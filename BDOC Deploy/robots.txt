@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /.netlify/
+Disallow: /netlify/
+
+Sitemap: https://kgsbdoc.netlify.app/sitemap.xml

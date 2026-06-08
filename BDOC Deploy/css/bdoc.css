@@ -1,0 +1,1221 @@
+/* ============================================================
+ * BDOC PHASE 2 MODULE: bdoc.css
+ * Extracted from index.html lines 78-614 (Turn 2, 2026-04-22)
+ * (c) 2026 Kitsune Global Solutions LLC
+ * ============================================================ */
+/* Phase 31: banner removed — reset offset to 0 (was 20px for classBanner) */
+:root{--bnh:0px}
+.tb{top:var(--bnh)!important}
+.lp{top:calc(48px + var(--bnh))!important}
+.sc{top:calc(52px + var(--bnh))!important}
+#watchlistPanel,#presetsPanel{top:calc(110px + var(--bnh))!important}
+#coaPanel{top:130px}
+@media(max-width:767px){
+  :root{--bnh:0px} /* no banner on mobile — too cramped */
+  #classBanner{display:none!important}
+}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+/* ═══════════════════════════════════════════════════════════════════════════
+ * KITSUNE BDOC — Phase 11 (2026-05-05) SURGICAL FIX PASS
+ * Per operator brief v3: SINGLE ACCENT (#4A9EFF muted blue), no rainbow,
+ * #E6E8EB text (not pure white), #0E1116 base (not pure black),
+ * NO colored glows (subtle dark drop shadow only — Fix 4).
+ * ═══════════════════════════════════════════════════════════════════════════ */
+--bg:#0E1116;--bg2:#13171F;--panel:rgba(19,23,31,0.94);
+--bg-surface-1:#13171F;--bg-surface-2:#181D26;--bg-surface-3:#1D222A;
+/* SINGLE ACCENT — muted blue (operator-spec) */
+--kf:#4A9EFF;--kf2:#5BAEFF;--kfG:rgba(74,158,255,0.10);
+--bl:#4A9EFF;--blG:rgba(74,158,255,0.08);
+/* Status — danger red SPARINGLY, success/warning desaturated (Fix 4) */
+--rd:#DA3633;--rdG:rgba(218,54,51,0.08);
+--gn:#3FB950;--gnG:rgba(63,185,80,0.08);
+--yl:#E8B339;--ylG:rgba(232,179,57,0.08);
+--pr:#4A9EFF;--prG:rgba(74,158,255,0.08);
+/* Text hierarchy — operator-spec exact (#E6E8EB / #9BA1A8 / #5C636B) */
+--t1:#E6E8EB;--t2:#9BA1A8;--t3:#5C636B;--t4:#1E2436;
+--text-primary:#E6E8EB;--text-secondary:#9BA1A8;--text-tertiary:#5C636B;
+/* Status semantics + spec aliases */
+--crit:#DA3633;--ok:#3FB950;--warn:#E8B339;
+--success:#3FB950;--danger:#DA3633;--accent:#4A9EFF;
+/* Borders — hairline 6% standard */
+--bdr:rgba(255,255,255,0.06);--bdr2:rgba(255,255,255,0.10);
+--bdr3:rgba(74,158,255,0.20);
+--border:rgba(255,255,255,0.06);
+--border-subtle:rgba(255,255,255,0.06);--border-active:rgba(74,158,255,0.4);
+/* Phase 11 Fix 4: NO COLORED GLOWS — subtle dark drop shadow only */
+--glow-bl:0 1px 2px rgba(0,0,0,0.4);
+--glow-rd:0 1px 2px rgba(0,0,0,0.4);
+--glow-kf:0 1px 2px rgba(0,0,0,0.4);
+--accent-glow:0 1px 2px rgba(0,0,0,0.4);
+/* Typography stack */
+--m:'JetBrains Mono','IBM Plex Mono',ui-monospace,monospace;
+--s:'Inter','IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+/* Geometry */
+--r:2px;--r-card:3px;--r-btn:2px;
+--lw:248px;--rw:360px;
+/* Transitions */
+--t-fast:120ms;--t-norm:200ms;--t-slow:320ms;
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Phase 13 (2026-05-05) — CINEMATIC WAR-ROOM OVERLAY
+ * Operator brief: dark glass panels, cyan UI chrome, amber threat data, glows.
+ * Layered ON TOP of the existing token system — old tokens preserved for stability.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+--glass:rgba(8,12,20,0.82);
+--border-glow:rgba(0,212,255,0.15);
+--cyan:#00d4ff;
+--amber:#f59e0b;
+--red-threat:#ef4444;
+--green-live:#22c55e;
+--panel-blur:blur(12px);
+}
+/* Section 1: apply panel-blur to all sidebar panels (left intel + right AI) */
+.lp,.rp{backdrop-filter:var(--panel-blur);-webkit-backdrop-filter:var(--panel-blur)}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--t1);font-family:var(--s);font-feature-settings:'cv11','ss01','ss03';-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;letter-spacing:0.005em}
+/* Phase 10B: typography utility classes per spec — uppercase labels, monospace data */
+.tac-label{font-family:var(--m);font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--t3);font-weight:500}
+.tac-data{font-family:var(--m);font-variant-numeric:tabular-nums}
+.tac-h1{font-family:var(--s);font-size:28px;font-weight:700;letter-spacing:-0.01em;color:var(--t1)}
+.tac-h2{font-family:var(--s);font-size:20px;font-weight:600;letter-spacing:-0.005em;color:var(--t1)}
+.tac-h3{font-family:var(--s);font-size:16px;font-weight:600;color:var(--t1)}
+.tac-body{font-family:var(--s);font-size:14px;line-height:1.55;color:var(--t1)}
+.tac-small{font-family:var(--s);font-size:12px;color:var(--t2)}
+::selection{background:rgba(74,158,255,0.25);color:#fff}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px;transition:background var(--t-norm)}
+::-webkit-scrollbar-thumb:hover{background:rgba(74,158,255,0.3)}
+#cesiumContainer{position:absolute;inset:0;z-index:1}
+.cesium-viewer-bottom,.cesium-viewer-animationContainer,.cesium-viewer-timelineContainer,.cesium-viewer-fullscreenContainer,.cesium-viewer-vrContainer,.cesium-viewer-toolbar,.cesium-credit-logoContainer,.cesium-credit-textContainer,.cesium-credit-expand-link,.cesium-viewer .cesium-widget-credits{display:none!important}
+/* Phase 10B: subtle 2% engineering grid overlay — Palantir/Gotham foundational vibe */
+.grid-ov{position:fixed;inset:0;z-index:2;pointer-events:none;
+background:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(74,158,255,0.025) 39px,rgba(74,158,255,0.025) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(74,158,255,0.025) 39px,rgba(74,158,255,0.025) 40px),repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,0.008) 2px,rgba(255,255,255,0.008) 3px);
+mix-blend-mode:screen}
+/* ═══ AMBIENT VIGNETTE + HUD FRAME ═══ */
+.hud-vignette{position:fixed;inset:0;z-index:2;pointer-events:none;
+background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.2) 85%,rgba(0,0,0,0.4) 100%)}
+.hud-frame{position:fixed;inset:0;z-index:3;pointer-events:none}
+.hud-frame::before{content:'';position:absolute;top:41px;left:0;right:0;height:1px;background:linear-gradient(90deg,rgba(74,158,255,0.15),transparent 30%,transparent 70%,rgba(74,158,255,0.15))}
+.hud-frame::after{content:'';position:absolute;bottom:57px;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(74,158,255,0.06),transparent)}
+/* Corner brackets */
+.hud-corner{position:fixed;width:24px;height:24px;z-index:3;pointer-events:none;opacity:0.15}
+.hud-corner::before,.hud-corner::after{content:'';position:absolute;background:rgba(74,158,255,0.6)}
+.hud-corner.tl{top:48px;left:0}.hud-corner.tr{top:48px;right:0}.hud-corner.bl{bottom:58px;left:0}.hud-corner.br{bottom:58px;right:0}
+.hud-corner.tl::before,.hud-corner.bl::before{left:0;width:16px;height:1px}
+.hud-corner.tr::before,.hud-corner.br::before{right:0;width:16px;height:1px}
+.hud-corner.tl::after,.hud-corner.tr::after{top:0;width:1px;height:16px}
+.hud-corner.bl::after,.hud-corner.br::after{bottom:0;width:1px;height:16px}
+.hud-corner.tl::before{top:0}.hud-corner.tl::after{left:0}
+.hud-corner.tr::before{top:0}.hud-corner.tr::after{right:0}
+.hud-corner.bl::before{bottom:0}.hud-corner.bl::after{left:0}
+.hud-corner.br::before{bottom:0}.hud-corner.br::after{right:0}
+/* ═══ VISUAL FILTERS ═══ */
+/* --- CRT MONITOR EFFECT --- */
+.vfx-crt{position:fixed;inset:0;z-index:3;pointer-events:none;display:none}
+.vfx-crt.on{display:block}
+/* CRT standalone — phosphor scanlines + barrel distortion glow */
+.vfx-crt::before{content:'';position:fixed;inset:0;
+background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px),
+repeating-linear-gradient(90deg,transparent,transparent 3px,rgba(0,0,0,0.03) 3px,rgba(0,0,0,0.03) 4px);
+mix-blend-mode:multiply;z-index:3}
+.vfx-crt::after{content:'';position:fixed;inset:0;
+background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.45) 100%);
+z-index:4}
+body.filter-crt #cesiumContainer{filter:brightness(1.1) contrast(1.15) saturate(0.8)}
+body.filter-crt .lp,body.filter-crt .rp,body.filter-crt #intel-ticker,body.filter-crt .fd,body.filter-crt .tz,body.filter-crt #nav-widget{
+filter:brightness(1.05) contrast(1.1)}
+/* CRT phosphor flicker */
+@keyframes crtFlicker{0%,100%{opacity:1}92%{opacity:1}93%{opacity:0.92}94%{opacity:1}97%{opacity:0.96}98%{opacity:1}}
+body.filter-crt #cesiumContainer{animation:crtFlicker 4s infinite}
+/* CRT color fringing on text */
+body.filter-crt .ly-n,body.filter-crt .tz-time,body.filter-crt .fd-txt{text-shadow:none;transition:filter 200ms ease}
+/* Phase 12 Strike R2 (2026-05-05): #nvgBloomWarn — uses --warn token (amber) since this is a warning state, not critical */
+#nvgBloomWarn{display:none;position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(0,0,0,0.85);border:1px solid var(--warn);border-radius:var(--r);padding:8px 20px;font-family:var(--m);font-size:11px;font-weight:600;letter-spacing:0.12em;color:var(--warn);text-transform:uppercase}
+/* Green phosphor overlay — the NVG signature look */
+body.filter-nvg::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:2;
+background:rgba(0,38,0,0.35);mix-blend-mode:multiply}
+body.filter-nvg::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:2;
+background:radial-gradient(ellipse 80% 80% at center,rgba(0,255,50,0.06) 0%,transparent 50%),
+radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,0.7) 100%);
+mix-blend-mode:screen}
+/* NVG binocular tube vignette */
+body.filter-nvg .grid-ov{background:
+radial-gradient(circle at 35% 50%,transparent 22%,rgba(0,0,0,0.4) 28%,rgba(0,0,0,0.95) 38%),
+radial-gradient(circle at 65% 50%,transparent 22%,rgba(0,0,0,0.4) 28%,rgba(0,0,0,0.95) 38%);
+opacity:0.7}
+body.filter-nvg .vfx-crt{display:block}
+body.filter-nvg .vfx-crt::before{
+background:repeating-linear-gradient(0deg,transparent,transparent 1px,rgba(0,32,0,0.15) 1px,rgba(0,32,0,0.15) 2px);
+mix-blend-mode:multiply}
+body.filter-nvg .vfx-crt::after{
+background:radial-gradient(ellipse at center,rgba(0,255,68,0.02) 0%,transparent 60%);
+mix-blend-mode:screen}
+/* NVG green tint on UI panels */
+body.filter-nvg .lp,body.filter-nvg .rp,body.filter-nvg #intel-ticker,body.filter-nvg .fd,body.filter-nvg .tz{
+filter:hue-rotate(70deg) saturate(2) brightness(0.8)}
+body.filter-nvg #nav-widget{filter:hue-rotate(70deg) saturate(2)}
+/* NVG grain: static SVG noise overlay on grid-ov instead of canvas transform */
+
+/* --- FLIR (Forward Looking Infrared / Thermal) --- */
+body.filter-flir #cesiumContainer{filter:saturate(0) brightness(1.2) contrast(2.0) invert(1) hue-rotate(180deg)}
+/* FLIR hot-white crosshair overlay */
+body.filter-flir::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:2;
+background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,0.5) 100%)}
+body.filter-flir::after{content:'';position:fixed;z-index:4;pointer-events:none;
+top:50%;left:50%;width:60px;height:60px;transform:translate(-50%,-50%);
+border:1px solid rgba(255,255,255,0.2);border-radius:50%;
+box-shadow:0 1px 2px rgba(0,0,0,0.4);
+background:
+linear-gradient(0deg,transparent 48%,rgba(255,255,255,0.15) 49%,rgba(255,255,255,0.15) 51%,transparent 52%),
+linear-gradient(90deg,transparent 48%,rgba(255,255,255,0.15) 49%,rgba(255,255,255,0.15) 51%,transparent 52%)}
+body.filter-flir .grid-ov{background:none}
+/* FLIR HUD text style */
+body.filter-flir .lp,body.filter-flir .rp,body.filter-flir #intel-ticker,body.filter-flir .fd,body.filter-flir .tz{
+filter:invert(1) hue-rotate(180deg) brightness(0.9)}
+body.filter-flir #nav-widget{filter:invert(1) hue-rotate(180deg)}
+/* FLIR status bar */
+body.filter-flir #vfx-flir-bar{display:flex}
+#vfx-flir-bar{display:none;position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:999;
+font-family:var(--m);font-size:8px;letter-spacing:2px;color:rgba(255,255,255,0.6);
+gap:20px;align-items:center;pointer-events:none}
+#vfx-flir-bar span{padding:2px 8px;border:1px solid rgba(255,255,255,0.1);border-radius:2px;background:rgba(0,0,0,0.3)}
+/* ═══ FILTER TOOLBAR ═══ */
+.ftb{display:flex;gap:2px;margin-left:4px}
+.fb{background:none;border:1px solid var(--bdr);border-radius:4px;padding:3px 7px;font-family:var(--m);font-size:7px;letter-spacing:1px;color:var(--t3);cursor:pointer;transition:all .12s;text-transform:uppercase;font-weight:600}
+.fb:hover{color:var(--t2);border-color:var(--bdr2)}
+/* Phase 12 Strike R2: filter buttons active state — token-routed */
+.fb.a{color:var(--success);border-color:var(--gnG);background:var(--gnG)}
+.fb[data-f="nvg"].a{color:var(--success);border-color:var(--gnG);background:var(--gnG)}
+.fb[data-f="flir"].a{color:var(--yl);border-color:rgba(255,184,0,0.3);background:rgba(255,184,0,0.08)}
+.fb[data-f="crt"].a{color:var(--kf);border-color:rgba(74,158,255,0.3);background:rgba(74,158,255,0.08)}
+/* ═══ EXPORT TOOLBAR ═══ */
+.etb{display:flex;gap:2px;margin-left:4px}
+.eb{background:none;border:1px solid var(--bdr);border-radius:4px;padding:3px 7px;font-family:var(--m);font-size:7px;letter-spacing:1px;color:var(--t3);cursor:pointer;transition:all .12s;text-transform:uppercase;font-weight:600}
+.eb:hover{color:var(--kf);border-color:rgba(74,158,255,0.2)}
+/* ═══ ANOMALY BANNER ═══ */
+.anomaly-banner{position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:150;background:rgba(255,45,45,0.12);border:1px solid rgba(255,45,45,0.3);border-radius:4px;padding:6px 16px;font-family:var(--m);font-size:9px;color:var(--rd);letter-spacing:1px;display:none;animation:anomPulse 2s infinite;max-width:80%;text-align:center}
+.anomaly-banner.show{display:block}
+@keyframes anomPulse{0%,100%{border-color:rgba(255,45,45,0.3)}50%{border-color:rgba(255,45,45,0.6)}}
+/* ═══ EVENT LOG ═══ */
+#event-log{position:fixed;bottom:60px;right:10px;z-index:55;background:var(--panel);backdrop-filter:blur(20px);border:1px solid var(--bdr);border-radius:4px;width:360px;max-height:300px;overflow-y:auto;display:none;padding:8px}
+#event-log.show{display:block}
+.elog-h{font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--kf);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.elog-row{font-family:var(--m);font-size:8px;padding:3px 0;border-bottom:1px solid var(--bdr);display:flex;gap:6px}
+.elog-ts{color:var(--t3);flex-shrink:0;width:60px}
+.elog-sev{font-weight:700;flex-shrink:0;width:40px;font-size:7px;padding:1px 3px;border-radius:2px;text-align:center}
+.elog-sev.info{color:var(--kf);background:rgba(74,158,255,0.1)}
+.elog-sev.warn{color:var(--yl);background:var(--ylG)}
+.elog-sev.crit{color:var(--rd);background:var(--rdG)}
+.elog-msg{color:var(--t2);flex:1;word-break:break-word}
+/* ═══ KEYBOARD HELP ═══ */
+#kb-help{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);display:none;place-items:center}
+#kb-help.show{display:grid}
+.kb-inner{background:var(--bg2);border:1px solid var(--bdr2);border-radius:4px;padding:24px;max-width:500px;width:90%}
+.kb-title{font-family:var(--m);font-size:14px;font-weight:800;color:var(--kf);letter-spacing:2px;margin-bottom:16px}
+.kb-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bdr);font-size:11px}
+.kb-key{font-family:var(--m);font-size:9px;background:rgba(255,255,255,0.05);border:1px solid var(--bdr2);border-radius:3px;padding:2px 6px;color:var(--kf)}
+.kb-desc{color:var(--t2)}
+/* ═══ SCREENSHOT WATERMARK ═══ */
+#ss-watermark{position:fixed;bottom:62px;left:50%;transform:translateX(-50%);z-index:999;background:rgba(0,0,0,0.85);border:1px solid rgba(74,158,255,0.3);border-radius:4px;padding:8px 20px;font-family:var(--m);font-size:9px;color:var(--kf);letter-spacing:1.5px;display:none;text-align:center;pointer-events:none}
+#ss-watermark.show{display:block}
+/* ═══ LEGEND ═══ */
+#legend{position:fixed;bottom:62px;left:50%;transform:translateX(-50%);z-index:55;background:var(--panel);backdrop-filter:blur(20px);border:1px solid var(--bdr);border-radius:4px;padding:10px 16px;display:none;font-family:var(--m);font-size:8px}
+#legend.show{display:flex;gap:16px;align-items:center}
+.leg-i{display:flex;align-items:center;gap:4px;color:var(--t2)}
+.leg-d{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+/* ═══ REPLAY BAR ═══ */
+#replay-bar{position:fixed;bottom:62px;left:50%;transform:translateX(-50%);z-index:60;background:var(--panel);backdrop-filter:blur(20px);border:1px solid rgba(74,158,255,0.15);border-radius:4px;padding:8px 16px;display:none;align-items:center;gap:10px;font-family:var(--m);font-size:8px;min-width:400px}
+#replay-bar.show{display:flex}
+#replay-slider{flex:1;-webkit-appearance:none;appearance:none;height:4px;background:var(--t4);border-radius:2px;outline:none;cursor:pointer}
+#replay-slider::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--kf);cursor:pointer;border:none}
+#replay-slider::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--kf);cursor:pointer;border:none}
+.rp-label{color:var(--kf);font-weight:700;letter-spacing:1px;flex-shrink:0}
+.rp-ts{color:var(--t2);flex-shrink:0;min-width:50px;text-align:center}
+.rp-btn{background:none;border:1px solid var(--bdr);border-radius:3px;padding:3px 8px;color:var(--t2);cursor:pointer;font-family:var(--m);font-size:7px;letter-spacing:1px}
+.rp-btn:hover{border-color:var(--kf);color:var(--kf)}
+.rp-btn.active{background:rgba(255,45,45,0.1);border-color:rgba(255,45,45,0.3);color:var(--rd)}
+/* ═══ TOPBAR ═══ */
+/* Phase 10C (2026-05-05): Mission Control top bar — 48px height, hairline borders, accent strip */
+.tb{position:fixed;top:0;left:0;right:0;height:48px;z-index:100;background:linear-gradient(180deg,rgba(10,14,26,0.98),rgba(17,21,28,0.94));backdrop-filter:blur(24px);border-bottom:1px solid var(--bdr);display:flex;align-items:center;padding:0 14px;gap:10px;box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+.tb::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 0%,rgba(74,158,255,0.22) 20%,rgba(74,158,255,0.4) 50%,rgba(74,158,255,0.22) 80%,transparent 100%)}
+.lg{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.lg-i{width:28px;height:28px;background:linear-gradient(135deg,rgba(74,158,255,0.12),rgba(74,158,255,0.04));border:1px solid rgba(74,158,255,0.25);border-radius:4px;display:grid;place-items:center;font-family:var(--m);font-size:9px;font-weight:800;color:var(--kf);letter-spacing:0.5px;box-shadow:0 1px 2px rgba(0,0,0,0.4);text-shadow:none;font-size:11.5px;font-weight:700;letter-spacing:2.5px;color:var(--kf);text-shadow:none;color:var(--t3);letter-spacing:1.5px;font-weight:500}
+.tb-c{flex:1;display:flex;justify-content:center;gap:3px}
+.tb-r{display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:auto}
+.nb{background:none;border:1px solid transparent;border-radius:2px;padding:4px 11px;font-family:var(--m);font-size:8.5px;letter-spacing:1.2px;color:var(--t3);cursor:pointer;transition:all .15s;text-transform:uppercase;font-weight:500;position:relative}
+.nb:hover{color:var(--t1);border-color:rgba(74,158,255,0.12);background:rgba(74,158,255,0.04)}
+.nb:hover::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:1px;background:rgba(74,158,255,0.3)}
+.nb.a{color:var(--kf);border-color:rgba(74,158,255,0.15);background:rgba(74,158,255,0.06);text-shadow:none;align-items:center;gap:12px;flex-shrink:0;margin-right:4px}
+/* Phase 11 Fix 5+6: Bloomberg-style status row — no individual pills, vertical separators, no glow */
+.st{display:flex;align-items:center;gap:6px;font-family:var(--m);font-size:11px;color:var(--t1);font-weight:400;padding:0 12px 0 0;background:transparent;border:none;border-right:1px solid var(--bdr);height:22px;letter-spacing:0.02em;text-transform:none}
+.st:last-child{border-right:none;padding-right:0}
+.dt{width:6px;height:6px;border-radius:50%}
+.dt-g{background:var(--success)}
+.dt-r{background:var(--danger)}
+@keyframes bk{0%,100%{opacity:1}50%{opacity:.25}}
+.bk{animation:bk 2s infinite}
+.ub{background:var(--kf);border:none;border-radius:4px;padding:4px 12px;font-family:var(--m);font-size:8px;font-weight:700;letter-spacing:1.5px;color:#000;cursor:pointer;}
+/* ═══ LEFT PANEL ═══ */
+/* Phase 10D: left panel — top:48px to clear new tb height, hairline border with cyan accent strip */
+.lp{position:fixed;left:0;top:48px;width:var(--lw);bottom:58px;z-index:50;background:linear-gradient(180deg,rgba(17,21,28,0.96),rgba(10,14,26,0.94));backdrop-filter:blur(28px);border-right:1px solid var(--bdr);display:flex;flex-direction:column;transition:transform var(--t-slow) cubic-bezier(.4,0,.2,1);box-shadow:2px 0 24px rgba(0,0,0,0.5)}
+.lp::after{content:'';position:absolute;top:0;right:-1px;bottom:0;width:1px;background:linear-gradient(180deg,rgba(74,158,255,0.4) 0%,rgba(74,158,255,0.12) 40%,rgba(74,158,255,0.02) 100%)}
+.lp.shut{transform:translateX(calc(var(--lw)*-1))}
+.lp-reopen{position:fixed;top:52px;left:8px;z-index:90;width:36px;height:36px;background:var(--panel);border:1px solid rgba(74,158,255,0.2);border-radius:var(--r);color:var(--kf);font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;transition:all .2s;backdrop-filter:blur(12px);animation:lpPulse 2.5s ease-in-out infinite}
+.lp-reopen:hover{border-color:var(--bl);color:var(--t1);background:rgba(74,158,255,0.12);animation:none}
+@keyframes lpPulse{0%,100%{box-shadow:0 1px 2px rgba(0,0,0,0.4)}}
+/* reopen button visibility handled by togL() in JS */
+/* Phase 10D: panel header — accent strip on left, denser type per Mission Control spec */
+.lp-h{padding:13px 14px 11px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:relative}
+.lp-h::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:2px;height:18px;background:var(--kf);box-shadow:var(--glow-kf)}
+.lp-t{font-family:var(--m);font-size:11px;font-weight:600;letter-spacing:0.12em;color:var(--t1);text-transform:uppercase}
+.lp-x{background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:var(--r);transition:color var(--t-fast)}
+.lp-x:hover{color:var(--t1);background:rgba(74,158,255,0.08)}
+.lp-b{flex:1;overflow-y:auto;padding:10px 10px;scrollbar-gutter:stable}
+.lg-title{font-family:var(--m);font-size:10px;font-weight:600;letter-spacing:0.12em;color:var(--t3);text-transform:uppercase;margin:12px 0 6px 0;display:flex;align-items:center;gap:6px;padding:5px 8px;border-left:2px solid rgba(74,158,255,0.3);transition:all var(--t-fast)}
+.lg-title:hover{border-left-color:rgba(74,158,255,0.5);color:var(--t2)}
+.lg-title::before{content:'';width:4px;height:4px;background:rgba(74,158,255,0.3);clip-path:polygon(0 0,100% 50%,0 100%)}
+.ly{display:flex;align-items:center;gap:7px;padding:4px 7px;border-radius:3px;cursor:pointer;transition:all .15s;margin-bottom:1px;user-select:none;border:1px solid transparent;position:relative}
+.ly:hover{background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.04)}
+.ly.on{background:rgba(74,158,255,0.06);border-color:rgba(74,158,255,0.12);box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+.sw{width:24px;height:13px;border-radius:4px;background:var(--t4);position:relative;transition:all .2s;flex-shrink:0;border:1px solid rgba(255,255,255,0.06)}
+.sw::after{content:'';position:absolute;top:1px;left:1px;width:10px;height:10px;border-radius:50%;background:#555;transition:all .2s;box-shadow:0 1px 2px rgba(0,0,0,0.4);border-color:rgba(74,158,255,0.4);box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+.ly.on .sw::after{transform:translateX(11px);background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+.ly-d{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.ly-n{font-size:10.5px;color:var(--t1);font-weight:400}
+.ly-tg{margin-left:auto;font-family:var(--m);font-size:7.5px;padding:1px 4px;border-radius:2px;flex-shrink:0;font-weight:600;letter-spacing:.4px}
+.tg-l{color:var(--gn);background:var(--gnG)}.tg-c{color:var(--t3);background:rgba(255,255,255,0.03)}
+.tg-p{color:var(--pr);background:var(--prG)}.tg-b{color:var(--yl);background:var(--ylG)}
+.ly.force{border:1px solid rgba(255,45,45,0.15);background:rgba(255,45,45,0.04)}
+.ly.force.on{border-color:rgba(255,45,45,0.25);background:rgba(255,45,45,0.08)}
+.ly.locked{opacity:0.5;cursor:pointer}
+/* Phase 12 Strike R2: locked-layer hover — warn token instead of arbitrary amber */
+.ly.locked .ly-n::after{content:' \1F512';font-size:9px;color:var(--warn)}
+.ly.locked:hover{background:var(--ylG)!important;border-color:var(--ylG)!important}
+.ly.locked:hover::after{content:'\21D2 Operator $9.99/mo';position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:9px;color:var(--warn);letter-spacing:0.08em;font-family:var(--m);font-weight:600;background:var(--ylG);border:1px solid var(--bdr);padding:2px 6px;border-radius:var(--r);pointer-events:none;text-transform:uppercase}
+/* Phase 4A.2 (2026-05-04): loading-state pulse so user gets feedback while lazy-loaded layer fetches data */
+.ly.loading{position:relative;overflow:hidden}
+.ly.loading::before{content:'';position:absolute;top:0;left:-30%;width:30%;height:100%;background:linear-gradient(90deg,transparent,rgba(74,158,255,0.18),transparent);animation:lyShimmer 1.2s ease-in-out infinite;pointer-events:none}
+@keyframes lyShimmer{0%{left:-30%}100%{left:130%}}
+.ly.loaded-flash{animation:lyFlashOk 0.9s ease-out}
+@keyframes lyFlashOk{0%{border-color:rgba(63,185,80,0.6);box-shadow:0 0 0 1px rgba(63,185,80,0.18)}60%{border-color:rgba(63,185,80,0.25)}100%{border-color:rgba(255,255,255,0.04);box-shadow:none}}
+/* Phase 17a: persistent load-failure indicator — stays until next successful load */
+.ly.load-failed{border-left:2px solid rgba(218,54,51,0.65)!important;position:relative}
+.ly.load-failed::after{content:'FAILED · CLICK \21BA';position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:6.5px;color:#f87171;letter-spacing:0.05em;font-family:var(--m);pointer-events:none;font-weight:600}
+/* ═══ COLLAPSIBLE LAYER CATEGORIES ═══ */
+.lg-collapse{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;padding:6px 8px;transition:background .2s}
+.lg-collapse:hover{background:rgba(255,255,255,0.04)}
+.lg-arrow{font-size:7px;color:var(--t3);transition:transform .25s;display:inline-block}
+.lg-collapse.collapsed .lg-arrow{transform:rotate(-90deg)}
+.lg-group{max-height:500px;overflow:hidden;transition:max-height .3s ease,opacity .2s;opacity:1}
+.lg-group.closed{max-height:0;opacity:0;padding:0}
+/* ═══ BASEMAP SELECTOR ═══ */
+/* Phase 10D: tactical buttons — sharper, hairline border, accent fill on hover */
+.bm-btn{font-family:var(--m);font-size:9px;padding:5px 8px;border:1px solid var(--bdr);border-radius:var(--r-btn);background:rgba(255,255,255,0.02);color:var(--t2);cursor:pointer;transition:all var(--t-fast) ease-out;flex:1;min-width:42px;text-align:center;letter-spacing:0.08em;text-transform:uppercase;font-weight:500}
+.bm-btn:hover{border-color:var(--bdr3);color:var(--t1);background:rgba(74,158,255,0.06);box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+/* Phase 12 Strike R2 (2026-05-05): bm-btn.bm-active — fixed rogue color:#DA3633!important override that was clobbering the accent */
+.bm-btn.bm-active{border-color:var(--kf);color:var(--kf);background:rgba(74,158,255,0.10);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+/* Phase 12 Strike R2: battle-panel — neutralized red gradient border + accent strip */
+.battle-panel{position:fixed;bottom:62px;left:50%;transform:translateX(-50%);z-index:100;background:var(--panel);backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;flex-direction:column;gap:8px;min-width:min(480px,calc(100vw - 16px));max-width:640px;box-sizing:border-box;cursor:grab;box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+.battle-panel::before{content:'';position:absolute;top:-1px;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--bdr2),transparent)}
+.bp-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;border-bottom:1px solid var(--bdr);font-family:var(--m);font-size:11px}
+.bp-section{padding:6px 0}
+.bp-icons{display:flex;flex-wrap:wrap;gap:3px}
+.bt-icon{background:rgba(255,255,255,0.02);border:1px solid var(--t4);border-radius:2px;padding:4px 8px;cursor:pointer;font-family:var(--m);font-size:8px;color:var(--t2);transition:all .15s;display:flex;align-items:center;gap:4px}
+.bt-icon:hover{border-color:var(--bl);color:var(--t1)}
+.bt-icon.active{border-color:var(--bl);color:var(--bl);background:rgba(74,158,255,0.08)}
+.bt-icon .bt-dot{width:6px;height:6px;border-radius:1px}
+.bp-tool{background:rgba(255,255,255,0.02);border:1px solid var(--t4);border-radius:2px;padding:5px 12px;cursor:pointer;font-family:var(--m);font-size:8px;color:var(--t2);letter-spacing:.5px;transition:all .15s;margin-right:4px}
+.bp-tool:hover{border-color:var(--bl);color:var(--t1)}
+.bp-tool.active-tool{border-color:var(--kf);color:var(--kf);background:rgba(212,175,55,0.1)}
+.bp-cat-btn.active{border-color:var(--bl);color:var(--bl);background:rgba(74,158,255,0.15)}
+.bp-color{width:16px;height:16px;border-radius:2px;cursor:pointer;border:2px solid transparent;transition:border-color 0.15s}
+.bp-color:hover{border-color:rgba(255,255,255,0.4)}
+.bp-color.active{border-color:#fff}
+/* ═══ RIGHT-CLICK CONTEXT MENU ═══ */
+#battle-ctx{position:fixed;z-index:200;display:none;background:rgba(10,14,26,0.97);backdrop-filter:blur(16px);border:1px solid var(--bdr2);border-radius:4px;padding:4px 0;min-width:180px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.6)}
+#battle-ctx.show{display:block}
+.ctx-item{padding:7px 14px;font-size:10px;color:var(--t2);cursor:pointer;display:flex;align-items:center;gap:8px;letter-spacing:.5px;transition:background 0.1s}
+.ctx-item:hover{background:rgba(255,255,255,0.06);color:var(--t1)}
+.ctx-item.danger{color:var(--crit)}
+.ctx-item.danger:hover{background:rgba(196,80,74,0.15)}
+.ctx-sep{height:1px;background:var(--bdr);margin:4px 0}
+.ctx-header{padding:5px 14px;font-size:8px;color:var(--t3);letter-spacing:1px;text-transform:uppercase}
+.ctx-battle-only{display:none!important}
+body.battle-mode .ctx-battle-only{display:flex!important}
+.ctx-battle-only.ctx-sep{display:none!important}
+body.battle-mode .ctx-battle-only.ctx-sep{display:block!important}
+/* ═══ HOVER TOOLTIP ═══ */
+#battle-tooltip{position:fixed;z-index:190;display:none;background:rgba(10,14,26,0.95);backdrop-filter:blur(10px);border:1px solid var(--bdr2);border-radius:3px;padding:6px 10px;font-family:var(--m);font-size:10px;color:var(--t1);max-width:280px;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.5);line-height:1.4}
+#battle-tooltip .btt-label{color:var(--bl);font-weight:700;letter-spacing:.5px;margin-bottom:2px}
+#battle-tooltip .btt-comment{color:var(--t2);font-size:9px;white-space:pre-wrap}
+body.battle-mode #cesiumContainer{cursor:crosshair}
+/* ═══ STAT CARDS ═══ */
+/* Phase 11 Fix 8: stat strip — no individual borders, vertical-line separators between */
+.sc{position:fixed;top:52px;z-index:50;display:flex;gap:0;transition:left .3s,opacity .3s,transform .3s;background:rgba(19,23,31,0.85);backdrop-filter:blur(20px);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.sc.sh{left:calc(var(--lw) + 8px)}.sc.fl{left:8px}
+.sc.sc-hidden{opacity:0;transform:translateY(-10px);pointer-events:none}
+.sc-toggle-sh{left:calc(var(--lw) + 8px)}
+/* Fix 8: tile = transparent, vertical-line divider between tiles, hide empty via .si-empty */
+.si{background:transparent;border:none;border-right:1px solid var(--bdr);border-radius:0;padding:7px 14px;min-width:80px;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;transition:background var(--t-fast)}
+.si:last-child{border-right:none}
+.si:hover{background:rgba(255,255,255,0.02)}
+.si-empty{display:none}
+.si-flash{animation:siFlash 1.4s ease-out}
+@keyframes siFlash{0%{background:rgba(74,158,255,0.10)}100%{background:transparent}}
+.si::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(74,158,255,0.15),transparent)}
+/* Fix 8: label uppercase 10px tertiary; value 20px mono primary, no glow */
+.si-l{font-family:var(--m);font-size:10px;letter-spacing:0.08em;color:var(--text-tertiary);text-transform:uppercase;font-weight:500}
+.si-v{font-family:var(--m);font-size:20px;font-weight:600;margin-top:3px;line-height:1;color:var(--text-primary);text-shadow:none;font-variant-numeric:tabular-nums}
+/* ═══ FORCE TRACKER PANEL ═══ */
+.ft-panel{position:fixed;bottom:60px;z-index:55;background:var(--panel);backdrop-filter:blur(20px);border:1px solid rgba(255,45,45,0.15);border-radius:var(--r);padding:8px 12px;max-height:280px;overflow-y:auto;width:340px;display:none;transition:left .3s}
+.ft-panel.show{display:block}
+.ft-panel.sh{left:calc(var(--lw) + 8px)}.ft-panel.fl{left:8px}
+.ft-title{font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--rd);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.ft-row{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--bdr);font-family:var(--m);font-size:8.5px;cursor:pointer;transition:color .1s}
+.ft-row:hover{color:var(--kf)}
+.ft-hex{color:var(--rd);font-weight:600;width:56px}
+.ft-call{color:var(--bl);width:68px;overflow:hidden;text-overflow:ellipsis}
+.ft-type{color:var(--t2);width:48px}
+.ft-alt{color:var(--t3);margin-left:auto;font-size:8px}
+/* ═══ RIGHT PANEL ═══ */
+.rp{position:fixed;right:0;top:48px;width:var(--rw);bottom:58px;z-index:50;background:linear-gradient(180deg,rgba(8,12,20,0.96),rgba(6,9,17,0.94));backdrop-filter:blur(28px);border-left:1px solid var(--bdr3);display:flex;flex-direction:column;transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:-2px 0 20px rgba(0,0,0,0.3)}
+.rp::before{content:'';position:absolute;top:0;left:-1px;bottom:0;width:1px;background:linear-gradient(180deg,rgba(74,158,255,0.25) 0%,rgba(74,158,255,0.08) 40%,rgba(74,158,255,0.02) 100%)}
+.rp.shut{transform:translateX(var(--rw))}
+/* Collapse AI panel to just the header bar */
+.rp.mini{width:42px;min-width:42px;overflow:hidden}
+.rp.mini .am,.rp.mini .ai-ib,.rp.mini .ai-n,.rp.mini .ai-s2,.rp.mini .ai-ol,.rp.mini .rp-label,.rp.mini .rp-ts,.rp.mini .rp-btn{display:none}
+.rp.mini .rp-h{flex-direction:column;padding:9px 4px;gap:4px}
+.rp-collapse{background:none;border:1px solid var(--bdr);border-radius:3px;padding:2px 5px;color:var(--t2);cursor:pointer;font-size:12px;margin-left:auto;line-height:1;transition:all .2s}
+.rp-collapse:hover{border-color:var(--kf);color:var(--kf)}
+/* ═══ CESIUM INFOBOX — Professional dark theme ═══ */
+.cesium-infoBox{transition:right .3s;max-width:400px !important;border-radius:4px !important;border:1px solid rgba(74,158,255,0.15) !important;box-shadow:0 8px 32px rgba(0,0,0,0.6) !important;overflow:hidden !important}
+body.ai-open .cesium-infoBox{right:390px !important}
+body:not(.ai-open) .cesium-infoBox{right:50px !important}
+/* Phase 12 Strike R2 (2026-05-05): Cesium entity popup — token-routed */
+.cesium-infoBox-title{background:var(--bg-surface-1) !important;color:var(--text-primary) !important;font-family:var(--m) !important;font-size:11px !important;font-weight:600 !important;letter-spacing:0.08em !important;padding:10px 14px !important;border-bottom:1px solid var(--border) !important;text-transform:uppercase !important}
+.cesium-infoBox-iframe{background:var(--bg-surface-1) !important}
+.cesium-infoBox-close{color:var(--text-tertiary) !important;font-size:18px !important}
+.cesium-infoBox-close:hover{color:var(--text-primary) !important}
+.cesium-selection-wrapper{position:absolute !important}
+.cesium-selection-wrapper > div{border-color:rgba(74,158,255,0.5) !important}
+.rp-h{padding:9px 12px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:7px}
+.ai-a{width:24px;height:24px;border-radius:4px;background:linear-gradient(135deg,rgba(74,158,255,0.15),rgba(74,158,255,0.05));border:1px solid rgba(74,158,255,0.25);display:grid;place-items:center;font-family:var(--m);font-size:8px;font-weight:800;color:var(--kf);box-shadow:var(--glow-kf);text-shadow:none;font-size:9.5px;font-weight:700;letter-spacing:1px}
+.ai-s2{font-size:8px;color:var(--t3)}
+.ai-ol{margin-left:auto;font-family:var(--m);font-size:7.5px;color:var(--gn);display:flex;align-items:center;gap:3px}
+.am{flex:1;overflow-y:auto;padding:8px 12px;display:flex;flex-direction:column;gap:7px}
+.mg{max-width:96%;padding:8px 10px;border-radius:4px;font-size:11px;line-height:1.55;animation:mu .2s ease}
+@keyframes mu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.mg b{color:var(--kf);font-weight:600}
+.mg-t{font-family:var(--m);font-size:7.5px;color:var(--t3);margin-bottom:2px;letter-spacing:.4px;font-weight:500}
+.mg.sy{background:rgba(74,158,255,0.04);border:1px solid rgba(74,158,255,0.08);align-self:flex-start}
+.mg.us{background:rgba(74,158,255,0.06);border:1px solid rgba(74,158,255,0.1);align-self:flex-end;color:var(--bl)}
+.mg.al{background:var(--rdG);border:1px solid rgba(255,45,45,0.15);align-self:flex-start;color:var(--rd)}
+.mg.in{background:rgba(168,85,247,0.05);border:1px solid rgba(168,85,247,0.1);align-self:flex-start}
+.ai-ib{padding:8px 12px;border-top:1px solid var(--bdr);display:flex;gap:5px;align-items:center}
+.ai-ip{flex:1;background:rgba(255,255,255,0.02);border:1px solid rgba(74,158,255,0.1);border-radius:var(--r);padding:8px 10px;color:var(--t1);font-family:var(--s);font-size:11.5px;outline:none;transition:all .2s}
+.ai-ip:focus{border-color:rgba(74,158,255,0.15);background:rgba(74,158,255,0.03);box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+.ai-ip::placeholder{color:var(--t3)}
+/* Phase 12 Strike R2: ai-sb — flat accent fill, no gradient (was a glow-style) */
+.ai-sb{width:32px;height:32px;border-radius:var(--r);background:var(--accent);border:none;cursor:pointer;display:grid;place-items:center;color:#000;font-size:14px;flex-shrink:0;font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,0.4);transition:background var(--t-fast)}
+.ai-sb:hover{background:var(--kf2)}
+/* ═══ FEED ═══ */
+.fd{position:fixed;bottom:31px;left:0;right:0;height:26px;z-index:50;background:linear-gradient(180deg,rgba(6,9,17,0.92),rgba(4,6,12,0.96));border-bottom:1px solid rgba(74,158,255,0.04);backdrop-filter:blur(8px);border-top:1px solid var(--bdr2);display:flex;align-items:center;overflow:hidden;padding:0 8px}
+#cursorCoords{position:fixed;top:80px;left:210px;z-index:55;height:26px;display:flex;align-items:center;gap:10px;font-family:var(--m);font-size:9px;color:var(--t2);letter-spacing:0.3px;padding:0 10px;background:rgba(10,14,26,0.95);border:1px solid rgba(74,158,255,0.1);border-radius:3px;cursor:grab;user-select:none;max-width:calc(100vw - var(--rw) - 230px);overflow:hidden}
+#cursorCoords .cc-lbl{color:var(--t3);font-size:7px;letter-spacing:1px}
+#cursorCoords .cc-val{color:var(--kf);font-variant-numeric:tabular-nums}
+/* ═══ SETTINGS PANEL ═══ */
+#settingsPanel{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:500;background:var(--bg2);border:1px solid var(--bdr2);border-radius:4px;padding:20px;width:460px;max-height:80vh;overflow-y:auto;display:none;box-shadow:0 20px 60px rgba(0,0,0,0.6)}
+#settingsPanel.show{display:block}
+#settingsOverlay{position:fixed;inset:0;z-index:499;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:none}
+#settingsOverlay.show{display:block}
+.set-title{font-family:var(--m);font-size:13px;font-weight:700;letter-spacing:2px;color:var(--kf);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--bdr)}
+.set-section{margin-bottom:14px}
+.set-section-title{font-family:var(--m);font-size:9px;font-weight:600;letter-spacing:1.5px;color:var(--t2);margin-bottom:8px;text-transform:uppercase}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;font-family:var(--m);font-size:10px;color:var(--t1)}
+.set-row label{color:var(--t2);font-size:9px}
+.set-row select,.set-row input[type="range"]{background:#0d1117;border:1px solid var(--bdr2);color:var(--t1);font-family:var(--m);font-size:9px;padding:3px 6px;border-radius:3px;cursor:pointer;outline:none}
+.set-row input[type="range"]{width:120px;-webkit-appearance:none;height:4px;background:var(--t4);border:none;border-radius:2px}
+.set-row input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--kf);cursor:pointer}
+.set-chk{display:flex;align-items:center;gap:6px;padding:4px 0;font-family:var(--m);font-size:9px;color:var(--t2);cursor:pointer}
+.set-chk input{accent-color:var(--kf)}
+.fd-s{display:flex;gap:24px;animation:tk 120s linear infinite;white-space:nowrap}
+@keyframes tk{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.fd-i{font-family:var(--m);font-size:8.5px;color:var(--t2);display:flex;align-items:center;gap:4px;flex-shrink:0}
+.fd-d{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+/* ═══ MODAL ═══ */
+.mo-bg{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);display:none;place-items:center}
+.mo-bg.show{display:grid}
+.mo{background:var(--bg2);border:1px solid var(--bdr2);border-radius:4px;max-width:740px;width:92%;max-height:92vh;overflow-y:auto;padding:32px}
+.mo h2{font-family:var(--m);font-size:20px;font-weight:800;color:var(--kf);letter-spacing:1px;margin-bottom:5px}
+.mo .su{font-size:12.5px;color:var(--t2);margin-bottom:24px;line-height:1.65}
+.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.pc{background:rgba(255,255,255,0.012);border:1px solid var(--bdr);border-radius:4px;padding:20px;text-align:center;transition:all .2s;cursor:pointer}
+.pc:hover{border-color:var(--kf);transform:translateY(-2px)}
+.pc.ft{border-color:var(--kf);background:rgba(74,158,255,0.03);position:relative}
+.pc.ft::before{content:'RECOMMENDED';position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--kf);color:#000;font-size:7px;font-weight:700;padding:1px 7px;border-radius:3px;font-family:var(--m);letter-spacing:1px}
+.pt{font-family:var(--m);font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:5px}
+.pp{font-size:28px;font-weight:800;color:var(--t1);margin-bottom:2px}
+.ppd{font-size:9px;color:var(--t3);margin-bottom:12px}
+.pf{text-align:left;font-size:10.5px;color:var(--t2);line-height:2}
+.pf .ck{color:var(--gn);margin-right:4px;font-weight:700}
+.ct{background:var(--kf);color:#000;border:none;padding:11px 32px;border-radius:var(--r);font-family:var(--m);font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;text-decoration:none;display:inline-block}
+.ct2{background:transparent;border:1px solid var(--bdr);color:var(--t3);padding:8px 18px;border-radius:4px;font-family:var(--m);font-size:9px;cursor:pointer;margin-left:8px;text-decoration:none}
+/* ═══ HEALTH DASHBOARD ═══ */
+#health-dash{position:fixed;top:50px;right:10px;z-index:300;background:rgba(15,20,35,0.96);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:16px;width:340px;max-height:80vh;overflow-y:auto;display:none;font-family:var(--m)}
+#health-dash.show{display:block}
+.hd-feed{border:1px solid rgba(255,255,255,0.04);border-radius:4px;padding:6px 8px;margin-bottom:4px;font-size:8px}
+.hd-feed.healthy{border-left:3px solid var(--gn)}.hd-feed.degraded{border-left:3px solid var(--yl)}.hd-feed.down{border-left:3px solid var(--rd)}.hd-feed.unknown{border-left:3px solid #444}
+.hd-nm{font-weight:700;color:var(--t1);display:flex;justify-content:space-between;margin-bottom:2px}
+.hd-st{font-size:7px;padding:1px 4px;border-radius:2px;font-weight:600}
+.hd-st.healthy{color:var(--gn);background:var(--gnG)}.hd-st.degraded{color:var(--yl);background:var(--ylG)}.hd-st.down{color:var(--rd);background:var(--rdG)}
+.hd-row{display:flex;justify-content:space-between;color:var(--text-secondary);font-size:7.5px;margin-top:1px}
+/* ═══ PHASE 18b: SITUATION BROWSER ═══ */
+#sitPanel{position:fixed;left:0;top:calc(48px + var(--bnh));width:var(--lw);bottom:58px;z-index:51;background:linear-gradient(180deg,rgba(17,21,28,0.97),rgba(10,14,26,0.95));backdrop-filter:blur(28px);border-right:1px solid rgba(218,54,51,0.22);display:none;flex-direction:column;transition:transform var(--t-slow) cubic-bezier(.4,0,.2,1);box-shadow:2px 0 28px rgba(0,0,0,0.55)}
+#sitPanel.sp-open{display:flex}
+.sp-h{padding:13px 14px 11px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:relative;flex-shrink:0}
+.sp-h::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:2px;height:18px;background:#da3633;box-shadow:0 0 6px rgba(218,54,51,0.4)}
+.sp-title{font-family:var(--m);font-size:11px;font-weight:600;letter-spacing:0.12em;color:var(--t1);text-transform:uppercase}
+.sp-x{background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:var(--r);transition:color var(--t-fast)}
+.sp-x:hover{color:var(--t1);background:rgba(255,255,255,0.06)}
+.sp-tabs{display:flex;border-bottom:1px solid var(--bdr);flex-shrink:0}
+.sp-tab{flex:1;padding:7px 0;font-family:var(--m);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--t3);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s}
+.sp-tab.sp-tab-a{color:var(--t1);border-bottom-color:#da3633}
+.sp-body{flex:1;overflow-y:auto;padding:6px}
+.sit-card{padding:10px 12px;margin-bottom:4px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);border-radius:3px;cursor:pointer;transition:all 0.15s;border-left:3px solid transparent}
+.sit-card:hover{background:rgba(218,54,51,0.04);border-color:rgba(218,54,51,0.15)}
+.sit-card.sev-critical{border-left-color:#da3633}
+.sit-card.sev-high{border-left-color:#f0883e}
+.sit-card.sev-medium{border-left-color:#d29922}
+.sit-card.sev-low{border-left-color:#3fb950}
+.sit-title{font-family:var(--m);font-size:10px;font-weight:600;color:var(--t1);margin-bottom:3px;line-height:1.3}
+.sit-meta{font-family:var(--m);font-size:8px;color:var(--t3);margin-bottom:5px;letter-spacing:0.04em}
+.sit-badges{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.sev-badge{font-family:var(--m);font-size:7px;font-weight:700;letter-spacing:0.1em;padding:2px 5px;border-radius:2px;text-transform:uppercase}
+.sev-badge.critical{background:rgba(218,54,51,0.18);color:#f87171;border:1px solid rgba(218,54,51,0.35)}
+.sev-badge.high{background:rgba(240,136,62,0.15);color:#f0883e;border:1px solid rgba(240,136,62,0.3)}
+.sev-badge.medium{background:rgba(210,153,34,0.15);color:#d29922;border:1px solid rgba(210,153,34,0.3)}
+.sev-badge.low{background:rgba(63,185,80,0.1);color:#3fb950;border:1px solid rgba(63,185,80,0.25)}
+.sit-coa-badge{font-family:var(--m);font-size:7px;padding:2px 5px;background:rgba(74,158,255,0.1);border:1px solid rgba(74,158,255,0.22);border-radius:2px;color:#4A9EFF}
+.sd-back{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--bdr);cursor:pointer;font-family:var(--m);font-size:9px;color:var(--t3);letter-spacing:0.08em;transition:color 0.15s;flex-shrink:0;user-select:none}
+.sd-back:hover{color:var(--t1)}
+.sd-header{padding:10px 12px 8px;border-bottom:1px solid var(--bdr);flex-shrink:0}
+.sd-name{font-family:var(--m);font-size:11px;font-weight:600;color:var(--t1);margin-bottom:3px;line-height:1.3}
+.sd-meta{font-family:var(--m);font-size:8px;color:var(--t3);letter-spacing:0.04em}
+.sd-body{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.sd-section{border-bottom:1px solid rgba(255,255,255,0.04)}
+.sd-sec-hd{display:flex;align-items:center;padding:8px 12px;cursor:pointer;font-family:var(--m);font-size:9px;color:var(--t2);letter-spacing:0.1em;text-transform:uppercase;user-select:none;gap:6px}
+.sd-sec-hd:hover{color:var(--t1);background:rgba(255,255,255,0.02)}
+.sd-sec-arr{font-size:7px;color:var(--t3);transition:transform 0.15s;display:inline-block}
+.sd-sec-hd.open .sd-sec-arr{transform:rotate(90deg)}
+.sd-sec-body{padding:8px 12px 10px;font-family:var(--m);font-size:9px;color:var(--t2);line-height:1.6;display:none}
+.sd-sec-body.open{display:block}
+.rp-card{padding:8px 10px;margin-bottom:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:3px;cursor:pointer;transition:all 0.15s;position:relative}
+.rp-card:hover{background:rgba(74,158,255,0.05);border-color:rgba(74,158,255,0.18)}
+.rp-card-title{font-family:var(--m);font-size:9.5px;font-weight:600;color:var(--t1);margin-bottom:2px;padding-right:60px}
+.rp-card-sub{font-family:var(--m);font-size:8px;color:var(--t3)}
+.rp-status-badge{font-family:var(--m);font-size:7px;font-weight:600;padding:2px 5px;border-radius:2px;position:absolute;top:8px;right:8px;letter-spacing:0.08em;text-transform:uppercase}
+.rp-status-badge.proposed{background:rgba(74,158,255,0.1);color:#4A9EFF;border:1px solid rgba(74,158,255,0.25)}
+.rp-status-badge.approved{background:rgba(63,185,80,0.1);color:#3fb950;border:1px solid rgba(63,185,80,0.25)}
+.rp-status-badge.rejected{background:rgba(218,54,51,0.1);color:#f87171;border:1px solid rgba(218,54,51,0.25)}
+/* ═══ MOBILE ═══ */
+@media(max-width:767px){
+.tb{flex-wrap:wrap;height:auto;padding:6px 8px}
+.tb-c{display:none}
+.ftb,.etb{display:none}
+.sc{flex-wrap:wrap;gap:4px;padding:4px 8px}
+.sc.sh,.sc.fl{left:4px}
+.si{min-width:unset;padding:4px 6px}.si .si-l{font-size:6px}.si .si-v{font-size:13px}
+.lp{position:fixed;top:auto;bottom:60px;left:4px;width:calc(100vw - 8px);max-height:35vh;overflow-y:auto;border-radius:4px;z-index:100}
+.ft-panel{left:4px!important;right:4px;width:auto;bottom:60px;max-height:30vh}
+.rp{width:100%;top:auto;bottom:28px;height:50vh;transform:translateY(100%)}.rp:not(.shut){transform:translateY(0)}
+.mo .pg{grid-template-columns:1fr}
+button,.nb{min-height:36px;min-width:36px}
+.battle-panel{min-width:unset;width:calc(100vw - 16px);left:8px;transform:none;bottom:60px;padding:8px 10px;max-height:40vh;overflow-y:auto;font-size:11px}
+.battle-panel .bp-icons{gap:4px}
+.battle-panel .bp-tool{padding:4px 8px;font-size:9px}
+}
+@media(min-width:768px) and (max-width:1023px){
+.tb-c{gap:2px}.nb{font-size:8px;padding:4px 6px}.lp{width:180px}
+}
+/* Touch / small-screen refinements — 44×44 targets, prevent iOS zoom on input focus, auth modal width */
+@media(max-width:767px){
+button,.nb,.ly-sw,.sw{min-height:44px;min-width:44px}
+input,select,textarea{font-size:16px!important}
+#authBg .mo,.mo{max-width:95vw!important;width:95vw!important;padding:20px!important}
+.mo-sg{grid-template-columns:1fr!important;max-width:95vw!important}
+/* Phase 4D (2026-05-04): mobile-friendly floating panels — collapse to bottom strip pattern */
+#cyberHud{bottom:auto!important;top:60px!important;right:4px!important;left:4px!important;width:auto!important;max-width:calc(100vw - 8px)}
+#vegPanel{top:auto!important;bottom:60px!important;right:4px!important;left:4px!important;width:auto!important;max-width:calc(100vw - 8px);max-height:40vh}
+#navPanel{width:calc(100vw - 16px)!important;left:8px!important;transform:none!important}
+/* Phase 17a: watchlist + presets panels — stack vertically on mobile */
+#watchlistPanel{right:4px!important;left:4px!important;width:auto!important;top:60px!important;max-height:55vh;overflow-y:auto}
+#presetsPanel{right:4px!important;left:4px!important;width:auto!important;top:60px!important;max-height:55vh;overflow-y:auto}
+#sitPanel{position:fixed!important;left:0!important;right:0!important;width:100%!important;top:60px!important;bottom:auto!important;max-height:70vh;border-radius:0 0 4px 4px}
+#coaPanel{right:4px!important;left:4px!important;width:auto!important;top:60px!important;max-height:75vh;overflow-y:auto}
+#coaCompare{right:4px!important;left:4px!important;width:auto!important;top:60px!important;max-height:75vh;overflow-y:auto}
+.lg-title{font-size:9px;padding:4px 6px}
+.ly-n{font-size:11px}
+.ly-tg{font-size:8px}
+}
+/* Phase 17d: extreme-narrow fixes — phones <480px (296px = common side-panel debug width) */
+/* Core problem: flex-wrap:wrap on .tb causes topbar to grow to 300px+ at <400px, burying the globe */
+@media(max-width:480px){
+  /* Force topbar to single row — no wrapping, overflow hidden */
+  .tb{flex-wrap:nowrap!important;height:44px!important;align-items:center;padding:0 6px!important;overflow:hidden}
+  /* Hide heavy desktop-only topbar sections that cause wrapping */
+  .menu-bar,.etb{display:none!important}
+  #battleBtn{display:none!important}
+  /* Slim the logo block — hide long subtitle and version pills, keep BD icon + name */
+  .lg-s,#bdocBuildPill,#bdocThreatPill{display:none!important}
+  .lg{flex:1 1 auto;min-width:0;overflow:hidden}
+  /* CRITICAL: expose GPS locate + NAV from inside .tb-c which is normally display:none on mobile */
+  /* Users have NO access to GPS on mobile otherwise */
+  .tb-c{display:inline-flex!important;flex:0 0 auto;gap:3px;align-items:center;overflow:visible}
+  #cocomSelect,.tb-c > div{display:none!important} /* hide search & COCOM, keep buttons */
+  #locateMeBtn,#navBtn{display:inline-flex!important;align-items:center;justify-content:center;min-height:36px!important;min-width:36px!important;padding:4px!important;font-size:12px!important}
+  /* Status row: hide LIVE / FEEDS chips, keep clock + LOGIN */
+  .tb-r .st:nth-child(1),.tb-r .st:nth-child(2){display:none!important}
+  .tb-r{flex:0 0 auto;gap:4px}
+}
+/* Phase 4D: landscape phone — keep panels usable */
+@media(max-width:1023px) and (orientation:landscape) and (max-height:500px){
+.lp{max-height:60vh}
+#cyberHud,#vegPanel{max-height:80vh;overflow-y:auto}
+.boot-feed-status{display:none}
+}
+/* ═══ MOBILE OVERLAY ═══ */
+#mob-ov{position:fixed;inset:0;z-index:500;background:rgba(10,14,26,0.97);backdrop-filter:blur(20px);display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:var(--s)}
+#mob-ov.show{display:flex}
+.mo-lg{font-family:var(--m);font-size:32px;font-weight:800;color:var(--kf);letter-spacing:4px;margin-bottom:16px}
+.mo-tt{font-family:var(--m);font-size:14px;font-weight:700;letter-spacing:3px;color:var(--kf);margin-bottom:8px}
+.mo-sb{font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:24px;max-width:300px}
+.mo-sg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px;width:100%;max-width:280px}
+.mo-st{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);border-radius:4px;padding:12px}
+.mo-sv{font-family:var(--m);font-size:20px;font-weight:700;color:var(--t1)}
+.mo-sl{font-family:var(--m);font-size:7px;letter-spacing:1px;color:var(--text-tertiary);margin-top:2px}
+.mo-bp{background:var(--kf);color:#000;border:none;padding:14px 28px;border-radius:4px;font-family:var(--m);font-size:10px;font-weight:700;letter-spacing:2px;cursor:pointer;margin-bottom:10px;width:100%;max-width:280px}
+.mo-bs{background:transparent;color:var(--t2);border:1px solid rgba(255,255,255,0.06);padding:12px 28px;border-radius:4px;font-family:var(--m);font-size:9px;letter-spacing:1px;cursor:pointer;width:100%;max-width:280px}
+/* ═══ NAVIGATION WIDGET (Tactical HUD) ═══ */
+#nav-widget{position:fixed;right:calc(var(--rw) + 12px);bottom:64px;z-index:90;display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0.75;transition:opacity 0.3s,right 0.3s;user-select:none;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.5))}
+#nav-widget:hover{opacity:1}
+#nav-widget.rp-closed{right:12px}
+/* Compass ring */
+#nw-compass{position:relative;width:94px;height:94px;cursor:grab}
+#nw-compass:active{cursor:grabbing}
+#nw-compass-ring{width:94px;height:94px;transition:transform 0.08s;filter:drop-shadow(0 0 6px rgba(74,158,255,0.12))}
+/* Phase 12 Strike R2: nav widget north pointer — neutralized red */
+#nw-compass .nw-n{position:absolute;top:2px;left:50%;transform:translateX(-50%);font-family:var(--m);font-size:9px;font-weight:600;color:var(--text-secondary);pointer-events:none;text-shadow:none;width:58px;height:58px;border-radius:50%;background:var(--bg-surface-1);backdrop-filter:blur(12px);border:1px solid var(--border);cursor:grab;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+#nw-look:active{cursor:grabbing}
+#nw-look-knob{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.18),rgba(255,255,255,0.08));border:1px solid rgba(255,255,255,0.2);pointer-events:none;transition:transform 0.08s;box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+#nw-look-arrows{position:absolute;inset:0;pointer-events:none}
+/* Zoom slider */
+#nw-zoom{display:flex;flex-direction:column;align-items:center;gap:0}
+.nw-zbtn{width:30px;height:26px;background:linear-gradient(145deg,rgba(12,18,32,0.95),rgba(8,12,22,0.95));backdrop-filter:blur(12px);border:1px solid rgba(74,158,255,0.12);color:var(--t2);font-family:var(--m);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.nw-zbtn:hover{background:rgba(74,158,255,0.08);color:var(--kf);border-color:rgba(74,158,255,0.25);box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+.nw-zbtn:first-child{border-radius:3px 3px 0 0}
+.nw-zbtn:last-child{border-radius:0 0 3px 3px}
+#nw-zslider{width:30px;height:120px;background:linear-gradient(180deg,rgba(12,18,32,0.95),rgba(8,12,22,0.95));backdrop-filter:blur(12px);border-left:1px solid rgba(74,158,255,0.12);border-right:1px solid rgba(74,158,255,0.12);position:relative;cursor:pointer}
+#nw-ztrack{position:absolute;left:50%;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg,rgba(74,158,255,0.2),rgba(74,158,255,0.06));transform:translateX(-50%);border-radius:1px}
+#nw-zthumb{position:absolute;left:50%;width:22px;height:8px;background:linear-gradient(180deg,rgba(74,158,255,0.35),rgba(74,158,255,0.2));border:1px solid rgba(74,158,255,0.4);border-radius:1px;transform:translateX(-50%);cursor:grab;transition:top 0.1s;box-shadow:0 1px 2px rgba(0,0,0,0.4);box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+/* Globe button */
+#nw-globe{width:30px;height:26px;background:linear-gradient(145deg,rgba(12,18,32,0.95),rgba(8,12,22,0.95));backdrop-filter:blur(12px);border:1px solid rgba(74,158,255,0.12);border-radius:3px;color:var(--t2);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:4px;transition:all 0.15s}
+#nw-globe:hover{background:rgba(74,158,255,0.08);border-color:rgba(74,158,255,0.25);box-shadow:0 1px 2px rgba(0,0,0,0.4)}
+/* ═══ Phase 14: TILT BUTTON ROW (under joystick) — fixes "I can only look down at buildings" ═══ */
+#nw-tilt{display:flex;flex-direction:column;align-items:center;gap:0;margin-top:2px}
+.nw-tbtn{width:30px;height:22px;background:linear-gradient(145deg,rgba(12,18,32,0.95),rgba(8,12,22,0.95));backdrop-filter:blur(12px);border:1px solid rgba(0,212,255,0.18);color:var(--cyan,#00d4ff);font-family:var(--m);font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;letter-spacing:0.5px}
+.nw-tbtn:hover{background:rgba(0,212,255,0.12);border-color:rgba(0,212,255,0.4);box-shadow:0 0 6px rgba(0,212,255,0.25);color:#fff}
+.nw-tbtn:first-child{border-radius:3px 3px 0 0}
+.nw-tbtn:last-child{border-radius:0 0 3px 3px}
+.nw-tbtn + .nw-tbtn{border-top:none}
+/* ═══ BOOT PROGRESS INDICATOR ═══ */
+#boot-progress{display:none!important}
+#boot-progress.done{opacity:0;transform:translateY(100%);pointer-events:none}
+.boot-spinner{width:14px;height:14px;border:2px solid var(--bdr2);border-top-color:var(--kf);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.boot-label{font-size:10px;letter-spacing:1px;color:var(--t3)}
+.boot-feed-status{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.boot-dot{width:8px;height:8px;border-radius:50%;background:var(--bdr2);transition:background 0.3s}
+.boot-dot.ok{background:var(--ok)}.boot-dot.fail{background:var(--crit)}.boot-dot.loading{background:var(--kf);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+/* ═══ INTEL TICKER — Phase 12 Task 4 (2026-05-05): NEUTRALIZED, hidden via inline display:none ═══ */
+/* If revived later, all colors now come from token system. No red gradients, no multi-color stack. */
+#intel-ticker{position:fixed;bottom:0;left:0;right:0;z-index:95;height:30px;background:var(--bg-surface-1);border-top:1px solid var(--border);display:flex;align-items:center;overflow:hidden;font-family:var(--m)}
+#intel-ticker::before{content:'';position:absolute;top:-1px;left:0;right:0;height:1px;background:transparent;z-index:1}
+#intel-ticker-label{flex-shrink:0;padding:0 14px;font-size:10px;font-weight:500;letter-spacing:0.12em;color:var(--text-secondary);background:var(--bg-surface-2);height:100%;display:flex;align-items:center;gap:6px;text-transform:uppercase;position:relative;z-index:2;border-right:1px solid var(--border)}
+#intel-ticker-label::after{content:none}
+@keyframes tickerPulse{0%,100%{opacity:1}50%{opacity:0.4}}
+#intel-ticker-label .tk-dot{width:5px;height:5px;border-radius:50%;background:var(--accent)}
+#intel-ticker-track{flex:1;overflow:hidden;position:relative;height:100%;display:flex;align-items:center}
+#intel-ticker-track::before{content:'';position:absolute;left:0;top:0;bottom:0;width:40px;background:linear-gradient(90deg,var(--bg-surface-1),transparent);z-index:2;pointer-events:none}
+#intel-ticker-track::after{content:'';position:absolute;right:0;top:0;bottom:0;width:40px;background:linear-gradient(270deg,var(--bg-surface-1),transparent);z-index:2;pointer-events:none}
+#intel-ticker-content{display:flex;gap:0;white-space:nowrap;animation:tickerScroll 90s linear infinite;will-change:transform}
+#intel-ticker-content:hover{animation-play-state:paused}
+.ticker-item{display:inline-flex;align-items:center;gap:8px;padding:0 28px;font-size:11px;color:var(--text-primary);letter-spacing:0.005em;cursor:default;transition:color var(--t-fast)}
+.ticker-item:hover{color:var(--text-primary)}
+.ticker-sep{color:var(--border);font-size:6px}
+/* Phase 12 Task 4: ticker-tag — REMOVED multi-color stack. All severity tags now uniform muted style. */
+.ticker-tag{font-size:10px;font-weight:500;letter-spacing:0.08em;padding:2px 8px;border-radius:4px;margin-right:8px;text-shadow:none;color:var(--text-secondary);background:var(--bg-surface-2);border:1px solid var(--border);text-transform:uppercase}
+@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+/* Phase 15c (2026-05-13): moved tz-bar BELOW topbar (top:52px) so it stops covering the SIGN IN button. Topbar is 48px tall + 4px gap. */
+#tz-bar{position:fixed;top:52px;right:14px;z-index:150;display:flex;align-items:center;gap:0;background:rgba(10,14,20,0.92);border-radius:4px;border:1px solid #1e2436;font-family:var(--m);user-select:none;backdrop-filter:blur(6px);box-shadow:0 2px 8px rgba(0,0,0,0.4)}
+/* Phase 15c: SIGN IN button hover glow + ensure it's not overlapped */
+#userBadge{margin-left:8px;display:inline-flex;align-items:center;z-index:101;position:relative}
+.userBadge-signin:hover{background:rgba(0,212,255,0.18)!important;border-color:rgba(0,212,255,0.7)!important;box-shadow:0 0 10px rgba(0,212,255,0.35);color:#fff!important}
+/* Phase 31: LOGIN button — fixed position so it's ALWAYS visible regardless of toolbar width */
+#loginBtn{
+  position:fixed;
+  top:7px;
+  right:10px;
+  z-index:9999;
+  padding:6px 16px;
+  background:linear-gradient(180deg,rgba(0,212,255,0.28),rgba(0,180,220,0.18));
+  border:1px solid rgba(0,212,255,0.7);
+  border-radius:3px;
+  color:#fff;
+  font-family:var(--m,'JetBrains Mono',monospace);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:1.6px;
+  cursor:pointer;
+  text-transform:uppercase;
+  transition:all 0.18s ease;
+  user-select:none;
+  box-shadow:0 0 10px rgba(0,212,255,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+  text-shadow:0 1px 2px rgba(0,0,0,0.5);
+}
+#loginBtn:hover{
+  background:linear-gradient(180deg,rgba(0,212,255,0.45),rgba(0,180,220,0.32));
+  border-color:rgba(0,212,255,1);
+  color:#fff;
+  box-shadow:0 0 16px rgba(0,212,255,0.55), inset 0 1px 0 rgba(255,255,255,0.12);
+  transform:translateY(-1px);
+}
+#loginBtn:active{transform:translateY(0)}
+#loginBtn.logged-in{
+  background:rgba(63,185,80,0.10);
+  border-color:rgba(63,185,80,0.55);
+  color:#3FB950;
+  box-shadow:0 0 8px rgba(63,185,80,0.15);
+}
+#loginBtn.logged-in:hover{
+  background:rgba(63,185,80,0.22);
+  border-color:rgba(63,185,80,0.85);
+  color:#fff;
+  box-shadow:0 0 14px rgba(63,185,80,0.45);
+}
+#tz-bar.collapsed .tz-clocks{display:none}
+#tz-bar .tz-toggle{padding:4px 8px;cursor:pointer;color:var(--t3);font-size:9px;letter-spacing:1px;border:none;background:none}
+#tz-bar .tz-toggle:hover{color:var(--kf)}
+.tz-clocks{display:flex;gap:0}
+/* Phase 12 Task 6 (2026-05-05): tz-bar clock values routed through token system */
+.tz-cell{padding:4px 10px;border-left:1px solid var(--border);text-align:center;min-width:58px}
+.tz-cell:first-child{border-left:none}
+.tz-lbl{font-size:7px;letter-spacing:1.5px;color:var(--text-tertiary);margin-bottom:1px}
+.tz-val{font-size:12px;font-weight:600;color:var(--text-primary);letter-spacing:0.5px;font-variant-numeric:tabular-nums}
+.tz-val.zulu{color:var(--kf)}
+.pace-in{width:100%;padding:5px 6px;background:#0d1117;border:1px solid #1e2436;color:#c8ccd6;font-family:var(--m);font-size:10px;border-radius:2px;box-sizing:border-box}
+.pace-in:focus{border-color:var(--kf);outline:none}
+/* ═══ MENU BAR (Google Earth-style) ═══ */
+.menu-bar{display:flex;gap:0;margin:0 6px;flex-shrink:0}
+.menu-item{position:relative}
+.menu-btn{background:none;border:none;padding:4px 10px;font-family:var(--m);font-size:9px;letter-spacing:0.8px;color:var(--t2);cursor:pointer;transition:all .12s;border-radius:2px}
+.menu-btn:hover,.menu-btn.open{background:rgba(74,158,255,0.1);color:var(--t1)}
+.menu-drop{display:none;position:absolute;top:100%;left:0;min-width:230px;background:rgba(13,17,23,0.97);border:1px solid var(--bdr2);border-radius:3px;padding:4px 0;z-index:300;backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.5)}
+.menu-drop.show{display:block}
+.menu-drop-item{display:flex;align-items:center;justify-content:space-between;padding:5px 14px;font-family:var(--m);font-size:9px;color:var(--t2);cursor:pointer;transition:background .1s;gap:16px;white-space:nowrap}
+.menu-drop-item:hover{background:rgba(74,158,255,0.1);color:var(--t1)}
+.menu-drop-item .mdi-key{color:var(--t3);font-size:8px;letter-spacing:0.5px}
+.menu-drop-item .mdi-chk{width:14px;text-align:center;color:var(--gn);font-size:11px;flex-shrink:0}
+.menu-drop-sep{height:1px;background:var(--bdr);margin:3px 8px}
+.menu-drop-item.disabled{color:var(--t4);cursor:default;pointer-events:none}
+/* ═══ SCALE LEGEND ═══ */
+#scaleLegend{position:fixed;bottom:62px;left:50%;transform:translateX(-50%);z-index:55;font-family:var(--m);font-size:8px;color:var(--t2);display:none;text-align:center}
+#scaleLegend.show{display:block}
+#scaleLegend .scale-line{width:120px;height:2px;background:var(--t2);margin:2px auto 0;position:relative}
+#scaleLegend .scale-line::before,#scaleLegend .scale-line::after{content:'';position:absolute;top:-3px;width:1px;height:8px;background:var(--t2)}
+#scaleLegend .scale-line::before{left:0}
+#scaleLegend .scale-line::after{right:0}
+/* ═══ OVERVIEW MAP ═══ */
+#overviewMap{position:fixed;bottom:62px;right:12px;z-index:55;width:160px;height:120px;background:#0d1117;border:1px solid var(--bdr2);border-radius:3px;overflow:hidden;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.4)}
+#overviewMap.show{display:block}
+#overviewMap canvas,#overviewMap img{width:100%;height:100%;object-fit:cover}
+.ov-dot{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:6px;height:6px;border-radius:50%;background:var(--kf);box-shadow:0 0 8px var(--kf);z-index:2}
+.ov-label{position:absolute;bottom:2px;left:4px;font-family:var(--m);font-size:6px;color:var(--t3);letter-spacing:1px;z-index:2}
+/* ═══ ECONOMIC INTELLIGENCE WIDGET ═══ */
+/* Phase 12 Task 3 (2026-05-05): economic widget neutralized — gold/orange swapped to tokens, status colors only on values */
+/* Phase 16b (2026-05-13): repositioned econ widget to bottom-right, OUTSIDE the AI panel column.
+   Was top-right which overlapped the AI chat. Now sits just left of the AI panel at the bottom of the viewport. */
+#econWidget{position:fixed;bottom:60px;right:calc(var(--rw, 360px) + 16px);z-index:56;width:280px;background:var(--panel);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--r-card);padding:10px 12px;display:none;font-family:var(--m);box-shadow:0 8px 24px rgba(0,0,0,0.5);transition:right 0.3s ease}
+/* When AI panel is closed (.rp.shut), slide widget toward the right edge so it doesn't float in space */
+body:has(.rp.shut) #econWidget,.rp.shut~#econWidget{right:16px}
+#econWidget.show{display:block}
+.econ-title{font-size:10px;font-weight:600;letter-spacing:0.12em;color:var(--text-tertiary);margin-bottom:8px;display:flex;align-items:center;gap:6px;justify-content:space-between;text-transform:uppercase}
+.econ-title .econ-src{font-size:7px;color:var(--t3);font-weight:400;letter-spacing:1px}
+.econ-row{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;border-bottom:1px solid var(--bdr)}
+.econ-lbl{font-size:8px;color:var(--t2);letter-spacing:0.5px}
+.econ-val{font-size:12px;font-weight:600;color:var(--text-primary);font-variant-numeric:tabular-nums}
+.econ-val.debt{color:var(--danger)}
+.econ-val.gdp{color:var(--success)}
+.econ-val.deficit{color:var(--danger)}
+.econ-val.neutral{color:var(--t1)}
+.econ-sub{font-size:7px;color:var(--t3);text-align:right;margin-top:1px}
+.econ-ticker{margin-top:6px;padding-top:6px;border-top:1px solid var(--bdr);font-size:7px;color:var(--t3);letter-spacing:0.5px;text-align:center}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * PHASE 13 (2026-05-05) — CINEMATIC WAR-ROOM OVERLAY
+ * Sections 2-8 from operator brief: dark glass, cyan UI chrome, amber threat
+ * data, glows on important elements. All overrides at end of file so cascade
+ * wins without touching earlier rules. Delete this block to revert.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Pulsing animations (used by Sections 2, 4, 7) ─────────────────────────── */
+@keyframes p13LiveGreen{0%,100%{box-shadow:0 0 6px var(--green-live),0 0 0 0 rgba(34,197,94,0.7)}50%{box-shadow:0 0 10px var(--green-live),0 0 0 6px rgba(34,197,94,0)}}
+@keyframes p13LiveRed{0%,100%{box-shadow:0 0 6px var(--red-threat),0 0 0 0 rgba(239,68,68,0.7)}50%{box-shadow:0 0 10px var(--red-threat),0 0 0 6px rgba(239,68,68,0)}}
+@keyframes p13Amber{0%,100%{box-shadow:0 0 12px rgba(245,158,11,0.25)}50%{box-shadow:0 0 18px rgba(245,158,11,0.4)}}
+
+/* ── SECTION 2: LEFT PANEL — INTEL LAYERS ──────────────────────────────────── */
+.lp{background:var(--glass)!important;border-right:1px solid var(--border-glow)!important}
+.lg-title{font-size:9px!important;letter-spacing:3px!important;color:var(--cyan)!important;border-bottom:1px solid var(--border-glow)!important;padding-bottom:5px!important;text-transform:uppercase}
+.ly:hover{background:rgba(0,212,255,0.04)!important;border-color:rgba(0,212,255,0.15)!important}
+/* Live status dots get cyan glow + pulse */
+.dt.dt-g{background:var(--green-live);animation:p13LiveGreen 2s ease-in-out infinite}
+/* Threat scores in section titles (5/5, 4/5) — amber monospace */
+.ly-tg{color:var(--amber)!important;font-family:var(--m)!important;font-weight:600}
+.ly-tg.tg-l{color:var(--amber)!important}
+
+/* ── SECTION 3: THREAT LEVEL WIDGET (GTA pill + main GTA box) ──────────────── */
+#bdocThreatPill{border:1px solid var(--amber)!important;background:rgba(245,158,11,0.05)!important;color:var(--amber)!important;animation:p13Amber 3s ease-in-out infinite}
+/* GTA widget — large body with score number + level label */
+#gtaScore{font-size:32px!important;font-weight:800!important;color:var(--amber)!important;letter-spacing:-1px!important;text-shadow:0 0 16px rgba(245,158,11,0.5);font-family:var(--m);font-variant-numeric:tabular-nums}
+#gtaLevel{letter-spacing:4px!important;font-size:10px!important;color:var(--amber)!important;text-transform:uppercase;font-weight:600}
+/* If GTA widget has a container, give it the amber glow envelope */
+[id*="gtaWidget"],.gta-widget{border:1px solid var(--amber)!important;background:rgba(245,158,11,0.05)!important;box-shadow:0 0 20px rgba(245,158,11,0.3)!important}
+
+/* ── SECTION 4: RIGHT PANEL — KITSUNE AI ───────────────────────────────────── */
+.rp{background:var(--glass)!important;border-left:1px solid var(--border-glow)!important}
+/* AI message timestamps + system prefix */
+.mg.sy,.mg.us,.mg.al,.mg.in{font-size:11px}
+.mg.sy::before,.mg.in::before{color:var(--cyan);font-size:9px;letter-spacing:0.08em}
+.am .mg b{color:var(--cyan)}
+/* AI links in chat output — amber, no underline, hover glow */
+.am a,.mg a{color:var(--amber)!important;text-decoration:none;transition:text-shadow 200ms}
+.am a:hover,.mg a:hover{text-shadow:0 0 8px var(--amber)}
+/* ONLINE indicator pulse — already gets p13LiveGreen via .dt.dt-g rule */
+.ai-ol{color:var(--green-live);letter-spacing:0.12em;text-transform:uppercase;font-size:9px}
+.ai-n{color:var(--cyan)!important;letter-spacing:1px}
+.ai-s2{color:var(--text-tertiary);font-size:9px;letter-spacing:0.08em;text-transform:uppercase}
+
+/* ── SECTION 5: FORCE TRACKER TABLE ─────────────────────────────────────────── */
+.ft-panel{background:var(--glass)!important;backdrop-filter:var(--panel-blur)!important;-webkit-backdrop-filter:var(--panel-blur)!important;border:1px solid rgba(239,68,68,0.3)!important;box-shadow:0 0 15px rgba(239,68,68,0.15)!important}
+.ft-panel-header,.ft-h,.ft-title{color:var(--red-threat)!important;letter-spacing:2px!important;font-size:9px!important;text-transform:uppercase;font-weight:700}
+.ft-hex{color:var(--cyan)!important;font-family:var(--m)!important;font-variant-numeric:tabular-nums}
+.ft-row{transition:background 120ms ease-out}
+.ft-row:nth-child(even){background:rgba(255,255,255,0.02)}
+.ft-row:hover{background:rgba(0,212,255,0.04)}
+.ft-call{color:var(--text-primary)}
+.ft-type{color:var(--text-tertiary);letter-spacing:0.08em;text-transform:uppercase}
+.ft-alt{color:var(--amber);font-family:var(--m)}
+
+/* ── SECTION 6: HEADER BAR ──────────────────────────────────────────────────── */
+.tb{background:rgba(4,8,16,0.95)!important;backdrop-filter:blur(20px)!important;-webkit-backdrop-filter:blur(20px)!important;border-bottom:1px solid var(--border-glow)!important}
+.lg-t{color:var(--cyan)!important;letter-spacing:1px!important}
+.lg-s{color:var(--text-tertiary);font-size:9px;letter-spacing:0.08em;text-transform:uppercase}
+#clk,.tz-val{font-family:var(--m)!important;color:rgba(0,212,255,0.7)!important;font-variant-numeric:tabular-nums}
+.tz-lbl{color:rgba(0,212,255,0.45);letter-spacing:0.12em;text-transform:uppercase}
+/* Battle Tracker — red solid + red glow */
+#battleBtn{box-shadow:0 0 15px rgba(239,68,68,0.4)!important}
+#battleBtn:hover{box-shadow:0 0 22px rgba(239,68,68,0.55)!important}
+
+/* ── SECTION 7: BOTTOM TICKER ───────────────────────────────────────────────── */
+#bdocTicker{background:rgba(0,0,0,0.9)!important;backdrop-filter:blur(8px)!important;-webkit-backdrop-filter:blur(8px)!important;border-top:1px solid var(--border-glow)!important;color:rgba(0,212,255,0.6)!important}
+#bdocTicker div,#bdocTicker span{font-size:10px;letter-spacing:0.5px}
+#bdocTickerInner{color:rgba(0,212,255,0.6)}
+/* LIVE INTEL FEED label gets pulsing red dot prefix */
+#bdocTicker > div:first-child > span:first-child{background:var(--red-threat)!important;animation:p13LiveRed 1.8s ease-in-out infinite!important}
+
+/* ── SECTION 8: MAP STYLE BUTTONS ───────────────────────────────────────────── */
+.bm-btn{border:1px solid rgba(255,255,255,0.1)!important;color:rgba(255,255,255,0.4)!important;background:transparent!important;transition:all 150ms ease-out}
+.bm-btn:hover{border-color:rgba(0,212,255,0.4)!important;color:rgba(0,212,255,0.85)!important;background:rgba(0,212,255,0.04)!important}
+.bm-btn.bm-active{background:rgba(0,212,255,0.10)!important;border:1px solid var(--cyan)!important;color:var(--cyan)!important;text-shadow:0 0 8px var(--cyan)!important}
+
+/* ── Reduce-motion accessibility — kill pulse animations for users who request it ── */
+@media (prefers-reduced-motion: reduce){
+  .dt.dt-g,#bdocThreatPill,#bdocTicker > div:first-child > span:first-child{animation:none!important}
+}
+/* ── PHASE 13b (2026-05-05) — UX fixes for map style overlap, draggable tz-bar, nav panel polish ── */
+/* Map style buttons: prevent text overlap (was getting clipped at 42px min-width with 9px font + 0.08em letter-spacing) */
+.bm-btn{min-width:58px!important;white-space:nowrap!important;padding:5px 6px!important;font-size:8.5px!important;letter-spacing:0.05em!important}
+/* World clocks: draggable toggle button, collapsed by default, anchored top */
+#tz-bar{transition:none}
+#tz-bar .tz-toggle{cursor:grab;padding:6px 12px;font-size:12px;line-height:1;color:var(--cyan);user-select:none}
+#tz-bar .tz-toggle:active{cursor:grabbing}
+#tz-bar.collapsed{border-bottom-left-radius:4px;border-bottom-right-radius:4px}
+#tz-bar.dragging{opacity:0.85;cursor:grabbing}
+/* Navigation panel: clearer error surfacing */
+#navError{display:none;margin-top:8px;padding:8px 10px;background:rgba(239,68,68,0.10);border:1px solid var(--red-threat);border-radius:3px;color:var(--red-threat);font-size:10px;font-family:var(--m);letter-spacing:0.04em}
+#navError.show{display:block;animation:p13Amber 1.5s ease-out 1}
+/* Top-bar locate button — highlight it more so users see it */
+#locateMeBtn{background:rgba(34,197,94,0.06)!important;border:1px solid rgba(34,197,94,0.35)!important;box-shadow:0 0 8px rgba(34,197,94,0.18);transition:all 150ms}
+#locateMeBtn:hover{box-shadow:0 0 14px rgba(34,197,94,0.35);background:rgba(34,197,94,0.12)!important}
+/* NAV button styling consistency */
+#navBtn{background:rgba(0,212,255,0.06)!important;border:1px solid rgba(0,212,255,0.35)!important;color:var(--cyan)!important;letter-spacing:1px}
+#navBtn:hover{box-shadow:0 0 12px rgba(0,212,255,0.3);background:rgba(0,212,255,0.12)!important}
+/* ═══════════════════════════════════════════════════════════════════════════ END PHASE 13 ══════════════════════════════════════════════════════════════════════════ */
+/* ═════════════════════════════════════════════════════════════════════════════
+   PHASE 14 (2026-05-12) — FR24-STYLE AIRCRAFT READOUT PANEL
+   Appears on aircraft click. Glass card, top-right, slides in from right edge.
+   ═════════════════════════════════════════════════════════════════════════════ */
+#acReadout{
+  position:fixed;
+  top:60px;
+  right:calc(var(--rw,360px) + 12px);
+  width:300px;
+  max-height:calc(100vh - 100px);
+  z-index:91;
+  background:var(--glass,rgba(8,12,20,0.92));
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--border-glow,rgba(0,212,255,0.18));
+  border-radius:4px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5), 0 0 24px rgba(0,212,255,0.08);
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  color:#c8ccd6;
+  transform:translateX(20px);
+  opacity:0;
+  pointer-events:none;
+  transition:transform 0.28s ease-out, opacity 0.22s ease-out, right 0.3s;
+  overflow:hidden;
+}
+#acReadout.show{
+  transform:translateX(0);
+  opacity:1;
+  pointer-events:auto;
+}
+body.ai-open #acReadout{/* RP open — handled by --rw token */}
+/* If right panel is closed, slide closer to edge */
+.rp.shut ~ #acReadout, body:has(.rp.shut) #acReadout{right:12px}
+/* Header */
+.acr-hdr{padding:10px 14px 8px;display:flex;flex-direction:column;gap:2px}
+.acr-cs{font-size:18px;font-weight:700;letter-spacing:1.5px}
+.acr-cls{font-size:9px;letter-spacing:1.4px;text-transform:uppercase;font-weight:500}
+/* Photo */
+.acr-photo{position:relative;width:100%;height:140px;background:#0a0e14;overflow:hidden;border-bottom:1px solid rgba(0,212,255,0.08)}
+.acr-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.acr-photo-cred{position:absolute;bottom:4px;right:6px;font-size:8px;color:rgba(255,255,255,0.55);text-shadow:0 1px 2px rgba(0,0,0,0.9);letter-spacing:0.5px}
+.acr-photo-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(180deg,#0a0e14,#070a10)}
+.acr-photo-spinner{width:18px;height:18px;border:2px solid rgba(0,212,255,0.2);border-top-color:var(--cyan,#00d4ff);border-radius:50%;animation:acr-spin 0.8s linear infinite}
+@keyframes acr-spin{to{transform:rotate(360deg)}}
+/* Type tag */
+.acr-tag{padding:7px 14px;font-size:9px;letter-spacing:1.2px;color:#8a92a4;text-transform:uppercase;border-bottom:1px solid rgba(0,212,255,0.06);background:rgba(0,212,255,0.02)}
+/* Telemetry grid */
+.acr-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(0,212,255,0.06);padding:1px}
+.acr-cell{padding:8px 12px;background:var(--glass,rgba(8,12,20,0.92));display:flex;flex-direction:column;gap:2px}
+.acr-lbl{font-size:8px;color:#5a6378;letter-spacing:1.4px;text-transform:uppercase;font-weight:600}
+.acr-val{font-size:13px;color:#e6e8eb;font-weight:600;letter-spacing:0.5px}
+.acr-val-lg{font-size:17px;color:var(--amber,#f59e0b);font-weight:700;letter-spacing:0.8px}
+.acr-sub{font-size:9px;color:#6c7689;letter-spacing:0.5px;text-transform:uppercase}
+/* Coordinates row */
+.acr-coords{padding:8px 14px;display:flex;flex-direction:column;gap:4px;border-top:1px solid rgba(0,212,255,0.08);background:rgba(0,212,255,0.02)}
+.acr-coords > div{display:flex;align-items:center;gap:8px;font-size:10px}
+.acr-mono{font-family:'JetBrains Mono',monospace;color:#c8ccd6;font-weight:500;letter-spacing:0.5px}
+.acr-sq{display:inline-block;margin-left:auto;padding:1px 6px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.25);border-radius:2px;font-size:9px;color:var(--cyan,#00d4ff);letter-spacing:0.5px}
+.acr-sq-em{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.5);color:var(--red-threat,#ef4444);animation:acrSqPulse 1.2s ease-in-out infinite}
+@keyframes acrSqPulse{0%,100%{box-shadow:0 0 0 rgba(239,68,68,0.3)}50%{box-shadow:0 0 8px rgba(239,68,68,0.6)}}
+/* Actions row */
+.acr-actions{display:flex;gap:1px;padding:1px;background:rgba(0,212,255,0.08);border-top:1px solid rgba(0,212,255,0.1)}
+.acr-actions button{flex:1;padding:8px 6px;background:var(--glass,rgba(8,12,20,0.92));border:none;color:var(--cyan,#00d4ff);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;cursor:pointer;letter-spacing:1px;transition:background 0.15s,color 0.15s}
+.acr-actions button:hover{background:rgba(0,212,255,0.1);color:#fff}
+.acr-actions button.acr-close{color:#8a92a4}
+.acr-actions button.acr-close:hover{color:var(--red-threat,#ef4444);background:rgba(239,68,68,0.08)}
+/* ── BASE / AIRFIELD KPI READOUT (Phase 19c) — sibling to acReadout ──────── */
+#baseReadout{
+  position:fixed;
+  top:60px;
+  right:calc(var(--rw,360px) + 12px);
+  width:290px;
+  max-height:calc(100vh - 80px);
+  z-index:90;  /* just behind acReadout (91) so aircraft panel wins on overlap */
+  background:var(--glass,rgba(8,12,20,0.92));
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+  border:1px solid rgba(0,238,255,0.18);
+  border-radius:4px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.55), 0 0 22px rgba(0,238,255,0.07);
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  color:#c8ccd6;
+  transform:translateX(20px);
+  opacity:0;
+  pointer-events:none;
+  transition:transform 0.28s ease-out, opacity 0.22s ease-out, right 0.3s;
+  overflow:hidden auto;
+  scrollbar-width:thin;
+}
+#baseReadout.show{
+  transform:translateX(0);
+  opacity:1;
+  pointer-events:auto;
+}
+.rp.shut ~ #baseReadout, body:has(.rp.shut) #baseReadout{right:12px}
+/* Progress bar components */
+.bsr-bar-track{height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden}
+.bsr-bar-fill{height:100%;width:0%;background:var(--cyan,#00eeff);border-radius:2px;transition:width 0.65s ease}
+@media (max-width:900px){
+  #acReadout{width:260px;right:8px;top:50px;font-size:10px}
+  #baseReadout{width:252px;right:8px;top:50px;font-size:10px}
+  .acr-photo{height:110px}
+  .acr-val-lg{font-size:15px}
+  .acr-cs{font-size:16px}
+}
+@media (prefers-reduced-motion: reduce){
+  #acReadout,#baseReadout{transition:opacity 0.15s}
+  .acr-photo-spinner,.acr-sq-em{animation:none}
+}
+/* ═══════════════════════════════════════════════════════════════════════════ END PHASE 14 ══════════════════════════════════════════════════════════════════════════ */
+
+/* ╔══════════════════════════════════════════════════════════════════════════════════════════════╗
+   ║  PHASE 19c — GLASSMORPHIC HUD VISUAL UPGRADE  (2026-05-15)                                 ║
+   ║  Electric cyan palette · deep glass panels · neon glow borders · holographic labels        ║
+   ╚══════════════════════════════════════════════════════════════════════════════════════════════╝ */
+
+/* ── 1. PALETTE OVERRIDES ─────────────────────────────────────────────────── */
+:root{
+  --cyan:#00eeff;
+  --cyan-dim:#00bbcc;
+  --border-glow:rgba(0,238,255,0.22);
+  --glass:rgba(5,8,20,0.82);
+  --glass-deep:rgba(3,5,14,0.92);
+  --glass-panel:rgba(6,9,22,0.88);
+  /* real colored glows — previously all were near-black shadows */
+  --glow-cyan:0 0 22px rgba(0,238,255,0.18),0 0 4px rgba(0,238,255,0.28);
+  --glow-amber:0 0 22px rgba(232,179,57,0.18),0 0 4px rgba(232,179,57,0.30);
+  --glow-red:0 0 22px rgba(218,54,51,0.18),0 0 5px rgba(218,54,51,0.30);
+  --glow-green:0 0 18px rgba(34,197,94,0.15),0 0 4px rgba(34,197,94,0.25);
+  --accent-red:#ff2d55;
+  --accent-cyan:#00eeff;
+}
+
+/* ── 2. LEFT / RIGHT PANELS — deeper glass + edge glow ───────────────────── */
+.lp,.rp{
+  background:var(--glass-panel)!important;
+  box-shadow:0 0 40px rgba(0,238,255,0.05),inset 0 1px 0 rgba(255,255,255,0.03),0 12px 50px rgba(0,0,0,0.65)!important;
+}
+.rp{border-left:1px solid rgba(0,238,255,0.14)!important;}
+.lp{border-right:1px solid rgba(0,238,255,0.14)!important;}
+/* accent bar glow on LP header */
+.lp-h::before{
+  background:linear-gradient(90deg,var(--cyan) 0%,rgba(0,238,255,0.15) 100%)!important;
+  box-shadow:0 0 8px rgba(0,238,255,0.55);
+}
+
+/* ── 3. TOP BAR — stronger bottom edge ───────────────────────────────────── */
+.tb{
+  border-bottom:1px solid rgba(0,238,255,0.18)!important;
+  box-shadow:0 2px 20px rgba(0,238,255,0.07),0 1px 0 rgba(0,238,255,0.12)!important;
+}
+
+/* ── 4. TOOLBAR EXPORT BUTTONS — hover bloom ──────────────────────────────── */
+.eb:hover{
+  background:rgba(0,238,255,0.10)!important;
+  box-shadow:0 0 14px rgba(0,238,255,0.22),inset 0 0 8px rgba(0,238,255,0.06)!important;
+  border-color:rgba(0,238,255,0.40)!important;
+  color:#fff!important;
+}
+/* Individual color overrides on hover preserved via specificity chain */
+button.eb[style*="DA3633"]:hover{background:rgba(218,54,51,0.12)!important;box-shadow:0 0 14px rgba(218,54,51,0.28)!important;border-color:rgba(218,54,51,0.50)!important;}
+button.eb[style*="E8B339"]:hover{background:rgba(232,179,57,0.12)!important;box-shadow:0 0 14px rgba(232,179,57,0.28)!important;border-color:rgba(232,179,57,0.50)!important;}
+button.eb[style*="FF7043"]:hover{background:rgba(255,112,67,0.12)!important;box-shadow:0 0 14px rgba(255,112,67,0.28)!important;border-color:rgba(255,112,67,0.50)!important;}
+
+/* ── 5. FLOATING PANELS — glassmorphic with glow borders ─────────────────── */
+/* Shared base for all floating panels */
+#metarPanel,#navPanel,#watchlistPanel,#presetsPanel,#coaPanel,
+#event-log,#health-dash,#econWidget,#spaceWxPanel,#cisaPanel{
+  backdrop-filter:blur(26px) saturate(160%)!important;
+  -webkit-backdrop-filter:blur(26px) saturate(160%)!important;
+  border-radius:6px!important;
+  box-shadow:0 8px 44px rgba(0,0,0,0.60),inset 0 1px 0 rgba(255,255,255,0.04)!important;
+}
+/* Cyan-glass panels */
+#metarPanel,#navPanel,#watchlistPanel,#presetsPanel,#coaPanel,#event-log,#health-dash,#econWidget{
+  background:rgba(5,9,22,0.90)!important;
+  border:1px solid rgba(0,238,255,0.20)!important;
+  box-shadow:0 0 30px rgba(0,238,255,0.06),0 8px 44px rgba(0,0,0,0.60),inset 0 1px 0 rgba(255,255,255,0.04)!important;
+}
+/* Amber-glass — Space Weather */
+#spaceWxPanel{
+  background:rgba(10,8,3,0.92)!important;
+  border:1px solid rgba(232,179,57,0.28)!important;
+  box-shadow:0 0 30px rgba(232,179,57,0.08),0 8px 44px rgba(0,0,0,0.60),inset 0 1px 0 rgba(255,255,255,0.03)!important;
+}
+/* Red-glass — CYBER/CISA */
+#cisaPanel{
+  background:rgba(14,5,5,0.92)!important;
+  border:1px solid rgba(218,54,51,0.28)!important;
+  box-shadow:0 0 30px rgba(218,54,51,0.08),0 8px 44px rgba(0,0,0,0.60),inset 0 1px 0 rgba(255,255,255,0.03)!important;
+}
+
+/* ── 6. GTA WIDGET — amber glow glass ────────────────────────────────────── */
+#gtaWidget{
+  background:rgba(8,6,2,0.92)!important;
+  border:1px solid rgba(232,179,57,0.22)!important;
+  box-shadow:0 0 28px rgba(232,179,57,0.07),0 8px 40px rgba(0,0,0,0.58),inset 0 1px 0 rgba(255,255,255,0.03)!important;
+  backdrop-filter:blur(24px) saturate(140%)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(140%)!important;
+}
+#gtaWidget.expanded{box-shadow:0 0 40px rgba(232,179,57,0.10),0 12px 50px rgba(0,0,0,0.65),inset 0 1px 0 rgba(255,255,255,0.04)!important;}
+
+/* ── 7. LAYER TOGGLES — active glow pill ─────────────────────────────────── */
+.ly.on{
+  box-shadow:0 0 10px rgba(0,238,255,0.15)!important;
+  border-color:rgba(0,238,255,0.35)!important;
+}
+.ly.on .toggle-sw{
+  background:var(--cyan)!important;
+  box-shadow:0 0 8px rgba(0,238,255,0.50),0 0 16px rgba(0,238,255,0.20)!important;
+}
+.ly .toggle-sw{transition:background 0.2s,box-shadow 0.2s;}
+
+/* ── 8. STAT CARDS — value glow ──────────────────────────────────────────── */
+.sc .si-v,.stat-val{
+  text-shadow:0 0 10px rgba(0,238,255,0.30);
+}
+.sc .si-v.amber,.stat-val.amber{text-shadow:0 0 10px rgba(232,179,57,0.35);}
+.sc .si-v.red,.stat-val.red{text-shadow:0 0 10px rgba(239,68,68,0.35);}
+
+/* ── 9. HUD CORNER DECORATIONS — more visible ────────────────────────────── */
+.hud-corner{
+  opacity:0.45!important;
+  filter:drop-shadow(0 0 4px rgba(0,238,255,0.50));
+}
+
+/* ── 10. CLASSIFICATION BANNER — red bloom ───────────────────────────────── */
+#classBanner{
+  box-shadow:0 0 22px rgba(218,54,51,0.35),0 2px 0 rgba(218,54,51,0.50)!important;
+  text-shadow:0 0 8px rgba(255,45,85,0.60)!important;
+}
+
+/* ── 11. CESIUM INFOBOX — cyan glass ─────────────────────────────────────── */
+.cesium-infoBox,
+.cesium-infoBox-defaultTable{
+  background:rgba(5,9,22,0.93)!important;
+  border:1px solid rgba(0,238,255,0.22)!important;
+  backdrop-filter:blur(20px)!important;
+  -webkit-backdrop-filter:blur(20px)!important;
+  box-shadow:0 0 24px rgba(0,238,255,0.07),0 8px 32px rgba(0,0,0,0.55)!important;
+  color:#c8ccd6!important;
+  border-radius:5px!important;
+}
+.cesium-infoBox-title{
+  background:rgba(0,238,255,0.08)!important;
+  border-bottom:1px solid rgba(0,238,255,0.16)!important;
+  color:var(--cyan)!important;
+  text-shadow:0 0 8px rgba(0,238,255,0.40)!important;
+}
+
+/* ── 12. BATTLE / CONFLICT PANELS ────────────────────────────────────────── */
+#battle-ctx{
+  background:rgba(3,5,14,0.94)!important;
+  border:1px solid rgba(0,238,255,0.16)!important;
+  backdrop-filter:blur(28px)!important;
+  -webkit-backdrop-filter:blur(28px)!important;
+}
+.battle-panel{
+  background:rgba(5,9,22,0.88)!important;
+  border:1px solid rgba(0,238,255,0.15)!important;
+  backdrop-filter:blur(22px)!important;
+  box-shadow:0 0 24px rgba(0,0,0,0.55)!important;
+}
+
+/* ── 13. FEED BAR ─────────────────────────────────────────────────────────── */
+.fd{
+  background:rgba(3,5,14,0.95)!important;
+  border-top:1px solid rgba(0,238,255,0.14)!important;
+  box-shadow:0 -2px 16px rgba(0,238,255,0.05)!important;
+}
+
+/* ── 14. ANOMALY BANNER ───────────────────────────────────────────────────── */
+.anomaly-banner{
+  box-shadow:0 0 18px rgba(239,68,68,0.22),inset 0 1px 0 rgba(255,255,255,0.04)!important;
+  border-color:rgba(239,68,68,0.35)!important;
+}
+
+/* ── 15. COMPASS RING ────────────────────────────────────────────────────── */
+#nw-compass-ring{
+  filter:drop-shadow(0 0 5px rgba(0,238,255,0.45))!important;
+}
+
+/* ── 16. CUSTOM SCROLLBARS — cyan accent ─────────────────────────────────── */
+::-webkit-scrollbar-thumb:hover{background:rgba(0,238,255,0.30)!important;}
+::-webkit-scrollbar-thumb:active{background:rgba(0,238,255,0.45)!important;}
+.lp ::-webkit-scrollbar-thumb,.rp ::-webkit-scrollbar-thumb{background:rgba(0,238,255,0.12);}
+.lp ::-webkit-scrollbar-thumb:hover,.rp ::-webkit-scrollbar-thumb:hover{background:rgba(0,238,255,0.28);}
+
+/* ── 17. GRID SCAN OVERLAY — slightly brighter ───────────────────────────── */
+#grid-overlay{opacity:0.12!important;}
+
+/* ── 18. ACREADOUT + BASEREADOUT PANELS — align to new palette ───────────── */
+#acReadout,#baseReadout{
+  background:rgba(5,8,20,0.94)!important;
+  border:1px solid rgba(0,238,255,0.20)!important;
+  box-shadow:0 0 28px rgba(0,238,255,0.06),0 8px 40px rgba(0,0,0,0.55)!important;
+}
+/* Progress bars in baseReadout pick up updated cyan */
+#baseReadout .bsr-bar-fill{background:var(--cyan,#00eeff)!important;}
+.acr-val-lg{text-shadow:0 0 10px rgba(245,158,11,0.40);}
+.acr-sq{box-shadow:0 0 8px rgba(0,238,255,0.14);}
+.acr-actions button:hover{box-shadow:inset 0 0 12px rgba(0,238,255,0.08);}
+
+/* ── 19. ACTIVE LAYER LABEL GLOW ──────────────────────────────────────────── */
+.lp .ly-label,.lp .ly-name{transition:color 0.2s,text-shadow 0.2s;}
+.lp .ly.on .ly-label,.lp .ly.on .ly-name{
+  color:var(--cyan)!important;
+  text-shadow:0 0 8px rgba(0,238,255,0.35);
+}
+
+/* ── 20. MISSION TICKER / STATUS CHIPS ────────────────────────────────────── */
+.status-chip,.badge-chip{
+  box-shadow:0 0 8px rgba(0,238,255,0.12),inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ END PHASE 19c ═════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════ PHASE 20a ══════════════════════════════════════════════════════════════════════════════
+   ThreatFox + Emerging Threats IOC globe layer  ·  Polymarket prediction-markets panel
+   2026-05-15
+   ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. POLYMARKET PANEL — green glass treatment ─────────────────────────── */
+#polymarketPanel{
+  background:rgba(5,9,18,0.96)!important;
+  border:1px solid rgba(34,197,94,0.28)!important;
+  box-shadow:0 0 0 1px rgba(34,197,94,0.06),0 0 32px rgba(34,197,94,0.08),0 12px 40px rgba(0,0,0,0.60)!important;
+  backdrop-filter:blur(24px) saturate(155%)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(155%)!important;
+}
+#polymarketPanel>div:first-child{
+  background:linear-gradient(90deg,rgba(34,197,94,0.07),transparent)!important;
+  border-bottom:1px solid rgba(34,197,94,0.14)!important;
+}
+/* Market card probability bars */
+#pmContent a{color:#22c55e;text-decoration:none;}
+#pmContent a:hover{text-decoration:underline;}
+
+/* ── 2. IOC LAYER — LP toggle indicator ─────────────────────────────────── */
+.ly[data-layer="ioc"].on .ly-d{
+  box-shadow:0 0 8px rgba(218,54,51,0.8),0 0 16px rgba(255,119,34,0.4)!important;
+}
+.ly[data-layer="ioc"].on .ly-n{
+  color:#DA3633!important;
+  text-shadow:0 0 8px rgba(218,54,51,0.40);
+}
+
+/* ── 3. MKTS BUTTON — green bloom on hover ───────────────────────────────── */
+.eb[onclick*="showPolymarket"]:hover{
+  color:#22c55e!important;
+  border-color:rgba(34,197,94,0.50)!important;
+  box-shadow:0 0 10px rgba(34,197,94,0.25),inset 0 0 8px rgba(34,197,94,0.08)!important;
+  background:rgba(34,197,94,0.06)!important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ END PHASE 20a ═════════════════════════════════════════════════════════════════════════ */

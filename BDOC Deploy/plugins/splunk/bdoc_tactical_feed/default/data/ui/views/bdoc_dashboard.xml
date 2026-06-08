@@ -1,0 +1,74 @@
+<dashboard version="1.1" theme="dark">
+  <label>BDOC Tactical Feed</label>
+  <description>Kitsune Global Solutions — Export security events to BDOC globe visualization</description>
+
+  <row>
+    <panel>
+      <title>Threat Events by Geolocation (Last 24h)</title>
+      <map>
+        <search>
+          <query>index=main (sourcetype=firewall OR sourcetype=ids) (action=blocked OR action=denied) | iplocation src_ip | where isnotnull(lat) | geostats latfield=lat longfield=lon count by sourcetype</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="mapping.type">marker</option>
+        <option name="mapping.markerLayer.markerOpacity">0.8</option>
+        <option name="mapping.markerLayer.markerMinSize">10</option>
+        <option name="mapping.tileLayer.url">https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png</option>
+        <option name="height">400</option>
+      </map>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Top Threat Sources</title>
+      <table>
+        <search>
+          <query>index=main (sourcetype=firewall OR sourcetype=ids) (action=blocked OR action=denied) | iplocation src_ip | stats count as Events dc(dest_ip) as Targets values(action) as Actions by src_ip Country City | sort -Events | head 20</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">row</option>
+        <option name="count">20</option>
+      </table>
+    </panel>
+    <panel>
+      <title>Severity Distribution</title>
+      <chart>
+        <search>
+          <query>index=main (sourcetype=firewall OR sourcetype=ids) severity=* | stats count by severity | sort severity</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.showPercent">true</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>BDOC Export Status</title>
+      <html>
+        <style>
+          .bdoc-export-panel { font-family: 'JetBrains Mono', monospace; padding: 16px; }
+          .bdoc-export-panel h3 { color: #5b8cc9; letter-spacing: 2px; font-size: 12px; }
+          .bdoc-export-panel p { color: #7a8194; font-size: 11px; margin: 8px 0; }
+          .bdoc-export-panel code { background: rgba(91,140,201,0.1); padding: 2px 6px; border-radius: 2px; color: #c8ccd6; }
+          .bdoc-cmd { background: #0a0e14; border: 1px solid #1e2436; border-radius: 4px; padding: 12px; margin: 8px 0; font-size: 10px; color: #5b8cc9; white-space: pre-wrap; }
+        </style>
+        <div class="bdoc-export-panel">
+          <h3>KITSUNE BDOC — TACTICAL FEED</h3>
+          <p>Export search results to BDOC globe for geospatial threat visualization.</p>
+          <p><strong>Manual Export:</strong></p>
+          <div class="bdoc-cmd">| savedsearch "BDOC - Threat Events (Last 24h)" | outputcsv bdoc_export.csv</div>
+          <p>Then run: <code>python bin/bdoc_export.py -i bdoc_export.csv -o threats.geojson</code></p>
+          <p><strong>Direct Push (requires BDOC API endpoint):</strong></p>
+          <div class="bdoc-cmd">python bin/bdoc_export.py --stdin --push https://your-bdoc-instance/api/ingest</div>
+          <p style="color: #c4504a; font-size: 9px; margin-top: 12px;">KITSUNE GLOBAL SOLUTIONS LLC · SDVOSB · CAGE: 174S8</p>
+        </div>
+      </html>
+    </panel>
+  </row>
+</dashboard>

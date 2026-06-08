@@ -1,0 +1,63 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Redirect API calls to functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # geolocation=self allows the page itself to call navigator.geolocation.
+    # geolocation=() was blocking GPS entirely at the HTTP header level.
+    Permissions-Policy = "geolocation=(self), microphone=(), camera=()"
+    # Phase 24 (2026-05-23): enforce HTTPS-only for all connections.
+    # max-age=1 year; includeSubDomains so any future subdomains inherit the policy.
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+# Phase 4A.1 (2026-05-04): aggressive caching for immutable static assets
+# Lazy-loaded modules use ?v= cache-bust query strings, so 1-year cache is safe
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+    Access-Control-Allow-Origin = "*"
+
+# index.html: short cache so updates land within minutes
+[[headers]]
+  for = "/"
+  [headers.values]
+    Cache-Control = "public, max-age=300, must-revalidate"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=300, must-revalidate"
