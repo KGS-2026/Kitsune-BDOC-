@@ -1,0 +1,32 @@
+name: BDOC CI
+
+# Runs on every push and PR to validate the build BEFORE Netlify deploys.
+# This is the automated version of the manual bug-hunt: JS syntax, inline scripts,
+# CSS integrity, and JSON config sanity. A failed run blocks the merge.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  validate:
+    name: Validate (syntax + integrity)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run BDOC validation gate
+        run: bash scripts/ci-validate.sh
