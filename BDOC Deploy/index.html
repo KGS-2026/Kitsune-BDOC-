@@ -2982,9 +2982,9 @@ if(window.innerWidth<1600&&lpOpen)togL();
 function msg(t,x){const c=document.getElementById('am');const d=document.createElement('div');const tm=new Date().toLocaleTimeString('en-US',{hour12:false,timeZone:'UTC'});const lb={sy:'KITSUNE AI',us:'YOU',al:'ALERT',in:'INTEL'};d.className=`mg ${t}`;d.innerHTML=`<div class="mg-t">${lb[t]||'SYS'} \u00B7 ${tm}Z</div>${x}`;c.appendChild(d);c.scrollTop=c.scrollHeight}
 let _rfPending=false;
 function af(c,x){feed.push({c,x});if(feed.length>100)feed.shift();if(!_rfPending){_rfPending=true;requestAnimationFrame(()=>{rf();_rfPending=false})}}
-function rf(){const e=document.getElementById('fdEl');const h=feed.map(f=>`<div class="fd-i"><div class="fd-d" style="background:${f.c}"></div>${f.x}</div>`).join('');e.innerHTML=h+h}
-function us(n){srcN+=n;document.getElementById('srcN').textContent=srcN}
-setInterval(()=>{document.getElementById('clk').textContent=new Date().toISOString().slice(11,19)+'Z'},1000);
+function rf(){const e=document.getElementById('fdEl');if(!e)return;const h=feed.map(f=>`<div class="fd-i"><div class="fd-d" style="background:${f.c}"></div>${f.x}</div>`).join('');e.innerHTML=h+h}
+function us(n){srcN+=n;const _s=document.getElementById('srcN');if(_s)_s.textContent=srcN}
+setInterval(()=>{const _c=document.getElementById('clk');if(_c)_c.textContent=new Date().toISOString().slice(11,19)+'Z'},1000);
 // ═══════════════════════════════════════════
 // SECTION 9: PANEL TOGGLES + NAV
 // ═══════════════════════════════════════════
