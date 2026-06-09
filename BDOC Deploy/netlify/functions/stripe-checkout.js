@@ -11,10 +11,24 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { priceId, userId, email } = JSON.parse(event.body);
+    const body = JSON.parse(event.body);
+    const { userId, email, tier, annual } = body;
+    let { priceId } = body;
+
+    // hermes/overnight-2026-06-09: frontend now sends a tier name (operator|analyst|enterprise)
+    // + annual flag instead of a raw priceId, so the user's Supabase id always rides along as
+    // metadata (bare Payment Links could not do this). Map tier -> configured price env var.
+    if (!priceId && tier) {
+      const TIER_PRICE_MAP = {
+        operator:   annual ? process.env.STRIPE_PRICE_OPERATOR_YEARLY   : process.env.STRIPE_PRICE_OPERATOR_MONTHLY,
+        analyst:    annual ? process.env.STRIPE_PRICE_ANALYST_YEARLY    : process.env.STRIPE_PRICE_ANALYST_MONTHLY,
+        enterprise: annual ? process.env.STRIPE_PRICE_ENTERPRISE_YEARLY : process.env.STRIPE_PRICE_ENTERPRISE_MONTHLY,
+      };
+      priceId = TIER_PRICE_MAP[tier];
+    }
 
     if (!priceId || !userId || !email) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing priceId, userId, or email' }) };
+      return { statusCode: 400, body: JSON.stringify({ error: 'Missing priceId/tier, userId, or email' }) };
     }
 
     // Whitelist: only accept price IDs we have configured. Prevents a user from passing

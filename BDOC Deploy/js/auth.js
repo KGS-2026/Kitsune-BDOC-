@@ -328,15 +328,30 @@ const BDOC_Auth={
     const allowed=map[this.tier]||map.recon;
     return allowed[0]==='*'||allowed.includes(feature);
   },
-  subscribe(tierName,annual){
-    const links={operator:STRIPE_OPERATOR_LINK,'operator-annual':STRIPE_OPERATOR_ANNUAL,analyst:STRIPE_ANALYST_LINK,'analyst-annual':STRIPE_ANALYST_ANNUAL,enterprise:STRIPE_COMMAND_LINK,'enterprise-annual':STRIPE_COMMAND_ANNUAL};
-    let url=links[annual?tierName+'-annual':tierName]||STRIPE_OPERATOR_LINK;
-    // Append promo code if military discount applied
-    const promo=localStorage.getItem('bdoc_promo_applied');
-    if(promo)url+=(url.indexOf('?')>-1?'&':'?')+'prefilled_promo_code='+encodeURIComponent(promo);
-    // Phase 6 (2026-05-05): Plausible conversion event so operator can see funnel data
-    try{if(typeof plausible==='function')plausible('Subscribe Click',{props:{tier:tierName,billing:annual?'annual':'monthly',from_tier:this.tier||'recon',promo:promo||'none'}});}catch(_){}
-    window.location.href=url;
+  async subscribe(tierName,annual){
+    // hermes/overnight-2026-06-09: route through stripe-checkout function so the user's
+    // Supabase id rides along as Checkout Session metadata. The stripe-webhook then upgrades
+    // profiles.tier on checkout.session.completed. Bare Payment Links (below) could not do this.
+    try{if(typeof plausible==='function')plausible('Subscribe Click',{props:{tier:tierName,billing:annual?'annual':'monthly',from_tier:this.tier||'recon'}});}catch(_){}
+    // Must be signed in — we need a real userId to tie the subscription to the account.
+    if(!this.user||!this.user.id){
+      this._err&&this._err('Please sign in (or create an account) before subscribing, so we can link your plan to your account.');
+      try{showLg&&showLg()}catch(_){}
+      return;
+    }
+    const email=(this.profile&&this.profile.email)||this.user.email||'';
+    try{
+      const res=await fetch('/.netlify/functions/stripe-checkout',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({tier:tierName,annual:!!annual,userId:this.user.id,email})
+      });
+      const data=await res.json();
+      if(data&&data.url){window.location.href=data.url;return}
+      this._err&&this._err('Could not start checkout: '+((data&&data.error)||'unknown error'));
+    }catch(e){
+      console.error('[BDOC] subscribe error:',e);
+      this._err&&this._err('Checkout failed: '+e.message);
+    }
   },
   async openPortal(){
     if(!this.profile||!this.profile.stripe_customer_id){
