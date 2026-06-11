@@ -1,0 +1,4 @@
+[build]
+  base = "BDOC Deploy"
+  publish = "."
+  functions = "netlify/functions"
