@@ -155,7 +155,7 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p36">
+<link rel="stylesheet" href="css/bdoc.css?v=p35">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -187,14 +187,14 @@ if('serviceWorker' in navigator){
 <!-- NAVIGATION PANEL -->
 <div id="navPanel" style="display:none;position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:300;background:rgba(8,12,20,0.97);border:1px solid rgba(45,114,210,0.25);border-radius:8px;padding:14px 18px;font-family:var(--m);font-size:10px;color:var(--text-primary);width:360px;max-width:calc(100vw - 20px);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <span style="color:var(--kf);font-weight:700;letter-spacing:1.5px;font-size:11px">NAVIGATION</span>
+    <span style="color:var(--kf);font-weight:700;letter-spacing:1.5px;font-size:11px">&#128663; NAVIGATION</span>
     <button onclick="toggleNavPanel()" style="background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:14px;font-family:var(--m)">&times;</button>
   </div>
   <div style="margin-bottom:8px">
-    <div style="font-size:8px;color:var(--text-tertiary);margin-bottom:3px;letter-spacing:1px">FROM (or use &#9678; My Location)</div>
+    <div style="font-size:8px;color:var(--text-tertiary);margin-bottom:3px;letter-spacing:1px">FROM (or use &#128205; My Location)</div>
     <div style="display:flex;gap:4px">
       <input id="navFrom" type="text" placeholder="Starting address or coordinates..." style="flex:1;padding:7px 10px;background:#0d1117;border:1px solid var(--bdr2);color:var(--text-primary);font-family:var(--m);font-size:10px;border-radius:3px;outline:none">
-      <button onclick="useMyLocationForNav('from')" title="Use my location" style="padding:4px 8px;background:#0d1117;border:1px solid var(--bdr2);color:#3FB950;border-radius:3px;cursor:pointer;font-size:12px">&#9678;</button>
+      <button onclick="useMyLocationForNav('from')" title="Use my location" style="padding:4px 8px;background:#0d1117;border:1px solid var(--bdr2);color:#3FB950;border-radius:3px;cursor:pointer;font-size:12px">&#128205;</button>
     </div>
   </div>
   <div style="margin-bottom:10px">
@@ -202,7 +202,7 @@ if('serviceWorker' in navigator){
     <input id="navTo" type="text" placeholder="Destination address..." style="width:100%;box-sizing:border-box;padding:7px 10px;background:#0d1117;border:1px solid var(--bdr2);color:var(--text-primary);font-family:var(--m);font-size:10px;border-radius:3px;outline:none" onkeydown="if(event.key==='Enter')startNavigation()">
   </div>
   <div style="display:flex;gap:6px;margin-bottom:8px">
-    <button onclick="startNavigation()" style="flex:1;padding:8px;background:rgba(45,114,210,0.15));border:1px solid rgba(45,114,210,0.3);border-radius:4px;color:var(--kf);font-family:var(--m);font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer">GET DIRECTIONS</button>
+    <button onclick="startNavigation()" style="flex:1;padding:8px;background:rgba(45,114,210,0.15));border:1px solid rgba(45,114,210,0.3);border-radius:4px;color:var(--kf);font-family:var(--m);font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer">&#128663; GET DIRECTIONS</button>
     <button onclick="clearNavRoute()" style="padding:8px 12px;background:none;border:1px solid var(--bdr2);border-radius:4px;color:var(--text-tertiary);font-family:var(--m);font-size:10px;cursor:pointer">CLEAR</button>
   </div>
   <!-- Phase 13b: visible error surface inside nav panel (was previously only af() toast) -->
@@ -220,7 +220,7 @@ if('serviceWorker' in navigator){
 <!-- VEGETATION INTEL PANEL -->
 <div id="vegPanel" style="display:none;position:fixed;top:60px;right:380px;z-index:200;background:var(--bg-surface-1);border:1px solid var(--border);border-radius:3px;padding:10px 14px;font-family:var(--m);font-size:9px;color:var(--text-primary);width:280px;max-height:420px;overflow-y:auto">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-    <span style="color:var(--text-secondary);font-weight:600;letter-spacing:0.12em;font-size:10px;text-transform:uppercase">VEG INTEL</span>
+    <span style="color:var(--text-secondary);font-weight:600;letter-spacing:0.12em;font-size:10px;text-transform:uppercase">&#127793; VEG INTEL</span>
     <span id="vegStatus" style="color:var(--text-tertiary);font-size:8px">READY</span>
   </div>
   <div style="font-size:8px;color:var(--text-tertiary);margin-bottom:8px">RIGHT-CLICK any point → <b style="color:var(--text-secondary)">Scan Vegetation</b> | Type <b style="color:var(--text-secondary)">veg scan</b> in AI chat</div>
@@ -375,7 +375,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p36</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" title="Global Threat Assessment — composite score from active conflicts, earthquakes, cyber, fires, aircraft activity" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p35</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" title="Global Threat Assessment — composite score from active conflicts, earthquakes, cyber, fires, aircraft activity" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -458,10 +458,10 @@ if('serviceWorker' in navigator){
   style="width:100%;padding:5px 28px 5px 10px;background:#0d1117;border:1px solid var(--bdr2);color:#c8ccd6;font-family:var(--m);font-size:10px;border-radius:3px;outline:none;transition:border-color .2s"
   onfocus="this.style.borderColor='rgba(45,114,210,0.4)'" onblur="setTimeout(()=>{this.style.borderColor='';document.getElementById('searchResults').style.display='none'},200)"
   oninput="handleSearch(this.value)">
-<span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:11px;pointer-events:none">&#8981;</span>
+<span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:11px;pointer-events:none">&#128269;</span>
 <div id="searchResults" style="display:none;position:absolute;top:100%;left:0;right:0;margin-top:2px;background:rgba(13,17,23,0.97);border:1px solid var(--bdr2);border-radius:3px;max-height:240px;overflow-y:auto;z-index:200;"></div>
 </div>
-<button id="locateMeBtn" onclick="locateMe()" title="My Location" style="padding:4px 8px;background:#0d1117;border:1px solid var(--bdr2);color:#3FB950;font-size:14px;border-radius:3px;cursor:pointer;line-height:1">&#9678;</button>
+<button id="locateMeBtn" onclick="locateMe()" title="My Location" style="padding:4px 8px;background:#0d1117;border:1px solid var(--bdr2);color:#3FB950;font-size:14px;border-radius:3px;cursor:pointer;line-height:1">&#128205;</button>
 <button id="navBtn" onclick="toggleNavPanel()" title="Navigation / Directions" style="padding:4px 8px;background:#0d1117;border:1px solid var(--bdr2);color:var(--kf);font-size:11px;font-family:var(--m);font-weight:700;border-radius:3px;cursor:pointer;letter-spacing:0.5px">NAV</button>
 </div>
 <div class="ftb">
@@ -613,7 +613,7 @@ if('serviceWorker' in navigator){
 <div class="lg-group closed">
 <div id="custom-layer-list"></div>
 <label style="display:flex;align-items:center;gap:6px;padding:6px 10px;cursor:pointer;border:1px dashed #2d3a4a;border-radius:3px;margin:4px 8px;font-size:9px;color:var(--t3);letter-spacing:.5px;transition:border-color .2s" onmouseover="this.style.borderColor='var(--kf)'" onmouseout="this.style.borderColor='#2d3a4a'">
-<span style="font-size:14px"></span> IMPORT GeoJSON / KML / KMZ
+<span style="font-size:14px">&#128206;</span> IMPORT GeoJSON / KML / KMZ
 <input type="file" accept=".geojson,.json,.kml,.kmz,.topojson" multiple style="display:none" onchange="importGeoFiles(this.files)">
 </label>
 </div>
@@ -633,7 +633,7 @@ if('serviceWorker' in navigator){
 </div>
 <div class="lg-title lg-collapse collapsed" onclick="togCat(this)">TERRAIN INTEL <span class="lg-arrow">&#9660;</span></div>
 <div class="lg-group closed">
-<div class="ly" data-layer="vegetation" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#2d6a4f"></div><span class="ly-n">Vegetation Intelligence</span><span class="ly-tg" style="color:#52b788;background:rgba(82,183,136,0.1)">NDVI</span></div>
+<div class="ly" data-layer="vegetation" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#2d6a4f"></div><span class="ly-n">&#127793; Vegetation Intelligence</span><span class="ly-tg" style="color:#52b788;background:rgba(82,183,136,0.1)">NDVI</span></div>
 </div>
 </div>
 </div>
@@ -769,7 +769,7 @@ if('serviceWorker' in navigator){
 <div style="text-align:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--bdr)">
 <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px">
 <div style="background:#1a472a;border:1px solid #2d6a4f;border-radius:4px;padding:12px 20px;cursor:pointer;text-align:center;max-width:400px;width:100%" onclick="verifyMilitary()">
-<div style="font-size:11px;font-weight:700;letter-spacing:2px;color:#52b788;margin-bottom:4px">MILITARY / VETERAN?</div>
+<div style="font-size:11px;font-weight:700;letter-spacing:2px;color:#52b788;margin-bottom:4px">&#127894; MILITARY / VETERAN?</div>
 <div style="font-size:18px;font-weight:800;color:#95d5b2;letter-spacing:1px">50% OFF ALL TIERS</div>
 <div style="font-size:9px;color:#74c69d;margin-top:4px;letter-spacing:.5px">Enter your promo code. Works for Active, Reserve, Guard, Veterans &amp; Military Families.</div>
 <div style="margin-top:8px;background:#2d6a4f;color:#d8f3dc;padding:6px 16px;border-radius:2px;font-size:10px;font-weight:700;letter-spacing:1.5px;display:inline-block">ENTER PROMO CODE &#10132;</div>
@@ -885,7 +885,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <!-- MULTI-TIMEZONE CLOCK BAR -->
 <!-- Phase 13b: tz-bar collapsed by default + drag-to-move. Toggle button = grab handle. -->
 <div id="tz-bar" class="collapsed">
-<button class="tz-toggle" onclick="if(!window._tzDragMoved)document.getElementById('tz-bar').classList.toggle('collapsed');window._tzDragMoved=false" title="Click to toggle world clocks · Drag to move"></button>
+<button class="tz-toggle" onclick="if(!window._tzDragMoved)document.getElementById('tz-bar').classList.toggle('collapsed');window._tzDragMoved=false" title="Click to toggle world clocks · Drag to move">&#128339;</button>
 <div class="tz-clocks">
 <div class="tz-cell"><div class="tz-lbl">ZULU</div><div class="tz-val zulu" id="tz-zulu">--:--:--</div></div>
 <div class="tz-cell"><div class="tz-lbl">EST</div><div class="tz-val" id="tz-est">--:--:--</div></div>
@@ -965,7 +965,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <button class="nw-zbtn" onclick="CamCtrl.zoomOut()" title="Zoom Out (-)">−</button>
 </div>
 <!-- Globe reset -->
-<button id="nw-globe" onclick="CamCtrl.goGlobal()" title="Return to Globe (G)">&#9673;</button>
+<button id="nw-globe" onclick="CamCtrl.goGlobal()" title="Return to Globe (G)">&#127760;</button>
 </div>
 <!-- BATTLE TRACKING PANEL -->
 <div id="battlePanel" class="battle-panel" style="display:none">
@@ -1019,8 +1019,8 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <button class="bp-tool" onclick="setBattleTool('msr')" data-tool="msr" title="Main Supply Route — click waypoints, double-click to finish" style="border-color:#00cc66;color:#00cc66">&#10144; MSR</button>
 <button class="bp-tool" onclick="setBattleTool('minefield_area')" data-tool="minefield_area" title="Click points to mark minefield boundary. Double-click to finish." style="border-color:#ff6600;color:#ff6600">&#9888; MINEFIELD</button>
 <button class="bp-tool" onclick="setBattleTool('coord_line')" data-tool="coord_line" title="Fire Support Coordination Line (FSCL). Click points, double-click to finish." style="border-color:#2D72D2;color:#2D72D2">&#9476; FSCL</button>
-<button class="bp-tool" onclick="battleMeasureTool()" title="Measure distance between two points" style="border-color:#00bbff;color:#00bbff">MEASURE</button>
-<button class="bp-tool" onclick="exportBattlePlan()" title="Export all battle markers as GeoJSON" style="border-color:#FFD700;color:#FFD700">EXPORT</button>
+<button class="bp-tool" onclick="battleMeasureTool()" title="Measure distance between two points" style="border-color:#00bbff;color:#00bbff">&#128207; MEASURE</button>
+<button class="bp-tool" onclick="exportBattlePlan()" title="Export all battle markers as GeoJSON" style="border-color:#FFD700;color:#FFD700">&#128190; EXPORT</button>
 </div>
 </div>
 <!-- COLOR PICKER -->
@@ -1354,19 +1354,19 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
 <script defer src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
 <!-- ═══ BDOC PHASE 2 MODULES ═══ Must execute BEFORE inline script — defines EventLog, togFilter, formatters that the inline script calls during init -->
-<script src="js/telemetry.js?v=p36"></script>
-<script src="js/converters.js?v=p36"></script>
-<script src="js/data.js?v=p36"></script>
-<script src="js/auth.js?v=p36"></script>
-<script src="js/filters.js?v=p36"></script>
+<script src="js/telemetry.js?v=p35"></script>
+<script src="js/converters.js?v=p35"></script>
+<script src="js/data.js?v=p35"></script>
+<script src="js/auth.js?v=p35"></script>
+<script src="js/filters.js?v=p35"></script>
 <!-- layers-military.js is lazy-loaded on first toggle of milbases (Phase 3 Turn 7) -->
 <!-- layers-airfields.js is lazy-loaded on first toggle of milairfields (Phase 3 Turn 6) -->
 <!-- layers-nuke.js is lazy-loaded on first toggle of nukes (Phase 3 Turn 5) -->
 <!-- layers-infra.js is lazy-loaded on first toggle of powerplants/oilgas (Phase 3 Turn 2) -->
 <!-- layers-air.js is lazy-loaded on first toggle of air/forcetrack/sat/cable (Phase 3 Turn 8) -->
 <!-- layers-conflict.js is lazy-loaded on first toggle of conf/territory (Phase 3 Turn 3) -->
-<script src="js/kitsune-ai.js?v=p36"></script>
-<script src="js/bdoc-atak.js?v=p36"></script>
+<script src="js/kitsune-ai.js?v=p35"></script>
+<script src="js/bdoc-atak.js?v=p35"></script>
 <script>
 // ╔═══════════════════════════════════════════════════════╗
 // ║  KGS BDOC v7.0                                          ║
@@ -3067,7 +3067,7 @@ function verifyMilitary(){
       bg=document.createElement('div');bg.id='promoBg';
       bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center';
       bg.innerHTML=`<div style="background:#0a0e17;border:1px solid #2d6a4f;border-radius:6px;padding:24px 32px;max-width:400px;width:90%;font-family:var(--m)">
-        <div style="font-size:12px;font-weight:700;letter-spacing:2px;color:#52b788;margin-bottom:4px">MILITARY / VETERAN DISCOUNT</div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:2px;color:#52b788;margin-bottom:4px">&#127894; MILITARY / VETERAN DISCOUNT</div>
         <div style="font-size:9px;color:#74c69d;margin-bottom:16px">Enter your promo code below. Active, Reserve, Guard, Veterans &amp; Military Families.</div>
         <input id="promoInput" type="text" placeholder="Enter promo code" style="width:100%;box-sizing:border-box;padding:10px 12px;background:#0d1117;border:1px solid #2d6a4f;border-radius:4px;color:#d8f3dc;font-family:var(--m);font-size:13px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">
         <div id="promoErr" style="display:none;font-size:9px;color:#DA3633;margin-bottom:8px"></div>
@@ -9316,7 +9316,7 @@ function loadVegetationGrid(){
       item.className='ctx-item';
       item.setAttribute('data-veg-scan','1');
       item.style.cssText='padding:6px 12px;cursor:pointer;font-family:var(--m);font-size:10px;color:#52b788;border-top:1px solid rgba(255,255,255,0.05)';
-      item.innerHTML='Scan Vegetation';
+      item.innerHTML='&#127793; Scan Vegetation';
       item.onmouseenter=function(){this.style.background='rgba(82,183,136,0.1)'};
       item.onmouseleave=function(){this.style.background='none'};
       item.onclick=function(){
@@ -10089,7 +10089,7 @@ async function loadFalloutShelters(){
   if(_falloutDS){_falloutDS.show=true;return;}   // already loaded — just show
   const iconUri=svgToDataUri(_FALLOUT_ICON);
   try{
-    const res=await fetch('assets/fallout-shelters-us.kml?v=p36',{signal:AbortSignal.timeout(25000)});
+    const res=await fetch('assets/fallout-shelters-us.kml?v=p35',{signal:AbortSignal.timeout(25000)});
     if(!res.ok)throw new Error(`KML ${res.status}`);
     const kmlText=await res.text();
     const kmlDoc=new DOMParser().parseFromString(kmlText,'text/xml');
@@ -11775,7 +11775,7 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
-<script src="js/cesium-init.js?v=p36"></script>
+<script src="js/cesium-init.js?v=p35"></script>
 <!-- ═════════════════════════════════════════════════════════════════════════
      PHASE 16b (2026-05-13) — FIRST-RUN EXPERIENCE ("Grandma persona")
      On first app open: prompt for location → fly camera there → auto-enable weather radar.
