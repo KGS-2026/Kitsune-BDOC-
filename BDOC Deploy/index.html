@@ -1263,7 +1263,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 </div>
 <div id="cesiumContainer"></div>
 <!-- Phase 8B (2026-05-05): First-launch walkthrough — use-case questionnaire then highlighted tour -->
-<div id="bdocOnboard" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,0.85);font-family:var(--m);color:#c8ccd6">
+<div id="bdocOnboard" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,0.85);font-family:var(--s);color:#c8ccd6">
   <!-- STEP 1: Use-case questionnaire -->
   <div id="onboardQ" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:560px;max-width:calc(100vw - 24px);background:rgba(19,23,31,0.98);border:1px solid var(--bdr2);border-radius:3px;padding:28px 32px;box-shadow:0 1px 2px rgba(0,0,0,0.4)">
     <div style="text-align:center;margin-bottom:20px">
@@ -11803,7 +11803,7 @@ WiresharkBridge.connect = async function() {
     const card=document.createElement('div');
     card.id='bdocFirstRun';
     card.innerHTML=`
-      <div style="font-size:18px;color:var(--cyan,#2D72D2);font-weight:700;letter-spacing:1px;margin-bottom:10px">WELCOME TO BDOC</div>
+      <div style="font-family:var(--s);font-size:18px;color:var(--t1);font-weight:700;letter-spacing:-0.005em;margin-bottom:10px">WELCOME TO BDOC</div>
       <div style="font-size:13px;color:#c8ccd6;line-height:1.5;margin-bottom:16px">
         Want to see the <b style="color:var(--cyan,#2D72D2)">weather over your area</b> right now?<br>
         We'll use your location to show local clouds, radar, and storm tracking.

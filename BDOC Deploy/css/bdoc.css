@@ -449,7 +449,7 @@ body:not(.ai-open) .cesium-infoBox{right:50px !important}
 .mo-bg{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.88);display:none;place-items:center}
 .mo-bg.show{display:grid}
 .mo{background:var(--bg2);border:1px solid var(--bdr2);border-radius:4px;max-width:740px;width:92%;max-height:92vh;overflow-y:auto;padding:32px}
-.mo h2{font-family:var(--m);font-size:20px;font-weight:800;color:var(--kf);letter-spacing:1px;margin-bottom:5px}
+.mo h2{font-family:var(--s);font-size:20px;font-weight:700;color:var(--t1);letter-spacing:-0.005em;margin-bottom:5px}
 .mo .su{font-size:12.5px;color:var(--t2);margin-bottom:24px;line-height:1.65}
 .pg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
 .pc{background:rgba(255,255,255,0.012);border:1px solid var(--bdr);border-radius:4px;padding:20px;text-align:center;transition:all .2s;cursor:pointer}
@@ -589,12 +589,12 @@ input,select,textarea{font-size:16px!important}
 /* ═══ MOBILE OVERLAY ═══ */
 #mob-ov{position:fixed;inset:0;z-index:500;background:rgba(10,14,26,0.97);display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:var(--s)}
 #mob-ov.show{display:flex}
-.mo-lg{font-family:var(--m);font-size:32px;font-weight:800;color:var(--kf);letter-spacing:4px;margin-bottom:16px}
+.mo-lg{font-family:var(--s);font-size:30px;font-weight:700;color:var(--t1);letter-spacing:-0.01em;margin-bottom:16px}
 .mo-tt{font-family:var(--m);font-size:14px;font-weight:700;letter-spacing:3px;color:var(--kf);margin-bottom:8px}
 .mo-sb{font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:24px;max-width:300px}
 .mo-sg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px;width:100%;max-width:280px}
 .mo-st{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);border-radius:4px;padding:12px}
-.mo-sv{font-family:var(--m);font-size:20px;font-weight:700;color:var(--t1)}
+.mo-sv{font-family:var(--s);font-size:20px;font-weight:600;color:var(--t1)}
 .mo-sl{font-family:var(--m);font-size:7px;letter-spacing:1px;color:var(--text-tertiary);margin-top:2px}
 .mo-bp{background:var(--kf);color:#000;border:none;padding:14px 28px;border-radius:4px;font-family:var(--m);font-size:10px;font-weight:700;letter-spacing:2px;cursor:pointer;margin-bottom:10px;width:100%;max-width:280px}
 .mo-bs{background:transparent;color:var(--t2);border:1px solid rgba(255,255,255,0.06);padding:12px 28px;border-radius:4px;font-family:var(--m);font-size:9px;letter-spacing:1px;cursor:pointer;width:100%;max-width:280px}
