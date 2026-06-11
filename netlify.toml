@@ -2,3 +2,8 @@
   base = "BDOC Deploy"
   publish = "."
   functions = "netlify/functions"
+  # Force a build on EVERY push. Netlify's base-directory change-detection
+  # false-negatives and auto-cancels ("no content change in base directory"),
+  # which silently leaves the branch URL serving stale assets. Non-zero exit
+  # from the ignore command forces Netlify to always build. Do not remove.
+  ignore = "exit 1"
