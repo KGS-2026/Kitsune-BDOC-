@@ -7,3 +7,13 @@
   # which silently leaves the branch URL serving stale assets. Non-zero exit
   # from the ignore command forces Netlify to always build. Do not remove.
   ignore = "exit 1"
+
+[build.environment]
+  # Do NOT install devDependencies on Netlify. electron (^31) + electron-builder
+  # are devDeps for the DESKTOP app only; electron's postinstall pulls a ~150MB
+  # binary that times out/fails in Netlify CI, killing the build before publish
+  # and leaving the branch URL stuck on a stale deploy. The web build + functions
+  # only need runtime deps (stripe, @supabase/supabase-js), which live in
+  # "dependencies" and are unaffected. Do not remove.
+  NPM_FLAGS = "--omit=dev"
+  NODE_ENV = "production"
