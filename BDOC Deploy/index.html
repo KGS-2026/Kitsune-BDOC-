@@ -155,7 +155,7 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p37">
+<link rel="stylesheet" href="css/bdoc.css?v=p38">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -476,7 +476,7 @@ if('serviceWorker' in navigator){
 <button class="eb" onclick="genPDF()" title="Generate Brief">PDF</button>
 <button class="eb" onclick="showCISAKEV()" title="CISA Known Exploited Vulnerabilities — active cyber threats" style="color:#DA3633;border-color:rgba(218,54,51,0.25)">CYBER</button>
 <button class="eb" onclick="showPolymarket()" title="Polymarket Geopolitics — live prediction markets (crowd probability)" style="color:#22c55e;border-color:rgba(34,197,94,0.25)">MKTS</button>
-<button class="eb" onclick="showSpaceWeather()" title="NOAA Space Weather — Kp geomagnetic index + solar flare class" style="color:#E8B339;border-color:rgba(232,179,57,0.25)">SPACE</button>
+<button class="eb" onclick="showSpaceWeather()" title="NOAA Space Weather — Kp geomagnetic index + solar flare class" style="color:#E8B339;border-color:rgba(255,255,255,0.25)">SPACE</button>
 <button class="eb" onclick="loadVolcanicAsh()" title="Volcanic Ash SIGMETs — active aviation hazard polygons (toggle)" style="color:#FF7043;border-color:rgba(255,112,67,0.25)">VOLASH</button>
 <button class="eb" onclick="toggleSpotify()" title="Spotify — music & podcasts (paste any Spotify link)" style="color:#1DB954;border-color:rgba(29,185,84,0.3)">&#9834; SPOTIFY</button>
 </div>
@@ -988,7 +988,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <button class="bp-tool" onclick="setBattleTool('rect')" data-tool="rect" title="Click two corners">&#9634; RECT</button>
 <button class="bp-tool" onclick="setBattleTool('line')" data-tool="line" title="Click points, double-click to finish">&#9585; LINE</button>
 <button class="bp-tool" onclick="setBattleTool('annotation')" data-tool="annotation" title="Click to place text note">&#9998; NOTE</button>
-<button class="bp-tool" onclick="setBattleTool('building')" data-tool="building" title="Click 2 opposite corners to outline a building" style="border-color:#E8B339;color:#E8B339">&#9036; BUILDING</button>
+<button class="bp-tool" onclick="setBattleTool('building')" data-tool="building" title="Click 2 opposite corners to outline a building" style="border-color:rgba(255,255,255,0.24);color:#E6E8EB">&#9036; BUILDING</button>
 <button class="bp-tool" onclick="setBattleTool('outline')" data-tool="outline" title="Click corners for irregular shapes, double-click to finish">&#11043; TAG AREA</button>
 </div>
 </div>
@@ -1010,8 +1010,8 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <div class="bp-section">
 <div style="font-size:8px;color:var(--t3);letter-spacing:1px;margin-bottom:6px">ADVANCED TACTICAL</div>
 <div style="display:flex;gap:3px;flex-wrap:wrap">
-<button class="bp-tool" onclick="setBattleTool('range_rings')" data-tool="range_rings" title="Place concentric range rings (1/5/10/25/50km)" style="border-color:#E8B339;color:#E8B339">&#9678; RANGE RINGS</button>
-<button class="bp-tool" onclick="setBattleTool('bullseye')" data-tool="bullseye" title="Bullseye: click center — radial spokes + custom range rings (ATAK-style)" style="border-color:#E8B339;color:#E8B339">&#10753; BULLSEYE</button>
+<button class="bp-tool" onclick="setBattleTool('range_rings')" data-tool="range_rings" title="Place concentric range rings (1/5/10/25/50km)" style="border-color:rgba(255,255,255,0.24);color:#E6E8EB">&#9678; RANGE RINGS</button>
+<button class="bp-tool" onclick="setBattleTool('bullseye')" data-tool="bullseye" title="Bullseye: click center — radial spokes + custom range rings (ATAK-style)" style="border-color:rgba(255,255,255,0.24);color:#E6E8EB">&#10753; BULLSEYE</button>
 <button class="bp-tool" onclick="setBattleTool('casevac')" data-tool="casevac" title="CASEVAC — place medical emergency / incident marker" style="border-color:#ff4444;color:#ff4444">&#10010; CASEVAC</button>
 <button class="bp-tool" onclick="setBattleTool('phase_line')" data-tool="phase_line" title="Draw Phase Line (PL). Click points, double-click to finish.">&#9473; PHASE LINE</button>
 <button class="bp-tool" onclick="setBattleTool('feba')" data-tool="feba" title="Forward Edge of Battle Area — click points, double-click to finish" style="border-color:#ff2222;color:#ff2222">&#9644; FEBA/FLOT</button>
@@ -1118,7 +1118,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <div class="btt-comment"></div>
 </div>
 <!-- WATCHLIST PANEL (Phase 17a, 2026-05-14) -->
-<div id="watchlistPanel" style="display:none;position:fixed;top:110px;right:380px;z-index:200;width:282px;background:rgba(15,17,21,0.72);border:1px solid rgba(232,179,57,0.22);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+<div id="watchlistPanel" style="display:none;position:fixed;top:110px;right:380px;z-index:200;width:282px;background:rgba(15,17,21,0.72);border:1px solid rgba(255,255,255,0.22);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
   <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06)">
     <span style="color:#E8B339;font-size:10px;font-weight:700;letter-spacing:1.5px">⭐ WATCHLIST</span>
     <div style="display:flex;gap:6px;align-items:center">
@@ -1190,7 +1190,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
   <div id="cisaContent" style="overflow-y:auto;flex:1;padding:6px 12px 10px">Loading…</div>
 </div>
 <!-- SPACE WEATHER PANEL (Phase 19c) — NOAA SWPC Kp index + solar flare class -->
-<div id="spaceWxPanel" style="display:none;position:fixed;top:62px;right:12px;z-index:300;width:290px;background:rgba(15,17,21,0.72);border:1px solid rgba(232,179,57,0.30);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+<div id="spaceWxPanel" style="display:none;position:fixed;top:62px;right:12px;z-index:300;width:290px;background:rgba(15,17,21,0.72);border:1px solid rgba(255,255,255,0.30);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
   <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06)">
     <span style="color:#E8B339;font-size:10px;font-weight:700;letter-spacing:1.5px">☀ SPACE WEATHER // NOAA SWPC</span>
     <button onclick="document.getElementById('spaceWxPanel').style.display='none'" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:var(--t3);cursor:pointer;font-size:12px;line-height:1;padding:1px 5px">×</button>
@@ -1276,7 +1276,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
       <button onclick="bdocPickUseCase('conflict')" class="ob-btn" data-bg="rgba(255,68,68,0.08)" data-bc="rgba(255,68,68,0.3)" data-fc="#ff6666"><div style="font-size:18px;margin-bottom:4px">⚔</div><div style="font-size:11px;font-weight:700">Active Conflicts</div><div style="font-size:8px;color:#7a8194;margin-top:3px">Ukraine, Gaza, Taiwan, Hormuz</div></button>
       <button onclick="bdocPickUseCase('maritime')" class="ob-btn" data-bg="rgba(0,136,255,0.08)" data-bc="rgba(0,136,255,0.3)" data-fc="#2D72D2"><div style="font-size:18px;margin-bottom:4px">⚓</div><div style="font-size:11px;font-weight:700">Maritime &amp; Vessels</div><div style="font-size:8px;color:#7a8194;margin-top:3px">AIS, dark fleet, cables, chokepoints</div></button>
       <button onclick="bdocPickUseCase('cyber')" class="ob-btn" data-bg="rgba(45,114,210,0.08)" data-bc="rgba(45,114,210,0.3)" data-fc="#2D72D2"><div style="font-size:18px;margin-bottom:4px">⚡</div><div style="font-size:11px;font-weight:700">Cyber Threats</div><div style="font-size:8px;color:#7a8194;margin-top:3px">DDoS, outages, internet health</div></button>
-      <button onclick="bdocPickUseCase('disaster')" class="ob-btn" data-bg="rgba(255,170,0,0.08)" data-bc="rgba(255,170,0,0.3)" data-fc="#E8B339"><div style="font-size:18px;margin-bottom:4px">🌋</div><div style="font-size:11px;font-weight:700">Natural Disasters</div><div style="font-size:8px;color:#7a8194;margin-top:3px">Earthquakes, fires, floods, volcanoes</div></button>
+      <button onclick="bdocPickUseCase('disaster')" class="ob-btn" data-bg="rgba(255,255,255,0.08)" data-bc="rgba(255,255,255,0.3)" data-fc="#E6E8EB"><div style="font-size:18px;margin-bottom:4px">🌋</div><div style="font-size:11px;font-weight:700">Natural Disasters</div><div style="font-size:8px;color:#7a8194;margin-top:3px">Earthquakes, fires, floods, volcanoes</div></button>
       <button onclick="bdocPickUseCase('military')" class="ob-btn" data-bg="rgba(0,255,102,0.08)" data-bc="rgba(0,255,102,0.3)" data-fc="#3FB950"><div style="font-size:18px;margin-bottom:4px">🛡</div><div style="font-size:11px;font-weight:700">Military / GEOINT</div><div style="font-size:8px;color:#7a8194;margin-top:3px">Bases, aircraft, satellites, nukes</div></button>
       <button onclick="bdocPickUseCase('all')" class="ob-btn" data-bg="rgba(45,114,210,0.08)" data-bc="rgba(45,114,210,0.3)" data-fc="#2D72D2" style="grid-column:1/-1"><div style="font-size:11px;font-weight:700">All of the above — show me everything</div></button>
     </div>
@@ -1334,7 +1334,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
       <div style="color:#3FB950;font-size:8px;letter-spacing:1px;font-weight:600;margin-bottom:4px">RIGHT-CLICK</div>
       <div style="font-size:10px;color:#c8ccd6;line-height:1.5">Anywhere on globe for context menu — scan vegetation, submit report, fly to.</div>
     </div>
-    <div style="padding:10px 12px;background:rgba(255,170,0,0.06);border:1px solid rgba(255,170,0,0.15);border-radius:4px">
+    <div style="padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:4px">
       <div style="color:#E8B339;font-size:8px;letter-spacing:1px;font-weight:600;margin-bottom:4px">SHORTCUTS</div>
       <div style="font-size:10px;color:#c8ccd6;line-height:1.5">Press <b>?</b> for keyboard shortcuts. <b>1</b>/<b>2</b>/<b>3</b> = CRT/NVG/FLIR.</div>
     </div>
@@ -1354,19 +1354,19 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
 <script defer src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
 <!-- ═══ BDOC PHASE 2 MODULES ═══ Must execute BEFORE inline script — defines EventLog, togFilter, formatters that the inline script calls during init -->
-<script src="js/telemetry.js?v=p37"></script>
-<script src="js/converters.js?v=p37"></script>
-<script src="js/data.js?v=p37"></script>
-<script src="js/auth.js?v=p37"></script>
-<script src="js/filters.js?v=p37"></script>
+<script src="js/telemetry.js?v=p38"></script>
+<script src="js/converters.js?v=p38"></script>
+<script src="js/data.js?v=p38"></script>
+<script src="js/auth.js?v=p38"></script>
+<script src="js/filters.js?v=p38"></script>
 <!-- layers-military.js is lazy-loaded on first toggle of milbases (Phase 3 Turn 7) -->
 <!-- layers-airfields.js is lazy-loaded on first toggle of milairfields (Phase 3 Turn 6) -->
 <!-- layers-nuke.js is lazy-loaded on first toggle of nukes (Phase 3 Turn 5) -->
 <!-- layers-infra.js is lazy-loaded on first toggle of powerplants/oilgas (Phase 3 Turn 2) -->
 <!-- layers-air.js is lazy-loaded on first toggle of air/forcetrack/sat/cable (Phase 3 Turn 8) -->
 <!-- layers-conflict.js is lazy-loaded on first toggle of conf/territory (Phase 3 Turn 3) -->
-<script src="js/kitsune-ai.js?v=p37"></script>
-<script src="js/bdoc-atak.js?v=p37"></script>
+<script src="js/kitsune-ai.js?v=p38"></script>
+<script src="js/bdoc-atak.js?v=p38"></script>
 <script>
 // ╔═══════════════════════════════════════════════════════╗
 // ║  KGS BDOC v7.0                                          ║
@@ -2544,8 +2544,8 @@ BDOC.cmdk={
     // Crisis zones
     if(typeof _BDOC_CRISIS!=='undefined')Object.entries(_BDOC_CRISIS).forEach(([k,z])=>cmds.push({label:'Crisis: '+z.name,sub:'Fly + activate intel bundle',sec:'CRISIS',color:'#DA3633',fn:()=>bdocCrisisZone(k)}));
     // Presets
-    if(typeof _BDOC_PRESETS!=='undefined')Object.keys(_BDOC_PRESETS).forEach(k=>cmds.push({label:'Preset: '+k.charAt(0).toUpperCase()+k.slice(1),sub:'One-click layer bundle',sec:'PRESET',color:'#E8B339',fn:()=>bdocApplyPreset(k)}));
-    cmds.push({label:'Preset: Clear All',sub:'Toggle off every active layer',sec:'PRESET',color:'#E8B339',fn:()=>bdocApplyPreset('clear')});
+    if(typeof _BDOC_PRESETS!=='undefined')Object.keys(_BDOC_PRESETS).forEach(k=>cmds.push({label:'Preset: '+k.charAt(0).toUpperCase()+k.slice(1),sub:'One-click layer bundle',sec:'PRESET',color:'#E6E8EB',fn:()=>bdocApplyPreset(k)}));
+    cmds.push({label:'Preset: Clear All',sub:'Toggle off every active layer',sec:'PRESET',color:'#E6E8EB',fn:()=>bdocApplyPreset('clear')});
     // Layers (from DOM)
     document.querySelectorAll('.ly[data-layer]').forEach(el=>{
       const ly=el.dataset.layer;
@@ -10089,7 +10089,7 @@ async function loadFalloutShelters(){
   if(_falloutDS){_falloutDS.show=true;return;}   // already loaded — just show
   const iconUri=svgToDataUri(_FALLOUT_ICON);
   try{
-    const res=await fetch('assets/fallout-shelters-us.kml?v=p37',{signal:AbortSignal.timeout(25000)});
+    const res=await fetch('assets/fallout-shelters-us.kml?v=p38',{signal:AbortSignal.timeout(25000)});
     if(!res.ok)throw new Error(`KML ${res.status}`);
     const kmlText=await res.text();
     const kmlDoc=new DOMParser().parseFromString(kmlText,'text/xml');
@@ -10412,7 +10412,7 @@ function injectGTA(){
       <div style="display:flex;justify-content:space-between;margin-top:2px"><span style="color:#1e2436">Updated</span><span id="gtaUpdated" style="color:#1e2436">--</span></div>
       <div style="display:flex;gap:4px;margin-top:7px">
         <button onclick="event.stopPropagation();showCISAKEV()" style="flex:1;background:rgba(218,54,51,0.06);border:1px solid rgba(218,54,51,0.2);border-radius:2px;color:#DA3633;padding:4px 0;font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;cursor:pointer;text-transform:uppercase">\u26a1 CYBER</button>
-        <button onclick="event.stopPropagation();showSpaceWeather()" style="flex:1;background:rgba(232,179,57,0.06);border:1px solid rgba(232,179,57,0.2);border-radius:2px;color:#E8B339;padding:4px 0;font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;cursor:pointer;text-transform:uppercase">\u2600 SPACE</button>
+        <button onclick="event.stopPropagation();showSpaceWeather()" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);border-radius:2px;color:#E8B339;padding:4px 0;font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;cursor:pointer;text-transform:uppercase">\u2600 SPACE</button>
       </div>
     </div>
   `;
@@ -11775,7 +11775,7 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
-<script src="js/cesium-init.js?v=p37"></script>
+<script src="js/cesium-init.js?v=p38"></script>
 <!-- ═════════════════════════════════════════════════════════════════════════
      PHASE 16b (2026-05-13) — FIRST-RUN EXPERIENCE ("Grandma persona")
      On first app open: prompt for location → fly camera there → auto-enable weather radar.
