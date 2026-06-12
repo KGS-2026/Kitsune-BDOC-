@@ -1,9 +1,21 @@
 [build]
   publish = "."
   functions = "netlify/functions"
+  # Force a build on EVERY push. Netlify auto-cancels with "no content change in
+  # base directory" (false-negative) which silently leaves the branch URL serving
+  # stale assets. A non-zero exit from the ignore command forces a build every time.
+  # NOTE: with base="BDOC Deploy" set in the ROOT netlify.toml, Netlify reads build
+  # config from THIS file (inside the base dir), so the ignore rule MUST live here,
+  # not in the root toml. Do not remove. (Root cause of stuck p36/p37, fixed 2026-06-12.)
+  ignore = "exit 1"
 
 [build.environment]
   NODE_VERSION = "18"
+  # Do NOT install devDependencies (electron + electron-builder are desktop-only and
+  # their ~150MB postinstall times out in CI, killing the build). Web build + functions
+  # only need runtime deps (stripe, @supabase/supabase-js) from "dependencies".
+  NPM_FLAGS = "--omit=dev"
+  NODE_ENV = "production"
 
 [functions]
   node_bundler = "esbuild"
