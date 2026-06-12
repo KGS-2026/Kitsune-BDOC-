@@ -155,7 +155,7 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p36">
+<link rel="stylesheet" href="css/bdoc.css?v=p37">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -185,7 +185,7 @@ if('serviceWorker' in navigator){
 <div id="nvgBloomWarn">NVG BLOOM — DAYLIGHT DETECTED</div>
 <div class="anomaly-banner" id="anomBanner"></div>
 <!-- NAVIGATION PANEL -->
-<div id="navPanel" style="display:none;position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:300;background:rgba(8,12,20,0.97);border:1px solid rgba(45,114,210,0.25);border-radius:8px;padding:14px 18px;font-family:var(--m);font-size:10px;color:var(--text-primary);width:360px;max-width:calc(100vw - 20px);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+<div id="navPanel" style="display:none;position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:300;background:rgba(15,17,21,0.72);border:1px solid rgba(45,114,210,0.25);border-radius:8px;padding:14px 18px;font-family:var(--m);font-size:10px;color:var(--text-primary);width:360px;max-width:calc(100vw - 20px);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <span style="color:var(--kf);font-weight:700;letter-spacing:1.5px;font-size:11px">NAVIGATION</span>
     <button onclick="toggleNavPanel()" style="background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:14px;font-family:var(--m)">&times;</button>
@@ -1118,7 +1118,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <div class="btt-comment"></div>
 </div>
 <!-- WATCHLIST PANEL (Phase 17a, 2026-05-14) -->
-<div id="watchlistPanel" style="display:none;position:fixed;top:110px;right:380px;z-index:200;width:282px;background:rgba(8,12,20,0.97);border:1px solid rgba(232,179,57,0.22);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+<div id="watchlistPanel" style="display:none;position:fixed;top:110px;right:380px;z-index:200;width:282px;background:rgba(15,17,21,0.72);border:1px solid rgba(232,179,57,0.22);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
   <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06)">
     <span style="color:#E8B339;font-size:10px;font-weight:700;letter-spacing:1.5px">⭐ WATCHLIST</span>
     <div style="display:flex;gap:6px;align-items:center">
@@ -1132,7 +1132,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
   </div>
 </div>
 <!-- DASHBOARD PRESETS PANEL (Phase 17a, 2026-05-14) -->
-<div id="presetsPanel" style="display:none;position:fixed;top:110px;right:670px;z-index:200;width:260px;background:rgba(8,12,20,0.97);border:1px solid rgba(45,114,210,0.22);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+<div id="presetsPanel" style="display:none;position:fixed;top:110px;right:670px;z-index:200;width:260px;background:rgba(15,17,21,0.72);border:1px solid rgba(45,114,210,0.22);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
   <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06)">
     <span style="color:var(--kf);font-size:10px;font-weight:700;letter-spacing:1.5px">💾 SAVED VIEWS</span>
     <button onclick="DashboardPresets.togglePanel()" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:var(--t3);cursor:pointer;font-size:12px;line-height:1;padding:1px 5px">×</button>
@@ -1157,7 +1157,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
   <div id="spBody" class="sp-body" style="padding:0;overflow:hidden;flex:1;display:flex;flex-direction:column"></div>
 </div>
 <!-- COA MANAGER PANEL (Phase 18a, 2026-05-14) — Course of Action workflow, competitive parity vs. Palantir Gotham -->
-<div id="coaPanel" style="display:none;position:fixed;top:110px;left:260px;z-index:200;width:400px;background:rgba(8,12,20,0.97);border:1px solid rgba(218,54,51,0.30);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5);max-height:85vh;overflow:hidden;flex-direction:column">
+<div id="coaPanel" style="display:none;position:fixed;top:110px;left:260px;z-index:200;width:400px;background:rgba(15,17,21,0.72);border:1px solid rgba(218,54,51,0.30);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5);max-height:85vh;overflow:hidden;flex-direction:column">
   <div id="coa-drag-handle" style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;cursor:grab;user-select:none">
     <span style="color:#DA3633;font-size:10px;font-weight:700;letter-spacing:1.5px">⚔ COURSE OF ACTION</span>
     <div style="display:flex;gap:6px;align-items:center">
@@ -1173,7 +1173,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
   </div>
 </div>
 <!-- METAR PANEL (Phase 19b) — Aviation weather for air-capable military bases -->
-<div id="metarPanel" style="display:none;position:fixed;top:62px;right:12px;z-index:300;width:340px;background:rgba(8,12,20,0.97);border:1px solid rgba(45,114,210,0.30);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+<div id="metarPanel" style="display:none;position:fixed;top:62px;right:12px;z-index:300;width:340px;background:rgba(15,17,21,0.72);border:1px solid rgba(45,114,210,0.30);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
   <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06)">
     <span style="color:#2D72D2;font-size:10px;font-weight:700;letter-spacing:1.5px">☁ AVIATION WEATHER // METAR</span>
     <button onclick="document.getElementById('metarPanel').style.display='none'" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:var(--t3);cursor:pointer;font-size:12px;line-height:1;padding:1px 5px">×</button>
@@ -1181,7 +1181,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
   <div id="metarContent" style="padding:10px 12px;font-size:9px;color:var(--t2);min-height:60px">Loading…</div>
 </div>
 <!-- CISA KEV PANEL (Phase 19b) — Known Exploited Vulnerabilities cyber threat feed -->
-<div id="cisaPanel" style="display:none;position:fixed;top:62px;right:12px;z-index:300;width:380px;background:rgba(8,12,20,0.97);border:1px solid rgba(218,54,51,0.30);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5);max-height:80vh;overflow:hidden;flex-direction:column">
+<div id="cisaPanel" style="display:none;position:fixed;top:62px;right:12px;z-index:300;width:380px;background:rgba(15,17,21,0.72);border:1px solid rgba(218,54,51,0.30);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5);max-height:80vh;overflow:hidden;flex-direction:column">
   <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0">
     <span style="color:#DA3633;font-size:10px;font-weight:700;letter-spacing:1.5px">⚡ CISA // KNOWN EXPLOITED VULNERABILITIES</span>
     <button onclick="document.getElementById('cisaPanel').style.display='none'" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:var(--t3);cursor:pointer;font-size:12px;line-height:1;padding:1px 5px">×</button>
@@ -1190,7 +1190,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
   <div id="cisaContent" style="overflow-y:auto;flex:1;padding:6px 12px 10px">Loading…</div>
 </div>
 <!-- SPACE WEATHER PANEL (Phase 19c) — NOAA SWPC Kp index + solar flare class -->
-<div id="spaceWxPanel" style="display:none;position:fixed;top:62px;right:12px;z-index:300;width:290px;background:rgba(8,12,20,0.97);border:1px solid rgba(232,179,57,0.30);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+<div id="spaceWxPanel" style="display:none;position:fixed;top:62px;right:12px;z-index:300;width:290px;background:rgba(15,17,21,0.72);border:1px solid rgba(232,179,57,0.30);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
   <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06)">
     <span style="color:#E8B339;font-size:10px;font-weight:700;letter-spacing:1.5px">☀ SPACE WEATHER // NOAA SWPC</span>
     <button onclick="document.getElementById('spaceWxPanel').style.display='none'" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:var(--t3);cursor:pointer;font-size:12px;line-height:1;padding:1px 5px">×</button>
@@ -1198,7 +1198,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
   <div id="spaceWxContent" style="padding:10px 12px;font-size:9px;color:var(--t2);min-height:80px">Loading…</div>
 </div>
 <!-- POLYMARKET PANEL (Phase 20a) — Geopolitics prediction markets crowd probability -->
-<div id="polymarketPanel" style="display:none;position:fixed;top:62px;right:12px;z-index:300;width:360px;background:rgba(8,12,20,0.97);border:1px solid rgba(34,197,94,0.30);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5);max-height:80vh;overflow:hidden;flex-direction:column">
+<div id="polymarketPanel" style="display:none;position:fixed;top:62px;right:12px;z-index:300;width:360px;background:rgba(15,17,21,0.72);border:1px solid rgba(34,197,94,0.30);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5);max-height:80vh;overflow:hidden;flex-direction:column">
   <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0">
     <span style="color:#22c55e;font-size:10px;font-weight:700;letter-spacing:1.5px">📈 POLYMARKET // GEOPOLITICS INTEL</span>
     <button onclick="document.getElementById('polymarketPanel').style.display='none'" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:var(--t3);cursor:pointer;font-size:12px;line-height:1;padding:1px 5px">×</button>
@@ -1354,19 +1354,19 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
 <script defer src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
 <!-- ═══ BDOC PHASE 2 MODULES ═══ Must execute BEFORE inline script — defines EventLog, togFilter, formatters that the inline script calls during init -->
-<script src="js/telemetry.js?v=p36"></script>
-<script src="js/converters.js?v=p36"></script>
-<script src="js/data.js?v=p36"></script>
-<script src="js/auth.js?v=p36"></script>
-<script src="js/filters.js?v=p36"></script>
+<script src="js/telemetry.js?v=p37"></script>
+<script src="js/converters.js?v=p37"></script>
+<script src="js/data.js?v=p37"></script>
+<script src="js/auth.js?v=p37"></script>
+<script src="js/filters.js?v=p37"></script>
 <!-- layers-military.js is lazy-loaded on first toggle of milbases (Phase 3 Turn 7) -->
 <!-- layers-airfields.js is lazy-loaded on first toggle of milairfields (Phase 3 Turn 6) -->
 <!-- layers-nuke.js is lazy-loaded on first toggle of nukes (Phase 3 Turn 5) -->
 <!-- layers-infra.js is lazy-loaded on first toggle of powerplants/oilgas (Phase 3 Turn 2) -->
 <!-- layers-air.js is lazy-loaded on first toggle of air/forcetrack/sat/cable (Phase 3 Turn 8) -->
 <!-- layers-conflict.js is lazy-loaded on first toggle of conf/territory (Phase 3 Turn 3) -->
-<script src="js/kitsune-ai.js?v=p36"></script>
-<script src="js/bdoc-atak.js?v=p36"></script>
+<script src="js/kitsune-ai.js?v=p37"></script>
+<script src="js/bdoc-atak.js?v=p37"></script>
 <script>
 // ╔═══════════════════════════════════════════════════════╗
 // ║  KGS BDOC v7.0                                          ║
@@ -2760,7 +2760,7 @@ function bdocPlayScanner(feedUrl,name,color){
     const old=document.getElementById('bdocScannerModal');if(old)old.remove();
     const modal=document.createElement('div');
     modal.id='bdocScannerModal';
-    modal.style.cssText='position:fixed;bottom:14px;right:14px;z-index:9200;background:rgba(8,12,20,0.97);border:1px solid '+color+'44;border-radius:6px;padding:14px 16px;font-family:var(--m);color:#c8ccd6;backdrop-filter:blur(10px);width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.6)';
+    modal.style.cssText='position:fixed;bottom:14px;right:14px;z-index:9200;background:rgba(15,17,21,0.72);border:1px solid '+color+'44;border-radius:6px;padding:14px 16px;font-family:var(--m);color:#c8ccd6;width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.6)';
     modal.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid `+color+`22">
         <div>
@@ -5212,7 +5212,7 @@ function submitCommunityReport(lat,lon){
   const old=document.getElementById('communityForm');if(old)old.remove();
   // Build inline styled form
   const form=document.createElement('div');form.id='communityForm';
-  form.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100000;background:rgba(8,12,20,0.97);border:1px solid rgba(255,68,221,0.3);border-radius:6px;padding:16px 20px;width:340px;font-family:var(--m);backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,0.6)';
+  form.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100000;background:rgba(15,17,21,0.72);border:1px solid rgba(255,255,255,0.10);border-radius:6px;padding:16px 20px;width:340px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.6)';
   let typeBtns='';
   Object.entries(COMMUNITY_TYPES).forEach(([key,t])=>{
     typeBtns+=`<button type="button" class="cr-type-btn" data-type="${key}" onclick="document.querySelectorAll('.cr-type-btn').forEach(b=>b.style.borderColor='rgba(255,255,255,0.08)');this.style.borderColor='${t.color}';document.getElementById('crTypeVal').value='${key}'" style="padding:4px 8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:3px;color:${t.color};font-family:var(--m);font-size:9px;cursor:pointer;transition:border-color 0.2s">${t.icon} ${t.label}</button>`;
@@ -5229,7 +5229,7 @@ function submitCommunityReport(lat,lon){
     <div style="font-size:8px;color:#4a5068;margin-bottom:4px;letter-spacing:1px">DESCRIPTION</div>
     <textarea id="crDesc" placeholder="What did you observe? Be specific — location, time, details..." style="width:100%;box-sizing:border-box;height:70px;padding:8px;background:#0d1117;border:1px solid rgba(255,255,255,0.08);border-radius:3px;color:#c8ccd6;font-family:var(--m);font-size:10px;resize:vertical"></textarea>
     <div style="display:flex;gap:8px;margin-top:10px">
-      <button onclick="finalizeCommunityReport(${lat},${lon})" style="flex:1;padding:8px;background:rgba(255,68,221,0.15));border:1px solid rgba(255,68,221,0.3);border-radius:3px;color:#2D72D2;font-family:var(--m);font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer">\u{1F4E1} SUBMIT</button>
+      <button onclick="finalizeCommunityReport(${lat},${lon})" style="flex:1;padding:8px;background:rgba(255,68,221,0.15));border:1px solid rgba(255,255,255,0.10);border-radius:3px;color:#2D72D2;font-family:var(--m);font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer">\u{1F4E1} SUBMIT</button>
       <button onclick="document.getElementById('communityForm').remove()" style="padding:8px 14px;background:none;border:1px solid rgba(255,255,255,0.08);border-radius:3px;color:#4a5068;font-family:var(--m);font-size:10px;cursor:pointer">CANCEL</button>
     </div>`;
   document.body.appendChild(form);
@@ -10089,7 +10089,7 @@ async function loadFalloutShelters(){
   if(_falloutDS){_falloutDS.show=true;return;}   // already loaded — just show
   const iconUri=svgToDataUri(_FALLOUT_ICON);
   try{
-    const res=await fetch('assets/fallout-shelters-us.kml?v=p36',{signal:AbortSignal.timeout(25000)});
+    const res=await fetch('assets/fallout-shelters-us.kml?v=p37',{signal:AbortSignal.timeout(25000)});
     if(!res.ok)throw new Error(`KML ${res.status}`);
     const kmlText=await res.text();
     const kmlDoc=new DOMParser().parseFromString(kmlText,'text/xml');
@@ -10773,7 +10773,7 @@ window.loadVolcanicAsh=loadVolcanicAsh;
 (function(){
   const sty=document.createElement('style');
   sty.textContent=`
-#ws-hud{position:fixed;bottom:96px;right:14px;width:220px;background:rgba(6,9,17,0.92);border:1px solid rgba(0,255,204,0.15);border-radius:4px;padding:8px 10px;z-index:56;font-family:var(--m);display:none;backdrop-filter:blur(6px);box-shadow:0 0 20px rgba(0,255,204,0.06)}
+#ws-hud{position:fixed;bottom:96px;right:14px;width:220px;background:rgba(6,9,17,0.92);border:1px solid rgba(255,255,255,0.10);border-radius:4px;padding:8px 10px;z-index:56;font-family:var(--m);display:none;box-shadow:0 0 20px rgba(0,255,204,0.06)}
 #ws-hud.active{display:block}
 #ws-hud-title{font-size:8.5px;letter-spacing:2px;color:#00ffcc;margin-bottom:6px;display:flex;align-items:center;gap:6px}
 #ws-hud-dot{width:6px;height:6px;border-radius:50%;background:#00ffcc;animation:wsPulse 1.5s infinite}
@@ -11775,7 +11775,7 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
-<script src="js/cesium-init.js?v=p36"></script>
+<script src="js/cesium-init.js?v=p37"></script>
 <!-- ═════════════════════════════════════════════════════════════════════════
      PHASE 16b (2026-05-13) — FIRST-RUN EXPERIENCE ("Grandma persona")
      On first app open: prompt for location → fly camera there → auto-enable weather radar.
