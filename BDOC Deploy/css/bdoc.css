@@ -28,19 +28,19 @@
  * Surgical use only: active tool states, selected markers, critical highlights,
  * primary CTA. All other chrome stays white/gray. To switch to signal-lime,
  * change these three lines to #D4F24E / darker-lime / rgba(212,242,78,...). */
---kf:#E6E8EB;--kf2:#9BA1A8;--kfG:rgba(255,255,255,0.12);
---bl:#E6E8EB;--blG:rgba(255,255,255,0.08);
+--kf:#E8B349;--kf2:#C8963A;--kfG:rgba(232,179,73,0.12);
+--bl:#E8B349;--blG:rgba(232,179,73,0.08);
 /* Status — danger red SPARINGLY, success/warning desaturated (Fix 4) */
 --rd:#DA3633;--rdG:rgba(218,54,51,0.08);
 --gn:#3FB950;--gnG:rgba(63,185,80,0.08);
---yl:#E6E8EB;--ylG:rgba(255,255,255,0.08);
---pr:#E6E8EB;--prG:rgba(255,255,255,0.08);
+--yl:#E8B349;--ylG:rgba(232,179,73,0.08);
+--pr:#E8B349;--prG:rgba(232,179,73,0.08);
 /* Text hierarchy — operator-spec exact (#E6E8EB / #9BA1A8 / #5C636B) */
---t1:#E6E8EB;--t2:#9BA1A8;--t3:#5C636B;--t4:#1E2436;
---text-primary:#E6E8EB;--text-secondary:#9BA1A8;--text-tertiary:#5C636B;
+--t1:#C4C9D0;--t2:#8B919A;--t3:#5C636B;--t4:#1E2436;
+--text-primary:#C4C9D0;--text-secondary:#8B919A;--text-tertiary:#5C636B;
 /* Status semantics + spec aliases */
---crit:#DA3633;--ok:#3FB950;--warn:#E6E8EB;
---success:#3FB950;--danger:#DA3633;--accent:#E6E8EB;
+--crit:#DA3633;--ok:#3FB950;--warn:#E8B349;
+--success:#3FB950;--danger:#DA3633;--accent:#E8B349;
 /* Borders — hairline 10% standard per PHANTOM glass spec */
 --bdr:rgba(255,255,255,0.06);--bdr2:rgba(255,255,255,0.10);
 --bdr3:rgba(255,255,255,0.18);
@@ -72,8 +72,8 @@
  * downstream var(--cyan)/var(--glass)/var(--border-glow) reference resolve clean. */
 --glass:rgba(15,17,21,0.72);
 --border-glow:rgba(255,255,255,0.10);
---cyan:#E6E8EB;
---amber:#E6E8EB;
+--cyan:#E8B349;
+--amber:#E8B349;
 --red-threat:#DA3633;
 --green-live:#3FB950;
 --panel-blur:none;
@@ -500,7 +500,7 @@ body:not(.ai-open) .cesium-infoBox{right:50px !important}
 .sev-badge.high{background:rgba(240,136,62,0.15);color:var(--kf);border:1px solid rgba(240,136,62,0.3)}
 .sev-badge.medium{background:rgba(210,153,34,0.15);color:var(--kf);border:1px solid rgba(210,153,34,0.3)}
 .sev-badge.low{background:rgba(63,185,80,0.1);color:#3fb950;border:1px solid rgba(63,185,80,0.25)}
-.sit-coa-badge{font-family:var(--m);font-size:7px;padding:2px 5px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.22);border-radius:2px;color:#E6E8EB}
+.sit-coa-badge{font-family:var(--m);font-size:7px;padding:2px 5px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.22);border-radius:2px;color:#E8B349}
 .sd-back{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--bdr);cursor:pointer;font-family:var(--m);font-size:9px;color:var(--t3);letter-spacing:0.08em;transition:color 0.15s;flex-shrink:0;user-select:none}
 .sd-back:hover{color:var(--t1)}
 .sd-header{padding:10px 12px 8px;border-bottom:1px solid var(--bdr);flex-shrink:0}
@@ -519,7 +519,7 @@ body:not(.ai-open) .cesium-infoBox{right:50px !important}
 .rp-card-title{font-family:var(--m);font-size:9.5px;font-weight:600;color:var(--t1);margin-bottom:2px;padding-right:60px}
 .rp-card-sub{font-family:var(--m);font-size:8px;color:var(--t3)}
 .rp-status-badge{font-family:var(--m);font-size:7px;font-weight:600;padding:2px 5px;border-radius:2px;position:absolute;top:8px;right:8px;letter-spacing:0.08em;text-transform:uppercase}
-.rp-status-badge.proposed{background:rgba(255,255,255,0.1);color:#E6E8EB;border:1px solid rgba(255,255,255,0.25)}
+.rp-status-badge.proposed{background:rgba(255,255,255,0.1);color:#E8B349;border:1px solid rgba(232,179,73,0.25)}
 .rp-status-badge.approved{background:rgba(63,185,80,0.1);color:#3fb950;border:1px solid rgba(63,185,80,0.25)}
 .rp-status-badge.rejected{background:rgba(218,54,51,0.1);color:var(--rd);border:1px solid rgba(218,54,51,0.25)}
 /* ═══ MOBILE ═══ */
@@ -627,7 +627,7 @@ input,select,textarea{font-size:16px!important}
 #nw-globe:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.25);box-shadow:0 1px 2px rgba(0,0,0,0.4)}
 /* ═══ Phase 14: TILT BUTTON ROW (under joystick) — fixes "I can only look down at buildings" ═══ */
 #nw-tilt{display:flex;flex-direction:column;align-items:center;gap:0;margin-top:2px}
-.nw-tbtn{width:30px;height:22px;background:rgba(12,18,32,0.95);border:1px solid rgba(255,255,255,0.18);color:var(--cyan,#E6E8EB);font-family:var(--m);font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;letter-spacing:0.5px}
+.nw-tbtn{width:30px;height:22px;background:rgba(12,18,32,0.95);border:1px solid rgba(255,255,255,0.18);color:var(--cyan,#E8B349);font-family:var(--m);font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;letter-spacing:0.5px}
 .nw-tbtn:hover{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.4);box-shadow:0 1px 2px rgba(0,0,0,0.4);color:#fff}
 .nw-tbtn:first-child{border-radius:3px 3px 0 0}
 .nw-tbtn:last-child{border-radius:0 1px 2px rgba(0,0,0,0.4)}
@@ -909,7 +909,7 @@ body.ai-open #acReadout{/* RP open — handled by --rw token */}
 .acr-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .acr-photo-cred{position:absolute;bottom:4px;right:6px;font-size:8px;color:rgba(255,255,255,0.55);letter-spacing:0.5px}
 .acr-photo-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg)}
-.acr-photo-spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,0.2);border-top-color:var(--cyan,#E6E8EB);border-radius:50%;animation:acr-spin 0.8s linear infinite}
+.acr-photo-spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,0.2);border-top-color:var(--cyan,#E8B349);border-radius:50%;animation:acr-spin 0.8s linear infinite}
 @keyframes acr-spin{to{transform:rotate(360deg)}}
 /* Type tag */
 .acr-tag{padding:7px 14px;font-size:9px;letter-spacing:1.2px;color:var(--t2);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02)}
@@ -924,12 +924,12 @@ body.ai-open #acReadout{/* RP open — handled by --rw token */}
 .acr-coords{padding:8px 14px;display:flex;flex-direction:column;gap:4px;border-top:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02)}
 .acr-coords > div{display:flex;align-items:center;gap:8px;font-size:10px}
 .acr-mono{font-family:'JetBrains Mono',monospace;color:var(--t1);font-weight:500;letter-spacing:0.5px}
-.acr-sq{display:inline-block;margin-left:auto;padding:1px 6px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);border-radius:2px;font-size:9px;color:var(--cyan,#E6E8EB);letter-spacing:0.5px}
+.acr-sq{display:inline-block;margin-left:auto;padding:1px 6px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);border-radius:2px;font-size:9px;color:var(--cyan,#E8B349);letter-spacing:0.5px}
 .acr-sq-em{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.5);color:var(--rd);}
 @keyframes acrSqPulse{0%,100%{box-shadow:0 0 0 rgba(239,68,68,0.3)}50%{box-shadow:0 1px 2px rgba(0,0,0,0.4)}}
 /* Actions row */
 .acr-actions{display:flex;gap:1px;padding:1px;background:rgba(255,255,255,0.08);border-top:1px solid rgba(255,255,255,0.1)}
-.acr-actions button{flex:1;padding:8px 6px;background:var(--glass,rgba(8,12,20,0.92));border:none;color:var(--cyan,#E6E8EB);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;cursor:pointer;letter-spacing:1px;transition:background 0.15s,color 0.15s}
+.acr-actions button{flex:1;padding:8px 6px;background:var(--glass,rgba(8,12,20,0.92));border:none;color:var(--cyan,#E8B349);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;cursor:pointer;letter-spacing:1px;transition:background 0.15s,color 0.15s}
 .acr-actions button:hover{background:rgba(255,255,255,0.1);color:#fff}
 .acr-actions button.acr-close{color:var(--t2)}
 .acr-actions button.acr-close:hover{color:var(--rd);background:rgba(239,68,68,0.08)}
@@ -965,7 +965,7 @@ body.ai-open #acReadout{/* RP open — handled by --rw token */}
 .rp.shut ~ #baseReadout, body:has(.rp.shut) #baseReadout{right:12px}
 /* Progress bar components */
 .bsr-bar-track{height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden}
-.bsr-bar-fill{height:100%;width:0%;background:var(--cyan,#E6E8EB);border-radius:2px;transition:width 0.65s ease}
+.bsr-bar-fill{height:100%;width:0%;background:var(--cyan,#E8B349);border-radius:2px;transition:width 0.65s ease}
 @media (max-width:900px){
   #acReadout{width:260px;right:8px;top:50px;font-size:10px}
   #baseReadout{width:252px;right:8px;top:50px;font-size:10px}
@@ -988,7 +988,7 @@ body.ai-open #acReadout{/* RP open — handled by --rw token */}
 
 /* ── 1. PALETTE — single amber accent, glass surfaces ─────────────────────── */
 :root{
-  --cyan:#E6E8EB;            /* legacy alias now resolves to amber accent */
+  --cyan:#E8B349;            /* legacy alias now resolves to amber accent */
   --cyan-dim:#9BA1A8;
   --border-glow:rgba(255,255,255,0.10);
   --glass:rgba(15,17,21,0.72);
@@ -1000,22 +1000,32 @@ body.ai-open #acReadout{/* RP open — handled by --rw token */}
   --glow-red:0 8px 32px rgba(0,0,0,0.45);
   --glow-green:0 8px 32px rgba(0,0,0,0.45);
   --accent-red:#DA3633;
-  --accent-cyan:#E6E8EB;
+  --accent-cyan:#E8B349;
 }
 
-/* Shared PHANTOM glass recipe */
+/* Shared PHANTOM glass recipe — Apple-style 4-layer real glass (2026-06-12)
+ * (1) translucent tint fill (more see-through), (2) backdrop blur refraction,
+ * (3) CATCH-LIGHT edge: bright top, fading to near-invisible bottom (NOT a flat
+ *     white box outline), (4) layered soft diffused shadow for elevation. */
 .lp,.rp,
 #metarPanel,#navPanel,#watchlistPanel,#presetsPanel,#coaPanel,
 #event-log,#health-dash,#econWidget,#spaceWxPanel,#cisaPanel,
 #gtaWidget,#acReadout,#baseReadout,#battle-ctx,.battle-panel{
-  background:var(--glass)!important;
-  border:1px solid rgba(255,255,255,0.10)!important;
-  border-radius:14px!important;
-  box-shadow:0 8px 32px rgba(0,0,0,0.45)!important;
+  background:rgba(13,16,22,0.55)!important;
+  backdrop-filter:blur(18px) saturate(120%)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(120%)!important;
+  border:1px solid transparent!important;
+  border-radius:16px!important;
+  /* catch-light edge via layered border-image gradient (bright top → dim bottom) */
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    inset 0 0 0 1px rgba(255,255,255,0.04),
+    0 12px 40px rgba(0,0,0,0.50),
+    0 2px 8px rgba(0,0,0,0.30)!important;
 }
-.rp{border-left:1px solid rgba(255,255,255,0.10)!important;}
-.lp{border-right:1px solid rgba(255,255,255,0.10)!important;}
-.lp-h::before{background:rgba(255,255,255,0.45)!important;box-shadow:none!important;}
+.rp{border-left:1px solid rgba(255,255,255,0.06)!important;}
+.lp{border-right:1px solid rgba(255,255,255,0.06)!important;}
+.lp-h::before{background:rgba(232,179,73,0.55)!important;box-shadow:none!important;}
 
 /* ── 2. TOP BAR — hairline bottom edge, no bloom ──────────────────────────── */
 .tb{

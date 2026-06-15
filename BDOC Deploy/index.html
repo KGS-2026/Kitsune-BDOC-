@@ -155,7 +155,7 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p38">
+<link rel="stylesheet" href="css/bdoc.css?v=p39">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -375,7 +375,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p36</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" title="Global Threat Assessment — composite score from active conflicts, earthquakes, cyber, fires, aircraft activity" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p39</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" title="Global Threat Assessment — composite score from active conflicts, earthquakes, cyber, fires, aircraft activity" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -1354,19 +1354,19 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
 <script defer src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
 <!-- ═══ BDOC PHASE 2 MODULES ═══ Must execute BEFORE inline script — defines EventLog, togFilter, formatters that the inline script calls during init -->
-<script src="js/telemetry.js?v=p38"></script>
-<script src="js/converters.js?v=p38"></script>
-<script src="js/data.js?v=p38"></script>
-<script src="js/auth.js?v=p38"></script>
-<script src="js/filters.js?v=p38"></script>
+<script src="js/telemetry.js?v=p39"></script>
+<script src="js/converters.js?v=p39"></script>
+<script src="js/data.js?v=p39"></script>
+<script src="js/auth.js?v=p39"></script>
+<script src="js/filters.js?v=p39"></script>
 <!-- layers-military.js is lazy-loaded on first toggle of milbases (Phase 3 Turn 7) -->
 <!-- layers-airfields.js is lazy-loaded on first toggle of milairfields (Phase 3 Turn 6) -->
 <!-- layers-nuke.js is lazy-loaded on first toggle of nukes (Phase 3 Turn 5) -->
 <!-- layers-infra.js is lazy-loaded on first toggle of powerplants/oilgas (Phase 3 Turn 2) -->
 <!-- layers-air.js is lazy-loaded on first toggle of air/forcetrack/sat/cable (Phase 3 Turn 8) -->
 <!-- layers-conflict.js is lazy-loaded on first toggle of conf/territory (Phase 3 Turn 3) -->
-<script src="js/kitsune-ai.js?v=p38"></script>
-<script src="js/bdoc-atak.js?v=p38"></script>
+<script src="js/kitsune-ai.js?v=p39"></script>
+<script src="js/bdoc-atak.js?v=p39"></script>
 <script>
 // ╔═══════════════════════════════════════════════════════╗
 // ║  KGS BDOC v7.0                                          ║
@@ -10089,7 +10089,7 @@ async function loadFalloutShelters(){
   if(_falloutDS){_falloutDS.show=true;return;}   // already loaded — just show
   const iconUri=svgToDataUri(_FALLOUT_ICON);
   try{
-    const res=await fetch('assets/fallout-shelters-us.kml?v=p38',{signal:AbortSignal.timeout(25000)});
+    const res=await fetch('assets/fallout-shelters-us.kml?v=p39',{signal:AbortSignal.timeout(25000)});
     if(!res.ok)throw new Error(`KML ${res.status}`);
     const kmlText=await res.text();
     const kmlDoc=new DOMParser().parseFromString(kmlText,'text/xml');
@@ -11775,7 +11775,7 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
-<script src="js/cesium-init.js?v=p38"></script>
+<script src="js/cesium-init.js?v=p39"></script>
 <!-- ═════════════════════════════════════════════════════════════════════════
      PHASE 16b (2026-05-13) — FIRST-RUN EXPERIENCE ("Grandma persona")
      On first app open: prompt for location → fly camera there → auto-enable weather radar.
