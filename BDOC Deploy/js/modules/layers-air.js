@@ -426,7 +426,7 @@ async function loadAircraft(){
         const existing=_milEntMap.get(a.hex);
         if(existing){
           existing.position=Cesium.Cartesian3.fromDegrees(a.lon,a.lat,a.alt*0.3048);
-          existing.billboard.image=_ms||getACIcon(milColor,a.hdg,32);
+          existing.billboard.image=getACIcon(milColor,a.hdg,32,a.desc);
           existing.billboard.heightReference=a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE;
           existing.label.text=(a.cs||a.hex).substring(0,8);
           existing.description=buildAircraftCard(a);
@@ -434,7 +434,7 @@ async function loadAircraft(){
           existing.show=layers.air||layers.forcetrack;
           existing._ac=a;
         }else{
-          const ent=V.entities.add({position:Cesium.Cartesian3.fromDegrees(a.lon,a.lat,a.alt*0.3048),billboard:{image:_ms||getACIcon(milColor,a.hdg,32,a.desc),width:38,height:38,scaleByDistance:new Cesium.NearFarScalar(5e4,1.3,1e7,0.5),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE,disableDepthTestDistance:5e6},label:{text:(a.cs||a.hex).substring(0,8),font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(milColor),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,22),scaleByDistance:new Cesium.NearFarScalar(1e5,1,6e6,0.35),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},description:buildAircraftCard(a),show:layers.air||layers.forcetrack});
+          const ent=V.entities.add({position:Cesium.Cartesian3.fromDegrees(a.lon,a.lat,a.alt*0.3048),billboard:{image:getACIcon(milColor,a.hdg,32,a.desc),width:38,height:38,scaleByDistance:new Cesium.NearFarScalar(5e4,1.3,1e7,0.5),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE,disableDepthTestDistance:5e6},label:{text:(a.cs||a.hex).substring(0,8),font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(milColor),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,22),scaleByDistance:new Cesium.NearFarScalar(1e5,1,6e6,0.35),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},description:buildAircraftCard(a),show:layers.air||layers.forcetrack});
           ent._ac=a;
           _milEntMap.set(a.hex,ent);
         }
@@ -496,7 +496,7 @@ async function loadAircraft(){
           positions:Cesium.Cartesian3.fromDegreesArrayHeights([p0.lon,p0.lat,p0.alt,p1.lon,p1.lat,p1.alt]),
           width:isMil?4:2.5,
           material:new Cesium.PolylineGlowMaterialProperty({glowPower:0.28,color:c}),
-          distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,1500000)
+          distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,8000000)
         },
         show:showTrail
       }));
