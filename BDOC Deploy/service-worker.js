@@ -3,7 +3,7 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v41';
+const SW_VERSION = 'bdoc-v42';
 const STATIC_CACHE  = SW_VERSION + '-static';
 const CDN_CACHE     = SW_VERSION + '-cdn';
 const API_CACHE     = SW_VERSION + '-api';
@@ -87,7 +87,14 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   if (!url.protocol.startsWith('http')) return;
 
-  // Static local assets — Cache-first
+  // HTML / navigation — NETWORK-FIRST so a new deploy is seen immediately
+  // (cache-first on index.html was why fresh deploys required 2 reloads / never showed).
+  if (url.origin === self.location.origin &&
+      (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html'))) {
+    event.respondWith(networkFirst(event.request, STATIC_CACHE));
+    return;
+  }
+  // Other static local assets (versioned JS/CSS/SVG) — Cache-first
   if (url.origin === self.location.origin &&
       !url.pathname.startsWith('/.netlify/') &&
       !url.pathname.startsWith('/api/')) {
