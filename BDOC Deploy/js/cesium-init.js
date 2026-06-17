@@ -18,6 +18,19 @@ Cesium.Ion.defaultAccessToken=CFG.keys.cesium;
 try{
 V=new Cesium.Viewer('cesiumContainer',{animation:false,baseLayerPicker:false,fullscreenButton:false,vrButton:false,geocoder:false,homeButton:false,infoBox:true,sceneModePicker:false,selectionIndicator:true,timeline:false,navigationHelpButton:false,creditContainer:document.createElement('div'),contextOptions:{webgl:{preserveDrawingBuffer:true}},baseLayer:new Cesium.ImageryLayer(new Cesium.UrlTemplateImageryProvider({url:"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",credit:"ESRI",maximumLevel:19}))});
 const s=V.scene;
+// ── INFOBOX SCRIPT FIX (Cesium 1.104) ──
+// Cesium sandboxes the infoBox iframe as "allow-same-origin allow-popups allow-forms"
+// — deliberately OMITTING allow-scripts as an XSS guard. That kills every onclick
+// button inside entity description cards (Zoom In/Out, Go Back, SAT VIEW, etc.).
+// All card HTML is built by OUR code from trusted API data (escaped via esc()),
+// so re-enabling scripts is safe here. The frame exists immediately after viewer
+// construction; set the sandbox once and force a reload so it takes effect.
+try{
+  if(V.infoBox&&V.infoBox.frame){
+    V.infoBox.frame.setAttribute('sandbox','allow-same-origin allow-scripts allow-popups allow-forms');
+    V.infoBox.frame.src='about:blank';
+  }
+}catch(e){console.warn('[infoBox sandbox fix]',e)}
 // ── GOOGLE EARTH-GRADE RENDERING ──
 s.backgroundColor=Cesium.Color.fromCssColorString('#000000');
 s.globe.baseColor=Cesium.Color.fromCssColorString('#0a1628'); // Deep ocean blue when tiles haven't loaded
