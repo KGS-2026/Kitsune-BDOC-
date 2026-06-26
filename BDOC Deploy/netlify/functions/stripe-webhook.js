@@ -1,6 +1,6 @@
 // Handles Stripe webhook events for subscription lifecycle
 // Updates user tier in Supabase when subscription changes
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || process.env.Stripe_s_key);
 const { createClient } = require('@supabase/supabase-js');
 
 // Map Stripe price IDs to tier names

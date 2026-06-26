@@ -1,5 +1,5 @@
 // Creates a Stripe Customer Portal session for subscription self-service
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || process.env.Stripe_s_key);
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
