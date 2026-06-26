@@ -9457,8 +9457,10 @@ setInterval(()=>{
   af('var(--bl)',now+' \u2014 '+healthyCount+'/'+totalFeeds+' feeds healthy \u2022 '+milAC.length+' mil aircraft \u2022 '+eqEnts.length+' earthquakes \u2022 '+fireEnts.length+' fires \u2022 '+satEnts.length+' satellites');
 },300000);
 async function bootFeeds(){
-  // Phase 22: capture Stripe return flag BEFORE auth.init — init() calls replaceState which strips query params
-  const _stripeReturn=new URLSearchParams(window.location.search).get('stripe_success')==='true';
+  // Stripe Checkout returns to success_url with ?session_id=... (see netlify/functions/stripe-checkout.js).
+  // Capture BEFORE auth.init — init() calls replaceState which strips query params. (?stripe_success kept as legacy fallback.)
+  const _sp=new URLSearchParams(window.location.search);
+  const _stripeReturn=!!(_sp.get('session_id')||_sp.get('stripe_success'));
   // Initialize auth (guest mode continues if this fails)
   try{await BDOC_Auth.init()}catch(e){console.warn('[Auth] Init failed, continuing as guest:',e)}
   // Load tier from localStorage (manual grant day 1, webhook Week 2)
@@ -9473,8 +9475,8 @@ async function bootFeeds(){
         d.innerHTML='<div style="background:#0d1117;border:1px solid #2d6a4f;border-radius:8px;padding:40px;max-width:480px;text-align:center;color:#c9d1d9;font-family:var(--m)">'
           +'<div style="font-size:32px;margin-bottom:12px">&#9989;</div>'
           +'<h2 style="color:#52b788;margin-bottom:12px;letter-spacing:2px">PAYMENT RECEIVED</h2>'
-          +'<p style="font-size:12px;line-height:1.6;margin-bottom:16px">Thank you for subscribing to BDOC. Email <b style="color:#58a6ff">support@kitsuneglobalsolutions.com</b> with your Stripe receipt to activate your tier.</p>'
-          +'<p style="font-size:10px;color:#8b949e;margin-bottom:20px">Tier activation is currently manual (usually within 24 hours). Automated webhook activation coming Week 2.</p>'
+          +'<p style="font-size:12px;line-height:1.6;margin-bottom:16px">Thank you for subscribing to BDOC. Your account is being upgraded now &mdash; your new tier unlocks automatically within a few moments.</p>'
+          +'<p style="font-size:10px;color:#8b949e;margin-bottom:20px">If your tier does not update within a minute, refresh the page. Need help? <b style="color:#58a6ff">support@kitsuneglobalsolutions.com</b></p>'
           +'<button onclick="this.parentElement.parentElement.remove()" style="background:#238636;color:#fff;border:none;padding:10px 32px;border-radius:4px;cursor:pointer;font-weight:700;letter-spacing:1px;font-size:11px">ROGER THAT</button>'
           +'</div>';
         document.body.appendChild(d);
