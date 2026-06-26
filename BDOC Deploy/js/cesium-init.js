@@ -50,6 +50,18 @@ s.skyAtmosphere.show=true;
 if(window.devicePixelRatio>1){s.globe.maximumScreenSpaceError=1.5}else{s.globe.maximumScreenSpaceError=2}
 // Anti-aliasing
 s.postProcessStages.fxaa.enabled=true;
+// ═══ BLOOM — glow on bright markers/city-lights (spike 2026-06-25, the "alive" aesthetic) ═══
+// Only pixels brighter than threshold bloom, so terrain/ocean stay crisp; bright billboards/lights glow.
+try{
+  const _bloom=s.postProcessStages.bloom;
+  _bloom.enabled=true;
+  _bloom.uniforms.glowOnly=false;
+  _bloom.uniforms.contrast=128;
+  _bloom.uniforms.brightness=-0.2;   // negative = only bright pixels pass into the bloom pass
+  _bloom.uniforms.delta=1.0;
+  _bloom.uniforms.sigma=2.0;
+  _bloom.uniforms.stepSize=1.0;
+}catch(e){console.warn('[BDOC bloom]',e)}
 // ═══ CAMERA CONTROLLER — Google-Earth-style joystick feel ═══
 // Phase 14 fix (2026-05-12): Cesium defaults park tilt on middle-click — most users have no middle button.
 // Map RIGHT_DRAG + CTRL+LEFT_DRAG + PINCH onto tilt. Clamp zoom range. Tune inertia so the camera doesn't snap-stop.
