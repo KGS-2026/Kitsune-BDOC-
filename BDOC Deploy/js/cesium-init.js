@@ -62,6 +62,53 @@ try{
   _bloom.uniforms.sigma=3.5;         // wider blur = softer, more visible halo
   _bloom.uniforms.stepSize=1.0;
 }catch(e){console.warn('[BDOC bloom]',e)}
+// ═══ BLOOM TUNER — dev-only live slider panel (spike 2026-06-25) ═══
+// Shows ONLY in dev mode (?dev= key or saved dev key). Lets Travon dial bloom by hand,
+// screenshot the values, then we hardcode them and delete this block. Never visible to real users.
+try{
+  const _isDev = /[?&]dev=/.test(location.search) || !!localStorage.getItem('bdoc_dev_key');
+  if(_isDev){
+    const B=s.postProcessStages.bloom.uniforms;
+    const mk=(label,key,min,max,step)=>{
+      const val=B[key];
+      return `<div style="margin:10px 0">
+        <div style="display:flex;justify-content:space-between;font:600 11px 'IBM Plex Mono',monospace;color:#E8B349;letter-spacing:.5px;text-transform:uppercase">
+          <span>${label}</span><span id="bt-v-${key}" style="color:#fff;font-size:15px">${val}</span>
+        </div>
+        <input type="range" id="bt-${key}" min="${min}" max="${max}" step="${step}" value="${val}"
+          style="width:100%;accent-color:#E8B349;margin-top:4px">
+      </div>`;
+    };
+    const box=document.createElement('div');
+    box.id='bloom-tuner';
+    box.style.cssText='position:fixed;top:90px;right:18px;z-index:99999;width:240px;padding:14px 16px;'
+      +'background:rgba(15,17,21,0.92);border:1px solid rgba(232,179,73,0.5);border-radius:14px;'
+      +'box-shadow:0 8px 32px rgba(0,0,0,0.55);backdrop-filter:blur(8px);font-family:Inter,sans-serif;color:#fff';
+    box.innerHTML='<div style="font:700 12px Inter;letter-spacing:1px;text-transform:uppercase;color:#fff;margin-bottom:4px">✨ BLOOM TUNER <span style="color:#E8B349">DEV</span></div>'
+      +'<div style="font:500 10px Inter;color:rgba(255,255,255,0.5);margin-bottom:8px">Dial it in, screenshot, tell me the numbers.</div>'
+      +mk('Brightness','brightness',-1,1,0.05)
+      +mk('Contrast','contrast',0,255,1)
+      +mk('Sigma (halo)','sigma',0.5,8,0.1)
+      +mk('Delta','delta',0.5,3,0.1)
+      +'<div id="bt-readout" style="margin-top:12px;padding:8px;background:rgba(0,0,0,0.4);border-radius:8px;font:600 12px \'IBM Plex Mono\',monospace;color:#E8B349;line-height:1.6;word-break:break-all"></div>';
+    const attach=()=>document.body.appendChild(box);
+    if(document.body)attach(); else document.addEventListener('DOMContentLoaded',attach);
+    const readout=()=>{const r=box.querySelector('#bt-readout');
+      r.textContent=`brightness=${B.brightness}  contrast=${B.contrast}  sigma=${B.sigma}  delta=${B.delta}`;};
+    ['brightness','contrast','sigma','delta'].forEach(key=>{
+      const inp=box.querySelector('#bt-'+key);
+      inp.addEventListener('input',()=>{
+        const v=parseFloat(inp.value);
+        B[key]=v;
+        box.querySelector('#bt-v-'+key).textContent=v;
+        readout();
+        s.requestRender();
+      });
+    });
+    readout();
+    console.log('[BDOC] Bloom tuner active (dev mode)');
+  }
+}catch(e){console.warn('[BDOC bloom-tuner]',e)}
 // ═══ CAMERA CONTROLLER — Google-Earth-style joystick feel ═══
 // Phase 14 fix (2026-05-12): Cesium defaults park tilt on middle-click — most users have no middle button.
 // Map RIGHT_DRAG + CTRL+LEFT_DRAG + PINCH onto tilt. Clamp zoom range. Tune inertia so the camera doesn't snap-stop.
