@@ -56,10 +56,10 @@ try{
   const _bloom=s.postProcessStages.bloom;
   _bloom.enabled=true;
   _bloom.uniforms.glowOnly=false;
-  _bloom.uniforms.contrast=128;
-  _bloom.uniforms.brightness=-0.2;   // negative = only bright pixels pass into the bloom pass
-  _bloom.uniforms.delta=1.0;
-  _bloom.uniforms.sigma=2.0;
+  _bloom.uniforms.contrast=140;
+  _bloom.uniforms.brightness=0.1;    // slightly positive = more pixels bloom, tracers/markers glow visibly
+  _bloom.uniforms.delta=1.2;
+  _bloom.uniforms.sigma=3.5;         // wider blur = softer, more visible halo
   _bloom.uniforms.stepSize=1.0;
 }catch(e){console.warn('[BDOC bloom]',e)}
 // ═══ CAMERA CONTROLLER — Google-Earth-style joystick feel ═══
