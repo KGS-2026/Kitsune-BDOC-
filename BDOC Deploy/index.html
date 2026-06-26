@@ -163,7 +163,7 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p51">
+<link rel="stylesheet" href="css/bdoc.css?v=p52">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -233,7 +233,7 @@ if('serviceWorker' in navigator){
   </div>
   <div style="font-size:8px;color:var(--text-tertiary);margin-bottom:8px">RIGHT-CLICK any point → <b style="color:var(--text-secondary)">Scan Vegetation</b> | Type <b style="color:var(--text-secondary)">veg scan</b> in AI chat</div>
   <div id="vegNDVI" style="display:none;margin-bottom:8px">
-    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--text-secondary)">NDVI INDEX</span><span id="vegNDVIval" style="color:var(--text-primary);font-weight:600">--</span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--text-secondary)" title="Modeled from latitude/longitude biome climatology — not a live satellite measurement. For tactical planning use only; ground-truth before reliance.">NDVI (MODELED EST.)</span><span id="vegNDVIval" style="color:var(--text-primary);font-weight:600">--</span></div>
     <div style="height:6px;background:var(--bg-surface-2);border-radius:3px;overflow:hidden"><div id="vegNDVIbar" style="height:100%;width:0%;background:var(--accent);border-radius:3px;transition:width 0.5s"></div></div>
   </div>
   <div id="vegCover" style="display:none;margin-bottom:8px">
@@ -1362,19 +1362,19 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
 <script defer src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
 <!-- ═══ BDOC PHASE 2 MODULES ═══ Must execute BEFORE inline script — defines EventLog, togFilter, formatters that the inline script calls during init -->
-<script src="js/telemetry.js?v=p51"></script>
-<script src="js/converters.js?v=p51"></script>
-<script src="js/data.js?v=p51"></script>
-<script src="js/auth.js?v=p51"></script>
-<script src="js/filters.js?v=p51"></script>
+<script src="js/telemetry.js?v=p52"></script>
+<script src="js/converters.js?v=p52"></script>
+<script src="js/data.js?v=p52"></script>
+<script src="js/auth.js?v=p52"></script>
+<script src="js/filters.js?v=p52"></script>
 <!-- layers-military.js is lazy-loaded on first toggle of milbases (Phase 3 Turn 7) -->
 <!-- layers-airfields.js is lazy-loaded on first toggle of milairfields (Phase 3 Turn 6) -->
 <!-- layers-nuke.js is lazy-loaded on first toggle of nukes (Phase 3 Turn 5) -->
 <!-- layers-infra.js is lazy-loaded on first toggle of powerplants/oilgas (Phase 3 Turn 2) -->
 <!-- layers-air.js is lazy-loaded on first toggle of air/forcetrack/sat/cable (Phase 3 Turn 8) -->
 <!-- layers-conflict.js is lazy-loaded on first toggle of conf/territory (Phase 3 Turn 3) -->
-<script src="js/kitsune-ai.js?v=p51"></script>
-<script src="js/bdoc-atak.js?v=p51"></script>
+<script src="js/kitsune-ai.js?v=p52"></script>
+<script src="js/bdoc-atak.js?v=p52"></script>
 <script>
 // ╔═══════════════════════════════════════════════════════╗
 // ║  KGS BDOC v7.0                                          ║
@@ -9139,9 +9139,11 @@ const VegIntel={
     const terrain=this.classifyTerrain(ndvi,lat,0);
     const hz=this.getHardinessZone(lat);
 
-    // Show NDVI bar
+    // Show NDVI bar — value is a MODELED estimate (biome climatology), not a
+    // live satellite read. Label reflects that so users never mistake it for
+    // ground-truth (fixes "DENSE FOREST in a desert" misread).
     const ndviEl=document.getElementById('vegNDVI');ndviEl.style.display='block';
-    document.getElementById('vegNDVIval').textContent=ndvi.toFixed(3);
+    document.getElementById('vegNDVIval').textContent='~'+ndvi.toFixed(2)+' est';
     document.getElementById('vegNDVIbar').style.width=(ndvi*100)+'%';
 
     // Show terrain cover
@@ -10107,7 +10109,7 @@ async function loadFalloutShelters(){
   if(_falloutDS){_falloutDS.show=true;return;}   // already loaded — just show
   const iconUri=svgToDataUri(_FALLOUT_ICON);
   try{
-    const res=await fetch('assets/fallout-shelters-us.kml?v=p51',{signal:AbortSignal.timeout(25000)});
+    const res=await fetch('assets/fallout-shelters-us.kml?v=p52',{signal:AbortSignal.timeout(25000)});
     if(!res.ok)throw new Error(`KML ${res.status}`);
     const kmlText=await res.text();
     const kmlDoc=new DOMParser().parseFromString(kmlText,'text/xml');
@@ -11793,7 +11795,7 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
-<script src="js/cesium-init.js?v=p51"></script>
+<script src="js/cesium-init.js?v=p52"></script>
 <!-- ═════════════════════════════════════════════════════════════════════════
      PHASE 16b (2026-05-13) — FIRST-RUN EXPERIENCE ("Grandma persona")
      On first app open: prompt for location → fly camera there → auto-enable weather radar.
