@@ -163,7 +163,7 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p48">
+<link rel="stylesheet" href="css/bdoc.css?v=p49">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -321,7 +321,7 @@ if('serviceWorker' in navigator){
     <button onclick="WxRadar.setSpeed(2)" class="wxSpd" style="background:none;border:1px solid #1e2436;color:#8b949e;font-family:var(--m);font-size:7px;padding:1px 5px;border-radius:2px;cursor:pointer">2x</button>
   </div>
 </div>
-<div id="ss-watermark">KITSUNE BDOC v7.0 · UNCLASSIFIED · <span id="ss-ts"></span> · KITSUNE GLOBAL SOLUTIONS LLC · SDVOSB</div>
+<div id="ss-watermark">KITSUNE BDOC v7.0 · OSINT · <span id="ss-ts"></span> · Not affiliated with any government</div>
 <!-- Phase 10E (2026-05-05): COMMAND PALETTE (Cmd+K / Ctrl+K) — Mission Control fuzzy command launcher -->
 <div id="bdocCmdK" style="display:none;position:fixed;inset:0;z-index:9700;background:rgba(0,0,0,0.65);align-items:flex-start;justify-content:center;padding-top:18vh;font-family:var(--s)">
   <div style="width:560px;max-width:calc(100vw - 32px);background:rgba(17,21,28,0.98);border:1px solid rgba(45,114,210,0.3);border-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,0.4);overflow:hidden">
@@ -1362,19 +1362,19 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
 <script defer src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
 <!-- ═══ BDOC PHASE 2 MODULES ═══ Must execute BEFORE inline script — defines EventLog, togFilter, formatters that the inline script calls during init -->
-<script src="js/telemetry.js?v=p48"></script>
-<script src="js/converters.js?v=p48"></script>
-<script src="js/data.js?v=p48"></script>
-<script src="js/auth.js?v=p48"></script>
-<script src="js/filters.js?v=p48"></script>
+<script src="js/telemetry.js?v=p49"></script>
+<script src="js/converters.js?v=p49"></script>
+<script src="js/data.js?v=p49"></script>
+<script src="js/auth.js?v=p49"></script>
+<script src="js/filters.js?v=p49"></script>
 <!-- layers-military.js is lazy-loaded on first toggle of milbases (Phase 3 Turn 7) -->
 <!-- layers-airfields.js is lazy-loaded on first toggle of milairfields (Phase 3 Turn 6) -->
 <!-- layers-nuke.js is lazy-loaded on first toggle of nukes (Phase 3 Turn 5) -->
 <!-- layers-infra.js is lazy-loaded on first toggle of powerplants/oilgas (Phase 3 Turn 2) -->
 <!-- layers-air.js is lazy-loaded on first toggle of air/forcetrack/sat/cable (Phase 3 Turn 8) -->
 <!-- layers-conflict.js is lazy-loaded on first toggle of conf/territory (Phase 3 Turn 3) -->
-<script src="js/kitsune-ai.js?v=p48"></script>
-<script src="js/bdoc-atak.js?v=p48"></script>
+<script src="js/kitsune-ai.js?v=p49"></script>
+<script src="js/bdoc-atak.js?v=p49"></script>
 <script>
 // ╔═══════════════════════════════════════════════════════╗
 // ║  KGS BDOC v7.0                                          ║
@@ -2303,14 +2303,15 @@ function genPDF(){
   const addLine=()=>{doc.setDrawColor(180);doc.line(M,y,W-M,y);y+=3};
   const checkPage=()=>{if(y>270){doc.addPage();y=M}};
   doc.setTextColor(200,0,0);doc.setFontSize(12);doc.setFont('courier','bold');
-  doc.text('UNCLASSIFIED // FOR OFFICIAL USE ONLY',W/2,y,{align:'center'});y+=10;
+  doc.text('OPEN-SOURCE INTELLIGENCE AGGREGATION',W/2,y,{align:'center'});y+=10;
   doc.setTextColor(0);doc.setFontSize(18);doc.text('KITSUNE BDOC',M,y);y+=7;
   doc.setFontSize(14);doc.text('INTELLIGENCE BRIEF',M,y);y+=4;addLine();
   doc.setFontSize(8);doc.setFont('courier','normal');doc.setTextColor(80);
   doc.text(`Generated: ${ts}`,M,y);y+=3.5;
   doc.text(`System: ${h.toUpperCase()} | Version: BDOC v${CFG.version}`,M,y);y+=3.5;
   doc.text(`Classification: UNCLASSIFIED`,M,y);y+=3.5;
-  doc.text(`Prepared by: Kitsune Global Solutions LLC (SDVOSB | CAGE: 174S8)`,M,y);y+=6;
+  doc.text(`Prepared by: Kitsune BDOC — automated OSINT aggregation`,M,y);y+=4;
+  doc.text(`Not affiliated with, or endorsed by, any government.`,M,y);y+=6;
   doc.setTextColor(0);doc.setFontSize(12);doc.setFont('courier','bold');
   doc.text('1. SITUATION OVERVIEW',M,y);y+=5;
   doc.setFont('courier','normal');doc.setFontSize(9);
@@ -2363,10 +2364,10 @@ function genPDF(){
   doc.setTextColor(0);y+=6;
   checkPage();
   doc.setTextColor(200,0,0);doc.setFontSize(12);doc.setFont('courier','bold');
-  doc.text('UNCLASSIFIED // FOR OFFICIAL USE ONLY',W/2,y,{align:'center'});y+=8;
+  doc.text('OPEN-SOURCE INTELLIGENCE AGGREGATION',W/2,y,{align:'center'});y+=8;
   doc.setTextColor(120);doc.setFontSize(7);doc.setFont('courier','normal');
   doc.text('Auto-generated by KITSUNE BDOC v'+CFG.version,M,y);y+=3;
-  doc.text('Kitsune Global Solutions LLC | SDVOSB | CAGE: 174S8 | UEI: FG87MJMMBPN6',M,y);y+=3;
+  doc.text('Not affiliated with, or endorsed by, any government.',M,y);y+=3;
   doc.text('Sources: USGS, NASA FIRMS, ADS-B Exchange, CelesTrak, TeleGeography',M,y);
   doc.save('BDOC-Intel-Brief-'+ts.slice(0,10)+'.pdf');
   msg('sy','<b>PDF INTELLIGENCE BRIEF GENERATED</b><br>Direct PDF download. Contains aircraft summary, conflict zones, anomalies, system health.');
@@ -2375,15 +2376,15 @@ function genPDF(){
 function _genPDFhtml(){
   const ts=new Date().toISOString(),h=Health.sysHealth();
   let htm='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>BDOC Intel Brief</title><style>body{font-family:"Courier New",monospace;background:#fff;color:#111;padding:40px;max-width:800px;margin:0 auto}h1{font-size:18px;border-bottom:2px solid #000;padding-bottom:8px;letter-spacing:3px}h2{font-size:14px;color:#444;margin-top:24px;border-bottom:1px solid #ccc;padding-bottom:4px}.meta{font-size:10px;color:#666;margin-bottom:20px}table{width:100%;border-collapse:collapse;font-size:11px;margin:8px 0}th,td{border:1px solid #ccc;padding:4px 8px;text-align:left}th{background:#f5f5f5;font-weight:700}.cls{text-align:center;font-size:14px;font-weight:700;color:#c00;margin:20px 0;letter-spacing:4px}.ft{margin-top:30px;font-size:9px;color:#999;border-top:1px solid #ccc;padding-top:8px}</style></head><body>';
-  htm+='<div class="cls">UNCLASSIFIED // FOR OFFICIAL USE ONLY</div>';
+  htm+='<div class="cls">OPEN-SOURCE INTELLIGENCE AGGREGATION</div>';
   htm+='<h1>KITSUNE BDOC \u2014 INTELLIGENCE BRIEF</h1>';
-  htm+='<div class="meta">Generated: '+ts+'<br>System: '+h.toUpperCase()+'<br>Version: BDOC v'+CFG.version+'<br>Prepared by: Kitsune Global Solutions LLC (SDVOSB \u00B7 CAGE: 174S8)</div>';
+  htm+='<div class="meta">Generated: '+ts+'<br>System: '+h.toUpperCase()+'<br>Version: BDOC v'+CFG.version+'<br>Not affiliated with, or endorsed by, any government.</div>';
   htm+='<h2>1. SITUATION OVERVIEW</h2><p>Tracking '+allAC.length.toLocaleString()+' aircraft across '+CFG.regions.length+' COCOM regions. '+milAC.length+' mil/VIP active. '+document.getElementById('eqV').textContent+' seismic events. '+document.getElementById('fireV').textContent+' fires.</p>';
   htm+='<h2>2. MILITARY AIRCRAFT</h2><table><tr><th>Callsign</th><th>ICAO</th><th>Type</th><th>Alt</th><th>Region</th></tr>';
   milAC.slice(0,30).forEach(a=>{htm+='<tr><td>'+esc(a.cs||'\u2014')+'</td><td>'+esc(a.hex)+'</td><td>'+esc(a.desc)+'</td><td>'+(a.alt===0?'GND':a.alt.toLocaleString()+'ft')+'</td><td>'+esc(a.reg)+'</td></tr>'});
   htm+='</table>';
-  htm+='<div class="cls">UNCLASSIFIED // FOR OFFICIAL USE ONLY</div>';
-  htm+='<div class="ft">Kitsune Global Solutions LLC \u00B7 SDVOSB \u00B7 CAGE: 174S8</div></body></html>';
+  htm+='<div class="cls">OPEN-SOURCE INTELLIGENCE AGGREGATION</div>';
+  htm+='<div class="ft">Kitsune BDOC \u00B7 Open-source intelligence aggregation \u00B7 Not affiliated with, or endorsed by, any government.</div></body></html>';
   dlFile('BDOC-Intel-Brief-'+ts.slice(0,10)+'.html',htm,'text/html');
   msg('sy','<b>BRIEF GENERATED (HTML fallback)</b><br>jsPDF unavailable. HTML exported \u2014 print to PDF from browser.');
   EventLog.add('info','Intel brief generated (HTML fallback)');
@@ -3227,8 +3228,8 @@ function exportPACEpdf(){
     doc.setDrawColor(30,36,54);doc.line(M,y-5,W-M,y-5);
   });
   y+=5;doc.setFontSize(7);doc.setTextColor(50,60,80);
-  doc.text('CLASSIFICATION: UNCLASSIFIED // FOUO',M,y);
-  doc.text('Generated by Kitsune Global Solutions BDOC',W-M-60,y);
+  doc.text('OPEN-SOURCE AGGREGATION \u2014 NOT AFFILIATED WITH ANY GOVERNMENT',M,y);
+  doc.text('Generated by Kitsune BDOC',W-M-60,y);
   doc.save('PACE_COMMS_PLAN_'+new Date().toISOString().slice(0,10)+'.pdf');
   af('var(--kf)','Comms plan exported to PDF');
 }
@@ -10099,7 +10100,7 @@ async function loadFalloutShelters(){
   if(_falloutDS){_falloutDS.show=true;return;}   // already loaded — just show
   const iconUri=svgToDataUri(_FALLOUT_ICON);
   try{
-    const res=await fetch('assets/fallout-shelters-us.kml?v=p48',{signal:AbortSignal.timeout(25000)});
+    const res=await fetch('assets/fallout-shelters-us.kml?v=p49',{signal:AbortSignal.timeout(25000)});
     if(!res.ok)throw new Error(`KML ${res.status}`);
     const kmlText=await res.text();
     const kmlDoc=new DOMParser().parseFromString(kmlText,'text/xml');
@@ -11785,7 +11786,7 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
-<script src="js/cesium-init.js?v=p48"></script>
+<script src="js/cesium-init.js?v=p49"></script>
 <!-- ═════════════════════════════════════════════════════════════════════════
      PHASE 16b (2026-05-13) — FIRST-RUN EXPERIENCE ("Grandma persona")
      On first app open: prompt for location → fly camera there → auto-enable weather radar.
