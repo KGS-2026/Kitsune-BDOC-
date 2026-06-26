@@ -281,7 +281,7 @@ const _iconCache = new Map();
 // at full opacity on a dark tactical disc, aspect-ratio preserved, with a thin faction ring so
 // allegiance is still readable. SVG src is cache-busted (?v) because /*.svg is cached 1yr immutable.
 const _svgIconCache = new Map();
-const _BRANCH_SVG_VER = 'p30';
+const _BRANCH_SVG_VER = 'p54';
 const _branchSVGFiles = {usa:'usa_star.svg',usaf:'usaf_wings.svg',usmc:'usmc_ega.svg',usn:'usn_emblem.svg',ussf:'ussf_delta.svg'};
 // Phase 29 (2026-06-01): TRANSPARENT symbols — NO disc/white badge (per operator). Army/AF/Space
 // Force keep real colors with a soft dark halo. Navy + Marines source files are dark, so they're
@@ -305,12 +305,22 @@ function renderBranchIcon(branch,color,size){
         const iw=img.naturalWidth||box, ih=img.naturalHeight||box;
         const scale=Math.min(box/iw, box/ih);
         const dw=iw*scale, dh=ih*scale, dx=(size-dw)/2, dy=(size-dh)/2;
-        // Render the symbol into a temp canvas (recolor dark branches → light silhouette)
+        // Render the symbol into a temp canvas at full fidelity.
+        // Phase 30 (2026-06-26): emblems now render UNTINTED (full color) — the
+        // old source-in tint flattened the EGA/Navy/AF emblem to a featureless
+        // silhouette (the reason this path was disabled). Real emblem detail is
+        // the whole point (Task 4: branch insignia per base). Only Navy + AF
+        // source files that are near-black get a light recolor so they read on
+        // a dark globe; USMC/USA/USSF keep their native colors.
         const tmp=document.createElement('canvas');tmp.width=tmp.height=size;const t=tmp.getContext('2d');
         t.drawImage(img,dx,dy,dw,dh);
         if(tint){
-          t.globalCompositeOperation='source-in';
+          // Tint only the OPAQUE silhouette while preserving internal alpha
+          // gradients — applied as a soft multiply so emblem linework survives.
+          t.globalCompositeOperation='source-atop';
+          t.globalAlpha=0.55;
           t.fillStyle=tint;t.fillRect(0,0,size,size);
+          t.globalAlpha=1.0;
           t.globalCompositeOperation='source-over';
         }
         // Composite onto output with a soft dark halo so it reads on bright land AND dark ocean

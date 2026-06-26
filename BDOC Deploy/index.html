@@ -163,7 +163,7 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p53">
+<link rel="stylesheet" href="css/bdoc.css?v=p54">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -1362,19 +1362,19 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
 <script defer src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
 <!-- ═══ BDOC PHASE 2 MODULES ═══ Must execute BEFORE inline script — defines EventLog, togFilter, formatters that the inline script calls during init -->
-<script src="js/telemetry.js?v=p53"></script>
-<script src="js/converters.js?v=p53"></script>
-<script src="js/data.js?v=p53"></script>
-<script src="js/auth.js?v=p53"></script>
-<script src="js/filters.js?v=p53"></script>
+<script src="js/telemetry.js?v=p54"></script>
+<script src="js/converters.js?v=p54"></script>
+<script src="js/data.js?v=p54"></script>
+<script src="js/auth.js?v=p54"></script>
+<script src="js/filters.js?v=p54"></script>
 <!-- layers-military.js is lazy-loaded on first toggle of milbases (Phase 3 Turn 7) -->
 <!-- layers-airfields.js is lazy-loaded on first toggle of milairfields (Phase 3 Turn 6) -->
 <!-- layers-nuke.js is lazy-loaded on first toggle of nukes (Phase 3 Turn 5) -->
 <!-- layers-infra.js is lazy-loaded on first toggle of powerplants/oilgas (Phase 3 Turn 2) -->
 <!-- layers-air.js is lazy-loaded on first toggle of air/forcetrack/sat/cable (Phase 3 Turn 8) -->
 <!-- layers-conflict.js is lazy-loaded on first toggle of conf/territory (Phase 3 Turn 3) -->
-<script src="js/kitsune-ai.js?v=p53"></script>
-<script src="js/bdoc-atak.js?v=p53"></script>
+<script src="js/kitsune-ai.js?v=p54"></script>
+<script src="js/bdoc-atak.js?v=p54"></script>
 <script>
 // ╔═══════════════════════════════════════════════════════╗
 // ║  KGS BDOC v7.0                                          ║
@@ -10125,7 +10125,7 @@ async function loadFalloutShelters(){
   if(_falloutDS){_falloutDS.show=true;return;}   // already loaded — just show
   const iconUri=svgToDataUri(_FALLOUT_ICON);
   try{
-    const res=await fetch('assets/fallout-shelters-us.kml?v=p53',{signal:AbortSignal.timeout(25000)});
+    const res=await fetch('assets/fallout-shelters-us.kml?v=p54',{signal:AbortSignal.timeout(25000)});
     if(!res.ok)throw new Error(`KML ${res.status}`);
     const kmlText=await res.text();
     const kmlDoc=new DOMParser().parseFromString(kmlText,'text/xml');
@@ -10195,8 +10195,10 @@ togLy = function(el) {
   if (ly==='landings'){el.classList.toggle('on');layers.landings=el.classList.contains('on');if(layers.landings&&landingEnts.length===0&&typeof loadCableLandings==='function'){loadCableLandings()}else{landingEnts.forEach(e=>e.show=layers.landings)}return}
   if (ly==='chokepoints'){el.classList.toggle('on');layers.chokepoints=el.classList.contains('on');chokepointEnts.forEach(e=>e.show=layers.chokepoints);return}
   if (ly==='internet'){el.classList.toggle('on');layers.internet=el.classList.contains('on');if(layers.internet&&!internetHealthData)loadCloudflareRadar();return}
-  // [2026-05-03] upgradeUSBranchIcons removed from chain — canvas source-atop tint destroys SVG insignia detail; hand-drawn makeMilIcon SVGs are clearer
-  if (ly==='milbases'){el.classList.toggle('on');layers.milbases=el.classList.contains('on');if(layers.milbases){if(typeof milbaseEnts==='undefined'||milbaseEnts.length===0){BDOC.layerLoadFx.start('milbases');BDOC.LazyLoader.load('layers-military').then(()=>{if(window.loadMilBases)window.loadMilBases();BDOC.layerLoadFx.done('milbases',true)}).catch(e=>{console.warn('[lazy layers-military]',e);BDOC.layerLoadFx.done('milbases',false)})}else{milbaseEnts.forEach(e=>e.show=true)}}else{_bSafe(()=>milbaseEnts.forEach(e=>e.show=false))}return}
+  // [2026-06-26] upgradeUSBranchIcons RE-ENABLED — tint no longer destroys SVG
+  // detail (renderBranchIcon now renders emblems at full fidelity). US bases
+  // upgrade from hand-drawn/2525 frames to REAL branch emblems (EGA, Navy, AF).
+  if (ly==='milbases'){el.classList.toggle('on');layers.milbases=el.classList.contains('on');if(layers.milbases){if(typeof milbaseEnts==='undefined'||milbaseEnts.length===0){BDOC.layerLoadFx.start('milbases');BDOC.LazyLoader.load('layers-military').then(()=>{if(window.loadMilBases)window.loadMilBases();if(window.upgradeUSBranchIcons){try{window.upgradeUSBranchIcons()}catch(e){console.warn('[branch icons]',e)}}BDOC.layerLoadFx.done('milbases',true)}).catch(e=>{console.warn('[lazy layers-military]',e);BDOC.layerLoadFx.done('milbases',false)})}else{milbaseEnts.forEach(e=>e.show=true)}}else{_bSafe(()=>milbaseEnts.forEach(e=>e.show=false))}return}
   if (ly==='milairfields'){el.classList.toggle('on');layers.milairfields=el.classList.contains('on');if(layers.milairfields){if(typeof milairfieldEnts==='undefined'||milairfieldEnts.length===0){BDOC.layerLoadFx.start('milairfields');BDOC.LazyLoader.loadMany(['layers-military','layers-airfields']).then(()=>{if(window.loadMilAirfields)window.loadMilAirfields();BDOC.layerLoadFx.done('milairfields',true)}).catch(e=>{console.warn('[lazy layers-airfields]',e);BDOC.layerLoadFx.done('milairfields',false)})}else{milairfieldEnts.forEach(e=>e.show=true)}}else{_bSafe(()=>milairfieldEnts.forEach(e=>e.show=false))}return}
   if (ly==='nukes'){el.classList.toggle('on');layers.nukes=el.classList.contains('on');if(layers.nukes){if(typeof nukeEnts==='undefined'||nukeEnts.length===0){BDOC.layerLoadFx.start('nukes');BDOC.LazyLoader.load('layers-nuke').then(()=>{if(window.loadNukeSites)window.loadNukeSites();BDOC.layerLoadFx.done('nukes',true)}).catch(e=>{console.warn('[lazy layers-nuke]',e);BDOC.layerLoadFx.done('nukes',false)})}else{nukeEnts.forEach(e=>e.show=true)}}else{_bSafe(()=>nukeEnts.forEach(e=>e.show=false))}return}
   if (ly==='deflock'){el.classList.toggle('on');layers.deflock=el.classList.contains('on');if(layers.deflock)loadDeflock();else{if(V)deflockEnts.forEach(e=>{try{V.entities.remove(e)}catch(x){}});deflockEnts=[]}return}
@@ -11811,7 +11813,7 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
-<script src="js/cesium-init.js?v=p53"></script>
+<script src="js/cesium-init.js?v=p54"></script>
 <!-- ═════════════════════════════════════════════════════════════════════════
      PHASE 16b (2026-05-13) — FIRST-RUN EXPERIENCE ("Grandma persona")
      On first app open: prompt for location → fly camera there → auto-enable weather radar.
