@@ -94,10 +94,16 @@ exports.handler = async (event) => {
     console.warn(`[proxy-outages] Tier 2 (state) failed:`, e.message);
   }
 
-  // Tier 3: failure
+  // Tier 3: all upstreams unavailable. Return an empty-but-valid 200 payload
+  // (NOT 502) so the client renders "no outage data" cleanly instead of a
+  // console error / broken layer. Matches the graceful-degrade contract used
+  // by proxy-gdelt. Diagnostic header preserved for debugging.
+  // BLOCKER (2026-06-26): poweroutage.us migrated to poweroutage.com and the
+  // /api/web/stats/StateGeoCount path now 404s; Tier 1 county endpoint needs a
+  // paid POWEROUTAGE_KEY. Real outage data requires a new upstream or a key.
   return {
-    statusCode: 502,
-    headers,
-    body: JSON.stringify({ error: 'All outage data sources unavailable', tier1: 'failed', tier2: 'failed' })
+    statusCode: 200,
+    headers: { ...headers, 'X-Source-Tier': 'unavailable' },
+    body: JSON.stringify([])
   };
 };
