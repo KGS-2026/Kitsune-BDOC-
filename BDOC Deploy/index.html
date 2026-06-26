@@ -163,7 +163,7 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p54">
+<link rel="stylesheet" href="css/bdoc.css?v=p55">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -1029,6 +1029,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <button class="bp-tool" onclick="setBattleTool('coord_line')" data-tool="coord_line" title="Fire Support Coordination Line (FSCL). Click points, double-click to finish." style="border-color:#2D72D2;color:#2D72D2">&#9476; FSCL</button>
 <button class="bp-tool" onclick="battleMeasureTool()" title="Measure distance between two points" style="border-color:#00bbff;color:#00bbff">MEASURE</button>
 <button class="bp-tool" onclick="exportBattlePlan()" title="Export all battle markers as GeoJSON" style="border-color:#FFD700;color:#FFD700">EXPORT</button>
+<button class="bp-tool" onclick="exportBattlePlanCoT()" title="Export all battle markers as CoT XML — imports into ATAK / WinTAK / iTAK" style="border-color:#52b788;color:#52b788">⬇ TAK</button>
 </div>
 </div>
 <!-- COLOR PICKER -->
@@ -1362,19 +1363,19 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
 <script defer src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
 <!-- ═══ BDOC PHASE 2 MODULES ═══ Must execute BEFORE inline script — defines EventLog, togFilter, formatters that the inline script calls during init -->
-<script src="js/telemetry.js?v=p54"></script>
-<script src="js/converters.js?v=p54"></script>
-<script src="js/data.js?v=p54"></script>
-<script src="js/auth.js?v=p54"></script>
-<script src="js/filters.js?v=p54"></script>
+<script src="js/telemetry.js?v=p55"></script>
+<script src="js/converters.js?v=p55"></script>
+<script src="js/data.js?v=p55"></script>
+<script src="js/auth.js?v=p55"></script>
+<script src="js/filters.js?v=p55"></script>
 <!-- layers-military.js is lazy-loaded on first toggle of milbases (Phase 3 Turn 7) -->
 <!-- layers-airfields.js is lazy-loaded on first toggle of milairfields (Phase 3 Turn 6) -->
 <!-- layers-nuke.js is lazy-loaded on first toggle of nukes (Phase 3 Turn 5) -->
 <!-- layers-infra.js is lazy-loaded on first toggle of powerplants/oilgas (Phase 3 Turn 2) -->
 <!-- layers-air.js is lazy-loaded on first toggle of air/forcetrack/sat/cable (Phase 3 Turn 8) -->
 <!-- layers-conflict.js is lazy-loaded on first toggle of conf/territory (Phase 3 Turn 3) -->
-<script src="js/kitsune-ai.js?v=p54"></script>
-<script src="js/bdoc-atak.js?v=p54"></script>
+<script src="js/kitsune-ai.js?v=p55"></script>
+<script src="js/bdoc-atak.js?v=p55"></script>
 <script>
 // ╔═══════════════════════════════════════════════════════╗
 // ║  KGS BDOC v7.0                                          ║
@@ -7742,6 +7743,66 @@ function exportBattlePlan(){
   EventLog.add('info','Battle plan exported as GeoJSON');
 }
 
+// ═══ CoT XML EXPORT (TAK / ATAK interop) — Task 5b ═══
+// The GeoJSON export above does NOT open in TAK. This emits a single CoT 2.0
+// XML file containing every battle marker, mapped to MIL-STD-2525D CoT types by
+// affiliation/type, importable into ATAK/WinTAK/iTAK. Reuses buildCoT() from
+// bdoc-atak.js.
+function exportBattlePlanCoT(){
+  if(typeof battleEntities==='undefined'||battleEntities.length===0){af('var(--t3)','No battle markers to export');return}
+  if(typeof buildCoT!=='function'){af('var(--rd)','CoT module not loaded — refresh page');return}
+  // Map a marker's meta → CoT type code key understood by COT_TYPES.
+  const pickCoT=(meta)=>{
+    const t=(meta.type||'').toLowerCase();
+    const lbl=(meta.label||'').toLowerCase();
+    if(t==='casevac'||lbl.includes('casevac'))return 'casevac';
+    if(lbl.includes('observ')||t==='mark_observe')return 'observation_post';
+    if(lbl.includes('rally')||t==='mark_rally')return 'rally';
+    if(lbl.includes('fob'))return 'fob';
+    if(lbl.includes('lz'))return 'lz';
+    // affiliation from label prefix (HOSTILE/FRIENDLY/NEUTRAL) set by unit placement
+    if(lbl.startsWith('hostile')||lbl.includes('enemy')||t==='mark_attack')return 'hostile_ground';
+    if(lbl.startsWith('neutral'))return 'neutral_ground';
+    if(lbl.startsWith('friendly')||t==='mark_defend')return 'friendly_ground';
+    if(lbl.startsWith('unknown'))return 'unknown_ground';
+    return 'friendly_ground';
+  };
+  const events=[];
+  let n=0;
+  battleEntities.forEach((e)=>{
+    if(Array.isArray(e))return;
+    const meta=(battleMeta&&battleMeta.get)?(battleMeta.get(e)||{}):{};
+    if(!e.position)return;
+    let cart;
+    try{cart=Cesium.Cartographic.fromCartesian(e.position.getValue?e.position.getValue(Cesium.JulianDate.now()):e.position);}catch(x){return}
+    if(!cart)return;
+    const xml=buildCoT({
+      cotType:pickCoT(meta),
+      uid:'BDOC-BP-'+(++n)+'-'+Math.random().toString(36).slice(2,7).toUpperCase(),
+      lat:Cesium.Math.toDegrees(cart.latitude),
+      lon:Cesium.Math.toDegrees(cart.longitude),
+      hae:cart.height||0,
+      callsign:(meta.label||'Marker').slice(0,40),
+      remarks:meta.comment||'',
+      staleMs:3600000
+    });
+    // strip the per-event XML prolog so we can concatenate into one document
+    events.push(xml.replace(/<\?xml[^>]*\?>\s*/,''));
+  });
+  if(events.length===0){af('var(--t3)','No exportable point markers');return}
+  // Wrap multiple <event> elements per CoT message-pack convention.
+  const doc='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<events>\n'+events.join('\n')+'\n</events>';
+  if(typeof downloadCoT==='function'){
+    downloadCoT(doc,'BDOC-BattlePlan-'+new Date().toISOString().slice(0,10)+'.cot.xml');
+  }else{
+    const blob=new Blob([doc],{type:'application/xml'});const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='BDOC-BattlePlan-'+new Date().toISOString().slice(0,10)+'.cot.xml';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  }
+  af('var(--gn)','Battle plan exported as CoT XML (TAK): '+events.length+' events');
+  if(typeof EventLog!=='undefined')EventLog.add('info','Battle plan exported as CoT XML (TAK) — '+events.length+' events');
+}
+
 // ═══ ENTITY METADATA — comments/labels attached to battle entities ═══
 const battleMeta=new WeakMap(); // entity → {label, comment, type, color}
 function attachMeta(entity,meta){
@@ -10125,7 +10186,7 @@ async function loadFalloutShelters(){
   if(_falloutDS){_falloutDS.show=true;return;}   // already loaded — just show
   const iconUri=svgToDataUri(_FALLOUT_ICON);
   try{
-    const res=await fetch('assets/fallout-shelters-us.kml?v=p54',{signal:AbortSignal.timeout(25000)});
+    const res=await fetch('assets/fallout-shelters-us.kml?v=p55',{signal:AbortSignal.timeout(25000)});
     if(!res.ok)throw new Error(`KML ${res.status}`);
     const kmlText=await res.text();
     const kmlDoc=new DOMParser().parseFromString(kmlText,'text/xml');
@@ -11813,7 +11874,7 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
-<script src="js/cesium-init.js?v=p54"></script>
+<script src="js/cesium-init.js?v=p55"></script>
 <!-- ═════════════════════════════════════════════════════════════════════════
      PHASE 16b (2026-05-13) — FIRST-RUN EXPERIENCE ("Grandma persona")
      On first app open: prompt for location → fly camera there → auto-enable weather radar.
