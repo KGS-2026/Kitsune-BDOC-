@@ -124,7 +124,7 @@ background:rgba(0,0,0,0.2)}
 .vfx-crt.on{display:block}
 /* CRT standalone — phosphor scanlines + barrel distortion glow */
 .vfx-crt::before{content:'';position:fixed;inset:0;
-background:repeating-rgba(0,0,0,0.12);
+background:repeating-linear-gradient(0deg,rgba(0,0,0,0.12) 0px,rgba(0,0,0,0.12) 1px,transparent 1px,transparent 3px);
 mix-blend-mode:multiply;z-index:3}
 .vfx-crt::after{content:'';position:fixed;inset:0;
 background:rgba(0,0,0,0.45);
@@ -151,7 +151,7 @@ rgba(0,0,0,0.4);
 opacity:0.7}
 body.filter-nvg .vfx-crt{display:block}
 body.filter-nvg .vfx-crt::before{
-background:repeating-rgba(0,32,0,0.15);
+background:repeating-linear-gradient(0deg,rgba(0,32,0,0.15) 0px,rgba(0,32,0,0.15) 1px,transparent 1px,transparent 3px);
 mix-blend-mode:multiply}
 body.filter-nvg .vfx-crt::after{
 background:rgba(0,255,68,0.02);
