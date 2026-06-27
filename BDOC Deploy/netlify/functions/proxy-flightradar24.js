@@ -41,8 +41,10 @@ exports.handler = async (event) => {
     };
   }
 
-  // FR24 bounds format: south,north,west,east (lat_min,lat_max,lon_min,lon_max)
-  const bounds = `${la1.toFixed(4)},${la2.toFixed(4)},${lo1.toFixed(4)},${lo2.toFixed(4)}`;
+  // FR24 bounds format: north,south,west,east (lat_max,lat_min,lon_min,lon_max)
+  // per FR24 docs — latitude_north MUST come before latitude_south or the box
+  // inverts and the API returns an empty data array with HTTP 200.
+  const bounds = `${la2.toFixed(4)},${la1.toFixed(4)},${lo1.toFixed(4)},${lo2.toFixed(4)}`;
   const url = `${FR24_BASE}/api/live/flight-positions/full?bounds=${bounds}`;
 
   try {
