@@ -50,6 +50,7 @@ exports.handler = async (event) => {
       headers: {
         'Authorization': `Bearer ${key}`,
         'Accept': 'application/json',
+        'Accept-Version': 'v1',
         'User-Agent': 'KitsuneGlobal/BDOC-8.0'
       },
       signal: AbortSignal.timeout(8000)
