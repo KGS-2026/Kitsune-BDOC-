@@ -31,6 +31,52 @@ try{
     V.infoBox.frame.src='about:blank';
   }
 }catch(e){console.warn('[infoBox sandbox fix]',e)}
+// ── UNIVERSAL SELECTION SAFETY NET ──
+// PDF #1 issue ("nothing propagates when selected"): the infoBox engine works, but
+// individual layers create click-targets that are missing a name (→ UUID title looks
+// broken) and/or a description (→ blank popup body reads as "nothing happened").
+// Rather than audit 40+ layers, backfill at the single selection chokepoint: whenever
+// an entity is selected, ensure it has a readable title and a non-empty popup body
+// synthesized from whatever data the entity carries (name, position, properties).
+try{
+  V.selectedEntityChanged.addEventListener(function(ent){
+    if(!ent)return;
+    // 1) Title fallback — never show a raw UUID. Cesium shows entity.id as the
+    // infoBox title when name is empty, which surfaces our generated UUIDs.
+    try{
+      if(!ent.name){
+        let t=null;
+        if(ent.label&&ent.label.text){try{t=ent.label.text.getValue(V.clock.currentTime);}catch(_){}}
+        if(!t&&ent.properties&&ent.properties.name){try{t=ent.properties.name.getValue(V.clock.currentTime);}catch(_){}}
+        if(t)ent.name=(''+t).split('\n')[0].slice(0,48);
+      }
+    }catch(_){}
+    // 2) Description fallback — synthesize a minimal card if the layer gave none.
+    try{
+      let hasDesc=false;
+      if(ent.description){try{hasDesc=!!(ent.description.getValue(V.clock.currentTime)||'').trim();}catch(_){hasDesc=true;}}
+      if(!hasDesc){
+        const now=V.clock.currentTime;
+        let title=ent.name; if(!title&&ent.label&&ent.label.text){try{title=ent.label.text.getValue(now);}catch(_){}}
+        title=title?(''+title).split('\n')[0]:'Selected Object';
+        let lat=null,lon=null;
+        try{const p=ent.position&&ent.position.getValue(now);if(p){const c=Cesium.Cartographic.fromCartesian(p);lat=Cesium.Math.toDegrees(c.latitude);lon=Cesium.Math.toDegrees(c.longitude);}}catch(_){}
+        let rows='';
+        if(lat!=null&&lon!=null)rows+='<tr><td style="color:#4a5068;padding:3px 8px 3px 0">POSITION</td><td style="color:#c8ccd6">'+lat.toFixed(4)+'\u00B0, '+lon.toFixed(4)+'\u00B0</td></tr>';
+        try{ if(ent.properties&&ent.properties.propertyNames){
+          ent.properties.propertyNames.slice(0,8).forEach(function(pn){
+            let v=null;try{v=ent.properties[pn].getValue(now);}catch(_){}
+            if(v!=null&&typeof v!=='object'){const safe=(''+v).replace(/[<>&]/g,'').slice(0,80);rows+='<tr><td style="color:#4a5068;padding:3px 8px 3px 0">'+(''+pn).toUpperCase().replace(/[<>&]/g,'').slice(0,24)+'</td><td style="color:#c8ccd6">'+safe+'</td></tr>';}
+          });
+        }}catch(_){}
+        ent.description='<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;max-width:380px;background:#0a0e14;padding:14px;border-radius:2px;border:1px solid #1e2436;color:#c8ccd6">'
+          +'<div style="color:#E8B349;font-size:14px;font-weight:700;letter-spacing:1px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #1e2436">'+(''+title).replace(/[<>&]/g,'').slice(0,60)+'</div>'
+          +'<table style="width:100%;border-collapse:collapse;font-size:10px">'+(rows||'<tr><td style="color:#4a5068">No additional metadata available for this marker.</td></tr>')+'</table>'
+          +'<div style="margin-top:8px;font-size:7px;color:#1e2436;letter-spacing:1px;text-align:right">KITSUNE BDOC</div></div>';
+      }
+    }catch(_){}
+  });
+}catch(e){console.warn('[selection safety net]',e)}
 // ── GOOGLE EARTH-GRADE RENDERING ──
 s.backgroundColor=Cesium.Color.fromCssColorString('#000000');
 s.globe.baseColor=Cesium.Color.fromCssColorString('#0a1628'); // Deep ocean blue when tiles haven't loaded
