@@ -1493,7 +1493,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p44',              // MUST bump on ANY js/modules/* change — stale here = lazy modules never update (was 'p33', masked aircraft + other module fixes)
+  _version: 'p62',              // MUST bump on ANY js/modules/* change — stale here = lazy modules never update (was 'p44'; p62 = aircraft trails gated to tracked plane only)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];

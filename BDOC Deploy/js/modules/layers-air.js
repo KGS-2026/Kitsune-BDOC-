@@ -484,8 +484,14 @@ async function loadAircraft(){
     // Remove old segments then rebuild — simpler than diffing
     const old=_trailEntMap.get(hex);
     if(old&&old.segments)old.segments.forEach(seg=>V.entities.remove(seg));
+    // PDF p5 fix: only the SELECTED/tracked aircraft draws a trail. Drawing a trail for
+    // every plane produced a globe-wide spaghetti of glowing polylines that bloomed into
+    // the "giant spheres/blobs" (p4). Gate on the tracked hex; everyone else gets no trail.
+    const isTracked=(_trackedHex===hex);
     const segments=[];
-    const showTrail=isMil?(layers.air||layers.forcetrack):layers.air;
+    const layerOn=isMil?(layers.air||layers.forcetrack):layers.air;
+    const showTrail=layerOn&&isTracked;
+    if(!showTrail){_trailEntMap.set(hex,{segments});continue;}
     for(let i=1;i<trail.length;i++){
       const p0=trail[i-1],p1=trail[i];
       const meanAltFt=((p0.alt+p1.alt)/2)/0.3048;
