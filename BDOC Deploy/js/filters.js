@@ -74,19 +74,19 @@ function togFilter(f,btn){
       const bw=document.getElementById('nvgBloomWarn');
       if(!ces)return;
       if(sunAngle<-6){
-        // Full dark — raise globe minimumBrightness so CSS brightness(3.5) has something to amplify.
-        // Without this, globe renders near-black (0.02) and 3.5× of near-black is still near-black.
-        try{if(V&&V.scene&&V.scene.globe)V.scene.globe.minimumBrightness=0.28;}catch(_){}
-        ces.style.filter='saturate(0) brightness(3.5) contrast(1.4) sepia(1) hue-rotate(60deg) saturate(8)';
+        // Full dark — high gain, bright phosphor green.
+        try{if(V&&V.scene&&V.scene.globe)V.scene.globe.minimumBrightness=0.35;}catch(_){}
+        ces.style.filter='saturate(0) brightness(3.2) contrast(1.3) sepia(1) hue-rotate(60deg) saturate(8)';
         if(bw)bw.style.display='none';
       }else if(sunAngle<=10){
-        try{if(V&&V.scene&&V.scene.globe)V.scene.globe.minimumBrightness=0.15;}catch(_){}
-        ces.style.filter='saturate(0) brightness(1.8) contrast(1.2) sepia(1) hue-rotate(60deg) saturate(5)';
+        // Dawn/dusk — moderate gain, still clearly visible.
+        try{if(V&&V.scene&&V.scene.globe)V.scene.globe.minimumBrightness=0.28;}catch(_){}
+        ces.style.filter='saturate(0) brightness(2.2) contrast(1.25) sepia(1) hue-rotate(60deg) saturate(6)';
         if(bw)bw.style.display='none';
       }else{
-        // Daytime with NVG — bloom warning, keep normal brightness floor
-        try{if(V&&V.scene&&V.scene.globe)V.scene.globe.minimumBrightness=0.02;}catch(_){}
-        ces.style.filter='saturate(0) brightness(0.4) contrast(2) sepia(1) hue-rotate(60deg) saturate(10)';
+        // Daytime with NVG — bloom WARNING, but keep the globe bright & legible (was brightness 0.4 -> near-black).
+        try{if(V&&V.scene&&V.scene.globe)V.scene.globe.minimumBrightness=0.22;}catch(_){}
+        ces.style.filter='saturate(0) brightness(1.7) contrast(1.4) sepia(1) hue-rotate(60deg) saturate(7)';
         if(bw)bw.style.display='block';
       }
     }
