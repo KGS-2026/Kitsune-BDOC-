@@ -13,12 +13,58 @@
 //
 // If POWEROUTAGE_KEY is ever set, Tier 1 county-level outages still take priority.
 
-const BAS = [
-  'CISO','ERCO','MISO','PJM','SWPP','ISNE','NYIS','BPAT','AZPS','SRP','TVA',
-  'SOCO','FPL','DUK','CPLE','PACE','PACW','PSCO','NEVP','WACM','AECI','LDWP',
-  'SCL','PGE','IPCO','EPE','SC','PNM','TEPC','FMPP','JEA','TAL','SEC','GVL',
-  'NWMT','WAUW','PSEI','AVA','CHPD','DOPD','GCPD','BANC','TIDC','IID','WALC'
-];
+// Static BA metadata (name/coords/size) — baked in from
+// /930-api/respondents/data?type[0]=BA (2026-07-02). Stable reference data;
+// baking it removes one of two upstream fetches (both fetches from AWS Lambda
+// were blowing Netlify's 10s kill limit — EIA responds slower from AWS).
+const BA_META = {
+  SWPP:{name:'Southwest Power Pool',lat:37.762,lon:-98.83,radius:28991},
+  AECI:{name:'Associated Electric Cooperative, Inc.',lat:38.412,lon:-92.407,radius:2474},
+  MISO:{name:'Midcontinent Independent System Operator, Inc.',lat:41.534,lon:-91.808,radius:68805},
+  BANC:{name:'Balancing Authority of Northern California',lat:39.24,lon:-121.732,radius:1424},
+  CISO:{name:'California Independent System Operator',lat:36.944,lon:-119.534,radius:17733},
+  IID:{name:'Imperial Irrigation District',lat:33.231,lon:-115.56,radius:628},
+  LDWP:{name:'Los Angeles Department of Water and Power',lat:35.691,lon:-117.672,radius:2571},
+  TIDC:{name:'Turlock Irrigation District',lat:37.77,lon:-121.131,radius:201},
+  FMPP:{name:'Florida Municipal Power Pool',lat:28.18,lon:-81.355,radius:1869},
+  FPL:{name:'Florida Power & Light Co.',lat:27.08,lon:-81.072,radius:13782},
+  GVL:{name:'Gainesville Regional Utilities',lat:29.827,lon:-82.583,radius:194},
+  JEA:{name:'JEA',lat:30.279,lon:-81.68,radius:1219},
+  SEC:{name:'Seminole Electric Cooperative',lat:28.63,lon:-82.38,radius:1153},
+  TAL:{name:'City of Tallahassee',lat:30.334,lon:-84.279,radius:304},
+  AVA:{name:'Avista Corporation',lat:47.433,lon:-117.323,radius:776},
+  BPAT:{name:'Bonneville Power Administration',lat:44.914,lon:-119.671,radius:12459},
+  CHPD:{name:'Public Utility District No. 1 of Chelan County',lat:48.569,lon:-120.619,radius:1051},
+  DOPD:{name:'PUD No. 1 of Douglas County',lat:48.235,lon:-119.252,radius:510},
+  GCPD:{name:'Public Utility District No. 2 of Grant County, Washington',lat:46.78,lon:-118.596,radius:1161},
+  IPCO:{name:'Idaho Power Company',lat:43.543,lon:-114.771,radius:1584},
+  NEVP:{name:'Nevada Power Company',lat:39.232,lon:-116.598,radius:3305},
+  NWMT:{name:'NorthWestern Corporation',lat:46.451,lon:-110.248,radius:2411},
+  PACE:{name:'PacifiCorp East',lat:41.039,lon:-110.18,radius:5625},
+  PACW:{name:'PacifiCorp West',lat:43.435,lon:-121.406,radius:1866},
+  PGE:{name:'Portland General Electric Company',lat:44.863,lon:-123.016,radius:666},
+  PSCO:{name:'Public Service Company of Colorado',lat:38.073,lon:-104.299,radius:4504},
+  PSEI:{name:'Puget Sound Energy, Inc.',lat:47.315,lon:-121.424,radius:1807},
+  SCL:{name:'Seattle City Light',lat:47.822,lon:-123.023,radius:707},
+  WACM:{name:'Western Area Power Administration - Rocky Mountain Region',lat:40.361,lon:-104.974,radius:4370},
+  WAUW:{name:'Western Area Power Administration - Upper Great Plains West',lat:48.106,lon:-107.683,radius:59},
+  AZPS:{name:'Arizona Public Service Company',lat:34.612,lon:-111.714,radius:5910},
+  EPE:{name:'El Paso Electric Company',lat:32.15,lon:-106.079,radius:485},
+  PNM:{name:'Public Service Company of New Mexico',lat:34.698,lon:-106.603,radius:1746},
+  SRP:{name:'Salt River Project Agricultural Improvement and Power District',lat:33.477,lon:-111.505,radius:4390},
+  TEPC:{name:'Tucson Electric Power',lat:31.873,lon:-110.175,radius:1012},
+  WALC:{name:'Western Area Power Administration - Desert Southwest Region',lat:35.983,lon:-114.005,radius:788},
+  PJM:{name:'PJM Interconnection, LLC',lat:39.392,lon:-80.522,radius:90304},
+  CPLE:{name:'Duke Energy Progress East',lat:35.145,lon:-77.5,radius:7114},
+  DUK:{name:'Duke Energy Carolinas',lat:35.244,lon:-81.002,radius:11763},
+  SC:{name:'South Carolina Public Service Authority',lat:33.901,lon:-79.767,radius:1930},
+  SOCO:{name:'Southern Company Services, Inc. - Trans',lat:32.336,lon:-85.28,radius:26514},
+  ISNE:{name:'ISO New England',lat:44.056,lon:-70.915,radius:11387},
+  NYIS:{name:'New York Independent System Operator',lat:42.952,lon:-75.517,radius:14907},
+  TVA:{name:'Tennessee Valley Authority',lat:35.353,lon:-86.719,radius:17616},
+  ERCO:{name:'Electric Reliability Council of Texas, Inc.',lat:30.896,lon:-99.325,radius:39494}
+};
+const BAS = Object.keys(BA_META);
 
 exports.handler = async (event) => {
   const headers = {
@@ -57,27 +103,14 @@ exports.handler = async (event) => {
     q.push('type%5B0%5D=D', 'type%5B1%5D=DF');
     q.push('start=' + encodeURIComponent(start), 'end=' + encodeURIComponent(end));
 
-    const [seriesRes, respRes] = await Promise.all([
-      fetch('https://www.eia.gov/electricity/930-api/region_data/series_data?' + q.join('&'), {
-        signal: AbortSignal.timeout(7000), headers: { 'User-Agent': 'KitsuneGlobal/BDOC-8.0' }
-      }),
-      fetch('https://www.eia.gov/electricity/930-api/respondents/data?type%5B0%5D=BA', {
-        signal: AbortSignal.timeout(7000), headers: { 'User-Agent': 'KitsuneGlobal/BDOC-8.0' }
-      })
-    ]);
+    // Single upstream fetch (metadata baked in as BA_META) — 8.5s budget
+    // inside Netlify's 10s hard limit.
+    const seriesRes = await fetch('https://www.eia.gov/electricity/930-api/region_data/series_data?' + q.join('&'), {
+      signal: AbortSignal.timeout(8500), headers: { 'User-Agent': 'KitsuneGlobal/BDOC-8.0' }
+    });
     if (!seriesRes.ok) throw new Error('EIA series ' + seriesRes.status);
-    if (!respRes.ok) throw new Error('EIA respondents ' + respRes.status);
-
     const seriesJson = await seriesRes.json();
-    const respJson = await respRes.json();
-
-    // Respondent metadata → coords + size
-    const meta = {};
-    for (const grp of (Array.isArray(respJson) ? respJson : [])) {
-      for (const r of (grp.data || [])) {
-        if (r && r.id) meta[r.id] = { name: r.name, lat: r.lat, lon: r.lon, radius: r.radius || 0 };
-      }
-    }
+    const meta = BA_META;
 
     // Latest non-null demand (D) and matching-hour forecast (DF) per BA
     const demand = {}, forecast = {}, asOfMap = {};
