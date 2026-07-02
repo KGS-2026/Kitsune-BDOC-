@@ -5674,15 +5674,57 @@ const IPIntel={
 };
 // ═══ POWER OUTAGES (US) — Multi-source with KUBRA utility fallback ═══
 let outageEnts=[];
+// EIA-930 grid: BA metadata baked in (stable govt reference data, 2026-07).
+// EIA API sends Access-Control-Allow-Origin:* so the BROWSER fetches it directly —
+// the Netlify proxy times out on EIA from AWS IPs (their CDN deprioritizes AWS),
+// so the direct path is primary and the proxy is only a fallback for the keyed
+// PowerOutage.us county tier.
+const BDOC_BA_META={SWPP:{name:'Southwest Power Pool',lat:37.762,lon:-98.83},AECI:{name:'Associated Electric Cooperative, Inc.',lat:38.412,lon:-92.407},MISO:{name:'Midcontinent ISO',lat:41.534,lon:-91.808},BANC:{name:'Balancing Authority of Northern California',lat:39.24,lon:-121.732},CISO:{name:'California ISO',lat:36.944,lon:-119.534},IID:{name:'Imperial Irrigation District',lat:33.231,lon:-115.56},LDWP:{name:'LA Dept of Water and Power',lat:35.691,lon:-117.672},TIDC:{name:'Turlock Irrigation District',lat:37.77,lon:-121.131},FMPP:{name:'Florida Municipal Power Pool',lat:28.18,lon:-81.355},FPL:{name:'Florida Power & Light',lat:27.08,lon:-81.072},GVL:{name:'Gainesville Regional Utilities',lat:29.827,lon:-82.583},JEA:{name:'JEA (Jacksonville)',lat:30.279,lon:-81.68},SEC:{name:'Seminole Electric Cooperative',lat:28.63,lon:-82.38},TAL:{name:'City of Tallahassee',lat:30.334,lon:-84.279},AVA:{name:'Avista Corporation',lat:47.433,lon:-117.323},BPAT:{name:'Bonneville Power Administration',lat:44.914,lon:-119.671},CHPD:{name:'Chelan County PUD',lat:48.569,lon:-120.619},DOPD:{name:'Douglas County PUD',lat:48.235,lon:-119.252},GCPD:{name:'Grant County PUD',lat:46.78,lon:-118.596},IPCO:{name:'Idaho Power',lat:43.543,lon:-114.771},NEVP:{name:'Nevada Power',lat:39.232,lon:-116.598},NWMT:{name:'NorthWestern Energy (MT)',lat:46.451,lon:-110.248},PACE:{name:'PacifiCorp East',lat:41.039,lon:-110.18},PACW:{name:'PacifiCorp West',lat:43.435,lon:-121.406},PGE:{name:'Portland General Electric',lat:44.863,lon:-123.016},PSCO:{name:'PSCo (Xcel Colorado)',lat:38.073,lon:-104.299},PSEI:{name:'Puget Sound Energy',lat:47.315,lon:-121.424},SCL:{name:'Seattle City Light',lat:47.822,lon:-123.023},WACM:{name:'WAPA Rocky Mountain',lat:40.361,lon:-104.974},WAUW:{name:'WAPA Upper Great Plains West',lat:48.106,lon:-107.683},AZPS:{name:'Arizona Public Service',lat:34.612,lon:-111.714},EPE:{name:'El Paso Electric',lat:32.15,lon:-106.079},PNM:{name:'Public Service Co of New Mexico',lat:34.698,lon:-106.603},SRP:{name:'Salt River Project',lat:33.477,lon:-111.505},TEPC:{name:'Tucson Electric Power',lat:31.873,lon:-110.175},WALC:{name:'WAPA Desert Southwest',lat:35.983,lon:-114.005},PJM:{name:'PJM Interconnection',lat:39.392,lon:-80.522},CPLE:{name:'Duke Energy Progress East',lat:35.145,lon:-77.5},DUK:{name:'Duke Energy Carolinas',lat:35.244,lon:-81.002},SC:{name:'Santee Cooper (SC)',lat:33.901,lon:-79.767},SOCO:{name:'Southern Company',lat:32.336,lon:-85.28},ISNE:{name:'ISO New England',lat:44.056,lon:-70.915},NYIS:{name:'New York ISO',lat:42.952,lon:-75.517},TVA:{name:'Tennessee Valley Authority',lat:35.353,lon:-86.719},ERCO:{name:'ERCOT (Texas)',lat:30.896,lon:-99.325}};
+async function bdocFetchGridEIA(){
+  const now=new Date(),p=n=>String(n).padStart(2,'0');
+  const fmt=d=>`${p(d.getUTCMonth()+1)}${p(d.getUTCDate())}${d.getUTCFullYear()} ${p(d.getUTCHours())}:00:00`;
+  const bas=Object.keys(BDOC_BA_META);
+  const q=bas.map((b,i)=>`respondent%5B${i}%5D=${b}`);
+  q.push('type%5B0%5D=D','type%5B1%5D=DF');
+  q.push('start='+encodeURIComponent(fmt(new Date(now-3*3600e3))),'end='+encodeURIComponent(fmt(now)));
+  const res=await fetch('https://www.eia.gov/electricity/930-api/region_data/series_data?'+q.join('&'),{signal:AbortSignal.timeout(15000)});
+  if(!res.ok)throw new Error('EIA '+res.status);
+  const json=await res.json();
+  const demand={},forecast={};
+  for(const grp of(Array.isArray(json)?json:[])){
+    for(const s of(grp.data||[])){
+      const dates=s.VALUES&&s.VALUES.DATES||[],vals=s.VALUES&&s.VALUES.DATA||[];
+      if(s.TYPE_ID==='D'){
+        for(let i=vals.length-1;i>=0;i--){if(vals[i]!=null){demand[s.RESPONDENT_ID]={v:vals[i],t:dates[i]};break}}
+      }else if(s.TYPE_ID==='DF'){
+        const fm={};for(let i=0;i<dates.length;i++)if(vals[i]!=null)fm[dates[i]]=vals[i];
+        forecast[s.RESPONDENT_ID]=fm;
+      }
+    }
+  }
+  const nodes=[];
+  for(const id in demand){
+    const m=BDOC_BA_META[id];if(!m)continue;
+    const d=demand[id],f=forecast[id]?forecast[id][d.t]:null;
+    let stress=(f&&f>0)?Math.round(d.v/f*1000)/10:null;
+    if(stress!==null&&(stress<40||stress>160))stress=null; // junk-forecast clamp
+    nodes.push({_grid:true,id,name:m.name,lat:m.lat,lon:m.lon,demandMW:d.v,forecastMW:f||null,stressPct:stress,asOf:d.t});
+  }
+  return nodes;
+}
 async function loadPowerOutages(){
   if(!V)return;
   outageEnts.forEach(e=>V.entities.remove(e));outageEnts=[];
   let loaded=false;
-  // Attempt 1: PowerOutage.us county-level API (may CORS-block from browser)
+  // Attempt 1: direct EIA-930 fetch (CORS-open) with proxy fallback (keyed county tier)
   try{
-    const res=await fetch('/.netlify/functions/proxy-outages',{signal:AbortSignal.timeout(10000)}).catch(()=>null);
-    if(res&&res.ok){
-      const data=await res.json();
+    let data=null;
+    try{data=await bdocFetchGridEIA()}catch(e){console.warn('[Grid] direct EIA failed:',e.message)}
+    if(!data||!data.length){
+      const res=await fetch('/.netlify/functions/proxy-outages',{signal:AbortSignal.timeout(10000)}).catch(()=>null);
+      if(res&&res.ok)data=await res.json();
+    }
+    if(data&&data.length){
       // NEW SHAPE (2026-07): EIA-930 grid nodes {_grid:true,id,name,lat,lon,demandMW,forecastMW,stressPct,sizeMW,asOf}
       // PowerOutage.us died upstream — layer now shows live grid demand + stress per balancing authority.
       if(Array.isArray(data)&&data.length&&data[0]._grid){
