@@ -619,7 +619,7 @@ if('serviceWorker' in navigator){
 <div class="lg-title lg-collapse collapsed" onclick="togCat(this)">CYBER / DIGITAL <span class="lg-arrow">&#9660;</span></div>
 <div class="lg-group closed">
 <div class="ly" data-layer="cyber" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#DA3633"></div><span class="ly-n">DDoS / Cyber Attacks</span><span class="ly-tg tg-l">LIVE</span></div>
-<div class="ly" data-layer="outages" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#E8B339"></div><span class="ly-n">Power Outages (US)</span><span class="ly-tg tg-l">LIVE</span></div>
+<div class="ly" data-layer="outages" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#E8B339"></div><span class="ly-n">Power Grid Stress (US)</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="downdetect" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#DA3633"></div><span class="ly-n">Service Outages</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="wireshark" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#00ffcc"></div><span class="ly-n">&#x1F50C; Wireshark Live</span><span class="ly-tg" style="color:#00ffcc;background:rgba(0,255,204,0.08)">LOCAL</span></div>
 </div>
@@ -5683,6 +5683,42 @@ async function loadPowerOutages(){
     const res=await fetch('/.netlify/functions/proxy-outages',{signal:AbortSignal.timeout(10000)}).catch(()=>null);
     if(res&&res.ok){
       const data=await res.json();
+      // NEW SHAPE (2026-07): EIA-930 grid nodes {_grid:true,id,name,lat,lon,demandMW,forecastMW,stressPct,sizeMW,asOf}
+      // PowerOutage.us died upstream — layer now shows live grid demand + stress per balancing authority.
+      if(Array.isArray(data)&&data.length&&data[0]._grid){
+        (data||[]).forEach(n=>{
+          if(!isFinite(n.lat)||!isFinite(n.lon))return;
+          const st=n.stressPct;
+          const col=st===null?'#5C6470':st>110?'#ff2233':st>100?'#ff6600':st>92?'#E8B339':'#2ECC71';
+          const stLabel=st===null?'NO FORECAST':st>110?'CRITICAL LOAD':st>100?'OVER FORECAST':st>92?'PEAKING':'NOMINAL';
+          const sz=Math.min(Math.max(Math.sqrt(n.demandMW||100)*0.09,4),16);
+          outageEnts.push(V.entities.add({
+            position:Cesium.Cartesian3.fromDegrees(n.lon,n.lat),
+            point:{pixelSize:sz,color:Cesium.Color.fromCssColorString(col).withAlpha(0.85),outlineColor:Cesium.Color.BLACK,outlineWidth:1,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,scaleByDistance:new Cesium.NearFarScalar(1e5,1.5,8e6,0.25),disableDepthTestDistance:5e6},
+            label:{text:n.demandMW>=15000?esc(n.id):'',font:'bold 8px JetBrains Mono',fillColor:Cesium.Color.WHITE,outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,sz+2),scaleByDistance:new Cesium.NearFarScalar(5e4,1,3e6,0),disableDepthTestDistance:5e6},
+            description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:340px;padding:8px">
+              <div style="border-bottom:1px solid #333;padding-bottom:6px;margin-bottom:6px">
+                <b style="font-size:13px;color:${col}">\u26A1 GRID: ${esc(n.id)}</b>
+              </div>
+              <b>Operator:</b> ${esc(n.name)}<br>
+              <b>Live Demand:</b> <span style="color:${col};font-weight:bold">${Number(n.demandMW).toLocaleString()} MW</span><br>
+              ${n.forecastMW?`<b>Day-Ahead Forecast:</b> ${Number(n.forecastMW).toLocaleString()} MW<br>`:''}
+              ${st!==null?`<b>Load vs Forecast:</b> <span style="color:${col};font-weight:bold">${st}%</span><br>`:''}
+              <b>As of:</b> ${esc(n.asOf)} UTC<br><br>
+              <div style="font-size:9px;color:#667">\u2022 ${stLabel} \u2014 ${st===null?'forecast unavailable for this hour':st>110?'demand well above day-ahead forecast':st>100?'demand exceeding forecast':st>92?'near forecast peak':'within normal envelope'}</div>
+              <br><span style="color:#4a5068;font-size:8px">SOURCE: US EIA Form 930 Grid Monitor \u2014 KITSUNE BDOC Infrastructure Monitoring</span>
+            </div>`,
+            show:layers.outages
+          }));
+        });
+        if(outageEnts.length>0){
+          loaded=true;
+          const stressed=data.filter(n=>n.stressPct>100).length;
+          const totGW=Math.round(data.reduce((a,n)=>a+(n.demandMW||0),0)/1000);
+          af(stressed>8?'var(--rd)':stressed>3?'var(--yl)':'var(--bl)',`US grid: ${totGW} GW live demand across ${outageEnts.length} operators${stressed?` \u2014 ${stressed} over forecast`:''}`);
+          Health.ok('power_outages');
+        }
+      }else{
       let total=0;
       (data||[]).forEach(c=>{
         if(!c.Latitude||!c.Longitude||!isFinite(c.Latitude)||!isFinite(c.Longitude))return;
@@ -5714,6 +5750,7 @@ async function loadPowerOutages(){
         af(total>50000?'var(--rd)':total>10000?'var(--yl)':'var(--bl)',`Power outages: ${total.toLocaleString()} customers affected across ${outageEnts.length} counties`);
         Health.ok('power_outages');
       }
+      } // end legacy county-shape branch
     }
   }catch(e){console.warn('[Outage] PowerOutage.us attempt:',e.message)}
   // Attempt 2: If PowerOutage.us failed (CORS block), show curated major utility outage map links
