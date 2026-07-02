@@ -1130,3 +1130,90 @@ button.eb[style*="E8B339"]:hover,button.eb[style*="E8B349"]:hover{background:rgb
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ END PHASE 20a ═════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PHASE 24 — TACTICAL COMMAND POLISH (2026-07-02)
+   Goal: $500k defense-console look. One accent (amber), stencil type,
+   precision rails, no rainbow, no toy glows. Override block — cascades last.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── LEFT PANEL: command-rail chrome ── */
+.lp{background:linear-gradient(180deg,rgba(14,17,22,0.97) 0%,rgba(17,21,28,0.96) 100%)!important;
+  border-right:1px solid rgba(232,179,73,0.10)!important;box-shadow:2px 0 32px rgba(0,0,0,0.6)!important}
+.lp::after{background:linear-gradient(180deg,transparent,rgba(232,179,73,0.28) 30%,rgba(232,179,73,0.28) 70%,transparent)!important}
+.lp-h{background:rgba(232,179,73,0.03)}
+.lp-t{letter-spacing:0.22em!important;font-size:10px!important}
+
+/* Group headers — stencil ticks, amber left rail on hover */
+.lg-title{border-left:2px solid rgba(232,179,73,0.22)!important;letter-spacing:0.18em!important;
+  font-size:9px!important;color:#6B7280!important;margin:14px 0 7px 0!important}
+.lg-title:hover{border-left-color:var(--kf)!important;color:var(--t1)!important;background:rgba(232,179,73,0.03)}
+.lg-title::before{background:rgba(232,179,73,0.45)!important}
+
+/* Layer rows — precision rails */
+.ly{padding:5px 8px!important;border-radius:2px!important;margin-bottom:2px!important}
+.ly::before{content:'';position:absolute;left:0;top:15%;bottom:15%;width:2px;background:transparent;transition:background .15s}
+.ly:hover{background:rgba(255,255,255,0.025)!important;border-color:rgba(255,255,255,0.05)!important}
+.ly:hover::before{background:rgba(232,179,73,0.30)}
+.ly.on{background:linear-gradient(90deg,rgba(232,179,73,0.07),rgba(232,179,73,0.015) 60%,transparent)!important;
+  border-color:rgba(232,179,73,0.14)!important;box-shadow:none!important}
+.ly.on::before{background:var(--kf);box-shadow:0 0 6px rgba(232,179,73,0.5)}
+.ly-n{font-family:var(--m)!important;font-size:9.5px!important;letter-spacing:0.06em;text-transform:uppercase;color:var(--t2)!important;font-weight:500!important}
+.ly:hover .ly-n{color:var(--t1)!important}
+.ly.on .ly-n{color:#E6E8EB!important}
+
+/* Toggle switches — hard-edged mil-spec, amber when armed */
+.sw{width:26px!important;height:12px!important;border-radius:2px!important;background:#1A1F29!important;border:1px solid rgba(255,255,255,0.10)!important}
+.sw::after{width:8px!important;height:8px!important;border-radius:1px!important;background:#4A5160!important;top:1px!important;left:2px!important}
+.ly.on .sw{background:rgba(232,179,73,0.16)!important;border-color:rgba(232,179,73,0.45)!important}
+.ly.on .sw::after{background:var(--kf)!important;transform:translateX(13px)!important;box-shadow:0 0 5px rgba(232,179,73,0.6)!important}
+
+/* Tier tags — flat stencil chips */
+.ly-tg{border-radius:1px!important;letter-spacing:0.08em!important;font-size:7px!important;padding:1px 4px!important}
+
+/* Locked rows — classified feel */
+.ly.locked{opacity:0.38!important}
+.ly.locked:hover{opacity:0.6!important}
+
+/* ── SECTION HEADERS in panel (QUICK START etc.) ── */
+.lp-b>div[style*="letter-spacing"]{letter-spacing:0.2em!important}
+
+/* ── TOP BAR: command strip ── */
+.tb{background:linear-gradient(180deg,rgba(13,16,21,0.98),rgba(15,18,24,0.94))!important;
+  border-bottom:1px solid rgba(232,179,73,0.10)!important;box-shadow:0 2px 24px rgba(0,0,0,0.55)!important}
+
+/* ── BUTTONS: filter/export toolbar — stencil chips ── */
+.fb,.eb{border-radius:2px!important;letter-spacing:0.12em!important;border-color:rgba(255,255,255,0.09)!important;color:#6B7280!important}
+.fb:hover,.eb:hover{color:var(--t1)!important;border-color:rgba(232,179,73,0.35)!important;background:rgba(232,179,73,0.05)!important}
+
+/* ── CESIUM INFOBOX: intel-card chrome ── */
+.cesium-infoBox{background:rgba(12,15,20,0.96)!important;border:1px solid rgba(232,179,73,0.22)!important;
+  border-radius:2px!important;box-shadow:0 12px 48px rgba(0,0,0,0.7),0 0 0 1px rgba(0,0,0,0.4)!important;
+  backdrop-filter:blur(12px);top:60px!important}
+.cesium-infoBox-title{background:linear-gradient(90deg,rgba(232,179,73,0.10),transparent)!important;
+  color:#E6E8EB!important;font-family:'JetBrains Mono',monospace!important;font-size:11px!important;
+  letter-spacing:0.14em!important;text-transform:uppercase!important;font-weight:600!important;
+  border-bottom:1px solid rgba(232,179,73,0.18)!important;padding:10px 14px!important}
+.cesium-infoBox-camera{filter:sepia(1) hue-rotate(-10deg) saturate(2)}
+.cesium-infoBox-close{color:#6B7280!important;font-size:16px!important}
+.cesium-infoBox-close:hover{color:var(--kf)!important;background:none!important}
+.cesium-infoBox iframe{border:none!important}
+
+/* Selection indicator — amber reticle instead of default green */
+.cesium-selection-wrapper svg path{stroke:#E8B349!important;fill:none!important}
+
+/* ── STATUS FEED (bottom ticker area) ── */
+.fd{border-top:1px solid rgba(232,179,73,0.08)!important}
+
+/* ── SCROLLBARS: hairline tactical ── */
+.lp-b::-webkit-scrollbar{width:4px}
+.lp-b::-webkit-scrollbar-thumb{background:rgba(232,179,73,0.18);border-radius:0}
+.lp-b::-webkit-scrollbar-thumb:hover{background:rgba(232,179,73,0.35)}
+.lp-b::-webkit-scrollbar-track{background:transparent}
+
+/* ── CLASSIFICATION-STYLE watermark strip on left panel footer ── */
+.lp::before{content:'KGS // BDOC PHANTOM';position:absolute;bottom:6px;left:0;right:0;text-align:center;
+  font-family:'JetBrains Mono',monospace;font-size:6.5px;letter-spacing:0.34em;color:rgba(232,179,73,0.22);
+  pointer-events:none;z-index:1}
+
+/* ═══════════════ END PHASE 24 TACTICAL COMMAND POLISH ═══════════════ */
