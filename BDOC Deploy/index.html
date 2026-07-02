@@ -175,7 +175,7 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p61">
+<link rel="stylesheet" href="css/bdoc.css?v=p63">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -1493,7 +1493,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p62',              // MUST bump on ANY js/modules/* change — stale here = lazy modules never update (was 'p44'; p62 = aircraft trails gated to tracked plane only)
+  _version: 'p63',              // MUST bump on ANY js/modules/* change — p63 = hazard-species layer (Phase 2 moat feature)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
@@ -6166,6 +6166,7 @@ async function loadDeflock(){
 // ═══ CELL TOWERS — OpenStreetMap/OpenCelliD via Overpass API ═══
 let cellTowerEnts=[];
 layers.celltowers=false;
+layers.hazardbio=false;
 const _cellIconCache=new Map();
 // Carrier detection — resolve operator from multiple OSM tag fields + MNC codes
 // Reference: https://en.wikipedia.org/wiki/Mobile_country_code (US MCC=310/311/312/313/316)
@@ -10281,6 +10282,22 @@ togLy = function(el) {
   if (ly==='wireshark'){el.classList.toggle('on');layers.wireshark=el.classList.contains('on');if(layers.wireshark){WiresharkBridge._wsRetries=0;WiresharkBridge.connect()}else WiresharkBridge.disconnect();return}
   if (ly==='ioc'){el.classList.toggle('on');layers.ioc=el.classList.contains('on');if(layers.ioc){BDOC.layerLoadFx.start('ioc');loadIOCLayer();}else{iocEnts.forEach(e=>{try{V.entities.remove(e)}catch(x){}});iocEnts=[];}return}
   if (ly==='fallout'){el.classList.toggle('on');layers.fallout=el.classList.contains('on');if(layers.fallout){if(!_falloutDS){BDOC.layerLoadFx.start('fallout');loadFalloutShelters();}else{_falloutDS.show=true;}}else{if(_falloutDS)_falloutDS.show=false;}return}
+  if (ly==='hazardbio'){el.classList.toggle('on');layers.hazardbio=el.classList.contains('on');
+    if(layers.hazardbio){
+      BDOC.layerLoadFx.start('hazardbio');
+      BDOC.LazyLoader.load('layers-hazardbio').then(()=>{
+        // default sub-category: ticks (the headline use-case) if none picked yet
+        const chips=document.getElementById('hazbioChips');if(chips)chips.style.display='flex';
+        if(window.toggleHazardBioCat&&!document.querySelector('#hazbioChips .hazchip.on')){
+          const first=document.querySelector('#hazbioChips .hazchip[data-cat="ticks"]');
+          toggleHazardBioCat('ticks',first);
+        }else if(window.loadHazardBio){loadHazardBio();}
+        BDOC.layerLoadFx.done('hazardbio',true);
+      }).catch(e=>{console.warn('[lazy hazardbio]',e);BDOC.layerLoadFx.done('hazardbio',false)});
+    }else{
+      const chips=document.getElementById('hazbioChips');if(chips)chips.style.display='none';
+      if(window.hideHazardBio)hideHazardBio();
+    }return}
   _origTogLy(el);
 };
 
@@ -10321,6 +10338,15 @@ function injectAllUI() {
     <div class="lg-title" style="color:#2D72D2">SURVEILLANCE / COMMS INFRASTRUCTURE</div>
     <div class="ly" data-layer="deflock" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#2D72D2"></div><span class="ly-n">\uD83D\uDCF7 DeFlock Surveillance</span><span class="ly-tg" style="color:#2D72D2;background:rgba(45,114,210,0.1)">OSM</span></div>
     <div class="ly" data-layer="celltowers" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#4488ff"></div><span class="ly-n">\uD83D\uDCF6 Cell Towers</span><span class="ly-tg" style="color:#4488ff;background:rgba(68,136,255,0.1)">OSM</span></div>
+    <div class="lg-title" style="color:#E8B349">FIELD HAZARDS / BIOLOGICAL</div>
+    <div class="ly" data-layer="hazardbio" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#E8B349"></div><span class="ly-n">\u2623 Hazardous Species</span><span class="ly-tg" style="color:#E8B349;background:rgba(232,179,73,0.1)">LIVE</span></div>
+    <div id="hazbioChips" style="display:none;flex-wrap:wrap;gap:4px;padding:4px 8px 6px 26px">
+      <button class="hazchip" data-cat="ticks" onclick="toggleHazardBioCat('ticks',this)">TICKS</button>
+      <button class="hazchip" data-cat="vsnakes" onclick="toggleHazardBioCat('vsnakes',this)">SNAKES</button>
+      <button class="hazchip" data-cat="vspiders" onclick="toggleHazardBioCat('vspiders',this)">SPIDERS</button>
+      <button class="hazchip" data-cat="vinsects" onclick="toggleHazardBioCat('vinsects',this)">STINGING</button>
+      <button class="hazchip" data-cat="scorp" onclick="toggleHazardBioCat('scorp',this)">SCORPIONS</button>
+    </div>
   `;
   if (maritimeTitle) {
     lpBody.insertBefore(infraSection, maritimeTitle);
