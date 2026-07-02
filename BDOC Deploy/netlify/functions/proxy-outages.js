@@ -43,6 +43,7 @@ exports.handler = async (event) => {
   } catch (e) { console.warn('[proxy-outages] Tier 1 failed:', e.message); }
 
   // Tier 2: EIA 930 grid stress (free, no key)
+  let eiaError = null;
   try {
     const now = new Date();
     const fmt = (d) => {
@@ -122,9 +123,10 @@ exports.handler = async (event) => {
     if (!nodes.length) throw new Error('EIA returned no usable series');
     return { statusCode: 200, headers: { ...headers, 'X-Source-Tier': 'eia-930' }, body: JSON.stringify(nodes) };
   } catch (e) {
+    eiaError = e.message;
     console.warn('[proxy-outages] EIA tier failed:', e.message);
   }
 
   // Tier 3: graceful empty — client shows utility-map fallback links
-  return { statusCode: 200, headers: { ...headers, 'X-Source-Tier': 'unavailable' }, body: JSON.stringify([]) };
+  return { statusCode: 200, headers: { ...headers, 'Cache-Control': 'public, max-age=60', 'X-Source-Tier': 'unavailable', 'X-EIA-Error': String(eiaError || '').slice(0, 140) }, body: JSON.stringify([]) };
 };
