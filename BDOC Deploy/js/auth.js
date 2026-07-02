@@ -340,10 +340,14 @@ const BDOC_Auth={
       return;
     }
     const email=(this.profile&&this.profile.email)||this.user.email||'';
+    // Military promo (verifyMilitary flow) — stored locally, forwarded so checkout can
+    // attach the matching Stripe promotion code server-side. Without this the user is
+    // promised 50% off but Stripe never hears about it.
+    let promoCode=null;try{promoCode=localStorage.getItem('bdoc_promo_applied')||null;}catch(_){}
     try{
       const res=await fetch('/.netlify/functions/stripe-checkout',{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({tier:tierName,annual:!!annual,userId:this.user.id,email})
+        body:JSON.stringify({tier:tierName,annual:!!annual,userId:this.user.id,email,promoCode})
       });
       const data=await res.json();
       if(data&&data.url){window.location.href=data.url;return}

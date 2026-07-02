@@ -12,7 +12,7 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body);
-    const { userId, email, tier, annual } = body;
+    const { userId, email, tier, annual, promoCode } = body;
     let { priceId } = body;
 
     // hermes/overnight-2026-06-09: frontend now sends a tier name (operator|analyst|enterprise)
@@ -45,18 +45,41 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Invalid price selection' }) };
     }
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      customer_email: email,
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.URL || 'https://kgsbdoc.netlify.app'}?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: process.env.URL || 'https://kgsbdoc.netlify.app',
-      metadata: { userId },
-      subscription_data: {
-        metadata: { userId }
-      },
-      allow_promotion_codes: true
-    });
+    // Resolve the client-side promo code (MILITARY50/VETERAN50/GWOT50) to an active
+    // Stripe promotion code. Whitelisted to prevent arbitrary code probing. Non-fatal:
+    // on any failure we fall back to manual promo entry on the Checkout page.
+    let resolvedPromo = null;
+    const PROMO_WHITELIST = ['MILITARY50', 'VETERAN50', 'GWOT50'];
+    if (promoCode && PROMO_WHITELIST.includes(String(promoCode).toUpperCase())) {
+      try {
+        const found = await stripe.promotionCodes.list({ code: String(promoCode).toUpperCase(), active: true, limit: 1 });
+        if (found.data.length) resolvedPromo = found.data[0].id;
+      } catch (e) { console.warn('[stripe-checkout] promo lookup failed:', e.message); }
+    }
+
+    const session = await stripe.checkout.sessions.create((() => {
+      const cfg = {
+        mode: 'subscription',
+        customer_email: email,
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${process.env.URL || 'https://kgsbdoc.netlify.app'}?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: process.env.URL || 'https://kgsbdoc.netlify.app',
+        metadata: { userId },
+        subscription_data: {
+          metadata: { userId }
+        }
+      };
+      // Military promo: if the client applied a promo code (MILITARY50 etc.), attach the
+      // matching Stripe promotion code directly so the discount is pre-applied. Falls back
+      // to allow_promotion_codes (manual entry) when lookup fails or no code was sent.
+      // NOTE: 'discounts' and 'allow_promotion_codes' are mutually exclusive in Stripe.
+      if (resolvedPromo) {
+        cfg.discounts = [{ promotion_code: resolvedPromo }];
+      } else {
+        cfg.allow_promotion_codes = true;
+      }
+      return cfg;
+    })());
 
     return {
       statusCode: 200,
