@@ -5,14 +5,16 @@ exports.handler = async (event) => {
   const params = event.queryStringParameters || {};
   const endpoint = params.endpoint || 'debt_to_penny';
 
-  // Whitelist endpoint slugs — prevents arbitrary URL injection
+  // Whitelist endpoint slugs — prevents arbitrary URL injection.
+  // NOTE (2026-07-02): Treasury mixes API versions per dataset — debt_to_penny is v2,
+  // most others are v1. Hardcoding v1 for all returned 404 and killed the markets panel.
   const ENDPOINTS = {
-    debt_to_penny:      'accounting/od/debt_to_penny',
-    avg_interest_rates: 'accounting/od/avg_interest_rates',
-    monthly_treasury:   'accounting/mts/mts_table_5',
-    income_outlays:     'accounting/mts/mts_table_1',
-    debt_to_gdp:        'accounting/od/debt_to_gdp',
-    exchange_rates:     'rates_of_exchange'
+    debt_to_penny:      'v2/accounting/od/debt_to_penny',
+    avg_interest_rates: 'v2/accounting/od/avg_interest_rates',
+    monthly_treasury:   'v1/accounting/mts/mts_table_5',
+    income_outlays:     'v1/accounting/mts/mts_table_1',
+    debt_to_gdp:        'v2/accounting/od/debt_to_penny', // dedicated debt_to_gdp dataset was retired; derive GDP ratio client-side
+    exchange_rates:     'v1/accounting/od/rates_of_exchange'
   };
   const path = ENDPOINTS[endpoint];
   if (!path) {
@@ -26,7 +28,7 @@ exports.handler = async (event) => {
   if (!qs.has('page[size]')) qs.set('page[size]', '1');
   if (!qs.has('sort')) qs.set('sort', '-record_date');
 
-  const url = `https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/${path}?${qs.toString()}`;
+  const url = `https://api.fiscaldata.treasury.gov/services/api/fiscal_service/${path}?${qs.toString()}`;
 
   try {
     // 7s — must complete before Netlify's 10s hard kill
