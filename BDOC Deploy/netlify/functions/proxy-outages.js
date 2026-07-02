@@ -73,6 +73,27 @@ exports.handler = async (event) => {
     'Access-Control-Allow-Origin': '*'
   };
 
+  // ?diag=1 — probe EIA reachability from this Lambda (timing + status), no parsing.
+  if (event.queryStringParameters?.diag) {
+    const probes = {};
+    const tryFetch = async (label, url, hdrs) => {
+      const t0 = Date.now();
+      try {
+        const r = await fetch(url, { signal: AbortSignal.timeout(8000), headers: hdrs });
+        const txt = await r.text();
+        probes[label] = { status: r.status, ms: Date.now() - t0, bytes: txt.length };
+      } catch (e) { probes[label] = { error: e.message, ms: Date.now() - t0 }; }
+    };
+    await tryFetch('respondents-basic', 'https://www.eia.gov/electricity/930-api/respondents/data?type%5B0%5D=BA', { 'User-Agent': 'KitsuneGlobal/BDOC-8.0' });
+    await tryFetch('respondents-browser', 'https://www.eia.gov/electricity/930-api/respondents/data?type%5B0%5D=BA', {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      'Accept': 'application/json, text/plain, */*',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Referer': 'https://www.eia.gov/electricity/gridmonitor/'
+    });
+    return { statusCode: 200, headers, body: JSON.stringify(probes) };
+  }
+
   // Tier 1: keyed county-level outages (only if a paid key is configured)
   const key = process.env.POWEROUTAGE_KEY;
   if (key) try {
