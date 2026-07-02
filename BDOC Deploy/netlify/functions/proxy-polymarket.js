@@ -31,10 +31,18 @@ exports.handler = async (event) => {
     for (const ev of events) {
       if (!ev || !ev.markets || !ev.markets.length) continue;
 
+      // Gamma API returns outcomes/outcomePrices as JSON-ENCODED STRINGS
+      // (e.g. '["Yes","No"]'), not arrays — parse both shapes defensively.
+      const asArr = (v) => {
+        if (Array.isArray(v)) return v;
+        if (typeof v === 'string') { try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; } }
+        return [];
+      };
+
       // Parse up to 4 sub-markets per event
       const parsedMarkets = (ev.markets || []).slice(0, 4).map(m => {
-        const outcomes      = Array.isArray(m.outcomes)      ? m.outcomes      : [];
-        const outcomePrices = Array.isArray(m.outcomePrices) ? m.outcomePrices : [];
+        const outcomes      = asArr(m.outcomes);
+        const outcomePrices = asArr(m.outcomePrices);
         return {
           question:      m.question || '',
           outcomes,

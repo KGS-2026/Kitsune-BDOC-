@@ -15,18 +15,26 @@ exports.handler = async (event) => {
         signal: AbortSignal.timeout(8000),
         headers: { 'Accept': 'application/json', 'User-Agent': 'KitsuneGlobal/BDOC-8.0' }
       }).then(r => { if (!r.ok) throw new Error('Kp ' + r.status); return r.json(); }),
-      fetch('https://services.swpc.noaa.gov/json/goes/primary/xrays-1-minute.json', {
+      fetch('https://services.swpc.noaa.gov/json/goes/primary/xrays-6-hour.json', {
         signal: AbortSignal.timeout(8000),
         headers: { 'Accept': 'application/json', 'User-Agent': 'KitsuneGlobal/BDOC-8.0' }
       }).then(r => { if (!r.ok) throw new Error('Xray ' + r.status); return r.json(); })
     ]);
 
-    // Kp index: [[time_tag, kp, observed, noaa_scale], ...] — first row is header
+    // Kp index: NEW format (2026) = array of objects [{time_tag, Kp, a_running, station_count}, ...]
+    // Legacy format = array of arrays [[time_tag, kp, observed, noaa_scale], ...] w/ header row.
+    // Handle both — NOAA changed this without notice (broke prod: kp:null forever).
     let currentKp = null, gScale = 'G0';
-    if (kpRes.status === 'fulfilled' && Array.isArray(kpRes.value) && kpRes.value.length > 2) {
-      const rows = kpRes.value.slice(1); // skip header
-      const recent = rows.slice(-4); // last ~4 readings (3-hr cadence)
-      const vals = recent.map(r => parseFloat(r[1])).filter(v => !isNaN(v));
+    if (kpRes.status === 'fulfilled' && Array.isArray(kpRes.value) && kpRes.value.length > 1) {
+      let vals;
+      if (Array.isArray(kpRes.value[0])) {
+        // legacy array-of-arrays
+        const rows = kpRes.value.slice(1);
+        vals = rows.slice(-4).map(r => parseFloat(r[1])).filter(v => !isNaN(v));
+      } else {
+        // object format
+        vals = kpRes.value.slice(-4).map(r => parseFloat(r.Kp ?? r.kp ?? r.kp_index)).filter(v => !isNaN(v));
+      }
       currentKp = vals.length ? Math.max(...vals) : null;
       if (currentKp !== null) {
         if (currentKp >= 9)      gScale = 'G5';
