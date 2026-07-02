@@ -96,7 +96,11 @@ exports.handler = async (event) => {
       const p = (n) => String(n).padStart(2, '0');
       return `${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}${d.getUTCFullYear()} ${p(d.getUTCHours())}:00:00`;
     };
-    const start = fmt(new Date(now.getTime() - 6 * 3600e3)); // 6h lookback — data lags 1-2h
+    // ?hours= override for diagnostics; default 3h (data lags 1-2h upstream).
+    // Smaller window = smaller EIA response = faster from AWS (EIA's CDN is
+    // slow to serve AWS-origin requests; 6h window timed out in prod).
+    const hours = Math.min(Math.max(parseInt(event.queryStringParameters?.hours, 10) || 3, 1), 12);
+    const start = fmt(new Date(now.getTime() - hours * 3600e3));
     const end = fmt(now);
 
     const q = BAS.map((b, i) => `respondent%5B${i}%5D=${b}`);
