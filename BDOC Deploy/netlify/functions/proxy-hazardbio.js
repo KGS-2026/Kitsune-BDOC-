@@ -4,21 +4,22 @@
 // Viewport-driven: caller passes camera bounds. iNaturalist API is free/keyless;
 // cache aggressively to be a good citizen.
 //
-// Category → iNaturalist taxon IDs (curated):
-//   ticks    47577   Ixodida (all ticks: deer/dog/lone-star)
-//   vsnakes  30764   Viperidae (rattlesnakes, copperheads, cottonmouths)
-//            8672    Elapidae (coral snakes)
-//   vspiders 48000   Latrodectus (widow spiders)
-//            123784  Loxosceles (recluse spiders)
-//   vinsects 47651   Vespidae (hornets/wasps incl. yellowjackets)
-//            199439  Solenopsis invicta (fire ants)
-//   scorp    48498   Scorpiones (scorpions)
+// Category → iNaturalist taxon IDs — VERIFIED against /v1/taxa 2026-07-02
+// (previous IDs were unverified guesses and returned 0 results):
+//   ticks    51672   Ixodida (order, 137k obs: deer/dog/lone-star)
+//   vsnakes  30667   Viperidae (family, 350k obs: rattlers/copperhead/cottonmouth)
+//            30403   Elapidae (family, 92k obs: coral snakes)
+//   vspiders 47370   Latrodectus (genus, 103k obs: widow spiders)
+//            48137   Loxosceles (genus, 23k obs: recluse spiders)
+//   vinsects 52747   Vespidae (family, 1.35M obs: hornets/wasps/yellowjackets)
+//            67598   Solenopsis invicta (species, 38k obs: fire ants)
+//   scorp    48894   Scorpiones (order, 197k obs)
 const CATEGORIES = {
-  ticks:    { taxa: [47577],         label: 'Ticks' },
-  vsnakes:  { taxa: [30764, 8672],   label: 'Venomous Snakes' },
-  vspiders: { taxa: [48000, 123784], label: 'Venomous Spiders' },
-  vinsects: { taxa: [47651, 199439], label: 'Stinging Insects' },
-  scorp:    { taxa: [48498],         label: 'Scorpions' }
+  ticks:    { taxa: [51672],         label: 'Ticks' },
+  vsnakes:  { taxa: [30667, 30403],  label: 'Venomous Snakes' },
+  vspiders: { taxa: [47370, 48137],  label: 'Venomous Spiders' },
+  vinsects: { taxa: [52747, 67598],  label: 'Stinging Insects' },
+  scorp:    { taxa: [48894],         label: 'Scorpions' }
 };
 
 exports.handler = async (event) => {
