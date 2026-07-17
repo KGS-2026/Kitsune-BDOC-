@@ -12126,7 +12126,13 @@ WiresharkBridge.connect = async function() {
   // visit — both modals were rendering on top of each other (worst possible first impression).
   // Persona wizard owns the first visit; this weather card only runs once that's done AND
   // it never ran before. If the wizard is visible now, defer via poll until it closes.
-  function onboardVisible(){const el=document.getElementById('bdocOnboard');return el&&el.style.display!=='none'&&el.style.display!==''}
+  // Persona wizard owns the first visit; weather card waits for bdoc_onboard_done flag
+  // (computed-style check alone raced — card rendered before the wizard mounted).
+  function onboardVisible(){
+    if(localStorage.getItem('bdoc_onboard_done')!=='1')return true; // wizard not completed yet — hold
+    const el=document.getElementById('bdocOnboard');
+    return !!(el&&getComputedStyle(el).display!=='none');
+  }
 
   // Wait for Cesium to fully initialize (V created + bootFeeds running)
   function waitForReady(callback,attempts){
