@@ -10,6 +10,34 @@
 let activeFilter=null;
 let _flirTempInterval=null;
 let _nvgGainInterval=null;
+// ── NVG night-lights imagery (NASA Black Marble / Earth at Night, Ion asset 3812) ──
+// Lazy-loaded on first NVG engage. dayAlpha/nightAlpha make Cesium blend it ONLY
+// on the dark side of the terminator (requires globe.enableLighting=true), so city
+// lights appear where it's actually night — a real sensor sim, not just a tint.
+let _nvgNightLoading=null;
+function _ensureNightLayer(){
+  if(window._nightEarthLayer)return Promise.resolve(window._nightEarthLayer);
+  if(_nvgNightLoading)return _nvgNightLoading;
+  _nvgNightLoading=(async()=>{
+    try{
+      let layer;
+      if(Cesium.ImageryLayer&&Cesium.ImageryLayer.fromProviderAsync&&Cesium.IonImageryProvider.fromAssetId){
+        layer=Cesium.ImageryLayer.fromProviderAsync(Cesium.IonImageryProvider.fromAssetId(3812));
+      }else{
+        layer=new Cesium.ImageryLayer(new Cesium.IonImageryProvider({assetId:3812}));
+      }
+      layer.dayAlpha=0.0;   // invisible on the lit side
+      layer.nightAlpha=0.0; // stays hidden until NVG engages
+      layer.brightness=2.0;
+      V.imageryLayers.add(layer); // top of stack — blends over basemap
+      window._nightEarthLayer=layer;
+      console.log('[NVG] Earth-at-Night imagery loaded (Ion 3812)');
+      return layer;
+    }catch(e){console.warn('[NVG] night imagery failed:',e.message);return null}
+    finally{_nvgNightLoading=null}
+  })();
+  return _nvgNightLoading;
+}
 function togFilter(f,btn){
   // Clear all filter states
   document.body.classList.remove('filter-nvg','filter-flir','filter-crt');
@@ -29,7 +57,7 @@ function togFilter(f,btn){
       // Restore globe minimumBrightness to default (may have been raised for NVG night mode)
       try{V.scene.globe.minimumBrightness=0.02}catch(_){}
       if(window._cityLightsLayer){window._cityLightsLayer.dayAlpha=0.0;window._cityLightsLayer.nightAlpha=0.9;window._cityLightsLayer.brightness=2.2}
-      if(window._nightEarthLayer){window._nightEarthLayer.dayAlpha=0.0;window._nightEarthLayer.nightAlpha=0.6}
+      if(window._nightEarthLayer){window._nightEarthLayer.dayAlpha=0.0;window._nightEarthLayer.nightAlpha=0.6;window._nightEarthLayer.brightness=2.0;window._nightEarthLayer.contrast=1.0}
     }
     af('var(--t3)','Visual filter disengaged \u2014 normal mode');
     EventLog.add('info','Filter: OFF (normal mode)');return
@@ -45,10 +73,18 @@ function togFilter(f,btn){
     document.body.classList.add('filter-nvg');
     document.getElementById('vfxCrt').classList.add('on');
     if(V&&V.scene){
-      V.scene.globe.enableLighting=true;
+      V.scene.globe.enableLighting=true;           // terminator stays real
       V.scene.light=new Cesium.SunLight({intensity:0.05});
-      if(window._cityLightsLayer){window._cityLightsLayer.dayAlpha=0.4;window._cityLightsLayer.nightAlpha=1.0;window._cityLightsLayer.brightness=3.5;window._cityLightsLayer.contrast=2.5}
-      if(window._nightEarthLayer){window._nightEarthLayer.dayAlpha=0.15;window._nightEarthLayer.nightAlpha=0.9}
+      // Real sensor sim: NASA Earth-at-Night imagery blended onto the DARK side only.
+      _ensureNightLayer().then(layer=>{
+        if(layer&&activeFilter==='nvg'){
+          layer.nightAlpha=1.0;   // full city lights where it's night
+          layer.dayAlpha=0.0;     // nothing on the lit side — physics, not vibes
+          layer.brightness=3.0;
+          layer.contrast=1.6;
+        }
+      });
+      if(window._cityLightsLayer){window._cityLightsLayer.dayAlpha=0.0;window._cityLightsLayer.nightAlpha=1.0;window._cityLightsLayer.brightness=3.5;window._cityLightsLayer.contrast=2.5}
     }
     // Dynamic gain: adjust brightness based on sun angle at camera position
     function _nvgUpdateGain(){
@@ -74,26 +110,29 @@ function togFilter(f,btn){
       const bw=document.getElementById('nvgBloomWarn');
       if(!ces)return;
       if(sunAngle<-6){
-        // Full dark — high gain, bright phosphor green.
+        // Full dark — high gain: terrain amplified, city lights blooming. This is where NVG lives.
         try{if(V&&V.scene&&V.scene.globe)V.scene.globe.minimumBrightness=0.35;}catch(_){}
         ces.style.filter='saturate(0) brightness(3.2) contrast(1.3) sepia(1) hue-rotate(60deg) saturate(8)';
         if(bw)bw.style.display='none';
       }else if(sunAngle<=10){
-        // Dawn/dusk — moderate gain, still clearly visible.
-        try{if(V&&V.scene&&V.scene.globe)V.scene.globe.minimumBrightness=0.28;}catch(_){}
-        ces.style.filter='saturate(0) brightness(2.2) contrast(1.25) sepia(1) hue-rotate(60deg) saturate(6)';
+        // Dawn/dusk — gain rolls off as ambient light rises.
+        try{if(V&&V.scene&&V.scene.globe)V.scene.globe.minimumBrightness=0.18;}catch(_){}
+        ces.style.filter='saturate(0) brightness(1.6) contrast(1.2) sepia(1) hue-rotate(60deg) saturate(6)';
         if(bw)bw.style.display='none';
       }else{
-        // Daytime with NVG — bloom WARNING, but keep the globe bright & legible (was brightness 0.4 -> near-black).
-        try{if(V&&V.scene&&V.scene.globe)V.scene.globe.minimumBrightness=0.22;}catch(_){}
-        ces.style.filter='saturate(0) brightness(1.7) contrast(1.4) sepia(1) hue-rotate(60deg) saturate(7)';
+        // DAYLIGHT — real tubes auto-gate to protect the intensifier: the image
+        // WASHES OUT, it does not show you a crisp green daytime map. Crushed
+        // gain + heavy white bloom + BLOOM warning. You want to see in daylight?
+        // Take the NVGs off. (Previously brightness 1.7 = daytime x-ray vision — fake.)
+        try{if(V&&V.scene&&V.scene.globe)V.scene.globe.minimumBrightness=0.05;}catch(_){}
+        ces.style.filter='saturate(0) brightness(2.6) contrast(0.35) sepia(1) hue-rotate(60deg) saturate(4) blur(1.5px)';
         if(bw)bw.style.display='block';
       }
     }
     _nvgUpdateGain();
     _nvgGainInterval=setInterval(_nvgUpdateGain,500);
-    af('#00ff44','NVG ENGAGED \u2014 AN/PVS-31A binocular night vision simulation \u2014 dynamic gain active');
-    EventLog.add('info','Filter: NVG \u2014 night vision engaged (dynamic gain)');
+    af('#00ff44','NVG ENGAGED \u2014 AN/PVS-31A sim \u2014 Black Marble night lights + auto-gated gain');
+    EventLog.add('info','Filter: NVG \u2014 night vision engaged (night imagery + dynamic gain)');
   } else if(f==='flir'){
     document.body.classList.add('filter-flir');
     if(V&&V.scene){V.scene.globe.enableLighting=false}
