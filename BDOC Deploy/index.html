@@ -12142,6 +12142,9 @@ WiresharkBridge.connect = async function() {
   function waitForReady(callback,attempts){
     attempts=attempts||0;
     if(attempts>120){console.warn('[BDOC FirstRun] Cesium/onboarding not ready after 60s, aborting');return}
+    // p74b: re-check completion keys every poll — the wizard's skip/finish handlers set
+    // bdoc_first_run_complete_v1 AFTER this IIFE's initial gate check already passed.
+    if(localStorage.getItem(FIRST_RUN_KEY)==='1'||localStorage.getItem(SKIP_KEY)==='1')return;
     if(typeof V!=='undefined'&&V&&V.scene&&typeof togLy==='function'&&!onboardVisible())callback();
     else setTimeout(()=>waitForReady(callback,attempts+1),500);
   }
