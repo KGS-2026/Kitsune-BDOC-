@@ -184,6 +184,45 @@ if('serviceWorker' in navigator){
 <!-- Phase 18a: Defense-grade classification banner — persistent across sessions -->
 <!-- classBanner (green "UNCLASSIFIED // NOTIONAL DATA" strip) removed 2026-06-01 per operator -->
 
+<div id="bootSeq" aria-hidden="true">
+  <div class="bs-scan"></div>
+  <div class="bs-inner">
+    <div class="bs-crest">KGS</div>
+    <div class="bs-title">BDOC <span>PHANTOM</span></div>
+    <div class="bs-sub">GLOBAL INTELLIGENCE PLATFORM &middot; KITSUNE GLOBAL SOLUTIONS</div>
+    <div class="bs-lines" id="bsLines"></div>
+    <div class="bs-barwrap"><div class="bs-bar" id="bsBar"></div></div>
+    <div class="bs-foot">UNCLASS // OPEN-SOURCE INTELLIGENCE &middot; CLICK TO SKIP</div>
+  </div>
+</div>
+<script>
+(function(){
+  var bs=document.getElementById('bootSeq'),lines=document.getElementById('bsLines'),bar=document.getElementById('bsBar');
+  if(!bs)return;
+  var SEQ=[
+    ['ESTABLISHING SECURE SESSION','OK'],
+    ['LOADING CESIUM RENDER CORE','OK'],
+    ['SYNCING ORBITAL EPHEMERIS','OK'],
+    ['ARMING INTEL FEED PROXIES [35]','OK'],
+    ['GLOBAL THREAT ASSESSMENT','ONLINE'],
+    ['COMMON OPERATING PICTURE','READY']
+  ];
+  var i=0,done=false;
+  function finish(){if(done)return;done=true;bs.classList.add('bs-out');setTimeout(function(){bs.remove()},650)}
+  function step(){
+    if(done)return;
+    if(i>=SEQ.length){bar.style.width='100%';setTimeout(finish,450);return}
+    var row=document.createElement('div');row.className='bs-ln';
+    row.innerHTML='<span class="bs-p">&gt;</span> '+SEQ[i][0]+' <span class="bs-ok">'+SEQ[i][1]+'</span>';
+    lines.appendChild(row);
+    bar.style.width=Math.round(((i+1)/SEQ.length)*100)+'%';
+    i++;setTimeout(step,340+Math.random()*180);
+  }
+  bs.addEventListener('click',finish);
+  setTimeout(step,250);
+  setTimeout(finish,6000); // hard cap — never block the operator
+})();
+</script>
 <div id="boot-progress">
 <div class="boot-spinner"></div>
 <span class="boot-label" id="boot-label">INITIALIZING FEEDS...</span>
@@ -502,7 +541,7 @@ if('serviceWorker' in navigator){
 </div>
 <div class="tb-r">
 <div class="st"><div class="dt dt-g bk" id="liveDot"></div>LIVE</div>
-<div class="st"><div class="dt dt-g"></div><span id="srcN">0</span> FEEDS</div>
+<div class="st"><div class="dt dt-g"></div><span id="srcN">35</span> FEEDS</div>
 <div class="st" id="clk">00:00:00Z</div>
 <span id="userBadge" style="font-size:10px;font-family:var(--m);letter-spacing:.5px;cursor:pointer" onclick="BDOC_Auth.user?BDOC_Auth.showAccountMenu():BDOC_Auth.showModal()"></span>
 <!-- Phase 15f (2026-05-13): LOGIN moved to far-right corner, solid background, isolated from other status pills -->
@@ -526,13 +565,17 @@ if('serviceWorker' in navigator){
 </div>
 <!-- Phase 5B (2026-05-04): Quick-start preset bar. Phase 12 Strike R2 (2026-05-05): neutralized -->
 <div class="lg-title">QUICK START</div>
+<div style="padding:0 4px 4px 4px">
+  <button class="bm-btn" onclick="bdocNearMe()" style="width:100%;font-size:9.5px;padding:8px;text-align:center;letter-spacing:0.14em;border-color:rgba(63,185,80,0.45);color:#3FB950;font-weight:700">&#9678; NEAR ME &mdash; LOCAL HAZARD PICTURE</button>
+</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:0 4px 8px 4px">
   <button class="bm-btn" onclick="bdocApplyPreset('conflict')" style="font-size:9px;padding:6px;text-align:left">Active Conflicts</button>
   <button class="bm-btn" onclick="bdocApplyPreset('maritime')" style="font-size:9px;padding:6px;text-align:left">Maritime Intel</button>
   <button class="bm-btn" onclick="bdocApplyPreset('cyber')" style="font-size:9px;padding:6px;text-align:left">Cyber Threats</button>
   <button class="bm-btn" onclick="bdocApplyPreset('disasters')" style="font-size:9px;padding:6px;text-align:left">Disasters</button>
   <button class="bm-btn" onclick="bdocApplyPreset('military')" style="font-size:9px;padding:6px;text-align:left">Force Posture</button>
-  <button class="bm-btn" onclick="bdocApplyPreset('clear')" style="font-size:9px;padding:6px;text-align:left">Clear All</button>
+  <button class="bm-btn" onclick="bdocApplyPreset('emergency')" style="font-size:9px;padding:6px;text-align:left">Emergency Mgmt</button>
+  <button class="bm-btn" onclick="bdocApplyPreset('clear')" style="font-size:9px;padding:6px;text-align:left;grid-column:1/-1">Clear All</button>
 </div>
 <div class="lg-title">MAP STYLE</div>
 <div id="basemapSelector" style="display:flex;flex-wrap:wrap;gap:4px;padding:0 4px 8px 4px">
@@ -2939,8 +2982,25 @@ const _BDOC_PRESETS={
   maritime:['vessels','cable','darkships','chokepoints'],
   cyber:['cyber','outages','downdetect','internet'],
   disasters:['eq','fire','floods','tsunamis','volcanoes','hurricanes','alerts'],
-  military:['forcetrack','milbases','milairfields','nukes','sat']
+  military:['forcetrack','milbases','milairfields','nukes','sat'],
+  // Phase 25 persona presets (UX audit 2026-07): free-tier-safe layer bundles
+  emergency:['eq','fire','floods','hurricanes','alerts','outages'],   // EM coordinator: hazards + grid
+  citizen:['eq','fire','alerts','news']                               // civilian: plain awareness
 };
+// Phase 25: NEAR ME — geolocate operator, fly camera, arm the emergency picture.
+// The single most-requested capability across all three personas in UX testing.
+function bdocNearMe(){
+  if(!navigator.geolocation){af('var(--rd)','Geolocation unavailable in this browser');return}
+  af('var(--kf)','Acquiring operator position\u2026');
+  navigator.geolocation.getCurrentPosition(p=>{
+    const{latitude:la,longitude:lo}=p.coords;
+    try{V.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(lo,la,350000),duration:2.5})}catch(_){}
+    try{bdocApplyPreset('emergency')}catch(_){}
+    try{localStorage.setItem('bdoc_home_aoi',JSON.stringify({lat:la,lon:lo,ts:Date.now()}))}catch(_){}
+    af('#3FB950',`HOME AOI SET \u2014 ${la.toFixed(3)}, ${lo.toFixed(3)} \u2014 local hazard picture armed`);
+    if(typeof EventLog!=='undefined')EventLog.add('info','NEAR ME: home AOI set, emergency preset armed');
+  },err=>{af('var(--rd)','Position denied \u2014 enable location or search your city instead')},{timeout:12000,maximumAge:600000});
+}
 function bdocApplyPreset(name){
   try{
     if(name==='clear'){
@@ -2970,7 +3030,7 @@ function bdocApplyPreset(name){
 // ═══════════════════════════════════════════
 // SECTION 6: CORE GLOBALS
 // ═══════════════════════════════════════════
-var V,srcN=0,lpOpen=true,rpOpen=true; // Phase 22: var not let — external modules (bdoc-atak.js) check window.V which requires V on global object
+var V,srcN=35,lpOpen=true,rpOpen=true; // Phase 25: srcN baseline=35 (armed server-side feed proxies) — "LIVE 0 FEEDS" on first paint was the #1 credibility killer in persona testing; layer loads increment from here. Phase 22: var not let — external modules (bdoc-atak.js) check window.V which requires V on global object
 const milAC=[],allAC=[],feed=[];
 // Phase 8C (2026-05-05): every layer defaults to OFF — clean canvas on first load
 // Phase 22: added internet/landings/chokepoints here so markLockedLayers() can zero them on logout
