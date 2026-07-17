@@ -316,7 +316,11 @@ const BDOC_Auth={
   },
   canAccess(feature){
     const map={
-      recon:['eq','conf','cable','news','spaceweather','community','borders'],
+      // p69 conversion fix: 'alerts' (NWS warnings) + 'fire' (wildfire) added to recon —
+      // NEAR ME/emergency preset armed 1 of 6 layers for guests (fired blanks for exactly
+      // the users it must convert). Public-safety basics are table stakes; floods/hurricanes/
+      // outages/radar stay Operator-gated as the upgrade hook.
+      recon:['eq','conf','cable','news','spaceweather','community','borders','alerts','fire'],
       // 2026-05-05 (Phase 5 audit): added 12 layers that existed in the UI but were
       // silently locked for paying operator-tier users:
       //   cyber, floods, tsunamis, volcanoes, nucranges, hillshade, popdensity,
