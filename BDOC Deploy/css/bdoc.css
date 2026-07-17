@@ -270,6 +270,11 @@ gap:20px;align-items:center;pointer-events:none}
 .lp::after{content:'';position:absolute;top:0;right:-1px;bottom:0;width:1px;background:rgba(255,255,255,0.4)}
 .lp.shut{transform:translateX(calc(var(--lw)*-1))}
 .lp-reopen{position:fixed;top:52px;left:8px;z-index:90;width:36px;height:36px;background:var(--panel);border:1px solid rgba(255,255,255,0.2);border-radius:var(--r);color:var(--kf);font-size:18px;cursor:pointer;display:none;align-items:center;justify-content:center;transition:all .2s;}
+/* p69 overlap fix: JS races could leave the reopen burger visible while the panel is open —
+ * it sat on top of the INTEL LAYERS header. CSS is the source of truth now: if the left panel
+ * is open (not .shut) or the situation panel is open, the burger cannot render. */
+body:has(#lp:not(.shut)) .lp-reopen{display:none!important}
+body:has(#sitPanel.sp-open) .lp-reopen{display:none!important}
 .lp-reopen:hover{border-color:var(--bl);color:var(--t1);background:rgba(255,255,255,0.12);animation:none}
 @keyframes lpPulse{0%,100%{box-shadow:0 1px 2px rgba(0,0,0,0.4)}}
 /* reopen button visibility handled by togL() in JS */

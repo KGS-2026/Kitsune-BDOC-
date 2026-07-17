@@ -175,7 +175,7 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p64">
+<link rel="stylesheet" href="css/bdoc.css?v=p69">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -2997,10 +2997,64 @@ function bdocNearMe(){
     try{V.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(lo,la,350000),duration:2.5})}catch(_){}
     try{bdocApplyPreset('emergency')}catch(_){}
     try{localStorage.setItem('bdoc_home_aoi',JSON.stringify({lat:la,lon:lo,ts:Date.now()}))}catch(_){}
-    af('#3FB950',`HOME AOI SET \u2014 ${la.toFixed(3)}, ${lo.toFixed(3)} \u2014 local hazard picture armed`);
+    af('#3FB950','HOME AOI SET \u2014 '+la.toFixed(3)+', '+lo.toFixed(3)+' \u2014 local hazard picture armed');
     if(typeof EventLog!=='undefined')EventLog.add('info','NEAR ME: home AOI set, emergency preset armed');
+    try{AOIWatch.start(la,lo)}catch(_){}
   },err=>{af('var(--rd)','Position denied \u2014 enable location or search your city instead')},{timeout:12000,maximumAge:600000});
 }
+// ═══════════════════════════════════════════
+// P69: AOI WATCH — geofenced hazard alerting on the home AOI
+// The feature that turns NEAR ME from a camera move into an operational monitor.
+// Polls CORS-open feeds (NWS alerts + USGS quakes) every 5 min, dedupes by event id,
+// fires banner + browser Notification when a NEW hazard enters the AOI radius.
+// Zero server cost — pure client. Resumes automatically on reload if AOI saved.
+// ═══════════════════════════════════════════
+const AOIWatch={
+  lat:null,lon:null,timer:null,seen:{},RADIUS_KM:120,
+  start(la,lo){
+    this.lat=la;this.lon=lo;
+    try{const s=localStorage.getItem('bdoc_aoi_seen');if(s)this.seen=JSON.parse(s)}catch(_){this.seen={}}
+    if(this.timer)clearInterval(this.timer);
+    this.timer=setInterval(()=>this.poll(),5*60*1000);
+    this.poll(true);
+    // Ask notification permission once, politely, only after user armed the watch
+    try{if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}catch(_){}
+    af('var(--kf)','AOI WATCH ARMED \u2014 monitoring '+this.RADIUS_KM+' km radius (NWS alerts + USGS seismic, 5-min poll)');
+  },
+  km(la1,lo1,la2,lo2){const R=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;const a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(a))},
+  alert(id,title,detail,sev){
+    if(this.seen[id])return;this.seen[id]=Date.now();
+    // Prune seen-cache >48h so localStorage doesn't grow forever
+    try{const cut=Date.now()-48*3600*1000;Object.keys(this.seen).forEach(k=>{if(this.seen[k]<cut)delete this.seen[k]});localStorage.setItem('bdoc_aoi_seen',JSON.stringify(this.seen))}catch(_){}
+    const color=sev==='crit'?'var(--rd)':'var(--kf)';
+    af(color,'\u26A0 AOI ALERT \u2014 '+title);
+    try{if(typeof EventLog!=='undefined')EventLog.add(sev==='crit'?'alert':'warn','AOI WATCH: '+title+(detail?' \u2014 '+detail:''))}catch(_){}
+    try{if('Notification' in window&&Notification.permission==='granted')new Notification('BDOC AOI ALERT',{body:title+(detail?'\n'+detail:''),icon:'/icons/icon-192.png',tag:id})}catch(_){}
+  },
+  async poll(first){
+    if(this.lat==null)return;
+    // 1) NWS active alerts at the point (US only; fails silent elsewhere)
+    try{
+      const r=await fetch('https://api.weather.gov/alerts/active?point='+this.lat.toFixed(4)+','+this.lon.toFixed(4),{headers:{'Accept':'application/geo+json'}});
+      if(r.ok){const j=await r.json();(j.features||[]).forEach(f=>{
+        const p=f.properties||{};const sev=(p.severity==='Extreme'||p.severity==='Severe')?'crit':'warn';
+        this.alert('nws:'+f.id,(p.event||'Weather alert')+' \u2014 '+(p.areaDesc||'').slice(0,60),(p.headline||'').slice(0,120),sev);
+      })}
+    }catch(_){}
+    // 2) USGS M4.5+ quakes past day within radius
+    try{
+      const r=await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson');
+      if(r.ok){const j=await r.json();(j.features||[]).forEach(f=>{
+        const c=f.geometry&&f.geometry.coordinates;if(!c)return;
+        const d=this.km(this.lat,this.lon,c[1],c[0]);
+        if(d<=this.RADIUS_KM*2){const m=f.properties.mag;this.alert('eq:'+f.id,'M'+m+' earthquake '+Math.round(d)+' km from AOI',(f.properties.place||''),m>=6?'crit':'warn')}
+      })}
+    }catch(_){}
+    if(first&&typeof EventLog!=='undefined')EventLog.add('info','AOI WATCH: baseline sweep complete');
+  }
+};
+// Resume watch on reload if a home AOI exists (set within last 7 days)
+try{const a=JSON.parse(localStorage.getItem('bdoc_home_aoi')||'null');if(a&&a.lat&&(Date.now()-(a.ts||0))<7*86400*1000){setTimeout(()=>{try{AOIWatch.start(a.lat,a.lon)}catch(_){}},15000)}}catch(_){}
 function bdocApplyPreset(name){
   try{
     if(name==='clear'){
