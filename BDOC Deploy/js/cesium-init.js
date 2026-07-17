@@ -263,8 +263,8 @@ var _buildingsTileset=null;
 const s=V.scene;
 const il=s.globe.imageryLayers.get(0);
 il._isBaseLayer=true; // Tag base layer for setBasemap() removal
-// Match Google Earth color grade — slightly warm, vivid greens, deep oceans
-il.brightness=1.05;il.contrast=1.2;il.saturation=1.15;il.gamma=0.95;
+// Match Google Earth color grade — slightly warm, vivid greens, deep oceans (p68 verified tune)
+il.brightness=1.03;il.contrast=1.16;il.saturation=1.25;il.gamma=0.92;
 // ═══ PERSISTENT BORDERS + LABELS OVERLAY ═══
 // Single high-res label layer — no stacking, no blur
 // var (not let): setBasemap() lives in a sibling try{} block and needs access — let would block-scope these
