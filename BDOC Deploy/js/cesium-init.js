@@ -81,9 +81,9 @@ try{
 s.backgroundColor=Cesium.Color.fromCssColorString('#000000');
 s.globe.baseColor=Cesium.Color.fromCssColorString('#0a1628'); // Deep ocean blue when tiles haven't loaded
 s.globe.showGroundAtmosphere=true;s.globe.enableLighting=true;s.globe.depthTestAgainstTerrain=true;
-s.fog.enabled=true;s.fog.density=0.00003;s.fog.minimumBrightness=0.03;
+s.fog.enabled=true;s.fog.density=0.000015;s.fog.minimumBrightness=0.03; // p68: halved density — was hazing terrain at country zoom
 // Atmosphere scattering — match Google Earth's clean blue limb
-s.globe.atmosphereLightIntensity=10.0;
+s.globe.atmosphereLightIntensity=6.0; // p68: 10.0 washed the limb milky-white; 6.0 keeps blue glow w/o bleaching imagery
 s.globe.atmosphereRayleighCoefficient=new Cesium.Cartesian3(5.5e-6,13.0e-6,28.4e-6);
 s.globe.atmosphereMieCoefficient=new Cesium.Cartesian3(21e-6,21e-6,21e-6);
 s.globe.atmosphereMieAnisotropy=0.9;
@@ -102,12 +102,20 @@ try{
   const _bloom=s.postProcessStages.bloom;
   _bloom.enabled=true;
   _bloom.uniforms.glowOnly=false;
-  _bloom.uniforms.contrast=232;      // Travon-tuned 2026-06-25
-  _bloom.uniforms.brightness=0.45;   // Travon-tuned 2026-06-25
-  _bloom.uniforms.delta=2.7;         // Travon-tuned 2026-06-25
-  _bloom.uniforms.sigma=6.3;         // Travon-tuned 2026-06-25 — wide soft halo
+  _bloom.uniforms.contrast=119;      // p68 re-tune: old 232/0.45/2.7/6.3 bloomed the whole daylight hemisphere → washed-out look
+  _bloom.uniforms.brightness=-0.3;   // p68: negative brightness = only genuinely bright pixels (markers/lights) glow
+  _bloom.uniforms.delta=0.9;
+  _bloom.uniforms.sigma=3.0;
   _bloom.uniforms.stepSize=1.0;
 }catch(e){console.warn('[BDOC bloom]',e)}
+// ═══ P68: PROFESSIONAL IMAGERY COLOR GRADE ═══
+// Stock ESRI World Imagery renders flat/desaturated in Cesium (the "default skin" every hobby
+// Cesium app ships with). Grade the base layer like Google Earth: richer saturation, gentle
+// contrast lift, slight gamma crush for depth. Base layer only — data overlays unaffected.
+try{
+  const _base=V.imageryLayers.get(0);
+  if(_base){_base.saturation=1.25;_base.contrast=1.12;_base.gamma=0.92;_base.brightness=1.02;}
+}catch(e){console.warn('[BDOC color grade]',e)}
 // ═══ CAMERA CONTROLLER — Google-Earth-style joystick feel ═══
 // Phase 14 fix (2026-05-12): Cesium defaults park tilt on middle-click — most users have no middle button.
 // Map RIGHT_DRAG + CTRL+LEFT_DRAG + PINCH onto tilt. Clamp zoom range. Tune inertia so the camera doesn't snap-stop.
@@ -657,8 +665,8 @@ try{
 let _currentBasemap='satellite';
 const BASEMAPS={
   dark:{url:'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',credit:'CartoDB Dark Matter',brightness:1.6,contrast:1.3,saturation:0.4},
-  satellite:{type:'arcgis',credit:'ESRI World Imagery',brightness:1.0,contrast:1.1,saturation:1.0},
-  hybrid:{type:'arcgis_labels',credit:'ESRI + OSM Labels',brightness:1.0,contrast:1.1,saturation:1.0},
+  satellite:{type:'arcgis',credit:'ESRI World Imagery',brightness:1.02,contrast:1.12,saturation:1.25,gamma:0.92},
+  hybrid:{type:'arcgis_labels',credit:'ESRI + OSM Labels',brightness:1.02,contrast:1.12,saturation:1.25,gamma:0.92},
   terrain:{url:'https://tile.opentopomap.org/{z}/{x}/{y}.png',credit:'OpenTopoMap',brightness:1.0,contrast:1.1,saturation:0.8},
   streets:{url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',credit:'OpenStreetMap',brightness:1.05,contrast:1.05,saturation:1.1,isLight:true},
   topo:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',credit:'ESRI World Topo',brightness:1.0,contrast:1.1,saturation:0.9}
@@ -690,6 +698,7 @@ function setBasemap(name){
   il2.lowerToBottom(newLayer);
   newLayer._isBaseLayer=true; // Tag for future removal
   newLayer.brightness=bm.brightness;newLayer.contrast=bm.contrast;newLayer.saturation=bm.saturation;
+  if(bm.gamma)newLayer.gamma=bm.gamma; // p68 color grade support
   if(bm.type==='arcgis_labels'){
     // ESRI reference overlay — white state/country borders + city labels on satellite
     const refProvider=new Cesium.UrlTemplateImageryProvider({url:'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',credit:'ESRI Reference',maximumLevel:19});
