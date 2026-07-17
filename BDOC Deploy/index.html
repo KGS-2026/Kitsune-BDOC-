@@ -2508,6 +2508,7 @@ function bdocSkipOnboarding(){
     document.getElementById('bdocOnboard').style.display='none';
     localStorage.setItem('bdoc_onboard_done','1');
     localStorage.setItem('bdoc_welcome_seen','1'); // p73: wizard supersedes welcome card — 3-modal chain (wizard→welcome→weather) killed first impression
+    localStorage.setItem('bdoc_first_run_complete_v1','1'); // p73: weather card duplicates the wizard's Weather persona — one modal, period
     if(typeof plausible==='function')plausible('Onboarding Skipped',{props:{step:_bdocTourIdx>=0?'tour_step_'+_bdocTourIdx:'questionnaire'}});
   }catch(_){}
 }
@@ -2580,6 +2581,7 @@ function bdocFinishOnboarding(){
     document.getElementById('bdocOnboard').style.display='none';
     localStorage.setItem('bdoc_onboard_done','1');
     localStorage.setItem('bdoc_welcome_seen','1'); // p73: same guard as skip path
+    localStorage.setItem('bdoc_first_run_complete_v1','1'); // p73: persona already picked — no second interrogation
     if(typeof plausible==='function')plausible('Onboarding Complete');
     if(typeof af==='function')af('var(--gn)','Welcome to BDOC. Click 🔥 CRISIS HOT ZONES to jump to active geopolitical events.');
   }catch(_){}
