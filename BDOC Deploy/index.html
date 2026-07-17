@@ -12122,12 +12122,17 @@ WiresharkBridge.connect = async function() {
   const SKIP_KEY='bdoc_skip_first_run';
   if(localStorage.getItem(FIRST_RUN_KEY)==='1')return;
   if(localStorage.getItem(SKIP_KEY)==='1')return;
+  // p70 modal-stacking fix: the persona onboarding wizard (#bdocOnboard) also fires on first
+  // visit — both modals were rendering on top of each other (worst possible first impression).
+  // Persona wizard owns the first visit; this weather card only runs once that's done AND
+  // it never ran before. If the wizard is visible now, defer via poll until it closes.
+  function onboardVisible(){const el=document.getElementById('bdocOnboard');return el&&el.style.display!=='none'&&el.style.display!==''}
 
   // Wait for Cesium to fully initialize (V created + bootFeeds running)
   function waitForReady(callback,attempts){
     attempts=attempts||0;
-    if(attempts>40){console.warn('[BDOC FirstRun] Cesium not ready after 20s, aborting');return}
-    if(typeof V!=='undefined'&&V&&V.scene&&typeof togLy==='function')callback();
+    if(attempts>120){console.warn('[BDOC FirstRun] Cesium/onboarding not ready after 60s, aborting');return}
+    if(typeof V!=='undefined'&&V&&V.scene&&typeof togLy==='function'&&!onboardVisible())callback();
     else setTimeout(()=>waitForReady(callback,attempts+1),500);
   }
 
@@ -12142,7 +12147,7 @@ WiresharkBridge.connect = async function() {
         We'll use your location to show local clouds, radar, and storm tracking.
       </div>
       <div style="display:flex;gap:8px;flex-direction:column">
-        <button id="bdocFirstRunYes" style="padding:11px 16px;background:rgba(45,114,210,0.32));border:1px solid rgba(45,114,210,0.75);border-radius:3px;color:#fff;font-family:var(--m,monospace);font-size:12px;font-weight:700;letter-spacing:1.2px;cursor:pointer;text-transform:uppercase;box-shadow:0 1px 2px rgba(0,0,0,0.4)">✓ YES — SHOW MY WEATHER</button>
+        <button id="bdocFirstRunYes" style="padding:11px 16px;background:rgba(45,114,210,0.32);border:1px solid rgba(45,114,210,0.75);border-radius:3px;color:#fff;font-family:var(--m,monospace);font-size:12px;font-weight:700;letter-spacing:1.2px;cursor:pointer;text-transform:uppercase;box-shadow:0 1px 2px rgba(0,0,0,0.4)">✓ YES — SHOW MY WEATHER</button>
         <button id="bdocFirstRunNo" style="padding:9px 16px;background:transparent;border:1px solid rgba(138,146,164,0.4);border-radius:3px;color:#8a92a4;font-family:var(--m,monospace);font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;text-transform:uppercase">SKIP — I'M AN INTEL ANALYST</button>
       </div>
       <div style="margin-top:14px;font-size:9px;color:#5a6378;text-align:center;letter-spacing:0.5px">Location is used only on your device. Never sent to our servers.</div>
