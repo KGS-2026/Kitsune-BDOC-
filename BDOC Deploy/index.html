@@ -3703,6 +3703,13 @@ async function loadGDELTNews(){
     try{
       res=await safeFetch('gdelt','news','/.netlify/functions/proxy-gdelt?timespan=24h&maxpoints=150',{feedType:'news',staleOk:true});
       if(!res||!res.data)throw new Error('proxy empty');
+      // P77b: proxy degrades to HTTP 200 + empty features + _gdelt_warning when GDELT
+      // times out from AWS IPs (GDELT throttles datacenter ranges). That's a soft
+      // failure — throw so we retry direct from the user's residential IP, which
+      // GDELT serves fine.
+      try{const probe=typeof res.data==='string'?JSON.parse(res.data):res.data;
+        if(probe&&probe._gdelt_warning&&(!probe.features||probe.features.length===0))throw new Error('proxy degraded: '+probe._gdelt_warning);
+      }catch(pe){if(/proxy degraded/.test(pe.message))throw pe}
     }catch(proxyErr){
       console.warn('[GDELT] Proxy failed, trying direct:',proxyErr.message);
       // P77: GEO 2.0 endpoint is retired (404s) — fall back to DOC 2.0 artlist like the proxy does; OR'd terms MUST be wrapped in parens or GDELT rejects the query
