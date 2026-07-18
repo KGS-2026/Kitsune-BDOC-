@@ -3713,6 +3713,13 @@ async function loadGDELTNews(){
     let geojson;
     try{geojson=typeof res.data==='string'?JSON.parse(res.data):res.data}
     catch(parseErr){af('var(--yl)','GDELT returned non-JSON response — query may be empty');BDOC.layerLoadFx.done('news',false);return}
+    // P77: direct DOC 2.0 fallback returns {articles:[...]} not GeoJSON — convert using
+    // the same country-centroid placement the proxy uses (compact map, conflict countries).
+    if(!geojson.features&&Array.isArray(geojson.articles)){
+      const CTR={'United States':[-98.6,39.8],'Russia':[105.3,61.5],'Ukraine':[31.2,48.4],'Israel':[34.8,31.0],'Palestinian Territory':[35.2,31.9],'Iran':[53.7,32.4],'Iraq':[43.7,33.2],'Syria':[38.0,35.0],'Lebanon':[35.9,33.9],'Yemen':[48.5,15.6],'Saudi Arabia':[45.1,23.9],'Turkey':[35.2,38.9],'China':[104.2,35.9],'Taiwan':[121.0,23.7],'North Korea':[127.5,40.3],'South Korea':[127.8,36.4],'Japan':[138.3,36.2],'India':[78.9,20.6],'Pakistan':[69.3,30.4],'Afghanistan':[67.7,33.9],'Sudan':[30.2,12.9],'Ethiopia':[39.8,9.1],'Somalia':[46.2,5.2],'Nigeria':[8.7,9.1],'Libya':[17.2,26.3],'Egypt':[30.8,26.8],'United Kingdom':[-1.5,52.4],'France':[2.2,46.2],'Germany':[10.5,51.2],'Poland':[19.1,51.9],'Myanmar':[95.9,21.9],'Philippines':[122.9,12.9],'Venezuela':[-66.6,6.4],'Colombia':[-74.3,4.6],'Mexico':[-102.6,23.6]};
+      const jit=s=>{let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return((h%1000)/1000-0.5)*6};
+      geojson={type:'FeatureCollection',features:geojson.articles.filter(a=>CTR[a.sourcecountry]).map(a=>({type:'Feature',geometry:{type:'Point',coordinates:[CTR[a.sourcecountry][0]+jit(a.url||''),CTR[a.sourcecountry][1]+jit(a.title||'')]},properties:{name:a.title||'News Event',url:a.url||'',country:a.sourcecountry||''}}))};
+    }
     const features=geojson.features||[];
     newsEnts.forEach(e=>V.entities.remove(e));newsEnts=[];
     const seen=new Set();
