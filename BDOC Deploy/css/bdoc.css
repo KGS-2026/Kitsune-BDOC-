@@ -1245,3 +1245,114 @@ button.eb[style*="E8B339"]:hover,button.eb[style*="E8B349"]:hover{background:rgb
 #bootSeq .bs-bar{height:100%;width:0;background:linear-gradient(90deg,#E8B349,#F0C868);transition:width .3s ease;box-shadow:0 0 8px rgba(232,179,73,0.5)}
 #bootSeq .bs-foot{font-size:7.5px;letter-spacing:0.28em;color:#3A4048}
 /* ═══════════════ END PHASE 25 BOOT SEQUENCE ═══════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * PHASE 26 — GOTHAM-GRADE DESIGN SYSTEM (p76)
+ * Response to external design critique: "flat samey typography, even boxed
+ * spacing, no depth, functional prototype vibe."
+ * Four systems, cascade-safe (appended overrides only, no layout changes):
+ *   1. TYPE RAMP    — differentiated scale w/ weight+tracking contrast
+ *   2. ELEVATION    — 3 depth levels: canvas < panel < raised < overlay
+ *   3. HIERARCHY    — critical info pops (threat/crisis), chrome recedes
+ *   4. MICRO-MOTION — press/hover/focus feedback on every interactive element
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. TYPE RAMP ─────────────────────────────────────────────────────────
+ * Problem: everything was 9-11px/400-600 — nothing led the eye.
+ * Ramp: micro-label 7px/700/wide · body 10.5px/450 · data 11px mono
+ *       section-head 9.5px/700/very-wide · panel-title 12px/700       */
+
+/* Section headers: command-console stencil — heavier, wider, amber tick */
+.lg-title{
+  font-size:9px;font-weight:700;letter-spacing:0.22em;color:var(--t2);
+  margin:16px 0 7px 0;padding:6px 8px 5px;
+  border-left:2px solid var(--kf);
+  background:linear-gradient(90deg,rgba(232,179,73,0.05),transparent 60%);
+}
+.lg-title::before{background:var(--kf);opacity:0.8}
+.lg-title:hover{border-left-color:var(--kf);color:var(--t1)}
+
+/* Layer rows: bigger touch targets, clearer on-state, readable names */
+.ly{padding:5px 8px;border-radius:4px;margin-bottom:2px}
+.ly-n{font-size:11px;font-weight:450;letter-spacing:0.01em}
+.ly.on .ly-n{color:#E9ECF2;font-weight:600}
+.ly.on{
+  background:linear-gradient(90deg,rgba(232,179,73,0.10),rgba(232,179,73,0.03) 70%);
+  border-color:rgba(232,179,73,0.28);
+  box-shadow:inset 2px 0 0 var(--kf),0 1px 3px rgba(0,0,0,0.5);
+}
+.ly.on .ly-d{box-shadow:0 0 6px currentColor}
+
+/* Toolbar buttons (.eb): slightly larger, clearer rest/hover/active states */
+.eb{font-size:7.5px;padding:4px 8px;color:var(--t2);border-color:rgba(255,255,255,0.09)}
+.eb:hover{color:var(--kf);border-color:rgba(232,179,73,0.45);background:rgba(232,179,73,0.06)}
+.eb:active{transform:translateY(1px)}
+.eb.on,.eb.active{color:#0B0E13;background:var(--kf);border-color:var(--kf);font-weight:700}
+
+/* Basemap/preset buttons: cohesive with .eb family */
+.bm-btn{font-size:8.5px;padding:6px 8px;font-weight:600;letter-spacing:0.1em;border-radius:4px}
+.bm-btn:hover{border-color:rgba(232,179,73,0.4);color:var(--t1);background:rgba(232,179,73,0.05);transform:translateY(-1px)}
+.bm-btn:active{transform:translateY(0)}
+.bm-btn.bm-active{background:rgba(232,179,73,0.14);border-color:var(--kf);color:var(--kf);box-shadow:inset 0 0 0 1px rgba(232,179,73,0.25),0 2px 6px rgba(0,0,0,0.4)}
+
+/* ── 2. ELEVATION SYSTEM ─────────────────────────────────────────────────
+ * L0 canvas (globe) · L1 side panels · L2 raised cards/tiles · L3 overlays.
+ * Each level: darker shadow + 1px top inner highlight = machined edge.   */
+.lp{
+  background:linear-gradient(180deg,rgba(19,23,31,0.97),rgba(14,17,22,0.97));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),4px 0 24px rgba(0,0,0,0.55);
+  border-right:1px solid rgba(255,255,255,0.08);
+}
+.lp::after{background:linear-gradient(180deg,rgba(232,179,73,0.35),rgba(255,255,255,0.12) 30%,rgba(255,255,255,0.08))}
+.rp{
+  background:linear-gradient(180deg,rgba(19,23,31,0.97),rgba(14,17,22,0.97));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),-4px 0 24px rgba(0,0,0,0.55);
+}
+/* Status tiles: raised data cards, mono values pop */
+.si{border-right:1px solid rgba(255,255,255,0.07)}
+.si-v{font-weight:700;letter-spacing:0.02em}
+.si:hover{background:rgba(232,179,73,0.04)}
+/* Top bar: machined edge under it */
+.tb,.topbar,#topbar{box-shadow:0 1px 0 rgba(255,255,255,0.06),0 6px 18px rgba(0,0,0,0.5)}
+
+/* ── 3. HIERARCHY — critical intel pops, chrome recedes ─────────────────── */
+/* Crisis hot zones: these are THE reason to open the app — threat-coded rail */
+button.bm-btn[onclick*="bdocCrisisZone"]{
+  border-left:3px solid var(--rd);
+  background:linear-gradient(90deg,rgba(218,54,51,0.09),rgba(255,255,255,0.02) 65%);
+  font-weight:600;letter-spacing:0.06em;
+}
+button.bm-btn[onclick*="bdocCrisisZone"]:hover{
+  border-left-color:#FF5A55;border-color:rgba(218,54,51,0.45);
+  background:linear-gradient(90deg,rgba(218,54,51,0.16),rgba(255,255,255,0.03) 65%);
+  transform:translateX(2px);box-shadow:0 2px 8px rgba(0,0,0,0.5);
+}
+/* NEAR ME: the citizen CTA — full-strength affordance */
+button.bm-btn[onclick*="bdocNearMe"]{
+  background:linear-gradient(180deg,rgba(63,185,80,0.16),rgba(63,185,80,0.07));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.08),0 2px 8px rgba(0,0,0,0.4);
+}
+button.bm-btn[onclick*="bdocNearMe"]:hover{
+  background:linear-gradient(180deg,rgba(63,185,80,0.26),rgba(63,185,80,0.12));
+  box-shadow:0 0 14px rgba(63,185,80,0.25),0 2px 8px rgba(0,0,0,0.5);transform:translateY(-1px);
+}
+/* Locked layers recede harder — free layers read instantly */
+.ly.locked{opacity:0.32}
+.ly.locked:hover{opacity:0.75}
+
+/* ── 4. MICRO-INTERACTIONS ──────────────────────────────────────────────── */
+/* Universal focus ring for keyboard operators */
+.eb:focus-visible,.bm-btn:focus-visible,.ly:focus-visible,button:focus-visible{
+  outline:1px solid rgba(232,179,73,0.7);outline-offset:1px;
+}
+/* Toggle switches: smoother travel + amber on-glow */
+.sw{transition:background var(--t-norm) ease,box-shadow var(--t-norm) ease}
+.ly.on .sw{background:rgba(232,179,73,0.55);box-shadow:0 0 6px rgba(232,179,73,0.35)}
+.sw::after{transition:transform var(--t-norm) cubic-bezier(.34,1.4,.64,1)}
+/* Layer rows glide on hover */
+.ly{transition:background var(--t-fast) ease,border-color var(--t-fast) ease,transform var(--t-fast) ease}
+.ly:hover{transform:translateX(1px)}
+/* Panel scrollbars: hairline amber, invisible until hover */
+.lp-b::-webkit-scrollbar-thumb,.rp ::-webkit-scrollbar-thumb{background:rgba(232,179,73,0.18)}
+.lp-b:hover::-webkit-scrollbar-thumb{background:rgba(232,179,73,0.4)}
+/* ═══════════════ END PHASE 26 GOTHAM DESIGN SYSTEM ═══════════════ */
