@@ -3701,24 +3701,20 @@ async function loadAirQuality(){
 // Real-time geocoded news from GDELT Project — free, no API key, commercial-friendly
 async function loadGDELTNews(){
   try{
-    // Phase 15 (2026-05-13): route via Netlify proxy (handles CORS + non-JSON error responses).
-    // Falls back to direct GDELT if proxy fails.
+    // P78c (2026-06): FLIPPED order. GDELT hard-throttles datacenter IPs (Netlify
+    // functions live on AWS → the proxy times out ~always in prod), but serves
+    // residential IPs fine. So: browser-direct is PRIMARY, proxy is fallback for
+    // users whose networks block cross-origin GDELT. OR'd terms must be in parens.
     let res;
+    const directUrl='https://api.gdeltproject.org/api/v2/doc/doc?query='+encodeURIComponent('(conflict OR military OR disaster OR earthquake OR missile OR nuclear OR attack)')+'&mode=artlist&format=json&timespan=24h&maxrecords=150&sort=datedesc';
     try{
+      res=await safeFetch('gdelt','news',directUrl,{feedType:'news',staleOk:true});
+      if(!res||!res.data)throw new Error('direct empty');
+      const probe=typeof res.data==='string'?JSON.parse(res.data):res.data; // throws on GDELT plain-text errors → fallback
+      if(!probe||(!probe.articles&&!probe.features))throw new Error('direct unrecognized shape');
+    }catch(directErr){
+      console.warn('[GDELT] Direct failed, trying proxy:',directErr.message);
       res=await safeFetch('gdelt','news','/.netlify/functions/proxy-gdelt?timespan=24h&maxpoints=150',{feedType:'news',staleOk:true});
-      if(!res||!res.data)throw new Error('proxy empty');
-      // P77b: proxy degrades to HTTP 200 + empty features + _gdelt_warning when GDELT
-      // times out from AWS IPs (GDELT throttles datacenter ranges). That's a soft
-      // failure — throw so we retry direct from the user's residential IP, which
-      // GDELT serves fine.
-      try{const probe=typeof res.data==='string'?JSON.parse(res.data):res.data;
-        if(probe&&probe._gdelt_warning&&(!probe.features||probe.features.length===0))throw new Error('proxy degraded: '+probe._gdelt_warning);
-      }catch(pe){if(/proxy degraded/.test(pe.message))throw pe}
-    }catch(proxyErr){
-      console.warn('[GDELT] Proxy failed, trying direct:',proxyErr.message);
-      // P77: GEO 2.0 endpoint is retired (404s) — fall back to DOC 2.0 artlist like the proxy does; OR'd terms MUST be wrapped in parens or GDELT rejects the query
-      const url='https://api.gdeltproject.org/api/v2/doc/doc?query='+encodeURIComponent('(conflict OR military OR disaster OR earthquake OR missile OR nuclear OR attack)')+'&mode=artlist&format=json&timespan=24h&maxrecords=150&sort=datedesc';
-      res=await safeFetch('gdelt','news',url,{feedType:'news',staleOk:true});
     }
     if(!res||!res.data){af('var(--yl)','GDELT: both proxy and direct fetch failed');BDOC.layerLoadFx.done('news',false);return}
     let geojson;
