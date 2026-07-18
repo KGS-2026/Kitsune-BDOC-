@@ -1362,3 +1362,29 @@ button.bm-btn[onclick*="bdocNearMe"]:hover{
 .lp-b::-webkit-scrollbar-thumb,.rp ::-webkit-scrollbar-thumb{background:rgba(232,179,73,0.18)}
 .lp-b:hover::-webkit-scrollbar-thumb{background:rgba(232,179,73,0.4)}
 /* ═══════════════ END PHASE 26 GOTHAM DESIGN SYSTEM ═══════════════ */
+
+/* ═══════════════ P77 POLISH: DENSITY + CONVERSION PATH ═══════════════ */
+/* Grok punch list (2026-06): (1) long layer lists feel dense — quiet the tags,
+   hairline dividers between groups; (2) subscription modal must carry the P26
+   design language (elevation, machined edges, type ramp) so the screen where
+   money changes hands looks as expensive as the map. Cascade-safe: appended
+   last, same-specificity overrides win by order. NO !important. */
+
+/* — layer-list density — */
+.ly-tg{opacity:.68;transition:opacity .15s ease}
+.ly:hover .ly-tg,.ly.on .ly-tg{opacity:1}
+.lg-group{border-bottom:1px solid rgba(255,255,255,0.045);padding-bottom:3px;margin-bottom:3px}
+.lg-group.closed{padding-bottom:0;margin-bottom:0;border-bottom-color:transparent}
+
+/* — paywall / subscription modal: match P26 elevation system — */
+.mo{background:linear-gradient(180deg,#10151f 0%,#0b0f17 100%);border:1px solid rgba(255,255,255,0.09);border-top-color:rgba(255,255,255,0.16);border-radius:6px;box-shadow:0 24px 64px rgba(0,0,0,0.6),0 2px 8px rgba(0,0,0,0.4)}
+.mo h2{letter-spacing:.03em}
+.pc{background:linear-gradient(180deg,rgba(255,255,255,0.035) 0%,rgba(255,255,255,0.01) 100%);border:1px solid rgba(255,255,255,0.08);border-top-color:rgba(255,255,255,0.14);border-radius:5px;box-shadow:0 8px 24px rgba(0,0,0,0.35);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.pc:hover{transform:translateY(-2px);border-color:rgba(232,179,57,0.35);box-shadow:0 14px 32px rgba(0,0,0,0.5)}
+.pt{letter-spacing:.22em;font-weight:700}
+.ct{box-shadow:0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.15);transition:filter .15s ease,transform .1s ease}
+.ct:hover{filter:brightness(1.12)}
+.ct:active{transform:translateY(1px)}
+.ct2{transition:border-color .15s ease,color .15s ease}
+.ct2:hover{border-color:rgba(255,255,255,0.25);color:var(--t1)}
+/* ═══════════════ END P77 POLISH ═══════════════ */

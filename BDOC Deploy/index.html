@@ -175,7 +175,7 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p76b">
+<link rel="stylesheet" href="css/bdoc.css?v=p77">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.104.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -609,6 +609,8 @@ if('serviceWorker' in navigator){
 <div class="lg-group closed">
 <div class="ly" data-layer="cable" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:var(--pr)"></div><span class="ly-n">Submarine Cables</span><span class="ly-tg tg-l">FREE</span></div>
 <div class="ly" data-layer="powerplants" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#FFD700"></div><span class="ly-n">Power Plants</span><span class="ly-tg" style="color:#FFD700;background:rgba(255,215,0,0.1)">WRI</span></div>
+<div class="ly" data-layer="gridinfra" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#DA3633"></div><span class="ly-n">Power Grid (HV Lines)</span><span class="ly-tg tg-l">HIFLD</span></div>
+<div class="ly" data-layer="pipelines" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#FF8C00"></div><span class="ly-n">Energy Pipelines (US)</span><span class="ly-tg tg-l">EIA</span></div>
 <div class="ly" data-layer="oilgas" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#1a1a1a"></div><span class="ly-n">Oil &amp; Gas Infrastructure</span><span class="ly-tg" style="color:#FF8C00;background:rgba(255,140,0,0.1)">OSINT</span></div>
 </div>
 <div class="lg-title lg-collapse collapsed" onclick="togCat(this)">IMINT <span class="lg-arrow">&#9660;</span></div>
@@ -1536,7 +1538,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p63',              // MUST bump on ANY js/modules/* change — p63 = hazard-species layer (Phase 2 moat feature)
+  _version: 'p77',              // MUST bump on ANY js/modules/* change — p77 = layers-arcgis (HIFLD grid + EIA pipelines)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
@@ -3094,8 +3096,8 @@ const milAC=[],allAC=[],feed=[];
 // Phase 8C (2026-05-05): every layer defaults to OFF — clean canvas on first load
 // Phase 22: added internet/landings/chokepoints here so markLockedLayers() can zero them on logout
 // (they were previously set lazily; 'key in layers' was false so markLockedLayers skipped them)
-const layers={forcetrack:false,air:false,eq:false,fire:false,conf:false,cable:false,sat:false,territory:false,imint:false,weather:false,clouds:false,temp:false,hurricanes:false,alerts:false,wind:false,forecastradar:false,lightning:false,airquality:false,vessels:false,cyber:false,outages:false,downdetect:false,webcams:false,radio:false,deforest:false,sentinel:false,news:false,headlines:false,spaceweather:false,mesh:false,community:false,floods:false,tsunamis:false,volcanoes:false,nucranges:false,borders:false,hillshade:false,popdensity:false,alliances:false,powerplants:false,oilgas:false,sanctions:false,embassies:false,wireshark:false,vegetation:false,econintel:false,milbases:false,milairfields:false,nukes:false,darkships:false,ioc:false,internet:false,landings:false,chokepoints:false,deflock:false,celltowers:false,fallout:false};
-let eqEnts=[],fireEnts=[],confEnts=[],airEnts=[],milEnts=[],cableEnts=[],satEnts=[],territoryEnts=[],imintEnts=[],newsEnts=[],headlineEnts=[],spwxEnts=[],meshEnts=new Set(),communityEnts=[],floodEnts=[],tsunamiEnts=[],volcanoEnts=[],nucRangeEnts=[],allianceEnts=[],powerplantEnts=[],oilgasEnts=[],sanctionEnts=[],embassyEnts=[],wiresharkEnts=[],vegEnts=[],darkshipEnts=[],iocEnts=[],falloutEnts=[];
+const layers={forcetrack:false,air:false,eq:false,fire:false,conf:false,cable:false,sat:false,territory:false,imint:false,weather:false,clouds:false,temp:false,hurricanes:false,alerts:false,wind:false,forecastradar:false,lightning:false,airquality:false,vessels:false,cyber:false,outages:false,downdetect:false,webcams:false,radio:false,deforest:false,sentinel:false,news:false,headlines:false,spaceweather:false,mesh:false,community:false,floods:false,tsunamis:false,volcanoes:false,nucranges:false,borders:false,hillshade:false,popdensity:false,alliances:false,powerplants:false,gridinfra:false,pipelines:false,oilgas:false,sanctions:false,embassies:false,wireshark:false,vegetation:false,econintel:false,milbases:false,milairfields:false,nukes:false,darkships:false,ioc:false,internet:false,landings:false,chokepoints:false,deflock:false,celltowers:false,fallout:false};
+let eqEnts=[],fireEnts=[],confEnts=[],airEnts=[],milEnts=[],cableEnts=[],satEnts=[],territoryEnts=[],imintEnts=[],newsEnts=[],headlineEnts=[],spwxEnts=[],meshEnts=new Set(),communityEnts=[],floodEnts=[],tsunamiEnts=[],volcanoEnts=[],nucRangeEnts=[],allianceEnts=[],powerplantEnts=[],gridinfraEnts=[],pipelineEnts=[],oilgasEnts=[],sanctionEnts=[],embassyEnts=[],wiresharkEnts=[],vegEnts=[],darkshipEnts=[],iocEnts=[],falloutEnts=[];
 // XSS sanitizer — escapes HTML in any API-sourced string before injection into innerHTML/description
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 // Sanitize any HTML that will be handed to Cesium's InfoBox iframe (entity.description). Uses DOMPurify if loaded; falls back to esc() + whitelist.
@@ -3180,6 +3182,9 @@ function togLy(el){
   if(ly==='alliances'){if(layers.alliances)loadAlliances();else{if(typeof _allianceDS!=='undefined'&&_allianceDS){try{V.dataSources.remove(_allianceDS,true);}catch(_){}; _allianceDS=null;}allianceEnts.forEach(e=>V.entities.remove(e));allianceEnts=[]}}
   if(ly==='powerplants'){if(layers.powerplants){BDOC.layerLoadFx.start('powerplants');BDOC.LazyLoader.load('layers-infra').then(()=>{if(window.loadPowerPlants)window.loadPowerPlants();BDOC.layerLoadFx.done('powerplants',true)}).catch(e=>{console.warn('[lazy layers-infra]',e);BDOC.layerLoadFx.done('powerplants',false)})}else{powerplantEnts.forEach(e=>V.entities.remove(e));powerplantEnts=[]}}
   if(ly==='oilgas'){if(layers.oilgas){BDOC.layerLoadFx.start('oilgas');BDOC.LazyLoader.load('layers-infra').then(()=>{if(window.loadOilGas)window.loadOilGas();BDOC.layerLoadFx.done('oilgas',true)}).catch(e=>{console.warn('[lazy layers-infra]',e);BDOC.layerLoadFx.done('oilgas',false)})}else{oilgasEnts.forEach(e=>V.entities.remove(e));oilgasEnts=[]}}
+  // P77: HIFLD/EIA live infrastructure layers via generic ArcGIS adapter (layers-arcgis.js)
+  if(ly==='gridinfra'){if(layers.gridinfra){BDOC.layerLoadFx.start('gridinfra');BDOC.LazyLoader.load('layers-arcgis').then(()=>window.loadGridInfra?window.loadGridInfra():null).then(()=>BDOC.layerLoadFx.done('gridinfra',gridinfraEnts.length>0)).catch(e=>{console.warn('[lazy layers-arcgis]',e);BDOC.layerLoadFx.done('gridinfra',false)})}else{gridinfraEnts.forEach(e=>V.entities.remove(e));gridinfraEnts=[]}}
+  if(ly==='pipelines'){if(layers.pipelines){BDOC.layerLoadFx.start('pipelines');BDOC.LazyLoader.load('layers-arcgis').then(()=>window.loadPipelines?window.loadPipelines():null).then(()=>BDOC.layerLoadFx.done('pipelines',pipelineEnts.length>0)).catch(e=>{console.warn('[lazy layers-arcgis]',e);BDOC.layerLoadFx.done('pipelines',false)})}else{pipelineEnts.forEach(e=>V.entities.remove(e));pipelineEnts=[]}}
   if(ly==='sanctions'){if(layers.sanctions)loadSanctions();else{if(typeof _sanctionDS!=='undefined'&&_sanctionDS){try{V.dataSources.remove(_sanctionDS,true);}catch(_){}; _sanctionDS=null;}sanctionEnts.forEach(e=>V.entities.remove(e));sanctionEnts=[]}}
   if(ly==='embassies'){if(layers.embassies)loadEmbassies();else{embassyEnts.forEach(e=>V.entities.remove(e));embassyEnts=[]}}
   if(ly==='vegetation'){if(layers.vegetation){VegIntel.activate();document.getElementById('vegPanel').style.display='block'}else{VegIntel.deactivate();vegEnts.forEach(e=>V.entities.remove(e));vegEnts=[];document.getElementById('vegPanel').style.display='none'}}
@@ -3700,7 +3705,8 @@ async function loadGDELTNews(){
       if(!res||!res.data)throw new Error('proxy empty');
     }catch(proxyErr){
       console.warn('[GDELT] Proxy failed, trying direct:',proxyErr.message);
-      const url='https://api.gdeltproject.org/api/v2/geo/geo?query=conflict+OR+military+OR+disaster+OR+earthquake+OR+missile+OR+nuclear+OR+attack&mode=PointData&format=GeoJSON&timespan=24h&maxpoints=150';
+      // P77: GEO 2.0 endpoint is retired (404s) — fall back to DOC 2.0 artlist like the proxy does; OR'd terms MUST be wrapped in parens or GDELT rejects the query
+      const url='https://api.gdeltproject.org/api/v2/doc/doc?query='+encodeURIComponent('(conflict OR military OR disaster OR earthquake OR missile OR nuclear OR attack)')+'&mode=artlist&format=json&timespan=24h&maxrecords=150&sort=datedesc';
       res=await safeFetch('gdelt','news',url,{feedType:'news',staleOk:true});
     }
     if(!res||!res.data){af('var(--yl)','GDELT: both proxy and direct fetch failed');BDOC.layerLoadFx.done('news',false);return}

@@ -30,7 +30,13 @@ const CENTROIDS = {
 
 exports.handler = async (event) => {
   const params = event.queryStringParameters || {};
-  const query = params.query || 'war OR airstrike OR missile OR offensive OR military OR conflict OR attack';
+  // 2026-06 FIX (Hermes P77): GDELT DOC API now REJECTS queries containing OR'd
+  // terms unless the whole expression is wrapped in parentheses — it returns the
+  // plain-text error "Queries containing OR'd terms must be surrounded by ()."
+  // (non-JSON → we degraded to an empty FeatureCollection → layer looked dead).
+  // Wrap both the default query and any caller-supplied query that has a bare OR.
+  let query = params.query || 'war OR airstrike OR missile OR offensive OR military OR conflict OR attack';
+  if (/\sOR\s/i.test(query) && !/^\(.*\)$/.test(query.trim())) query = `(${query})`;
   const maxrecords = Math.min(Math.max(parseInt(params.maxpoints || params.maxrecords, 10) || 75, 1), 250);
   const timespan = /^\d+[hdwm]$/.test(params.timespan || '') ? params.timespan : '24h';
 
