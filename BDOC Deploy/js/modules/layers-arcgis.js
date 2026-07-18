@@ -19,7 +19,7 @@
 
 // ═══ GENERIC ADAPTER ═══
 window.ARCGIS = {
-  _CACHE_TTL: 7 * 24 * 3600 * 1000, // 7 days — HIFLD/EIA infra is near-static
+  _CACHE_TTL: 7 * 24 * 3600 * 1000, // default 7 days — HIFLD/EIA infra is near-static
 
   // Build a FeatureServer query URL. opts: where, outFields, precision,
   // maxOffset (line generalization, degrees), count (resultRecordCount), offset
@@ -43,12 +43,13 @@ window.ARCGIS = {
   async fetchGeoJSON(serviceUrl, opts) {
     opts = opts || {};
     const cacheKey = 'bdoc_arcgis_' + (opts.cacheKey || serviceUrl.slice(-40));
+    const ttl = opts.ttl != null ? opts.ttl : this._CACHE_TTL; // per-layer TTL: live feeds pass short ttl
     // cache hit?
     try {
       const raw = localStorage.getItem(cacheKey);
       if (raw) {
         const c = JSON.parse(raw);
-        if (Date.now() - c.t < this._CACHE_TTL && c.d && c.d.features) return c.d;
+        if (Date.now() - c.t < ttl && c.d && c.d.features) return c.d;
       }
     } catch (_) {}
 
@@ -176,4 +177,77 @@ window.loadPipelines = async function () {
     console.warn('[Pipelines]', e);
     af('var(--yl)', 'Pipelines: EIA feed unavailable — ' + e.message);
   }
+};
+
+// ═══ METAR SURFACE OBSERVATIONS (NOAA/Esri live, ~15 min refresh) ═══
+// 5,500+ global weather stations: wind barb direction, speed, gusts, temp, pressure.
+// The layer pilots/EMs check before anything else. TTL 15 min.
+window.loadMetar = async function () {
+  metarEnts.forEach(e => V.entities.remove(e)); metarEnts = [];
+  try {
+    const fc = await ARCGIS.fetchGeoJSON(
+      'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/NOAA_METAR_current_wind_speed_direction_v1/FeatureServer/0', {
+        where: 'WIND_SPEED IS NOT NULL', outFields: 'ICAO,STATION_NAME,COUNTRY,TEMP,WIND_DIRECT,WIND_SPEED,WIND_GUST,VISIBILITY,PRESSURE,WEATHER',
+        precision: 2, count: 2000, pages: 1, cacheKey: 'metar', ttl: 15 * 60 * 1000
+      });
+    let n = 0;
+    const windColor = s => s >= 35 ? '#DA3633' : s >= 22 ? '#FF8C00' : s >= 12 ? '#E8B339' : '#3FB950';
+    fc.features.forEach(f => {
+      const g = f.geometry; if (!g || g.type !== 'Point') return;
+      const pr = f.properties || {};
+      const spd = pr.WIND_SPEED || 0;
+      const col = windColor(spd);
+      const clr = Cesium.Color.fromCssColorString(col);
+      metarEnts.push(V.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(g.coordinates[0], g.coordinates[1]),
+        point: { pixelSize: spd >= 22 ? 6 : 4, color: clr.withAlpha(0.85), outlineColor: Cesium.Color.BLACK, outlineWidth: 1, disableDepthTestDistance: 5e6, scaleByDistance: new Cesium.NearFarScalar(5e5, 1.1, 1e7, 0.35) },
+        description: '<div style="font-family:\'JetBrains Mono\',monospace;padding:10px;color:#c8ccd6;background:#0d1117;border:1px solid ' + col + '">' +
+          '<div style="font-size:12px;font-weight:700;color:' + col + ';margin-bottom:6px">🌬 METAR — ' + esc(pr.ICAO || '?') + '</div>' +
+          '<div style="font-size:11px;font-weight:600">' + esc(pr.STATION_NAME || 'Station') + '</div>' +
+          '<div style="font-size:10px;margin-top:4px">Wind: <b>' + esc(String(pr.WIND_DIRECT || 0)) + '° @ ' + spd + ' kt' + (pr.WIND_GUST ? ' G' + pr.WIND_GUST : '') + '</b></div>' +
+          (pr.TEMP != null ? '<div style="font-size:10px">Temp: ' + pr.TEMP + '°F</div>' : '') +
+          (pr.PRESSURE ? '<div style="font-size:10px">Pressure: ' + pr.PRESSURE + ' hPa</div>' : '') +
+          (pr.WEATHER ? '<div style="font-size:10px">Wx: ' + esc(pr.WEATHER) + '</div>' : '') +
+          '<div style="font-size:8px;color:#8b949e;margin-top:6px">Source: NOAA METAR via Esri Living Atlas — live</div></div>',
+        show: layers.metar
+      }));
+      n++;
+    });
+    af('#3FB950', 'METAR: ' + n + ' live surface observations loaded (NOAA)'); us(1);
+  } catch (e) { console.warn('[METAR]', e); af('var(--yl)', 'METAR: feed unavailable — ' + e.message); }
+};
+
+// ═══ DART TSUNAMI BUOYS (NOAA NCEI) ═══
+// Deep-ocean Assessment and Reporting of Tsunamis — the actual sensor net that
+// detects tsunamis in open ocean. 62 stations. Pairs with the GDACS tsunami layer.
+window.loadDartBuoys = async function () {
+  dartEnts.forEach(e => V.entities.remove(e)); dartEnts = [];
+  try {
+    const fc = await ARCGIS.fetchGeoJSON(
+      'https://services2.arcgis.com/C8EMgrsFcRFL6LrL/arcgis/rest/services/Current_DARTs_and_Retrospective_BPR_Deployments/FeatureServer/0', {
+        outFields: 'STATION,DESCRIPTION,DEPLOYED,DATA_URL', precision: 2, pages: 1, cacheKey: 'dart', ttl: 24 * 3600 * 1000
+      });
+    let n = 0;
+    fc.features.forEach(f => {
+      const g = f.geometry; if (!g || g.type !== 'Point') return;
+      const pr = f.properties || {};
+      const live = pr.DEPLOYED === 'Y';
+      const col = live ? '#00ddff' : '#4a5068';
+      const clr = Cesium.Color.fromCssColorString(col);
+      dartEnts.push(V.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(g.coordinates[0], g.coordinates[1]),
+        point: { pixelSize: 7, color: clr.withAlpha(0.9), outlineColor: Cesium.Color.BLACK, outlineWidth: 1.5, disableDepthTestDistance: 5e6 },
+        label: { text: '🌊 ' + esc(String(pr.STATION || '')), font: '9px JetBrains Mono', fillColor: clr, outlineColor: Cesium.Color.BLACK, outlineWidth: 2, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, 14), disableDepthTestDistance: 5e6, scaleByDistance: new Cesium.NearFarScalar(1e6, 1, 2e7, 0) },
+        description: '<div style="font-family:\'JetBrains Mono\',monospace;padding:10px;color:#c8ccd6;background:#0d1117;border:1px solid ' + col + '">' +
+          '<div style="font-size:12px;font-weight:700;color:' + col + ';margin-bottom:6px">🌊 DART TSUNAMI BUOY ' + esc(String(pr.STATION || '')) + '</div>' +
+          '<div style="font-size:10px">' + esc(pr.DESCRIPTION || '') + '</div>' +
+          '<div style="font-size:10px;margin-top:4px">Status: <b style="color:' + col + '">' + (live ? 'DEPLOYED — REPORTING' : 'RETROSPECTIVE/BPR') + '</b></div>' +
+          (pr.DATA_URL ? '<div style="font-size:9px;margin-top:4px"><a href="' + esc(pr.DATA_URL) + '" target="_blank" style="color:#00ddff">Live station data →</a></div>' : '') +
+          '<div style="font-size:8px;color:#8b949e;margin-top:6px">Source: NOAA NCEI — the real tsunami sensor net</div></div>',
+        show: layers.dartbuoys
+      }));
+      n++;
+    });
+    af('#00ddff', 'DART: ' + n + ' tsunami buoys loaded (NOAA NCEI)'); us(1);
+  } catch (e) { console.warn('[DART]', e); af('var(--yl)', 'DART buoys: feed unavailable — ' + e.message); }
 };
