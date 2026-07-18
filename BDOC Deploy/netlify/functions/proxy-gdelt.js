@@ -42,7 +42,9 @@ exports.handler = async (event) => {
 
   const empty = (warn) => ({
     statusCode: 200,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=600', 'Access-Control-Allow-Origin': '*' },
+    // P78: do NOT let CDN cache failure responses — an empty result cached for 10 min
+    // extends every transient GDELT hiccup into a 10-minute layer outage.
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' },
     body: JSON.stringify({ type: 'FeatureCollection', features: [], _gdelt_warning: warn || null })
   });
 
