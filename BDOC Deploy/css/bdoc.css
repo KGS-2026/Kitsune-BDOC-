@@ -847,10 +847,13 @@ body:has(.rp.shut) #econWidget,.rp.shut~#econWidget{right:16px}
 /* LIVE INTEL FEED label gets pulsing red dot prefix */
 #bdocTicker > div:first-child > span:first-child{background:var(--red-threat)!important;animation:none}
 
-/* ── SECTION 8: MAP STYLE BUTTONS ───────────────────────────────────────────── */
-.bm-btn{border:1px solid rgba(255,255,255,0.1)!important;color:rgba(255,255,255,0.4)!important;background:transparent!important;transition:all 150ms ease-out}
-.bm-btn:hover{border-color:rgba(255,255,255,0.4)!important;color:rgba(255,255,255,0.85)!important;background:rgba(255,255,255,0.04)!important}
-.bm-btn.bm-active{background:rgba(255,255,255,0.10)!important;border:1px solid var(--cyan)!important;color:var(--cyan)!important;}
+/* ── SECTION 8: MAP STYLE BUTTONS ─────────────────────────────────────────────
+ * p76: !important flags REMOVED — they were nuking every downstream .bm-btn
+ * refinement (crisis-zone threat rails, NEAR ME CTA, Phase 26 design system).
+ * Base look preserved without the sledgehammer. */
+.bm-btn{border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.55);background:transparent;transition:all 150ms ease-out}
+.bm-btn:hover{border-color:rgba(255,255,255,0.4);color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.04)}
+.bm-btn.bm-active{background:rgba(255,255,255,0.10);border:1px solid var(--cyan);color:var(--cyan)}
 
 /* ── Reduce-motion accessibility — kill pulse animations for users who request it ── */
 @media (prefers-reduced-motion: reduce){
@@ -1149,11 +1152,13 @@ button.eb[style*="E8B339"]:hover,button.eb[style*="E8B349"]:hover{background:rgb
 .lp-h{background:rgba(232,179,73,0.03)}
 .lp-t{letter-spacing:0.22em!important;font-size:10px!important}
 
-/* Group headers — stencil ticks, amber left rail on hover */
-.lg-title{border-left:2px solid rgba(232,179,73,0.22)!important;letter-spacing:0.18em!important;
-  font-size:9px!important;color:#6B7280!important;margin:14px 0 7px 0!important}
-.lg-title:hover{border-left-color:var(--kf)!important;color:var(--t1)!important;background:rgba(232,179,73,0.03)}
-.lg-title::before{background:rgba(232,179,73,0.45)!important}
+/* Group headers — stencil ticks, amber left rail on hover
+ * p76: !important stripped so Phase 26 type ramp (weight 700, 0.22em tracking,
+ * amber gradient wash) can win — these were pinning headers to the flat look. */
+.lg-title{border-left:2px solid rgba(232,179,73,0.22);letter-spacing:0.18em;
+  font-size:9px;color:#6B7280;margin:14px 0 7px 0}
+.lg-title:hover{border-left-color:var(--kf);color:var(--t1);background:rgba(232,179,73,0.03)}
+.lg-title::before{background:rgba(232,179,73,0.45)}
 
 /* Layer rows — precision rails */
 .ly{padding:5px 8px!important;border-radius:2px!important;margin-bottom:2px!important}
@@ -1262,32 +1267,33 @@ button.eb[style*="E8B339"]:hover,button.eb[style*="E8B349"]:hover{background:rgb
  * Ramp: micro-label 7px/700/wide · body 10.5px/450 · data 11px mono
  *       section-head 9.5px/700/very-wide · panel-title 12px/700       */
 
-/* Section headers: command-console stencil — heavier, wider, amber tick */
+/* Section headers: command-console stencil — heavier, wider, amber tick
+ * (!important required: Phase 24 block above pins these with its own flags) */
 .lg-title{
-  font-size:9px;font-weight:700;letter-spacing:0.22em;color:var(--t2);
-  margin:16px 0 7px 0;padding:6px 8px 5px;
-  border-left:2px solid var(--kf);
+  font-size:9px!important;font-weight:700!important;letter-spacing:0.22em!important;color:var(--t2)!important;
+  margin:16px 0 7px 0!important;padding:6px 8px 5px;
+  border-left:2px solid var(--kf)!important;
   background:linear-gradient(90deg,rgba(232,179,73,0.05),transparent 60%);
 }
-.lg-title::before{background:var(--kf);opacity:0.8}
-.lg-title:hover{border-left-color:var(--kf);color:var(--t1)}
+.lg-title::before{background:var(--kf)!important;opacity:0.8}
+.lg-title:hover{border-left-color:var(--kf)!important;color:var(--t1)!important}
 
 /* Layer rows: bigger touch targets, clearer on-state, readable names */
-.ly{padding:5px 8px;border-radius:4px;margin-bottom:2px}
-.ly-n{font-size:11px;font-weight:450;letter-spacing:0.01em}
-.ly.on .ly-n{color:#E9ECF2;font-weight:600}
+.ly{padding:5px 8px!important;border-radius:3px!important;margin-bottom:2px!important}
+.ly-n{font-size:10px!important;font-weight:500!important;letter-spacing:0.05em}
+.ly.on .ly-n{color:#EDF0F5!important;font-weight:600!important}
 .ly.on{
-  background:linear-gradient(90deg,rgba(232,179,73,0.10),rgba(232,179,73,0.03) 70%);
-  border-color:rgba(232,179,73,0.28);
-  box-shadow:inset 2px 0 0 var(--kf),0 1px 3px rgba(0,0,0,0.5);
+  background:linear-gradient(90deg,rgba(232,179,73,0.10),rgba(232,179,73,0.02) 70%)!important;
+  border-color:rgba(232,179,73,0.26)!important;
+  box-shadow:0 1px 3px rgba(0,0,0,0.45)!important;
 }
 .ly.on .ly-d{box-shadow:0 0 6px currentColor}
 
 /* Toolbar buttons (.eb): slightly larger, clearer rest/hover/active states */
-.eb{font-size:7.5px;padding:4px 8px;color:var(--t2);border-color:rgba(255,255,255,0.09)}
-.eb:hover{color:var(--kf);border-color:rgba(232,179,73,0.45);background:rgba(232,179,73,0.06)}
+.eb{font-size:7.5px!important;padding:4px 8px;color:var(--t2)!important;border-color:rgba(255,255,255,0.09)}
+.eb:hover{color:var(--kf)!important;border-color:rgba(232,179,73,0.45)!important;background:rgba(232,179,73,0.06)!important}
 .eb:active{transform:translateY(1px)}
-.eb.on,.eb.active{color:#0B0E13;background:var(--kf);border-color:var(--kf);font-weight:700}
+.eb.on,.eb.active{color:#0B0E13!important;background:var(--kf)!important;border-color:var(--kf)!important;font-weight:700}
 
 /* Basemap/preset buttons: cohesive with .eb family */
 .bm-btn{font-size:8.5px;padding:6px 8px;font-weight:600;letter-spacing:0.1em;border-radius:4px}
