@@ -261,7 +261,8 @@ window.loadFirePerims = async function () {
     const fc = await ARCGIS.fetchGeoJSON(
       'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters/FeatureServer/0', {
         where: "poly_DateCurrent >= CURRENT_TIMESTAMP - INTERVAL '60' DAY",
-        outFields: 'poly_IncidentName,poly_GISAcres,poly_PercentContained,poly_DateCurrent',
+        // NB: containment lives under attr_PercentContained (poly_PercentContained was removed upstream)
+        outFields: 'poly_IncidentName,poly_GISAcres,attr_PercentContained,poly_DateCurrent',
         precision: 4, maxOffset: 0.001, count: 500, pages: 1, cacheKey: 'wfigs', ttl: 3600 * 1000
       });
     let n = 0;
@@ -269,7 +270,7 @@ window.loadFirePerims = async function () {
       const g = f.geometry; if (!g) return;
       const polys = g.type === 'Polygon' ? [g.coordinates] : (g.type === 'MultiPolygon' ? g.coordinates : []);
       const pr = f.properties || {};
-      const contained = pr.poly_PercentContained || 0;
+      const contained = pr.attr_PercentContained || 0;
       // fresh + uncontained = hot red; mostly contained = amber
       const col = contained >= 75 ? '#E8B339' : '#DA3633';
       const clr = Cesium.Color.fromCssColorString(col);

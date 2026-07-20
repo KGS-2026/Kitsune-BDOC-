@@ -1541,7 +1541,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p79',              // MUST bump on ANY js/modules/* change — p77 = layers-arcgis (HIFLD grid + EIA pipelines)
+  _version: 'p79b',              // MUST bump on ANY js/modules/* change — p77 = layers-arcgis (HIFLD grid + EIA pipelines)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
