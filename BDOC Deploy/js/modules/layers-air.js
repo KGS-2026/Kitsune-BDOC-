@@ -608,11 +608,18 @@ async function loadSatellites(){
   if(!V)return;
   if(_satPosTimer){clearInterval(_satPosTimer);_satPosTimer=null;}
   try{
-    const results=await Promise.all(_SAT_GROUPS.map(({g})=>
-      safeFetch('celestrak','sats_'+g,`/.netlify/functions/proxy-celestrak?group=${g}&format=json`,{feedType:'satellites',staleOk:true})
-      .catch(()=>safeFetch('celestrak','sats_'+g,`https://celestrak.org/NORAD/elements/gp.php?GROUP=${g}&FORMAT=json`,{feedType:'satellites',staleOk:true}))
-      .catch(()=>null)
-    ));
+    // p81: browser-direct PRIMARY (CelesTrak sends CORS * and serves residential IPs in <1s,
+    // but throttles AWS/datacenter — the Netlify proxy consistently 502s from Lambda).
+    // NOTE: safeFetch never rejects (resolves {data:null} on failure), so fallback must be
+    // gated on data presence — the old .catch() chain was unreachable and the layer died
+    // whenever the proxy 502'd.
+    const results=await Promise.all(_SAT_GROUPS.map(async({g})=>{
+      let r=await safeFetch('celestrak','sats_'+g,`https://celestrak.org/NORAD/elements/gp.php?GROUP=${g}&FORMAT=json`,{feedType:'satellites',staleOk:true}).catch(()=>null);
+      if(!r||!Array.isArray(r.data)||!r.data.length){
+        r=await safeFetch('celestrak','sats_'+g,`/.netlify/functions/proxy-celestrak?group=${g}&format=json`,{feedType:'satellites',staleOk:true}).catch(()=>null);
+      }
+      return r;
+    }));
     const seen=new Set();const allSats=[];
     results.forEach((res,i)=>{
       const arr=(res&&res.data&&Array.isArray(res.data))?res.data:[];

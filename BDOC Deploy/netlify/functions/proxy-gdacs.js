@@ -25,17 +25,26 @@ exports.handler = async (event) => {
   };
 
   try {
-    const res = await fetch(url, {
-      signal: AbortSignal.timeout(15000),
-      headers: { 'Accept': 'application/json', 'User-Agent': 'KitsuneGlobal/BDOC-8.0' }
-    });
+    // p81: GDACS intermittently throws transient 500s (confirmed 2026-07-20: 500 then
+    // 200 seconds apart, same URL) — retry once after a short pause before failing.
+    let res;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      res = await fetch(url, {
+        signal: AbortSignal.timeout(12000),
+        headers: { 'Accept': 'application/json', 'User-Agent': 'KitsuneGlobal/BDOC-8.0' }
+      });
+      if (res.ok) break;
+      if (attempt === 0) await new Promise(r => setTimeout(r, 1200));
+    }
     if (!res.ok) throw new Error(`GDACS ${res.status}`);
     const data = await res.text();
     return { statusCode: 200, headers, body: data };
   } catch (e) {
     return {
       statusCode: 502,
-      headers,
+      // p81: failures must NOT inherit the 15-min success cache — the CDN was pinning
+      // transient GDACS 500s into 15-minute layer outages (same class as p78b GDELT fix).
+      headers: { ...headers, 'Cache-Control': 'no-store' },
       body: JSON.stringify({ error: e.message, source: 'GDACS', upstream: url })
     };
   }
