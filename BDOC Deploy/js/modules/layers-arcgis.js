@@ -304,3 +304,46 @@ window.loadFirePerims = async function () {
     af('#DA3633', 'FIRE PERIMETERS: ' + n + ' active burn footprints loaded (WFIGS, 60-day window)'); us(1);
   } catch (e) { console.warn('[FirePerims]', e); af('var(--yl)', 'Fire perimeters: WFIGS feed unavailable — ' + e.message); }
 };
+
+// ═══ US TRANSMISSION SUBSTATIONS (HIFLD, ≥345kV) ═══
+// The nodes of the grid — where the 345/500kV backbone terminates and steps
+// down. Pairs with gridinfra (the lines). HIFLD national dataset hosted by
+// Oregon Explorer (79,687 total; ≥345kV filter → ~2,213 strategic sites).
+// Static infrastructure: TTL 7 days.
+window.loadSubstations = async function () {
+  substationEnts.forEach(e => V.entities.remove(e)); substationEnts = [];
+  try {
+    const fc = await ARCGIS.fetchGeoJSON(
+      'https://services1.arcgis.com/CD5mKowwN6nIaqd8/arcgis/rest/services/project_renewable_us_substations_2022/FeatureServer/10', {
+        where: 'MAX_VOLT >= 345', outFields: 'NAME,CITY,STATE,MAX_VOLT,MIN_VOLT,STATUS,LINES',
+        precision: 3, count: 2000, pages: 2, cacheKey: 'subst345'
+      });
+    let n = 0;
+    fc.features.forEach(f => {
+      const g = f.geometry; if (!g || g.type !== 'Point') return;
+      const pr = f.properties || {};
+      const kv = pr.MAX_VOLT || 0;
+      const ehv = kv >= 500;
+      const col = ehv ? '#DA3633' : '#E8B339'; // matches gridinfra line tiers: 500kV+ red, 345kV amber
+      const clr = Cesium.Color.fromCssColorString(col);
+      const nm = (pr.NAME && !/^UNKNOWN\d*$/i.test(pr.NAME)) ? pr.NAME : ((pr.CITY || 'UNNAMED') + ' SUBSTATION');
+      substationEnts.push(V.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(g.coordinates[0], g.coordinates[1]),
+        point: { pixelSize: ehv ? 7 : 5, color: clr.withAlpha(0.9), outlineColor: Cesium.Color.BLACK, outlineWidth: 1.2, disableDepthTestDistance: 5e6, scaleByDistance: new Cesium.NearFarScalar(5e5, 1.1, 8e6, 0.4) },
+        name: '⚡ ' + esc(nm),
+        description: '<div style="font-family:\'JetBrains Mono\',monospace;padding:10px;color:#c8ccd6;background:#0d1117;border:1px solid ' + col + '">' +
+          '<div style="font-size:12px;font-weight:700;color:' + col + ';margin-bottom:6px">⚡ ' + (ehv ? 'EHV ' : '') + 'TRANSMISSION SUBSTATION</div>' +
+          '<div style="font-size:11px;font-weight:600">' + esc(nm) + '</div>' +
+          '<div style="font-size:10px;margin-top:4px">Voltage: <b>' + esc(String(kv)) + ' kV</b>' + (pr.MIN_VOLT && pr.MIN_VOLT > 0 ? ' (steps to ' + esc(String(pr.MIN_VOLT)) + ' kV)' : '') + '</div>' +
+          (pr.LINES ? '<div style="font-size:10px">Connected lines: <b>' + esc(String(pr.LINES)) + '</b></div>' : '') +
+          ((pr.CITY || pr.STATE) ? '<div style="font-size:10px">Location: ' + esc((pr.CITY || '?') + ', ' + (pr.STATE || '?')) + '</div>' : '') +
+          (pr.STATUS && pr.STATUS !== 'IN SERVICE' ? '<div style="font-size:10px;color:#FF8C00">Status: ' + esc(pr.STATUS) + '</div>' : '') +
+          '<div style="font-size:8px;color:#8b949e;margin-top:6px">Source: HIFLD / DHS — national substation dataset</div></div>',
+        show: layers.substations
+      }));
+      n++;
+    });
+    af('#E8B339', 'SUBSTATIONS: ' + n + ' HV transmission substations loaded (HIFLD, 345kV+)'); us(1);
+    try { EventLog.add('info', 'Substations: ' + n + ' sites (HIFLD)'); } catch (_) {}
+  } catch (e) { console.warn('[Substations]', e); af('var(--yl)', 'Substations: HIFLD feed unavailable — ' + e.message); }
+};

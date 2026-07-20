@@ -610,6 +610,7 @@ if('serviceWorker' in navigator){
 <div class="ly" data-layer="cable" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:var(--pr)"></div><span class="ly-n">Submarine Cables</span><span class="ly-tg tg-l">FREE</span></div>
 <div class="ly" data-layer="powerplants" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#FFD700"></div><span class="ly-n">Power Plants</span><span class="ly-tg" style="color:#FFD700;background:rgba(255,215,0,0.1)">WRI</span></div>
 <div class="ly" data-layer="gridinfra" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#DA3633"></div><span class="ly-n">Power Grid (HV Lines)</span><span class="ly-tg tg-l">HIFLD</span></div>
+<div class="ly" data-layer="substations" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#E8B339"></div><span class="ly-n">Substations (345kV+)</span><span class="ly-tg tg-l">HIFLD</span></div>
 <div class="ly" data-layer="pipelines" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#FF8C00"></div><span class="ly-n">Energy Pipelines (US)</span><span class="ly-tg tg-l">EIA</span></div>
 <div class="ly" data-layer="oilgas" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#1a1a1a"></div><span class="ly-n">Oil &amp; Gas Infrastructure</span><span class="ly-tg" style="color:#FF8C00;background:rgba(255,140,0,0.1)">OSINT</span></div>
 </div>
@@ -1541,7 +1542,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p79b',              // MUST bump on ANY js/modules/* change — p77 = layers-arcgis (HIFLD grid + EIA pipelines)
+  _version: 'p80',              // MUST bump on ANY js/modules/* change — p80 = layers-arcgis (+substations)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
@@ -2994,7 +2995,7 @@ const _BDOC_PRESETS={
   disasters:['eq','fire','fireperims','floods','tsunamis','dartbuoys','volcanoes','hurricanes','alerts','metar'],
   military:['forcetrack','milbases','milairfields','nukes','sat'],
   // Phase 25 persona presets (UX audit 2026-07): free-tier-safe layer bundles
-  emergency:['eq','fire','fireperims','floods','hurricanes','alerts','outages','metar','gridinfra'],   // EM coordinator: hazards + grid + live wx obs
+  emergency:['eq','fire','fireperims','floods','hurricanes','alerts','outages','metar','gridinfra','substations'],   // EM coordinator: hazards + grid + live wx obs
   citizen:['eq','fire','alerts','news']                               // civilian: plain awareness
 };
 // Phase 25: NEAR ME — geolocate operator, fly camera, arm the emergency picture.
@@ -3100,8 +3101,8 @@ const milAC=[],allAC=[],feed=[];
 // Phase 8C (2026-05-05): every layer defaults to OFF — clean canvas on first load
 // Phase 22: added internet/landings/chokepoints here so markLockedLayers() can zero them on logout
 // (they were previously set lazily; 'key in layers' was false so markLockedLayers skipped them)
-const layers={forcetrack:false,air:false,eq:false,fire:false,conf:false,cable:false,sat:false,territory:false,imint:false,weather:false,clouds:false,temp:false,hurricanes:false,alerts:false,wind:false,forecastradar:false,lightning:false,airquality:false,vessels:false,cyber:false,outages:false,downdetect:false,webcams:false,radio:false,deforest:false,sentinel:false,news:false,headlines:false,spaceweather:false,mesh:false,community:false,floods:false,tsunamis:false,volcanoes:false,nucranges:false,borders:false,hillshade:false,popdensity:false,alliances:false,powerplants:false,gridinfra:false,pipelines:false,metar:false,dartbuoys:false,fireperims:false,oilgas:false,sanctions:false,embassies:false,wireshark:false,vegetation:false,econintel:false,milbases:false,milairfields:false,nukes:false,darkships:false,ioc:false,internet:false,landings:false,chokepoints:false,deflock:false,celltowers:false,fallout:false};
-let eqEnts=[],fireEnts=[],confEnts=[],airEnts=[],milEnts=[],cableEnts=[],satEnts=[],territoryEnts=[],imintEnts=[],newsEnts=[],headlineEnts=[],spwxEnts=[],meshEnts=new Set(),communityEnts=[],floodEnts=[],tsunamiEnts=[],volcanoEnts=[],nucRangeEnts=[],allianceEnts=[],powerplantEnts=[],gridinfraEnts=[],pipelineEnts=[],metarEnts=[],dartEnts=[],fireperimEnts=[],oilgasEnts=[],sanctionEnts=[],embassyEnts=[],wiresharkEnts=[],vegEnts=[],darkshipEnts=[],iocEnts=[],falloutEnts=[];
+const layers={forcetrack:false,air:false,eq:false,fire:false,conf:false,cable:false,sat:false,territory:false,imint:false,weather:false,clouds:false,temp:false,hurricanes:false,alerts:false,wind:false,forecastradar:false,lightning:false,airquality:false,vessels:false,cyber:false,outages:false,downdetect:false,webcams:false,radio:false,deforest:false,sentinel:false,news:false,headlines:false,spaceweather:false,mesh:false,community:false,floods:false,tsunamis:false,volcanoes:false,nucranges:false,borders:false,hillshade:false,popdensity:false,alliances:false,powerplants:false,gridinfra:false,substations:false,pipelines:false,metar:false,dartbuoys:false,fireperims:false,oilgas:false,sanctions:false,embassies:false,wireshark:false,vegetation:false,econintel:false,milbases:false,milairfields:false,nukes:false,darkships:false,ioc:false,internet:false,landings:false,chokepoints:false,deflock:false,celltowers:false,fallout:false};
+let eqEnts=[],fireEnts=[],confEnts=[],airEnts=[],milEnts=[],cableEnts=[],satEnts=[],territoryEnts=[],imintEnts=[],newsEnts=[],headlineEnts=[],spwxEnts=[],meshEnts=new Set(),communityEnts=[],floodEnts=[],tsunamiEnts=[],volcanoEnts=[],nucRangeEnts=[],allianceEnts=[],powerplantEnts=[],gridinfraEnts=[],substationEnts=[],pipelineEnts=[],metarEnts=[],dartEnts=[],fireperimEnts=[],oilgasEnts=[],sanctionEnts=[],embassyEnts=[],wiresharkEnts=[],vegEnts=[],darkshipEnts=[],iocEnts=[],falloutEnts=[];
 // XSS sanitizer — escapes HTML in any API-sourced string before injection into innerHTML/description
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 // Sanitize any HTML that will be handed to Cesium's InfoBox iframe (entity.description). Uses DOMPurify if loaded; falls back to esc() + whitelist.
@@ -3188,6 +3189,7 @@ function togLy(el){
   if(ly==='oilgas'){if(layers.oilgas){BDOC.layerLoadFx.start('oilgas');BDOC.LazyLoader.load('layers-infra').then(()=>{if(window.loadOilGas)window.loadOilGas();BDOC.layerLoadFx.done('oilgas',true)}).catch(e=>{console.warn('[lazy layers-infra]',e);BDOC.layerLoadFx.done('oilgas',false)})}else{oilgasEnts.forEach(e=>V.entities.remove(e));oilgasEnts=[]}}
   // P77: HIFLD/EIA live infrastructure layers via generic ArcGIS adapter (layers-arcgis.js)
   if(ly==='gridinfra'){if(layers.gridinfra){BDOC.layerLoadFx.start('gridinfra');BDOC.LazyLoader.load('layers-arcgis').then(()=>window.loadGridInfra?window.loadGridInfra():null).then(()=>BDOC.layerLoadFx.done('gridinfra',gridinfraEnts.length>0)).catch(e=>{console.warn('[lazy layers-arcgis]',e);BDOC.layerLoadFx.done('gridinfra',false)})}else{gridinfraEnts.forEach(e=>V.entities.remove(e));gridinfraEnts=[]}}
+  if(ly==='substations'){if(layers.substations){BDOC.layerLoadFx.start('substations');BDOC.LazyLoader.load('layers-arcgis').then(()=>window.loadSubstations?window.loadSubstations():null).then(()=>BDOC.layerLoadFx.done('substations',substationEnts.length>0)).catch(e=>{console.warn('[lazy layers-arcgis]',e);BDOC.layerLoadFx.done('substations',false)})}else{substationEnts.forEach(e=>V.entities.remove(e));substationEnts=[]}}
   if(ly==='pipelines'){if(layers.pipelines){BDOC.layerLoadFx.start('pipelines');BDOC.LazyLoader.load('layers-arcgis').then(()=>window.loadPipelines?window.loadPipelines():null).then(()=>BDOC.layerLoadFx.done('pipelines',pipelineEnts.length>0)).catch(e=>{console.warn('[lazy layers-arcgis]',e);BDOC.layerLoadFx.done('pipelines',false)})}else{pipelineEnts.forEach(e=>V.entities.remove(e));pipelineEnts=[]}}
   if(ly==='metar'){if(layers.metar){BDOC.layerLoadFx.start('metar');BDOC.LazyLoader.load('layers-arcgis').then(()=>window.loadMetar?window.loadMetar():null).then(()=>BDOC.layerLoadFx.done('metar',metarEnts.length>0)).catch(e=>{console.warn('[lazy layers-arcgis]',e);BDOC.layerLoadFx.done('metar',false)})}else{metarEnts.forEach(e=>V.entities.remove(e));metarEnts=[]}}
   if(ly==='dartbuoys'){if(layers.dartbuoys){BDOC.layerLoadFx.start('dartbuoys');BDOC.LazyLoader.load('layers-arcgis').then(()=>window.loadDartBuoys?window.loadDartBuoys():null).then(()=>BDOC.layerLoadFx.done('dartbuoys',dartEnts.length>0)).catch(e=>{console.warn('[lazy layers-arcgis]',e);BDOC.layerLoadFx.done('dartbuoys',false)})}else{dartEnts.forEach(e=>V.entities.remove(e));dartEnts=[]}}
