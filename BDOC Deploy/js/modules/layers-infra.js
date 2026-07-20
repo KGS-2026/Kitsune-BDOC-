@@ -59,7 +59,41 @@ function loadPowerPlants(){
       show:layers.powerplants
     }));
   });
-  af('#FFD700','Power Plants: '+plants.length+' major facilities loaded (nuclear/coal/gas/hydro/wind/solar)');us(1);
+  af('#FFD700','Power Plants: '+plants.length+' major world facilities loaded');us(1);
+  // P79: augment the curated world list with LIVE US EIA data (2,459 plants ≥100MW)
+  // via the generic ArcGIS adapter. Curated list keeps global coverage; EIA gives
+  // the US real density. Lazy-loads layers-arcgis if not present.
+  (async()=>{
+    try{
+      if(!window.ARCGIS)await BDOC.LazyLoader.load('layers-arcgis');
+      const fc=await ARCGIS.fetchGeoJSON('https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Power_Plants_in_the_US/FeatureServer/0',{
+        where:'Total_MW >= 100',outFields:'Plant_Name,PrimSource,Total_MW,State,Utility_Na',precision:3,count:2000,pages:2,cacheKey:'eiaplants',ttl:7*24*3600*1000});
+      if(!layers.powerplants)return; // user disarmed while fetching
+      const srcMap={'nuclear':'nuclear','coal':'coal','natural gas':'gas','petroleum':'oil','hydroelectric':'hydro','pumped storage':'hydro','wind':'wind','solar':'solar','geothermal':'geothermal','biomass':'biomass','batteries':'other','other':'other'};
+      let n=0;
+      fc.features.forEach(f=>{
+        const g=f.geometry;if(!g||g.type!=='Point')return;
+        const pr=f.properties||{};
+        const fuel=srcMap[(pr.PrimSource||'').toLowerCase()]||'other';
+        const fcol=fuelColors[fuel]||fuelColors.other;
+        const clr=Cesium.Color.fromCssColorString(fcol);
+        powerplantEnts.push(V.entities.add({
+          position:Cesium.Cartesian3.fromDegrees(g.coordinates[0],g.coordinates[1]),
+          point:{pixelSize:pr.Total_MW>=1000?6:4,color:clr.withAlpha(0.85),outlineColor:Cesium.Color.BLACK,outlineWidth:1,disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1.1,1e7,0.35)},
+          description:'<div style="font-family:\'JetBrains Mono\',monospace;padding:10px;color:#c8ccd6;background:#0d1117;border:1px solid '+esc(fcol)+'">'+
+            '<div style="font-size:12px;font-weight:700;color:'+esc(fcol)+';margin-bottom:6px">'+esc(fuel.toUpperCase())+' POWER PLANT</div>'+
+            '<div style="font-size:11px;font-weight:600">'+esc(pr.Plant_Name||'Plant')+'</div>'+
+            '<div style="font-size:10px;margin-top:4px">Capacity: <b>'+(pr.Total_MW||0).toLocaleString()+' MW</b></div>'+
+            (pr.Utility_Na?'<div style="font-size:10px">Utility: '+esc(pr.Utility_Na)+'</div>':'')+
+            '<div style="font-size:10px">State: '+esc(pr.State||'')+'</div>'+
+            '<div style="font-size:8px;color:#8b949e;margin-top:6px">Source: EIA via HIFLD — live federal data</div></div>',
+          show:layers.powerplants
+        }));
+        n++;
+      });
+      af('#FFD700','Power Plants: +'+n+' live US plants \u2265100MW (EIA)');us(1);
+    }catch(e){console.warn('[PowerPlants EIA]',e)}
+  })();
 }
 
 // ═══ OIL & GAS INFRASTRUCTURE (Major refineries, pipelines, LNG terminals) ═══

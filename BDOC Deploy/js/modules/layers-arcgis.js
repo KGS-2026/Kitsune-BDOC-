@@ -251,3 +251,55 @@ window.loadDartBuoys = async function () {
     af('#00ddff', 'DART: ' + n + ' tsunami buoys loaded (NOAA NCEI)'); us(1);
   } catch (e) { console.warn('[DART]', e); af('var(--yl)', 'DART buoys: feed unavailable — ' + e.message); }
 };
+
+// ═══ WILDFIRE PERIMETERS (WFIGS Interagency, live) ═══
+// Actual burn footprints as polygons — not just hotspots. The layer wildland
+// firefighters and EMs actually plan evacuations from. TTL 1h.
+window.loadFirePerims = async function () {
+  fireperimEnts.forEach(e => V.entities.remove(e)); fireperimEnts = [];
+  try {
+    const fc = await ARCGIS.fetchGeoJSON(
+      'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters/FeatureServer/0', {
+        where: "poly_DateCurrent >= CURRENT_TIMESTAMP - INTERVAL '60' DAY",
+        outFields: 'poly_IncidentName,poly_GISAcres,poly_PercentContained,poly_DateCurrent',
+        precision: 4, maxOffset: 0.001, count: 500, pages: 1, cacheKey: 'wfigs', ttl: 3600 * 1000
+      });
+    let n = 0;
+    fc.features.forEach(f => {
+      const g = f.geometry; if (!g) return;
+      const polys = g.type === 'Polygon' ? [g.coordinates] : (g.type === 'MultiPolygon' ? g.coordinates : []);
+      const pr = f.properties || {};
+      const contained = pr.poly_PercentContained || 0;
+      // fresh + uncontained = hot red; mostly contained = amber
+      const col = contained >= 75 ? '#E8B339' : '#DA3633';
+      const clr = Cesium.Color.fromCssColorString(col);
+      const desc = '<div style="font-family:\'JetBrains Mono\',monospace;padding:10px;color:#c8ccd6;background:#0d1117;border:1px solid ' + col + '">' +
+        '<div style="font-size:12px;font-weight:700;color:' + col + ';margin-bottom:6px">🔥 FIRE PERIMETER — ' + esc(pr.poly_IncidentName || 'Incident') + '</div>' +
+        '<div style="font-size:10px">Size: <b>' + Math.round(pr.poly_GISAcres || 0).toLocaleString() + ' acres</b></div>' +
+        '<div style="font-size:10px">Containment: <b>' + contained + '%</b></div>' +
+        (pr.poly_DateCurrent ? '<div style="font-size:10px">Updated: ' + new Date(pr.poly_DateCurrent).toISOString().slice(0, 16).replace('T', ' ') + 'Z</div>' : '') +
+        '<div style="font-size:8px;color:#8b949e;margin-top:6px">Source: WFIGS Interagency — live federal data</div></div>';
+      polys.forEach(rings => {
+        if (!rings || !rings[0] || rings[0].length < 3) return;
+        const flat = [];
+        rings[0].forEach(pt => { flat.push(pt[0], pt[1]); });
+        fireperimEnts.push(V.entities.add({
+          polygon: {
+            hierarchy: Cesium.Cartesian3.fromDegreesArray(flat),
+            material: clr.withAlpha(0.28),
+            outline: false, // outline unsupported on ground-clamped polygons; separate polyline below
+          },
+          description: desc,
+          show: layers.fireperims
+        }));
+        fireperimEnts.push(V.entities.add({
+          polyline: { positions: Cesium.Cartesian3.fromDegreesArray(flat), width: 1.6, material: clr.withAlpha(0.9), clampToGround: true },
+          description: desc,
+          show: layers.fireperims
+        }));
+        n++;
+      });
+    });
+    af('#DA3633', 'FIRE PERIMETERS: ' + n + ' active burn footprints loaded (WFIGS, 60-day window)'); us(1);
+  } catch (e) { console.warn('[FirePerims]', e); af('var(--yl)', 'Fire perimeters: WFIGS feed unavailable — ' + e.message); }
+};
