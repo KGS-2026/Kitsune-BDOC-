@@ -1542,7 +1542,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p80',              // MUST bump on ANY js/modules/* change — p80 = layers-arcgis (+substations)
+  _version: 'p80b',              // MUST bump on ANY js/modules/* change — p80b = layers-arcgis (+substations, stale-cache fallback)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];

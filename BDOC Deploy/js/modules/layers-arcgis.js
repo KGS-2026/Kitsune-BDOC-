@@ -44,27 +44,38 @@ window.ARCGIS = {
     opts = opts || {};
     const cacheKey = 'bdoc_arcgis_' + (opts.cacheKey || serviceUrl.slice(-40));
     const ttl = opts.ttl != null ? opts.ttl : this._CACHE_TTL; // per-layer TTL: live feeds pass short ttl
-    // cache hit?
+    // cache hit? (keep stale copy around as a fallback if the live fetch 429s/fails)
+    let stale = null;
     try {
       const raw = localStorage.getItem(cacheKey);
       if (raw) {
         const c = JSON.parse(raw);
-        if (Date.now() - c.t < ttl && c.d && c.d.features) return c.d;
+        if (c.d && c.d.features) {
+          if (Date.now() - c.t < ttl) return c.d;
+          stale = c.d; // expired but usable in an emergency
+        }
       }
     } catch (_) {}
 
     const count = opts.count || 1000;
     const maxPages = opts.pages || 3;
     const all = { type: 'FeatureCollection', features: [] };
-    for (let page = 0; page < maxPages; page++) {
-      const url = this.buildUrl(serviceUrl, Object.assign({}, opts, { count: count, offset: page * count }));
-      const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
-      if (!res.ok) throw new Error('ArcGIS HTTP ' + res.status);
-      const d = await res.json();
-      if (d.error) throw new Error('ArcGIS: ' + (d.error.message || 'query error'));
-      const feats = d.features || [];
-      all.features.push.apply(all.features, feats);
-      if (feats.length < count) break; // last page
+    try {
+      for (let page = 0; page < maxPages; page++) {
+        const url = this.buildUrl(serviceUrl, Object.assign({}, opts, { count: count, offset: page * count }));
+        const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
+        if (!res.ok) throw new Error('ArcGIS HTTP ' + res.status);
+        const d = await res.json();
+        if (d.error) throw new Error('ArcGIS: ' + (d.error.message || 'query error'));
+        const feats = d.features || [];
+        all.features.push.apply(all.features, feats);
+        if (feats.length < count) break; // last page
+      }
+    } catch (e) {
+      // Upstream 429/outage: serve the stale cache rather than an empty layer
+      // (WFIGS et al. are shared public services with per-minute global quotas)
+      if (stale) { console.warn('[ARCGIS] live fetch failed, serving stale cache for', cacheKey, e.message); return stale; }
+      throw e;
     }
     // cache (best-effort — payload may exceed quota; that's fine)
     try { localStorage.setItem(cacheKey, JSON.stringify({ t: Date.now(), d: all })); } catch (_) {}
