@@ -25,7 +25,7 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=3600', // 1 hour — Feodo updates every few hours
+        'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=3600', // 1 hour — Feodo updates every few hours
         'Access-Control-Allow-Origin': '*'
       },
       body: data

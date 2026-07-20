@@ -8,7 +8,7 @@ exports.handler = async (event) => {
 
   const headers = {
     'Content-Type': 'text/xml; charset=utf-8',
-    'Cache-Control': 'public, max-age=86400', // 24 hrs — static historical data, rarely changes
+    'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=86400', // 24 hrs — static historical data, rarely changes
     'Access-Control-Allow-Origin': '*'
   };
 

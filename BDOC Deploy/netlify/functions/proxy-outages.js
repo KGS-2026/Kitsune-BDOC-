@@ -69,7 +69,7 @@ const BAS = Object.keys(BA_META);
 exports.handler = async (event) => {
   const headers = {
     'Content-Type': 'application/json',
-    'Cache-Control': 'public, max-age=600', // EIA updates hourly
+    'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=600', // EIA updates hourly
     'Access-Control-Allow-Origin': '*'
   };
 
@@ -186,5 +186,5 @@ exports.handler = async (event) => {
   }
 
   // Tier 3: graceful empty — client shows utility-map fallback links
-  return { statusCode: 200, headers: { ...headers, 'Cache-Control': 'public, max-age=60', 'X-Source-Tier': 'unavailable', 'X-EIA-Error': String(eiaError || '').slice(0, 140) }, body: JSON.stringify([]) };
+  return { statusCode: 200, headers: { ...headers, 'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=60', 'X-Source-Tier': 'unavailable', 'X-EIA-Error': String(eiaError || '').slice(0, 140) }, body: JSON.stringify([]) };
 };

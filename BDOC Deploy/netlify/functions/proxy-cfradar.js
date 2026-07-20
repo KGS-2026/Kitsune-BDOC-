@@ -19,7 +19,7 @@ exports.handler = async (event) => {
 
   const headers = {
     'Content-Type': 'application/json',
-    'Cache-Control': 'public, max-age=120', // 2 min — attack data updates frequently
+    'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=120', // 2 min — attack data updates frequently
     'Access-Control-Allow-Origin': '*'
   };
 

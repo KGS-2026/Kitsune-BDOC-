@@ -20,7 +20,7 @@ exports.handler = async (event) => {
 
   const headers = {
     'Content-Type': 'application/json',
-    'Cache-Control': 'public, max-age=900', // 15 min — GDACS data is slow-moving
+    'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=900', // 15 min — GDACS data is slow-moving
     'Access-Control-Allow-Origin': '*'
   };
 
@@ -37,7 +37,19 @@ exports.handler = async (event) => {
       if (attempt === 0) await new Promise(r => setTimeout(r, 1200));
     }
     if (!res.ok) throw new Error(`GDACS ${res.status}`);
-    const data = await res.text();
+    let data = await res.text();
+    // p82: GDACS upstream now IGNORES the eventtype param — returns a mixed bag of
+    // FL/EQ/TC/DR regardless of what you ask for (confirmed 2026-07-20: eventtype=TS
+    // returned 171 features, 0 of them TS). Filter server-side so each layer only
+    // gets its own event type; without this, floods/tsunamis/volcanoes render each
+    // other's (mislabeled) events.
+    try {
+      const geo = JSON.parse(data);
+      if (geo && Array.isArray(geo.features)) {
+        geo.features = geo.features.filter(f => (f.properties?.eventtype || '') === eventtype);
+        data = JSON.stringify(geo);
+      }
+    } catch (_) { /* non-JSON payload — pass through untouched */ }
     return { statusCode: 200, headers, body: data };
   } catch (e) {
     return {

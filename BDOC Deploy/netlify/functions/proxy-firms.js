@@ -35,7 +35,7 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: {
         'Content-Type': 'text/plain',
-        'Cache-Control': 'public, max-age=600',
+        'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=600',
         'Access-Control-Allow-Origin': '*'
       },
       body: text

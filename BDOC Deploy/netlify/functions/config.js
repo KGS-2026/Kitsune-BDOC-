@@ -6,7 +6,7 @@ exports.handler = async (event) => {
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      'Cache-Control': 'public, max-age=300'
+      'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=300'
     },
     body: JSON.stringify({
       supabase_url: process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ulgxbqhbgbyxlzoyxcus.supabase.co',

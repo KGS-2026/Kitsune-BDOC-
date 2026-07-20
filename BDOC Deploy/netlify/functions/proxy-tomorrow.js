@@ -30,7 +30,7 @@ exports.handler = async (event) => {
         statusCode: 200,
         headers: {
           'Content-Type': 'image/png',
-          'Cache-Control': 'public, max-age=600',
+          'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=600',
           'Access-Control-Allow-Origin': '*'
         },
         body: Buffer.from(buf).toString('base64'),
@@ -55,7 +55,7 @@ exports.handler = async (event) => {
         statusCode: res.ok ? 200 : res.status,
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'public, max-age=600',
+          'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=600',
           'Access-Control-Allow-Origin': '*'
         },
         body

@@ -12,7 +12,7 @@ exports.handler = async (event) => {
 
   const headers = {
     'Content-Type': 'application/json',
-    'Cache-Control': `public, max-age=${CACHE_TTL}`,
+    'Netlify-Vary': 'query', 'Cache-Control': `public, max-age=${CACHE_TTL}`,
     'Access-Control-Allow-Origin': '*'
   };
 

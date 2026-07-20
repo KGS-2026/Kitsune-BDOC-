@@ -4204,6 +4204,7 @@ async function loadHurricanes(){
       const gdacsRes=await fetch(`/.netlify/functions/proxy-gdacs?eventtype=TC&fromDate=${fd2}&toDate=${td2}`,{signal:AbortSignal.timeout(15000)}).catch(()=>null);
       if(gdacsRes&&gdacsRes.ok){
         const gdacsData=await gdacsRes.json();
+        if(gdacsData&&Array.isArray(gdacsData.features))gdacsData.features=gdacsData.features.filter(f=>(f.properties?.eventtype||'')==='TC'); // p82
         (gdacsData.features||[]).forEach(f=>{
           const coords=f.geometry?.coordinates;if(!coords)return;
           const [lon,lat]=Array.isArray(coords[0])?coords[0]:coords;
@@ -9855,6 +9856,7 @@ async function loadFloods(){
     }
     if(!res||!res.ok)throw new Error('GDACS '+(res?res.status:'CORS-blocked'));
     const geo=await res.json();
+    if(geo&&Array.isArray(geo.features))geo.features=geo.features.filter(f=>(f.properties?.eventtype||'')==='FL'); // p82: GDACS ignores eventtype param upstream
     if(!geo.features||!geo.features.length){af('#2D72D2','Floods: No active flood events from GDACS');return}
     geo.features.forEach(f=>{
       const coords=f.geometry?.coordinates;if(!coords)return;
@@ -9897,6 +9899,7 @@ async function loadTsunamis(){
     }
     if(!res||!res.ok)throw new Error('GDACS '+(res?res.status:'CORS-blocked'));
     const geo=await res.json();
+    if(geo&&Array.isArray(geo.features))geo.features=geo.features.filter(f=>(f.properties?.eventtype||'')==='TS'); // p82: GDACS ignores eventtype param upstream
     if(!geo.features||!geo.features.length){af('#00CED1','Tsunamis: No active tsunami warnings from GDACS');return}
     geo.features.forEach(f=>{
       const coords=f.geometry?.coordinates;if(!coords)return;
@@ -9940,6 +9943,7 @@ async function loadVolcanoes(){
     }
     if(!res||!res.ok)throw new Error('GDACS '+(res?res.status:'CORS-blocked'));
     const geo=await res.json();
+    if(geo&&Array.isArray(geo.features))geo.features=geo.features.filter(f=>(f.properties?.eventtype||'')==='VO'); // p82: GDACS ignores eventtype param upstream
     if(!geo.features||!geo.features.length){af('#FF4500','Volcanoes: No active volcanic events from GDACS');return}
     geo.features.forEach(f=>{
       const coords=f.geometry?.coordinates;if(!coords)return;

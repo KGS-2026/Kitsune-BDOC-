@@ -7,7 +7,7 @@ exports.handler = async (event) => {
 
   const headers = {
     'Content-Type': 'application/json',
-    'Cache-Control': 'public, max-age=3600', // 1 hour — CISA updates catalog daily
+    'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=3600', // 1 hour — CISA updates catalog daily
     'Access-Control-Allow-Origin': '*'
   };
 

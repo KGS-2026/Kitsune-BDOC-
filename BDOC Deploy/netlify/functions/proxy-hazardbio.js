@@ -28,7 +28,7 @@ exports.handler = async (event) => {
   }
   const headers = {
     'Content-Type': 'application/json',
-    'Cache-Control': 'public, max-age=1800', // 30 min — species observations move slowly
+    'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=1800', // 30 min — species observations move slowly
     'Access-Control-Allow-Origin': '*'
   };
   const p = event.queryStringParameters || {};

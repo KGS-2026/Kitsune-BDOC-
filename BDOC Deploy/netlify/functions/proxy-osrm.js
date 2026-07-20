@@ -35,7 +35,7 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=300',  // 5 min — routes don't change often
+        'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=300',  // 5 min — routes don't change often
         'Access-Control-Allow-Origin': '*'
       },
       body: data

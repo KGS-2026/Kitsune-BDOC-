@@ -83,7 +83,7 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=600', 'Access-Control-Allow-Origin': '*' },
+      headers: { 'Content-Type': 'application/json', 'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=600', 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({ type: 'FeatureCollection', features, _gdelt_count: articles.length })
     };
   } catch (e) {

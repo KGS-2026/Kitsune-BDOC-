@@ -5,7 +5,7 @@
 exports.handler = async (event) => {
   const headers = {
     'Content-Type': 'application/json',
-    'Cache-Control': 'public, max-age=900', // 15 min — SWPC updates ~hourly
+    'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=900', // 15 min — SWPC updates ~hourly
     'Access-Control-Allow-Origin': '*'
   };
 

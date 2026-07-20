@@ -96,7 +96,7 @@ exports.handler = async (event) => {
     const body = await res.text();
     return {
       statusCode: res.ok ? 200 : res.status,
-      headers: { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${cfg.ttl || 300}` },
+      headers: { ...CORS, 'Content-Type': 'application/json', 'Netlify-Vary': 'query', 'Cache-Control': `public, max-age=${cfg.ttl || 300}` },
       body
     };
   } catch (e) {

@@ -76,7 +76,7 @@ exports.handler = async (event) => {
         ...CORS,
         'Content-Type': 'application/json',
         // Short cache — live positions change every ~30s
-        'Cache-Control': 'public, max-age=30'
+        'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=30'
       },
       body
     };

@@ -21,7 +21,7 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=86400',
+        'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=86400',
         'Access-Control-Allow-Origin': '*'
       },
       body: data

@@ -31,7 +31,7 @@ exports.handler = async (event) => {
   const maxAge = type === 'metar' ? 300 : 600;
   const headers = {
     'Content-Type': 'application/json',
-    'Cache-Control': `public, max-age=${maxAge}`,
+    'Netlify-Vary': 'query', 'Cache-Control': `public, max-age=${maxAge}`,
     'Access-Control-Allow-Origin': '*'
   };
 
