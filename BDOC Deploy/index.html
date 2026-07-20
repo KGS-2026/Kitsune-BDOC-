@@ -3615,13 +3615,19 @@ async function loadAirQuality(){
   aqiEnts.forEach(e=>V.entities.remove(e));aqiEnts=[];
   try{
     // WAQI map station feed — free, no auth, world cities
+    // p83 (2026-07-20): WAQI 'demo' token is DEAD upstream ({"status":"error","data":"Invalid key"}
+    // from both /v2/map/bounds and /feed/geo) — layer was silently empty. Proxy stays primary
+    // (lights up when WAQI_TOKEN is configured in Netlify env); fallback is Open-Meteo Air
+    // Quality API (keyless, CORS-open, batched coords) over a curated global city grid.
+    // Data-gated, not status-gated: WAQI returns HTTP 200 for "Invalid key".
     let res=await fetch('/.netlify/functions/proxy-waqi?latlng=-60,-180,70,180',{signal:AbortSignal.timeout(15000)}).catch(()=>null);
-    if(!res||!res.ok){
-      // Direct WAQI API fallback
-      res=await fetch('https://api.waqi.info/v2/map/bounds/?latlng=-60,-180,70,180&networks=all&token=demo',{signal:AbortSignal.timeout(15000)}).catch(()=>null);
+    let waqiOk=false;
+    if(res&&res.ok){
+      const probe=await res.clone().json().catch(()=>null);
+      waqiOk=!!(probe&&probe.status==='ok'&&Array.isArray(probe.data)&&probe.data.length);
     }
-    if(!res||!res.ok){
-      // Fallback: curated major city AQI from WAQI feed endpoints
+    if(!waqiOk){
+      // Fallback: curated major city AQI via Open-Meteo (keyless, CORS-open, one batched call)
       const cities=[
         {n:'New York',lat:40.71,lon:-74.01},{n:'Los Angeles',lat:34.05,lon:-118.24},{n:'Chicago',lat:41.88,lon:-87.63},
         {n:'Houston',lat:29.76,lon:-95.37},{n:'Atlanta',lat:33.75,lon:-84.39},{n:'London',lat:51.51,lon:-0.13},
@@ -3631,15 +3637,29 @@ async function loadAirQuality(){
         {n:'Cairo',lat:30.04,lon:31.24},{n:'Lagos',lat:6.52,lon:3.38},{n:'Mexico City',lat:19.43,lon:-99.13},
         {n:'Sao Paulo',lat:-23.55,lon:-46.63},{n:'Moscow',lat:55.76,lon:37.62},{n:'Dubai',lat:25.20,lon:55.27},
         {n:'Singapore',lat:1.35,lon:103.82},{n:'Sydney',lat:-33.87,lon:151.21},{n:'Berlin',lat:52.52,lon:13.41},
+        {n:'Istanbul',lat:41.01,lon:28.98},{n:'Karachi',lat:24.86,lon:67.01},{n:'Dhaka',lat:23.81,lon:90.41},
+        {n:'Lahore',lat:31.55,lon:74.34},{n:'Riyadh',lat:24.71,lon:46.68},{n:'Tehran',lat:35.69,lon:51.39},
+        {n:'Baghdad',lat:33.31,lon:44.37},{n:'Kyiv',lat:50.45,lon:30.52},{n:'Warsaw',lat:52.23,lon:21.01},
+        {n:'Madrid',lat:40.42,lon:-3.70},{n:'Rome',lat:41.90,lon:12.50},{n:'Johannesburg',lat:-26.20,lon:28.05},
+        {n:'Nairobi',lat:-1.29,lon:36.82},{n:'Lima',lat:-12.05,lon:-77.04},{n:'Bogota',lat:4.71,lon:-74.07},
+        {n:'Santiago',lat:-33.45,lon:-70.67},{n:'Buenos Aires',lat:-34.60,lon:-58.38},{n:'Toronto',lat:43.65,lon:-79.38},
+        {n:'Denver',lat:39.74,lon:-104.99},{n:'Phoenix',lat:33.45,lon:-112.07},{n:'Seattle',lat:47.61,lon:-122.33},
+        {n:'Miami',lat:25.76,lon:-80.19},{n:'Dallas',lat:32.78,lon:-96.80},{n:'Ho Chi Minh City',lat:10.82,lon:106.63},
       ];
-      // Fetch individual city AQIs from WAQI direct API
-      const results=await Promise.allSettled(cities.map(c=>
-        fetch(`https://api.waqi.info/feed/geo:${c.lat};${c.lon}/?token=demo`,{signal:AbortSignal.timeout(8000)}).then(r=>r.json()).then(j=>({...c,aqi:j.data&&j.data.aqi?j.data.aqi:null,dom:j.data&&j.data.dominentpol?j.data.dominentpol:null}))
-      ));
+      // One batched Open-Meteo request: comma-separated lat/lon arrays → array of results
+      const lats=cities.map(c=>c.lat).join(','),lons=cities.map(c=>c.lon).join(',');
+      const omr=await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude='+lats+'&longitude='+lons+'&current=us_aqi,pm2_5,pm10,ozone,nitrogen_dioxide',{signal:AbortSignal.timeout(15000)});
+      if(!omr.ok)throw new Error('Open-Meteo AQ '+omr.status);
+      const om=await omr.json();
+      const rows=Array.isArray(om)?om:[om];
       let count=0;
-      results.forEach(r=>{
-        if(r.status!=='fulfilled'||!r.value.aqi||r.value.aqi==='-')return;
-        const c=r.value;const aqi=parseInt(c.aqi);if(isNaN(aqi))return;
+      rows.forEach((row,i)=>{
+        const c=cities[i];
+        if(!c||!row||!row.current)return;
+        const aqi=Math.round(row.current.us_aqi);if(!isFinite(aqi)||aqi<0)return;
+        const pols={'PM2.5':row.current.pm2_5,'PM10':row.current.pm10,'O3':row.current.ozone,'NO2':row.current.nitrogen_dioxide};
+        let dom=null,dv=-1;for(const k in pols){if(pols[k]!=null&&pols[k]>dv){dv=pols[k];dom=k}}
+        c.dom=dom?dom+' \u2014 '+dv.toFixed(1)+' \u00B5g/m\u00B3':null;
         const col=aqiColor(aqi);const lev=aqiLevel(aqi);
         aqiEnts.push(V.entities.add({
           position:Cesium.Cartesian3.fromDegrees(c.lon,c.lat),
@@ -3659,13 +3679,13 @@ async function loadAirQuality(){
             ${c.dom?'<table style="width:100%;border-collapse:collapse;font-size:10px;color:#7a8194"><tr><td style="padding:3px 0;width:40%"><b style="color:#4a5068">DOMINANT</b></td><td style="color:#c8ccd6">'+esc(String(c.dom).toUpperCase())+'</td></tr></table>':''}
             <div style="margin-top:8px;height:6px;background:#1e2436;border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.min(aqi/3,100)}%;background:#00cc00;border-radius:3px"></div></div>
             <div style="display:flex;justify-content:space-between;font-size:7px;color:#4a5068;margin-top:2px"><span>Good</span><span>Moderate</span><span>Unhealthy</span><span>Hazardous</span></div>
-            <div style="margin-top:8px;font-size:7px;color:#1e2436;letter-spacing:1px;text-align:right">KITSUNE BDOC \u2014 WAQI</div>
+            <div style="margin-top:8px;font-size:7px;color:#1e2436;letter-spacing:1px;text-align:right">KITSUNE BDOC \u2014 OPEN-METEO</div>
           </div>`,
           show:layers.airquality
         }));
         count++;
       });
-      af('var(--gn)',`Air Quality: ${count} cities monitored via WAQI`);
+      af('var(--gn)',`Air Quality: ${count} cities monitored via Open-Meteo (US AQI)`);
       EventLog.add('info',`AQI layer: ${count} cities loaded`);
       return;
     }
@@ -9760,22 +9780,17 @@ async function loadEconIntel(){
   const widget=document.getElementById('econWidget');
   if(!widget)return;
   widget.classList.add('show');
-  // Phase 16b (2026-05-13): route Treasury calls through Netlify proxy (some networks block direct fiscaldata.treasury.gov)
-  // Fall back to direct if proxy fails.
+  // p83 (2026-07-20): Treasury API sends Access-Control-Allow-Origin:* and the
+  // Netlify Lambda can't reach fiscaldata.treasury.gov ("fetch failed" — AWS-origin
+  // blocked/unroutable), so BROWSER-DIRECT is PRIMARY and the proxy is the fallback
+  // (for networks that block treasury.gov client-side). Old direct fallback used
+  // retired v1 paths (404) — debt_to_penny/avg_interest_rates are v2 now.
   const treasuryFetch=async(endpoint,extraParams)=>{
-    const qs=new URLSearchParams();
-    qs.set('endpoint',endpoint);
-    if(extraParams)for(const k in extraParams)qs.set(k,extraParams[k]);
-    try{
-      const r=await fetch('/.netlify/functions/proxy-treasury?'+qs.toString(),{signal:AbortSignal.timeout(15000)});
-      if(r.ok)return r.json();
-      throw new Error('proxy '+r.status);
-    }catch(proxyErr){
-      // Direct fallback
-      const directBase='https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/';
-      const directPaths={debt_to_penny:'accounting/od/debt_to_penny',avg_interest_rates:'accounting/od/avg_interest_rates'};
-      const path=directPaths[endpoint];
-      if(!path)throw proxyErr;
+    const directBase='https://api.fiscaldata.treasury.gov/services/api/fiscal_service/';
+    const directPaths={debt_to_penny:'v2/accounting/od/debt_to_penny',avg_interest_rates:'v2/accounting/od/avg_interest_rates',monthly_treasury:'v1/accounting/mts/mts_table_5',income_outlays:'v1/accounting/mts/mts_table_1',exchange_rates:'v1/accounting/od/rates_of_exchange'};
+    let directErr=null;
+    const path=directPaths[endpoint];
+    if(path)try{
       const directQs=new URLSearchParams();
       directQs.set('sort','-record_date');
       directQs.set('page[size]',extraParams&&extraParams['page[size]']||'1');
@@ -9783,8 +9798,16 @@ async function loadEconIntel(){
       if(extraParams&&extraParams.filter)directQs.set('filter',extraParams.filter);
       const r=await fetch(directBase+path+'?'+directQs.toString(),{signal:AbortSignal.timeout(15000)});
       if(!r.ok)throw new Error('Treasury direct '+r.status);
-      return r.json();
-    }
+      const j=await r.json();
+      if(j&&j.data&&j.data.length)return j; // data-gated: empty 200 falls through to proxy
+      throw new Error('Treasury direct: empty payload');
+    }catch(e){directErr=e;console.warn('[Econ] direct Treasury failed, trying proxy:',e.message)}
+    const qs=new URLSearchParams();
+    qs.set('endpoint',endpoint);
+    if(extraParams)for(const k in extraParams)qs.set(k,extraParams[k]);
+    const r=await fetch('/.netlify/functions/proxy-treasury?'+qs.toString(),{signal:AbortSignal.timeout(15000)}).catch(()=>null);
+    if(r&&r.ok)return r.json();
+    throw(directErr||new Error('proxy '+(r?r.status:'unreachable')));
   };
   try{
     const json=await treasuryFetch('debt_to_penny',{fields:'record_date,tot_pub_debt_out_amt,debt_held_public_amt,intragov_hold_amt'});
