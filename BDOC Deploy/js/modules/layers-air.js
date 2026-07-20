@@ -601,9 +601,31 @@ const _SAT_GROUPS=[
   {g:'stations',   col:'#00eeff', label:'Space Station'},
   {g:'visual',     col:'#ffffff', label:'Visually Bright'},
   {g:'gps-ops',    col:'#39d353', label:'GPS'},
-  {g:'glonass-ops',col:'#ffa500', label:'GLONASS'},
+  {g:'glo-ops',    col:'#ffa500', label:'GLONASS'},   // p81: was 'glonass-ops' — invalid group, CelesTrak returns "Invalid query"
   {g:'military',   col:'#DA3633', label:'US Military'},
 ];
+// p81: parse 3-line TLE text into the record shape the render loop expects.
+// CelesTrak GP FORMAT=json has NO TLE_LINE1/2 fields, and the bundled satellite.js
+// only exposes twoline2satrec (no json2satrec) — so the JSON path could never
+// produce a single satellite. Layer was silently dead ("feed empty").
+function _parseTLE(txt){
+  const lines=String(txt||'').split(/\r?\n/).map(l=>l.trimEnd()).filter(l=>l.length);
+  const out=[];
+  for(let i=0;i+2<lines.length;){
+    if(lines[i+1][0]==='1'&&lines[i+2][0]==='2'){
+      const l1=lines[i+1],l2=lines[i+2];
+      out.push({
+        OBJECT_NAME:lines[i].trim(),
+        NORAD_CAT_ID:parseInt(l1.substring(2,7),10),
+        TLE_LINE1:l1,TLE_LINE2:l2,
+        INCLINATION:parseFloat(l2.substring(8,16))||0,
+        MEAN_MOTION:parseFloat(l2.substring(52,63))||0
+      });
+      i+=3;
+    }else i++;
+  }
+  return out;
+}
 async function loadSatellites(){
   if(!V)return;
   if(_satPosTimer){clearInterval(_satPosTimer);_satPosTimer=null;}
@@ -614,15 +636,15 @@ async function loadSatellites(){
     // gated on data presence — the old .catch() chain was unreachable and the layer died
     // whenever the proxy 502'd.
     const results=await Promise.all(_SAT_GROUPS.map(async({g})=>{
-      let r=await safeFetch('celestrak','sats_'+g,`https://celestrak.org/NORAD/elements/gp.php?GROUP=${g}&FORMAT=json`,{feedType:'satellites',staleOk:true}).catch(()=>null);
-      if(!r||!Array.isArray(r.data)||!r.data.length){
-        r=await safeFetch('celestrak','sats_'+g,`/.netlify/functions/proxy-celestrak?group=${g}&format=json`,{feedType:'satellites',staleOk:true}).catch(()=>null);
+      let r=await safeFetch('celestrak','sats_'+g,`https://celestrak.org/NORAD/elements/gp.php?GROUP=${g}&FORMAT=tle`,{feedType:'satellites',staleOk:true,text:true}).catch(()=>null);
+      if(!r||typeof r.data!=='string'||!r.data.includes('\n1 ')){
+        r=await safeFetch('celestrak','sats_'+g,`/.netlify/functions/proxy-celestrak?group=${g}&format=tle`,{feedType:'satellites',staleOk:true,text:true}).catch(()=>null);
       }
       return r;
     }));
     const seen=new Set();const allSats=[];
     results.forEach((res,i)=>{
-      const arr=(res&&res.data&&Array.isArray(res.data))?res.data:[];
+      const arr=(res&&typeof res.data==='string')?_parseTLE(res.data):[];
       arr.forEach(s=>{
         if(!s.TLE_LINE1||!s.TLE_LINE2)return;
         if(seen.has(s.NORAD_CAT_ID))return;

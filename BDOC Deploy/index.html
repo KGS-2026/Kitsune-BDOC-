@@ -1542,7 +1542,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p81',              // MUST bump on ANY js/modules/* change — p81 = layers-air (satellites browser-direct primary, proxy fallback)
+  _version: 'p81b',              // MUST bump on ANY js/modules/* change — p81b = layers-air (TLE format + parser; GP JSON had no TLE lines)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
