@@ -1543,7 +1543,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p91',              // MUST bump on ANY js/modules/* change — p86 = layers-air (OpenSky browser-direct primary; proxy 502s from Lambda, was spamming warnings + wasting 15s/region/cycle)
+  _version: 'p92',              // MUST bump on ANY js/modules/* change — p86 = layers-air (OpenSky browser-direct primary; proxy 502s from Lambda, was spamming warnings + wasting 15s/region/cycle)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];

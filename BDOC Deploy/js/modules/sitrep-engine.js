@@ -99,12 +99,53 @@ window.generateSitrep = async function (target) {
   var docUrl = 'https://api.gdeltproject.org/api/v2/doc/doc?query=' + encodeURIComponent(t.q) + '&mode=artlist&format=json&timespan=24h&maxrecords=250&sort=hybridrel';
   var results = await Promise.allSettled([
     fetch(docUrl, { signal: AbortSignal.timeout(20000) }).then(function (r) { return r.json(); }),
-    fetch('/.netlify/functions/proxy-gdeltevents?files=16', { signal: AbortSignal.timeout(25000) }).then(function (r) { return r.json(); })
+    fetch('/.netlify/functions/proxy-gdeltevents?files=16', { signal: AbortSignal.timeout(40000) }).then(function (r) { return r.json(); })
   ]);
 
-  var arts = (results[0].status === 'fulfilled' && results[0].value && results[0].value.articles) || [];
+  var docRes = results[0].status === 'fulfilled' ? results[0].value : null;
+  // SW offline-fallback or GDELT rate-limit both yield a shape without .articles — treat as miss
+  var arts = (docRes && Array.isArray(docRes.articles)) ? docRes.articles : [];
+
+  // FALLBACK: browser-direct blocked (datacenter IP throttling / offline SW response)
+  // → route through our Netlify proxy-gdelt, which returns FeatureCollection of articles.
+  if (!arts.length) {
+    try {
+      var pq = t.q.replace(/[()"]/g, '').split(' OR ').join(' OR ');
+      var pr = await fetch('/.netlify/functions/proxy-gdelt?query=' + encodeURIComponent(pq) + '&timespan=24h&maxrecords=150', { signal: AbortSignal.timeout(30000) });
+      var pd = await pr.json();
+      arts = ((pd && pd.features) || []).map(function (f) {
+        var p = f.properties || {};
+        return { title: p.name || '', url: p.url || '', domain: p.domain || '', seendate: p.seendate || '' };
+      }).filter(function (a) { return a.title; });
+    } catch (e) { console.warn('[SITREP proxy fallback]', e); }
+  }
+
   var evAll = (results[1].status === 'fulfilled' && results[1].value && results[1].value.events) || [];
   var evs = evAll.filter(function (e) { return t.cc.indexOf(e.cc) !== -1; });
+
+  // LAST RESORT: no article titles at all → events-only SITREP (kinetic events still
+  // carry type, place, salience and source links — a real answer, just thinner).
+  if (!arts.length && evs.length) {
+    var codeName = function (c, root) {
+      if (root === '20') return 'MASS VIOLENCE';
+      if (c === '195' || c === '1951' || c === '1952') return 'AIR/DRONE STRIKE';
+      if (c === '194') return 'NAVAL/BLOCKADE';
+      if (c === '193') return 'GROUND CLASH';
+      if (c === '186') return 'ASSASSINATION ATTEMPT';
+      if (/^183/.test(c)) return 'BOMBING/IED';
+      return root === '18' ? 'ASSAULT' : 'ARMED ENGAGEMENT';
+    };
+    var top2 = evs.slice().sort(function (a, b) { return b.m - a.m; }).slice(0, 10);
+    var h2 = '<b>⚡ LIVE SITREP — ' + esc(t.name) + '</b> <span style="font-size:9px;color:#E8B339">(EVENTS-ONLY MODE — news feed unreachable)</span><br>' +
+      '<span style="font-size:9px;color:#8b949e">LAST ~4H · ' + evs.length + ' GEOCODED KINETIC EVENTS</span><br><br>';
+    top2.forEach(function (ev) {
+      h2 += '&bull; <b>' + codeName(ev.code, ev.root) + '</b> — ' + esc(ev.place) + ' <span style="color:#8b949e">(' + ev.m + ' mentions)</span>' +
+        (ev.url ? ' <a href="' + esc(ev.url) + '" target="_blank" rel="noopener" style="color:#00ddff">source</a>' : '') + '<br>';
+    });
+    h2 += '<br><span style="font-size:8px;color:#4a5068">GDELT 2.0 Event DB. Full narrative SITREP unavailable — news API unreachable from this connection; retry in ~60s.</span>';
+    msg('sy', h2);
+    return;
+  }
 
   if (!arts.length && !evs.length) {
     msg('sy', '<b>SITREP — ' + t.name + '</b><br><br>⚠ No live reporting retrievable right now (GDELT may be rate-limiting). Try again in ~60s.');
