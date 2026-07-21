@@ -38,11 +38,24 @@ window.ARCGIS = {
     return serviceUrl.replace(/\/+$/, '') + '/query?' + p.toString();
   },
 
+  // P85: in-flight request dedupe. Two consumers hitting the same cacheKey
+  // concurrently (e.g. NIFC auto-load + fireperims layer, both WFIGS) would
+  // otherwise double-fetch on a cold cache and 429 each other — WFIGS has a
+  // shared global per-minute quota. Same cacheKey in flight → share the promise.
+  _inflight: {},
+
   // Fetch one layer as GeoJSON with pagination + localStorage cache.
   // cacheKey: short string; pages: max pages of `count` records (default 3).
   async fetchGeoJSON(serviceUrl, opts) {
     opts = opts || {};
-    const cacheKey = 'bdoc_arcgis_' + (opts.cacheKey || serviceUrl.slice(-40));
+    const dedupeKey = 'bdoc_arcgis_' + (opts.cacheKey || serviceUrl.slice(-40));
+    if (this._inflight[dedupeKey]) return this._inflight[dedupeKey];
+    const p = this._fetchGeoJSON(serviceUrl, opts, dedupeKey);
+    this._inflight[dedupeKey] = p;
+    try { return await p; } finally { delete this._inflight[dedupeKey]; }
+  },
+
+  async _fetchGeoJSON(serviceUrl, opts, cacheKey) {
     const ttl = opts.ttl != null ? opts.ttl : this._CACHE_TTL; // per-layer TTL: live feeds pass short ttl
     // cache hit? (keep stale copy around as a fallback if the live fetch 429s/fails)
     let stale = null;
