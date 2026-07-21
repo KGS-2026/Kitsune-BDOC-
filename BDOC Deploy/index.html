@@ -598,6 +598,7 @@ if('serviceWorker' in navigator){
 <div class="lg-group closed">
 <div class="ly force" data-layer="forcetrack" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:var(--rd)"></div><span class="ly-n" style="color:var(--rd);font-weight:600">FORCE TRACKER</span><span class="ly-tg" style="color:var(--rd);background:var(--rdG)">MIL+VIP</span></div>
 <div class="ly" data-layer="conf" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:var(--rd)"></div><span class="ly-n">Active Conflicts</span><span class="ly-tg tg-l">LIVE</span></div>
+<div class="ly" data-layer="warlive" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#DA3633"></div><span class="ly-n" style="color:#ff6b6b;font-weight:600">⚡ War Room (Live 24h)</span><span class="ly-tg" style="color:#ff6b6b;background:rgba(218,54,51,0.12)">REAL-TIME</span></div>
 <div class="ly" data-layer="territory" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#ff3344"></div><span class="ly-n">Territory Control</span><span class="ly-tg tg-l">LIVE</span></div>
 </div>
 <div class="lg-title lg-collapse collapsed" onclick="togCat(this)">MILITARY <span class="lg-arrow">&#9660;</span></div>
@@ -1542,7 +1543,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p86',              // MUST bump on ANY js/modules/* change — p86 = layers-air (OpenSky browser-direct primary; proxy 502s from Lambda, was spamming warnings + wasting 15s/region/cycle)
+  _version: 'p87',              // MUST bump on ANY js/modules/* change — p86 = layers-air (OpenSky browser-direct primary; proxy 502s from Lambda, was spamming warnings + wasting 15s/region/cycle)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
@@ -2988,7 +2989,7 @@ function bdocCrisisZone(key){
 }
 // Phase 5B (2026-05-04): Quick-start preset bundles. Each turns ON a curated set, leaves others alone.
 const _BDOC_PRESETS={
-  conflict:['conf','territory','milbases','nukes'],
+  conflict:['conf','warlive','territory','milbases','nukes'],
   maritime:['vessels','cable','darkships','chokepoints','dartbuoys'],
   cyber:['cyber','outages','downdetect','internet'],
   // P79: fireperims (WFIGS burn footprints) + metar (live surface obs) + dartbuoys join the hazard bundles
@@ -3101,8 +3102,8 @@ const milAC=[],allAC=[],feed=[];
 // Phase 8C (2026-05-05): every layer defaults to OFF — clean canvas on first load
 // Phase 22: added internet/landings/chokepoints here so markLockedLayers() can zero them on logout
 // (they were previously set lazily; 'key in layers' was false so markLockedLayers skipped them)
-const layers={forcetrack:false,air:false,eq:false,fire:false,conf:false,cable:false,sat:false,territory:false,imint:false,weather:false,clouds:false,temp:false,hurricanes:false,alerts:false,wind:false,forecastradar:false,lightning:false,airquality:false,vessels:false,cyber:false,outages:false,downdetect:false,webcams:false,radio:false,deforest:false,sentinel:false,news:false,headlines:false,spaceweather:false,mesh:false,community:false,floods:false,tsunamis:false,volcanoes:false,nucranges:false,borders:false,hillshade:false,popdensity:false,alliances:false,powerplants:false,gridinfra:false,substations:false,pipelines:false,metar:false,dartbuoys:false,fireperims:false,oilgas:false,sanctions:false,embassies:false,wireshark:false,vegetation:false,econintel:false,milbases:false,milairfields:false,nukes:false,darkships:false,ioc:false,internet:false,landings:false,chokepoints:false,deflock:false,celltowers:false,fallout:false};
-let eqEnts=[],fireEnts=[],confEnts=[],airEnts=[],milEnts=[],cableEnts=[],satEnts=[],territoryEnts=[],imintEnts=[],newsEnts=[],headlineEnts=[],spwxEnts=[],meshEnts=new Set(),communityEnts=[],floodEnts=[],tsunamiEnts=[],volcanoEnts=[],nucRangeEnts=[],allianceEnts=[],powerplantEnts=[],gridinfraEnts=[],substationEnts=[],pipelineEnts=[],metarEnts=[],dartEnts=[],fireperimEnts=[],oilgasEnts=[],sanctionEnts=[],embassyEnts=[],wiresharkEnts=[],vegEnts=[],darkshipEnts=[],iocEnts=[],falloutEnts=[];
+const layers={forcetrack:false,air:false,eq:false,fire:false,conf:false,warlive:false,cable:false,sat:false,territory:false,imint:false,weather:false,clouds:false,temp:false,hurricanes:false,alerts:false,wind:false,forecastradar:false,lightning:false,airquality:false,vessels:false,cyber:false,outages:false,downdetect:false,webcams:false,radio:false,deforest:false,sentinel:false,news:false,headlines:false,spaceweather:false,mesh:false,community:false,floods:false,tsunamis:false,volcanoes:false,nucranges:false,borders:false,hillshade:false,popdensity:false,alliances:false,powerplants:false,gridinfra:false,substations:false,pipelines:false,metar:false,dartbuoys:false,fireperims:false,oilgas:false,sanctions:false,embassies:false,wireshark:false,vegetation:false,econintel:false,milbases:false,milairfields:false,nukes:false,darkships:false,ioc:false,internet:false,landings:false,chokepoints:false,deflock:false,celltowers:false,fallout:false};
+let eqEnts=[],fireEnts=[],confEnts=[],warliveEnts=[],airEnts=[],milEnts=[],cableEnts=[],satEnts=[],territoryEnts=[],imintEnts=[],newsEnts=[],headlineEnts=[],spwxEnts=[],meshEnts=new Set(),communityEnts=[],floodEnts=[],tsunamiEnts=[],volcanoEnts=[],nucRangeEnts=[],allianceEnts=[],powerplantEnts=[],gridinfraEnts=[],substationEnts=[],pipelineEnts=[],metarEnts=[],dartEnts=[],fireperimEnts=[],oilgasEnts=[],sanctionEnts=[],embassyEnts=[],wiresharkEnts=[],vegEnts=[],darkshipEnts=[],iocEnts=[],falloutEnts=[];
 // XSS sanitizer — escapes HTML in any API-sourced string before injection into innerHTML/description
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 // Sanitize any HTML that will be handed to Cesium's InfoBox iframe (entity.description). Uses DOMPurify if loaded; falls back to esc() + whitelist.
@@ -3149,6 +3150,8 @@ function togLy(el){
   if(ly==='eq'){if(layers.eq&&eqEnts.length===0){BDOC.layerLoadFx.start('eq');loadEQ();}eqEnts.forEach(e=>e.show=layers.eq)}
   if(ly==='fire'){if(layers.fire&&fireEnts.length===0){BDOC.layerLoadFx.start('fire');loadFires();}fireEnts.forEach(e=>e.show=layers.fire);firePerimEnts.forEach(e=>e.show=layers.fire)}
   if(ly==='conf'){if(layers.conf){if(confEnts.length===0){BDOC.layerLoadFx.start('conf');BDOC.LazyLoader.load('layers-conflict').then(()=>{if(window.loadConflicts)window.loadConflicts();BDOC.layerLoadFx.done('conf',true)}).catch(e=>{console.warn('[lazy layers-conflict]',e);BDOC.layerLoadFx.done('conf',false)})}else{confEnts.forEach(e=>e.show=true)}}else{confEnts.forEach(e=>e.show=false)}}
+  // P80: WAR ROOM — live 24h conflict fusion (GDELT reporting + FIRMS thermal in war-zone AOIs)
+  if(ly==='warlive'){if(layers.warlive){BDOC.layerLoadFx.start('warlive');BDOC.LazyLoader.load('layers-warlive').then(()=>window.loadWarLive?window.loadWarLive():null).then(()=>BDOC.layerLoadFx.done('warlive',warliveEnts.length>0)).catch(e=>{console.warn('[lazy layers-warlive]',e);BDOC.layerLoadFx.done('warlive',false)})}else{warliveEnts.forEach(e=>V.entities.remove(e));warliveEnts=[];if(window.loadWarLive&&window.loadWarLive._interval){clearInterval(window.loadWarLive._interval);window.loadWarLive._interval=null}}}
   if(ly==='cable'){if(layers.cable&&cableEnts.length===0){BDOC.layerLoadFx.start('cable');BDOC.LazyLoader.load('layers-air').then(()=>{if(window.loadCables)window.loadCables();BDOC.layerLoadFx.done('cable',true)}).catch(e=>{console.warn('[lazy layers-air]',e);BDOC.layerLoadFx.done('cable',false)})}cableEnts.forEach(e=>e.show=layers.cable)}
   if(ly==='sat'){if(layers.sat&&satEnts.length===0){BDOC.layerLoadFx.start('sat');BDOC.LazyLoader.load('layers-air').then(()=>{if(window.loadSatellites)window.loadSatellites();BDOC.layerLoadFx.done('sat',true)}).catch(e=>{console.warn('[lazy layers-air]',e);BDOC.layerLoadFx.done('sat',false)})}satEnts.forEach(e=>e.show=layers.sat)}
   if(ly==='territory'){if(layers.territory){BDOC.layerLoadFx.start('territory');BDOC.LazyLoader.load('layers-conflict').then(()=>{territoryEnts.forEach(e=>e.show=true);if(window._territoryDataSource)window._territoryDataSource.entities.values.forEach(e=>e.show=true);if(territoryEnts.length===0&&!window._territoryDataSource&&window.loadTerritoryControl)window.loadTerritoryControl();BDOC.layerLoadFx.done('territory',true)}).catch(e=>{console.warn('[lazy layers-conflict]',e);BDOC.layerLoadFx.done('territory',false)})}else{territoryEnts.forEach(e=>e.show=false);if(window._territoryDataSource)window._territoryDataSource.entities.values.forEach(e=>e.show=false)}}
