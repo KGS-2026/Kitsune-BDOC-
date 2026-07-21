@@ -1542,7 +1542,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p85',              // MUST bump on ANY js/modules/* change — p85 = layers-arcgis (in-flight dedupe: NIFC auto-load + fireperims layer share one WFIGS fetch, no more mutual 429)
+  _version: 'p86',              // MUST bump on ANY js/modules/* change — p86 = layers-air (OpenSky browser-direct primary; proxy 502s from Lambda, was spamming warnings + wasting 15s/region/cycle)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
@@ -4931,13 +4931,14 @@ function loadDarkShips(){
   EventLog.add('info',`Dark fleet: ${fleet.length} vessels/hubs from Atlantic Council/RUSI/C4ADS sources`);
 }
 // ═══ AISSTREAM.IO — GLOBAL REAL-TIME VESSEL TRACKING (WebSocket) ═══
-let _aisWS=null,_aisVesselMap=new Map(),_aisReconnectTimer=null;
+let _aisWS=null,_aisVesselMap=new Map(),_aisReconnectTimer=null,_aisRetryMs=10000,_aisFailStreak=0;
 function connectAISstream(){
   if(_aisWS&&(_aisWS.readyState===WebSocket.OPEN||_aisWS.readyState===WebSocket.CONNECTING))return;
   try{
     _aisWS=new WebSocket('wss://stream.aisstream.io/v0/stream');
     _aisWS.onopen=()=>{
       console.log('[AISstream] WebSocket connected — subscribing to global AIS');
+      _aisRetryMs=10000;_aisFailStreak=0; // reset backoff on success
       // [SECURITY] TODO: Proxy this key through Netlify Function — exposed in client-side source
       _aisWS.send(JSON.stringify({APIKey:'e6c3aec5d02b9c79d9d566e6980560b5d6f4cc27',BoundingBoxes:[[[-90,-180],[90,180]]],FilterMessageTypes:['PositionReport','ShipStaticData']}));
       af('var(--bl)','AISstream.io: connected — streaming global vessel positions');
@@ -5004,15 +5005,23 @@ function connectAISstream(){
       }catch(ex){}
     };
     _aisWS.onclose=()=>{
-      console.warn('[AISstream] WebSocket closed — reconnecting in 10s');
-      _aisReconnectTimer=setTimeout(()=>{if(layers.vessels)connectAISstream()},10000);
+      // Exponential backoff (p86): aisstream.io's TLS cert expired upstream (verified via
+      // openssl: cert expired → WS handshake fails instantly). Fixed 10s retry = error spam
+      // + wasted connections while it's down. 10s→cap 10min doubling; one-time banner after
+      // 3 straight failures. Digitraffic snapshot layer (loadVessels) is unaffected.
+      _aisFailStreak++;
+      if(_aisFailStreak===3)af('var(--yl)','AISstream.io live feed unreachable (upstream cert/outage) — showing Baltic AIS snapshot only');
+      console.warn(`[AISstream] WebSocket closed — reconnecting in ${Math.round(_aisRetryMs/1000)}s (fail #${_aisFailStreak})`);
+      _aisReconnectTimer=setTimeout(()=>{if(layers.vessels)connectAISstream()},_aisRetryMs);
+      _aisRetryMs=Math.min(_aisRetryMs*2,600000);
     };
     _aisWS.onerror=(e)=>{console.error('[AISstream] WebSocket error:',e)};
   }catch(e){console.error('[AISstream] Connection failed:',e)}
 }
 function disconnectAISstream(){
   if(_aisReconnectTimer){clearTimeout(_aisReconnectTimer);_aisReconnectTimer=null}
-  if(_aisWS){_aisWS.close();_aisWS=null}
+  _aisRetryMs=10000;_aisFailStreak=0;
+  if(_aisWS){_aisWS.onclose=null;_aisWS.close();_aisWS=null}
 }
 // Update vessel count stat every 5s when streaming
 setInterval(()=>{if(_aisWS&&_aisWS.readyState===WebSocket.OPEN){const el=document.getElementById('vesselV');if(el)el.textContent=_aisVesselMap.size.toLocaleString()}},5000);

@@ -244,22 +244,28 @@ async function fetchOpenSky(reg){
   const lamax=(reg.lat+latR).toFixed(2);
   const lomin=(reg.lon-lonR).toFixed(2);
   const lomax=(reg.lon+lonR).toFixed(2);
-  // Try proxy first, fall back to direct API
-  let res;
+  // Browser-direct PRIMARY (p86): OpenSky throttles AWS/datacenter IPs, so the Netlify
+  // proxy 502s ~always ("operation aborted due to timeout" after its 7s internal cap) —
+  // same pattern as CelesTrak/GDELT. Old order wasted a 15s doomed proxy attempt per
+  // region per cycle and spammed console warnings. Proxy kept as data-gated fallback
+  // (it injects OPENSKY_USER/PASS Basic Auth if configured, and covers client networks
+  // that block opensky-network.org directly).
+  let res=null;
   try{
-    res=await safeFetch('opensky',`osky_${reg.name}`,`/.netlify/functions/proxy-opensky?lamin=${lamin}&lomin=${lomin}&lamax=${lamax}&lomax=${lomax}`,{feedType:'aircraft',staleOk:true,timeout:15000});
-    if(!res.data||!res.data.states)throw new Error('proxy empty');
+    const directUrl=`https://opensky-network.org/api/states/all?lamin=${lamin}&lomin=${lomin}&lamax=${lamax}&lomax=${lomax}`;
+    const r=await fetch(directUrl,{signal:AbortSignal.timeout(15000)});
+    if(!r.ok)throw new Error('direct '+r.status);
+    const data=await r.json();
+    if(!data||!data.states)throw new Error('direct empty');
+    res={data,fromCache:false};
+    Health.ok('opensky',data.states.length||0);
   }catch(e){
-    console.warn(`[Aircraft] OpenSky proxy failed for ${reg.name}, trying direct:`,e.message);
     try{
-      const directUrl=`https://opensky-network.org/api/states/all?lamin=${lamin}&lomin=${lomin}&lamax=${lamax}&lomax=${lomax}`;
-      const r=await fetch(directUrl,{signal:AbortSignal.timeout(15000)});
-      if(!r.ok)throw new Error('direct '+r.status);
-      const data=await r.json();
-      res={data,fromCache:false};
-      Health.ok('opensky',data.states?.length||0);
-    }catch(e2){
-      console.warn(`[Aircraft] OpenSky direct also failed for ${reg.name}:`,e2.message);
+      const p=await safeFetch('opensky',`osky_${reg.name}`,`/.netlify/functions/proxy-opensky?lamin=${lamin}&lomin=${lomin}&lamax=${lamax}&lomax=${lomax}`,{feedType:'aircraft',staleOk:true,timeout:12000});
+      if(p&&p.data&&p.data.states)res=p; // data-gated — safeFetch never rejects, resolves {data:null} on failure
+    }catch(e2){/* fall through */}
+    if(!res){
+      console.warn(`[Aircraft] OpenSky unavailable for ${reg.name} (direct: ${e.message}; proxy also empty)`);
       return[];
     }
   }
