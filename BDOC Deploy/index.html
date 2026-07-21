@@ -9973,6 +9973,48 @@ async function loadTsunamis(){
 // ═══ VOLCANOES (GDACS / Smithsonian GVP) ═══
 async function loadVolcanoes(){
   volcanoEnts.forEach(e=>V.entities.remove(e));volcanoEnts=[];
+  // p87 (2026-07-21): GDACS VO feed returns ZERO features globally (upstream ignores the
+  // eventtype param and its mixed bag contains no real VO events) — the layer was dead.
+  // Primary is now the USGS/Esri Monitored Volcanoes live feed (161 volcanoes, real alert
+  // levels: WARNING/WATCH/ADVISORY/NORMAL, ~1h refresh) via the ARCGIS adapter (retry +
+  // cache + stale-fallback). GDACS kept as fallback if the USGS service ever dies.
+  try{
+    if(!window.ARCGIS)await BDOC.LazyLoader.load('layers-arcgis');
+    const fc=await ARCGIS.fetchGeoJSON('https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/Monitored_Global_USGS_Volcanos/FeatureServer/0',{
+      where:'1=1',outFields:'Volcano_Name,Alert_Level,Color_Code,Region,Threat,Link,Elevation,Alert_Date',precision:3,count:500,pages:1,cacheKey:'usgsvolc',ttl:3600*1000});
+    if(!layers.volcanoes)return; // user disarmed mid-fetch
+    if(!fc.features||!fc.features.length)throw new Error('USGS volcano feed empty');
+    const codeColors={'RED':'#FF0000','ORANGE':'#FF8C00','YELLOW':'#E8B339','GREEN':'#3FB950'};
+    let elevated=0;
+    fc.features.forEach(f=>{
+      const g=f.geometry;if(!g||g.type!=='Point')return;
+      const [lon,lat]=g.coordinates;
+      if(typeof lon!=='number'||typeof lat!=='number'||!isFinite(lon)||!isFinite(lat))return;
+      const p=f.properties||{};
+      const code=(p.Color_Code||'').toUpperCase();
+      const lvl=(p.Alert_Level||'UNASSIGNED').toUpperCase();
+      const hot=code==='RED'||code==='ORANGE'||code==='YELLOW';
+      if(hot)elevated++;
+      const clr=codeColors[code]||'#8b949e';
+      const name=esc(p.Volcano_Name||'Volcano');
+      const desc='<div style="font-family:var(--m);padding:8px;max-width:300px;color:#c8ccd6;background:#0d1117;border:1px solid '+clr+'">'+
+        '<div style="font-size:11px;font-weight:600;color:'+clr+';margin-bottom:6px">VOLCANO — '+esc(lvl)+'</div>'+
+        '<div style="font-size:10px;margin-bottom:3px"><b>'+name+'</b></div>'+
+        '<div style="font-size:9px;color:#8b949e">Region: '+esc(p.Region||'--')+' | Elev: '+esc(String(p.Elevation||'--'))+' m</div>'+
+        '<div style="font-size:9px;color:#8b949e">Aviation code: <span style="color:'+clr+'">'+esc(code||'UNASSIGNED')+'</span> | Threat: '+esc(p.Threat||'--')+'</div>'+
+        (p.Link&&/^https?:/.test(p.Link)?'<div style="font-size:9px;margin-top:4px"><a href="'+esc(p.Link)+'" target="_blank" style="color:#2D72D2">USGS volcano page →</a></div>':'')+
+        '<div style="font-size:8px;color:#555;margin-top:6px">Source: USGS Volcano Hazards (live, ~1h refresh)</div></div>';
+      volcanoEnts.push(V.entities.add({
+        position:Cesium.Cartesian3.fromDegrees(lon,lat),
+        billboard:hot?{image:makeSvgIcon('\u{1F30B}',clr),width:30,height:30,verticalOrigin:Cesium.VerticalOrigin.CENTER,pixelOffset:new Cesium.Cartesian2(18,0),disableDepthTestDistance:5e6}:undefined,
+        point:hot?undefined:{pixelSize:5,color:Cesium.Color.fromCssColorString(clr).withAlpha(0.85),outlineColor:Cesium.Color.BLACK,outlineWidth:1,disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1.1,1e7,0.35)},
+        label:hot?{text:name.substring(0,18),font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(18,22),disableDepthTestDistance:5e6}:undefined,
+        description:desc,show:layers.volcanoes
+      }));
+    });
+    af('#FF4500','Volcanoes: '+volcanoEnts.length+' USGS-monitored ('+elevated+' at elevated alert)');us(1);
+    return;
+  }catch(usgsErr){console.warn('[Volcanoes] USGS feed failed, trying GDACS fallback:',usgsErr.message)}
   try{
     const now=new Date();const from=new Date(now.getTime()-180*86400000);
     const fd=from.toISOString().split('T')[0],td=now.toISOString().split('T')[0];
