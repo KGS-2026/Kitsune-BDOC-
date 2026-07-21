@@ -123,7 +123,50 @@ window.loadWarLive = async function () {
     });
   } catch (e) { console.warn('[WarLive FIRMS]', e); }
 
-  af('#DA3633', 'WAR ROOM: ' + newsN + ' live reports + ' + thermalN + ' thermal anomalies across ' + WAR_THEATERS.length + ' theaters (24h)'); us(1);
+  // ── 3. P90: GDELT 2.0 EVENTS — geocoded kinetic events, typed by CAMEO code ──
+  // This is event-level plotting at REAL coordinates (city/landmark precision),
+  // the capability Liveuamap sells for $500+/mo. Served by proxy-gdeltevents
+  // which fuses the last 3h of GDELT 15-min export files server-side.
+  let eventN = 0;
+  try {
+    const res = await fetch('/.netlify/functions/proxy-gdeltevents?files=12', { signal: AbortSignal.timeout(25000) });
+    if (res.ok) {
+      const d = await res.json();
+      // CAMEO taxonomy → display type. root 18=assault, 19=fight, 20=mass violence
+      const typeOf = (code, root) => {
+        if (root === '20') return { icon: '☢', label: 'MASS VIOLENCE', color: '#ff2d78' };
+        if (code === '195' || code === '1951' || code === '1952') return { icon: '✈', label: 'AIR / DRONE STRIKE', color: '#ff6b35' };
+        if (code === '194') return { icon: '⚓', label: 'NAVAL / BLOCKADE', color: '#00b4d8' };
+        if (code === '193') return { icon: '⚔', label: 'GROUND CLASH', color: '#DA3633' };
+        if (code === '196') return { icon: '☣', label: 'WMD / CBRN', color: '#ff2d78' };
+        if (code === '186') return { icon: '🎯', label: 'ASSASSINATION ATTEMPT', color: '#E8B339' };
+        if (code === '183' || code === '1831' || code === '1832' || code === '1833') return { icon: '💣', label: 'BOMBING / IED', color: '#ff6b35' };
+        if (root === '18') return { icon: '✖', label: 'ASSAULT / ATTACK', color: '#E8B339' };
+        return { icon: '⚔', label: 'ARMED ENGAGEMENT', color: '#DA3633' };
+      };
+      (d.events || []).forEach(ev => {
+        const t = typeOf(ev.code, ev.root);
+        const salient = ev.m >= 20; // widely-reported events get labels
+        warliveEnts.push(V.entities.add({
+          position: Cesium.Cartesian3.fromDegrees(ev.lon, ev.lat),
+          point: { pixelSize: salient ? 8 : 5, color: Cesium.Color.fromCssColorString(t.color).withAlpha(0.9), outlineColor: Cesium.Color.BLACK, outlineWidth: 1, disableDepthTestDistance: Number.POSITIVE_INFINITY, scaleByDistance: new Cesium.NearFarScalar(5e5, 1.3, 1.2e7, 0.5) },
+          label: salient ? { text: t.icon + ' ' + t.label, font: '9px JetBrains Mono', fillColor: Cesium.Color.fromCssColorString(t.color), outlineColor: Cesium.Color.BLACK, outlineWidth: 2, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -14), disableDepthTestDistance: Number.POSITIVE_INFINITY, distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 8e6) } : undefined,
+          description: '<div style="font-family:\'JetBrains Mono\',monospace;padding:12px;color:#c8ccd6;background:#0a0e14;border:1px solid ' + t.color + ';max-width:400px">' +
+            '<div style="font-size:12px;font-weight:700;color:' + t.color + ';margin-bottom:4px">' + t.icon + ' ' + t.label + '</div>' +
+            '<div style="font-size:8px;color:#8b949e;letter-spacing:1px;margin-bottom:8px">GDELT EVENT ' + esc(ev.code) + ' · LAST 3H · GEOCODED</div>' +
+            '<div style="font-size:10px;margin-bottom:3px">Location: <b>' + esc(ev.place || 'unknown') + '</b></div>' +
+            '<div style="font-size:10px;margin-bottom:3px">Media salience: <b>' + ev.m + ' mentions</b>' + (salient ? ' <span style="color:' + t.color + '">— MAJOR EVENT</span>' : '') + '</div>' +
+            '<div style="font-size:10px;margin-bottom:3px">Conflict intensity (Goldstein): <b>' + ev.g + '</b> · Tone: ' + ev.tone + '</div>' +
+            (ev.url ? '<a href="' + esc(ev.url) + '" target="_blank" rel="noopener" style="color:#00ddff;font-size:9px">Read source →</a>' : '') +
+            '<div style="font-size:8px;color:#4a5068;margin-top:6px">Source: GDELT 2.0 Event Database — CAMEO-coded, machine-geocoded from global media</div></div>',
+          show: layers.warlive
+        }));
+        eventN++;
+      });
+    }
+  } catch (e) { console.warn('[WarLive GDELT-Events]', e); }
+
+  af('#DA3633', 'WAR ROOM: ' + eventN + ' geocoded kinetic events (3h) + ' + newsN + ' theater reports + ' + thermalN + ' thermal anomalies (24h)'); us(1);
   // auto-refresh every 15 min while armed
   if (!window.loadWarLive._interval) {
     window.loadWarLive._interval = setInterval(() => { if (layers.warlive) window.loadWarLive(); }, 15 * 60 * 1000);
