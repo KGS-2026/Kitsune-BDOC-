@@ -3,7 +3,7 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v98';
+const SW_VERSION = 'bdoc-v99';
 const STATIC_CACHE  = SW_VERSION + '-static';
 const CDN_CACHE     = SW_VERSION + '-cdn';
 const API_CACHE     = SW_VERSION + '-api';
@@ -20,7 +20,7 @@ const STATIC_PRECACHE = [
   '/js/data.js?v=p31',
   '/js/auth.js?v=p70',
   '/js/filters.js?v=p31',
-  '/js/kitsune-ai.js?v=p31',
+  '/js/kitsune-ai.js?v=p91',
   '/js/bdoc-atak.js?v=p31',
   '/js/cesium-init.js?v=p31',
   '/js/modules/layers-military.js?v=p31',

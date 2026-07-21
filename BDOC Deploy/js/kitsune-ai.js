@@ -41,6 +41,28 @@ function sendQ(){
   if(!q)return;
   msg('us',esc(q));inp.value='';
   let matched=false;
+  // ── P91: LIVE SITREP ENGINE — natural-language theater questions get LIVE answers,
+  // not static briefs. Triggers on "sitrep <theater>", or any question combining a
+  // theater name with intel-question words (what/happened/hit/attack/casualt/killed/
+  // strikes/bases/24|today|latest|now/who). Static BRIEFS remain the fallback for a
+  // bare theater name (e.g. just "iran" still gives the background brief).
+  try{
+    const thKeys=Object.keys(window.SITREP_THEATERS||{});
+    const TH_FALLBACK=['iran','ukraine','gaza','israel','lebanon','yemen','sudan','myanmar','sahel','taiwan'];
+    const thHit=(thKeys.length?thKeys:TH_FALLBACK).find(k=>q.includes(k));
+    const intent=/sitrep|what.{0,20}(happen|going on)|attack|strike|hit|casualt|killed|injured|wounded|bases?|latest|today|last 24|past 24|update|right now|live/i.test(q);
+    if(thHit&&(intent||q.startsWith('sitrep'))){
+      msg('sy','<b>⚡ GENERATING LIVE SITREP — '+thHit.toUpperCase()+'</b><br><span style="font-size:9px;color:#8b949e">Pulling 24h global media + geocoded kinetic events…</span>');
+      const run=()=>window.generateSitrep(thHit).catch(e=>{console.warn('[SITREP]',e);msg('sy','<b>SITREP ERROR</b><br>'+esc(String(e&&e.message||e)))});
+      if(window.generateSitrep)run();
+      else if(window.BDOC&&BDOC.LazyLoader)BDOC.LazyLoader.load('sitrep-engine').then(run).catch(e=>msg('sy','<b>SITREP module failed to load.</b> '+esc(String(e&&e.message||e))));
+      return;
+    }
+    if(q==='sitrep'||q==='sitreps'){
+      msg('sy','<b>LIVE SITREP</b><br><br>Ask me about a theater, e.g.:<br>&bull; <b>sitrep iran</b> — or just "what happened in iran in the last 24 hours?"<br>&bull; <b>sitrep ukraine</b>, <b>sitrep gaza</b>, <b>sitrep yemen</b>, <b>sitrep sudan</b>, <b>sitrep myanmar</b>, <b>sitrep sahel</b>, <b>sitrep taiwan</b><br><br>I\'ll pull the last 24h of global reporting and extract: who attacked whom, installations hit, and casualty claims — with sources.');
+      return;
+    }
+  }catch(_){}
   const aliases={centcom:'iran',eucom:'ukraine',indopacom:'china',satellites:'satellite',sat:'satellite',ships:'vessels',maritime:'vessels',ais:'vessels',surveillance:'deflock',alpr:'deflock',flock:'deflock',cameras:'deflock',power:'outages',blackout:'outages',grid:'outages','power outage':'outages',downdetector:'service',services:'service','status check':'service','cell tower':'celltowers',cellular:'celltowers',towers:'celltowers','5g':'celltowers',lte:'celltowers',scanner:'radio',scanners:'radio',police:'radio',noaa:'radio','weather radio':'radio',broadcastify:'radio',economy:'debt',fiscal:'debt','national debt':'debt','debt clock':'debt',treasury:'debt',ofac:'sanctions',sdn:'sanctions',watchlist:'sanctions',nato:'alliances',brics:'alliances',csto:'alliances','five eyes':'alliances',aukus:'alliances',lng:'oil',refinery:'oil',pipeline:'oil',energy:'oil',consulate:'embassy',diplomatic:'embassy','power plant':'powerplants',powerplant:'powerplants',ndvi:'vegetation',flora:'vegetation',canopy:'vegetation',jungle:'vegetation',terrain:'vegetation','veg scan':'vegetation','plant id':'vegetation',biome:'vegetation',geolocate:'ip lookup','ip trace':'trace ip','ip intel':'ip lookup',whois:'ip lookup'};
   const qNorm=aliases[q]||q;
   for(const[key,val]of Object.entries(BRIEFS)){
