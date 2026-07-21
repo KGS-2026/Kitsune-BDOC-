@@ -58,6 +58,13 @@ function sendQ(){
       else if(window.BDOC&&BDOC.LazyLoader)BDOC.LazyLoader.load('sitrep-engine').then(run).catch(e=>msg('sy','<b>SITREP module failed to load.</b> '+esc(String(e&&e.message||e))));
       return;
     }
+    if(q==='clear sitrep'||q==='sitrep clear'){
+      var n=(window._sitrepEnts||[]).length;
+      (window._sitrepEnts||[]).forEach(function(e){try{V.entities.remove(e)}catch(_){}});
+      window._sitrepEnts=[];
+      msg('sy','<b>SITREP markers cleared</b> ('+n+' removed).');
+      return;
+    }
     if(q==='sitrep'||q==='sitreps'){
       msg('sy','<b>LIVE SITREP</b><br><br>Ask me about a theater, e.g.:<br>&bull; <b>sitrep iran</b> — or just "what happened in iran in the last 24 hours?"<br>&bull; <b>sitrep ukraine</b>, <b>sitrep gaza</b>, <b>sitrep yemen</b>, <b>sitrep sudan</b>, <b>sitrep myanmar</b>, <b>sitrep sahel</b>, <b>sitrep taiwan</b><br><br>I\'ll pull the last 24h of global reporting and extract: who attacked whom, installations hit, and casualty claims — with sources.');
       return;

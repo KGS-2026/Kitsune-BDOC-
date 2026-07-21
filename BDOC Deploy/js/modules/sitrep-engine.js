@@ -23,16 +23,16 @@
 // ============================================================
 
 window.SITREP_THEATERS = {
-  iran:    { name: 'IRAN / PERSIAN GULF', cc: ['IR'], q: '(iran OR tehran OR irgc OR "strait of hormuz" OR "us strikes iran")' },
-  ukraine: { name: 'UKRAINE THEATER',     cc: ['UP', 'RS'], q: '(ukraine OR kyiv OR kharkiv OR "russian strike" OR zaporizhzhia)' },
-  gaza:    { name: 'GAZA / ISRAEL / LEBANON', cc: ['IS', 'GZ', 'LE', 'WE'], q: '(gaza OR israel OR idf OR hezbollah OR lebanon)' },
+  iran:    { name: 'IRAN / PERSIAN GULF', cc: ['IR'], lat: 32.4, lon: 53.7, h: 3.2e6, q: '(iran OR tehran OR irgc OR "strait of hormuz" OR "us strikes iran")' },
+  ukraine: { name: 'UKRAINE THEATER',     cc: ['UP', 'RS'], lat: 48.4, lon: 31.2, h: 2.6e6, q: '(ukraine OR kyiv OR kharkiv OR "russian strike" OR zaporizhzhia)' },
+  gaza:    { name: 'GAZA / ISRAEL / LEBANON', cc: ['IS', 'GZ', 'LE', 'WE'], lat: 32.2, lon: 35.2, h: 9e5, q: '(gaza OR israel OR idf OR hezbollah OR lebanon)' },
   israel:  { alias: 'gaza' },
   lebanon: { alias: 'gaza' },
-  yemen:   { name: 'YEMEN / RED SEA',     cc: ['YM'], q: '(yemen OR houthi OR "red sea" OR hodeidah)' },
-  sudan:   { name: 'SUDAN CIVIL WAR',     cc: ['SU'], q: '(sudan OR khartoum OR darfur OR rsf OR "el fasher")' },
-  myanmar: { name: 'MYANMAR CIVIL WAR',   cc: ['BM'], q: '(myanmar OR burma OR junta OR tatmadaw)' },
-  sahel:   { name: 'SAHEL INSURGENCY',    cc: ['ML', 'NG', 'UV'], q: '(mali OR niger OR "burkina faso" OR jnim)' },
-  taiwan:  { name: 'TAIWAN STRAIT',       cc: ['TW', 'CH'], q: '(taiwan OR "taiwan strait" OR pla OR "chinese military")' }
+  yemen:   { name: 'YEMEN / RED SEA',     cc: ['YM'], lat: 15.3, lon: 45.0, h: 2.2e6, q: '(yemen OR houthi OR "red sea" OR hodeidah)' },
+  sudan:   { name: 'SUDAN CIVIL WAR',     cc: ['SU'], lat: 14.5, lon: 30.5, h: 2.8e6, q: '(sudan OR khartoum OR darfur OR rsf OR "el fasher")' },
+  myanmar: { name: 'MYANMAR CIVIL WAR',   cc: ['BM'], lat: 21.0, lon: 96.5, h: 2.4e6, q: '(myanmar OR burma OR junta OR tatmadaw)' },
+  sahel:   { name: 'SAHEL INSURGENCY',    cc: ['ML', 'NG', 'UV'], lat: 14.5, lon: 2.0, h: 3.2e6, q: '(mali OR niger OR "burkina faso" OR jnim)' },
+  taiwan:  { name: 'TAIWAN STRAIT',       cc: ['TW', 'CH'], lat: 23.7, lon: 121.0, h: 2.2e6, q: '(taiwan OR "taiwan strait" OR pla OR "chinese military")' }
 };
 
 // Gazetteer of named military installations & strategic sites (Gulf/CENTCOM-heavy,
@@ -123,6 +123,47 @@ window.generateSitrep = async function (target) {
   var evAll = (results[1].status === 'fulfilled' && results[1].value && results[1].value.events) || [];
   var evs = evAll.filter(function (e) { return t.cc.indexOf(e.cc) !== -1; });
 
+  // ── P92: PLOT THE ANSWER — SITREP incidents become map markers, camera flies to theater.
+  // "Does the map have markers where the incidents happened?" — it does now.
+  window._sitrepEnts = window._sitrepEnts || [];
+  var plotIncidents = function () {
+    try {
+      if (typeof V === 'undefined' || typeof Cesium === 'undefined') return 0;
+      // clear previous SITREP markers (one active SITREP overlay at a time)
+      window._sitrepEnts.forEach(function (e) { try { V.entities.remove(e); } catch (_) {} });
+      window._sitrepEnts = [];
+      var codeMeta = function (c, root) {
+        if (root === '20') return { icon: '☢', label: 'MASS VIOLENCE', color: '#ff2d78' };
+        if (c === '195' || c === '1951' || c === '1952') return { icon: '✈', label: 'AIR/DRONE STRIKE', color: '#ff6b35' };
+        if (c === '194') return { icon: '⚓', label: 'NAVAL/BLOCKADE', color: '#00b4d8' };
+        if (c === '193') return { icon: '⚔', label: 'GROUND CLASH', color: '#DA3633' };
+        if (c === '186') return { icon: '🎯', label: 'ASSASSINATION ATTEMPT', color: '#E8B339' };
+        if (/^183/.test(c)) return { icon: '💣', label: 'BOMBING/IED', color: '#ff6b35' };
+        return root === '18' ? { icon: '✖', label: 'ASSAULT', color: '#E8B339' } : { icon: '⚔', label: 'ARMED ENGAGEMENT', color: '#DA3633' };
+      };
+      evs.forEach(function (ev, i) {
+        var meta = codeMeta(ev.code, ev.root);
+        var labeled = i < 12 || ev.m >= 15; // label the salient ones, dot the rest
+        window._sitrepEnts.push(V.entities.add({
+          position: Cesium.Cartesian3.fromDegrees(ev.lon, ev.lat),
+          point: { pixelSize: labeled ? 9 : 6, color: Cesium.Color.fromCssColorString(meta.color).withAlpha(0.95), outlineColor: Cesium.Color.WHITE, outlineWidth: 1.5, disableDepthTestDistance: Number.POSITIVE_INFINITY },
+          label: labeled ? { text: meta.icon + ' ' + meta.label, font: '10px JetBrains Mono', fillColor: Cesium.Color.fromCssColorString(meta.color), outlineColor: Cesium.Color.BLACK, outlineWidth: 2, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -16), disableDepthTestDistance: Number.POSITIVE_INFINITY } : undefined,
+          description: '<div style="font-family:\'JetBrains Mono\',monospace;padding:12px;color:#c8ccd6;background:#0a0e14;border:1px solid ' + meta.color + ';max-width:400px">' +
+            '<div style="font-size:12px;font-weight:700;color:' + meta.color + '">' + meta.icon + ' ' + meta.label + '</div>' +
+            '<div style="font-size:8px;color:#8b949e;letter-spacing:1px;margin:4px 0 8px">SITREP INCIDENT · LAST ~4H · GEOCODED</div>' +
+            '<div style="font-size:10px">Location: <b>' + esc(ev.place || 'unknown') + '</b></div>' +
+            '<div style="font-size:10px">Media salience: <b>' + ev.m + ' mentions</b></div>' +
+            (ev.url ? '<a href="' + esc(ev.url) + '" target="_blank" rel="noopener" style="color:#00ddff;font-size:9px">Read source →</a>' : '') + '</div>'
+        }));
+      });
+      // fly the camera to the theater so the operator SEES the answer
+      if (t.lat && evs.length) V.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(t.lon, t.lat, t.h || 2.5e6), duration: 2.2 });
+      return window._sitrepEnts.length;
+    } catch (e) { console.warn('[SITREP plot]', e); return 0; }
+  };
+  var plotted = plotIncidents();
+  var plotNote = plotted ? '<br><span style="font-size:9px;color:#3FB950">▣ ' + plotted + ' incident markers plotted on the globe — camera moving to theater. Click any marker for details. Type "clear sitrep" to remove.</span>' : '';
+
   // LAST RESORT: no article titles at all → events-only SITREP (kinetic events still
   // carry type, place, salience and source links — a real answer, just thinner).
   if (!arts.length && evs.length) {
@@ -143,7 +184,7 @@ window.generateSitrep = async function (target) {
         (ev.url ? ' <a href="' + esc(ev.url) + '" target="_blank" rel="noopener" style="color:#00ddff">source</a>' : '') + '<br>';
     });
     h2 += '<br><span style="font-size:8px;color:#4a5068">GDELT 2.0 Event DB. Full narrative SITREP unavailable — news API unreachable from this connection; retry in ~60s.</span>';
-    msg('sy', h2);
+    msg('sy', h2 + plotNote);
     return;
   }
 
@@ -238,5 +279,5 @@ window.generateSitrep = async function (target) {
 
   html += '<br><span style="font-size:8px;color:#4a5068">Machine-extracted from GDELT global media monitoring + GDELT 2.0 Event DB. Claims are media-reported and UNVERIFIED — cross-check before operational use. Casualty figures may include partisan claims.</span>';
 
-  msg('sy', html);
+  msg('sy', html + plotNote);
 };

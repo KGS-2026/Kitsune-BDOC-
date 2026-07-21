@@ -1436,7 +1436,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <!-- layers-infra.js is lazy-loaded on first toggle of powerplants/oilgas (Phase 3 Turn 2) -->
 <!-- layers-air.js is lazy-loaded on first toggle of air/forcetrack/sat/cable (Phase 3 Turn 8) -->
 <!-- layers-conflict.js is lazy-loaded on first toggle of conf/territory (Phase 3 Turn 3) -->
-<script src="js/kitsune-ai.js?v=p91"></script>
+<script src="js/kitsune-ai.js?v=p93"></script>
 <script src="js/bdoc-atak.js?v=p59"></script>
 <script>
 // ╔═══════════════════════════════════════════════════════╗
@@ -1543,7 +1543,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p92',              // MUST bump on ANY js/modules/* change — p86 = layers-air (OpenSky browser-direct primary; proxy 502s from Lambda, was spamming warnings + wasting 15s/region/cycle)
+  _version: 'p93',              // MUST bump on ANY js/modules/* change — p86 = layers-air (OpenSky browser-direct primary; proxy 502s from Lambda, was spamming warnings + wasting 15s/region/cycle)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
