@@ -12476,16 +12476,34 @@ async function spotifyLogin(){
   location.href='https://accounts.spotify.com/authorize?'+p;
 }
 async function _spExchange(code){
-  const r=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'authorization_code',code,redirect_uri:location.origin+'/',client_id:localStorage.getItem('sp_cid'),code_verifier:localStorage.getItem('sp_cv')})});
+  // P81: sp_cv (PKCE verifier) can be missing if localStorage was cleared or the
+  // SW update-reload raced the callback — fail LOUDLY instead of silently.
+  const cv=localStorage.getItem('sp_cv'),cid=localStorage.getItem('sp_cid');
+  if(!cv||!cid){af&&af('var(--rd)','Spotify: login session lost (verifier missing) — click CONNECT again');return{error:'missing_verifier'};}
+  const r=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'authorization_code',code,redirect_uri:location.origin+'/',client_id:cid,code_verifier:cv})});
   const d=await r.json();
-  if(d.access_token){localStorage.setItem('sp_at',d.access_token);localStorage.setItem('sp_rt',d.refresh_token||'');localStorage.setItem('sp_exp',Date.now()+d.expires_in*1000);}
+  if(d.access_token){localStorage.setItem('sp_at',d.access_token);localStorage.setItem('sp_rt',d.refresh_token||'');localStorage.setItem('sp_exp',Date.now()+d.expires_in*1000);af&&af('#1DB954','\u266A Spotify connected');}
+  else{af&&af('var(--rd)','Spotify login failed: '+(d.error_description||d.error||'token exchange rejected')+' — check your app\u2019s Redirect URI is exactly '+location.origin+'/');console.warn('[Spotify] token exchange failed:',d);}
   return d;
 }
+// P81: silent refresh — tokens expire in 1h; without this every session > 1h "breaks"
+async function _spRefresh(){
+  const rt=localStorage.getItem('sp_rt'),cid=localStorage.getItem('sp_cid');
+  if(!rt||!cid)return false;
+  try{
+    const r=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'refresh_token',refresh_token:rt,client_id:cid})});
+    const d=await r.json();
+    if(d.access_token){localStorage.setItem('sp_at',d.access_token);if(d.refresh_token)localStorage.setItem('sp_rt',d.refresh_token);localStorage.setItem('sp_exp',Date.now()+d.expires_in*1000);return true;}
+  }catch(e){console.warn('[Spotify] refresh failed:',e);}
+  return false;
+}
 async function spotifyLoadPlaylists(){
-  const tok=localStorage.getItem('sp_at');if(!tok)return;
+  let tok=localStorage.getItem('sp_at');if(!tok)return;
+  // P81: refresh expired tokens instead of silently logging out
+  if(Date.now()>parseInt(localStorage.getItem('sp_exp')||'0',10)){if(await _spRefresh())tok=localStorage.getItem('sp_at');}
   try{
     const ur=await fetch('https://api.spotify.com/v1/me',{headers:{Authorization:'Bearer '+tok}});
-    if(!ur.ok){spotifyLogout();return;}
+    if(!ur.ok){if(ur.status===401&&await _spRefresh()){return spotifyLoadPlaylists();}spotifyLogout();af&&af('var(--yl)','Spotify session expired — reconnect');return;}
     const u=await ur.json();
     const nameEl=document.getElementById('spUserName');if(nameEl)nameEl.textContent=DOMPurify.sanitize(u.display_name||u.id);
     const pr=await fetch('https://api.spotify.com/v1/me/playlists?limit=30',{headers:{Authorization:'Bearer '+tok}});
@@ -12509,9 +12527,16 @@ function spotifyLogout(){
 // Detect OAuth callback or restore session on page load
 (async()=>{
   const qs=new URLSearchParams(location.search);
+  // P81: stash the one-time code in sessionStorage IMMEDIATELY — the SW
+  // "controller changed" reload can fire mid-exchange and eat the URL params.
   if(qs.get('state')==='bdoc_spotify'&&qs.get('code')){
-    await _spExchange(qs.get('code'));
+    sessionStorage.setItem('sp_pending_code',qs.get('code'));
     history.replaceState({},'',location.pathname);
+  }
+  const pending=sessionStorage.getItem('sp_pending_code');
+  if(pending){
+    sessionStorage.removeItem('sp_pending_code');
+    try{await _spExchange(pending);}catch(e){af&&af('var(--rd)','Spotify: token exchange error — '+e.message);}
     const p=document.getElementById('spotifyPanel');if(p)p.style.display='flex';
   }
   const cidEl=document.getElementById('spClientId');
