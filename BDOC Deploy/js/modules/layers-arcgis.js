@@ -60,13 +60,28 @@ window.ARCGIS = {
     const count = opts.count || 1000;
     const maxPages = opts.pages || 3;
     const all = { type: 'FeatureCollection', features: [] };
+    // P84: retry each page up to 2 extra times with backoff. Prod smoke tests
+    // showed transient 'Failed to fetch' on first load (cold DNS/TLS or brief
+    // arcgis.com hiccup) killing whole layers (powerplants EIA, gridinfra)
+    // while identical requests succeeded seconds later.
+    const fetchPage = async (url) => {
+      let lastErr;
+      for (let att = 0; att < 3; att++) {
+        if (att) await new Promise(r => setTimeout(r, att * 1500));
+        try {
+          const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
+          if (!res.ok) throw new Error('ArcGIS HTTP ' + res.status);
+          const d = await res.json();
+          if (d.error) throw new Error('ArcGIS: ' + (d.error.message || 'query error'));
+          return d;
+        } catch (e) { lastErr = e; }
+      }
+      throw lastErr;
+    };
     try {
       for (let page = 0; page < maxPages; page++) {
         const url = this.buildUrl(serviceUrl, Object.assign({}, opts, { count: count, offset: page * count }));
-        const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
-        if (!res.ok) throw new Error('ArcGIS HTTP ' + res.status);
-        const d = await res.json();
-        if (d.error) throw new Error('ArcGIS: ' + (d.error.message || 'query error'));
+        const d = await fetchPage(url);
         const feats = d.features || [];
         all.features.push.apply(all.features, feats);
         if (feats.length < count) break; // last page

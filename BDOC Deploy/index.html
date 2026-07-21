@@ -1542,7 +1542,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p81b',              // MUST bump on ANY js/modules/* change — p81b = layers-air (TLE format + parser; GP JSON had no TLE lines)
+  _version: 'p84',              // MUST bump on ANY js/modules/* change — p84 = layers-arcgis (page fetch retry w/ backoff; transient 'Failed to fetch' was killing powerplants-EIA + gridinfra on first load)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
@@ -3511,7 +3511,7 @@ async function loadFirePerimeters(){
   if(!V)return;
   firePerimEnts.forEach(e=>V.entities.remove(e));firePerimEnts=[];
   try{
-    const url='https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters/FeatureServer/0/query?where=1%3D1&outFields=poly_IncidentName,poly_GISAcres,poly_PercentContained,poly_DateCurrent&geometryType=esriGeometryEnvelope&spatialRel=esriSpatialRelIntersects&returnGeometry=true&f=geojson&resultRecordCount=200';
+    const url='https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters/FeatureServer/0/query?where=1%3D1&outFields=poly_IncidentName,poly_GISAcres,attr_PercentContained,poly_DateCurrent&geometryType=esriGeometryEnvelope&spatialRel=esriSpatialRelIntersects&returnGeometry=true&f=geojson&resultRecordCount=200';
     const res=await safeFetch('nifc_perimeters','firePerim',url,{feedType:'fires',timeout:15000,staleOk:true});
     if(!res.data)return;
     const data=res.data;
@@ -3522,7 +3522,7 @@ async function loadFirePerimeters(){
       const props=f.properties||{};
       const name=props.poly_IncidentName||'Unknown Fire';
       const acres=props.poly_GISAcres?Math.round(props.poly_GISAcres):0;
-      const contained=props.poly_PercentContained||0;
+      const contained=props.attr_PercentContained||props.poly_PercentContained||0;
       const updated=props.poly_DateCurrent?new Date(props.poly_DateCurrent).toLocaleDateString():'';
       // Handle both Polygon and MultiPolygon
       const rings=f.geometry.type==='MultiPolygon'?f.geometry.coordinates.flat():f.geometry.coordinates;
