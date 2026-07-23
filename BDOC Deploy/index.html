@@ -3151,7 +3151,7 @@ function togLy(el){
   if(ly==='fire'){if(layers.fire&&fireEnts.length===0){BDOC.layerLoadFx.start('fire');loadFires();}fireEnts.forEach(e=>e.show=layers.fire);firePerimEnts.forEach(e=>e.show=layers.fire)}
   if(ly==='conf'){if(layers.conf){if(confEnts.length===0){BDOC.layerLoadFx.start('conf');BDOC.LazyLoader.load('layers-conflict').then(()=>{if(window.loadConflicts)window.loadConflicts();BDOC.layerLoadFx.done('conf',true)}).catch(e=>{console.warn('[lazy layers-conflict]',e);BDOC.layerLoadFx.done('conf',false)})}else{confEnts.forEach(e=>e.show=true)}}else{confEnts.forEach(e=>e.show=false)}}
   // P80: WAR ROOM — live 24h conflict fusion (GDELT reporting + FIRMS thermal in war-zone AOIs)
-  if(ly==='warlive'){if(layers.warlive){BDOC.layerLoadFx.start('warlive');BDOC.LazyLoader.load('layers-warlive').then(()=>window.loadWarLive?window.loadWarLive():null).then(()=>BDOC.layerLoadFx.done('warlive',warliveEnts.length>0)).catch(e=>{console.warn('[lazy layers-warlive]',e);BDOC.layerLoadFx.done('warlive',false)})}else{warliveEnts.forEach(e=>V.entities.remove(e));warliveEnts=[];if(window.loadWarLive&&window.loadWarLive._interval){clearInterval(window.loadWarLive._interval);window.loadWarLive._interval=null}}}
+  if(ly==='warlive'){if(layers.warlive){try{localStorage.setItem('bdoc_warlive_auto','1')}catch(_){}BDOC.layerLoadFx.start('warlive');BDOC.LazyLoader.load('layers-warlive').then(()=>window.loadWarLive?window.loadWarLive():null).then(()=>BDOC.layerLoadFx.done('warlive',warliveEnts.length>0)).catch(e=>{console.warn('[lazy layers-warlive]',e);BDOC.layerLoadFx.done('warlive',false)})}else{try{localStorage.setItem('bdoc_warlive_auto','0')}catch(_){}warliveEnts.forEach(e=>V.entities.remove(e));warliveEnts=[];if(window.loadWarLive&&window.loadWarLive._interval){clearInterval(window.loadWarLive._interval);window.loadWarLive._interval=null}}}
   if(ly==='cable'){if(layers.cable&&cableEnts.length===0){BDOC.layerLoadFx.start('cable');BDOC.LazyLoader.load('layers-air').then(()=>{if(window.loadCables)window.loadCables();BDOC.layerLoadFx.done('cable',true)}).catch(e=>{console.warn('[lazy layers-air]',e);BDOC.layerLoadFx.done('cable',false)})}cableEnts.forEach(e=>e.show=layers.cable)}
   if(ly==='sat'){if(layers.sat&&satEnts.length===0){BDOC.layerLoadFx.start('sat');BDOC.LazyLoader.load('layers-air').then(()=>{if(window.loadSatellites)window.loadSatellites();BDOC.layerLoadFx.done('sat',true)}).catch(e=>{console.warn('[lazy layers-air]',e);BDOC.layerLoadFx.done('sat',false)})}satEnts.forEach(e=>e.show=layers.sat)}
   if(ly==='territory'){if(layers.territory){BDOC.layerLoadFx.start('territory');BDOC.LazyLoader.load('layers-conflict').then(()=>{territoryEnts.forEach(e=>e.show=true);if(window._territoryDataSource)window._territoryDataSource.entities.values.forEach(e=>e.show=true);if(territoryEnts.length===0&&!window._territoryDataSource&&window.loadTerritoryControl)window.loadTerritoryControl();BDOC.layerLoadFx.done('territory',true)}).catch(e=>{console.warn('[lazy layers-conflict]',e);BDOC.layerLoadFx.done('territory',false)})}else{territoryEnts.forEach(e=>e.show=false);if(window._territoryDataSource)window._territoryDataSource.entities.values.forEach(e=>e.show=false)}}
@@ -9771,6 +9771,16 @@ async function bootFeeds(){
   window._satTimer=setInterval(()=>{if(!document.hidden&&layers.sat&&typeof loadSatellites==='function')loadSatellites()},CFG.refresh.satellites);
   msg('sy','All feeds initialized. <b>'+srcN+'</b> sources active across <b>8 domains</b>: Air, Space, Seismic, Fire, Maritime, Conflict, Cyber, Infrastructure.<br><br>Type <b>status</b> for system overview or <b>export brief</b> to generate intel report.');
   EventLog.add('info','All feeds initialized \u2014 BDOC v7.0 operational');
+  // P93: AUTO-ARM GLOBAL CONFLICT PICTURE ON FIRST LOAD.
+  // Operators open a conflict-intel platform expecting to SEE conflicts — not a bare
+  // globe. Arm ⚡ War Room (GDELT kinetic events + theater SITREPs + FIRMS war-zone
+  // thermal) automatically after boot settles. Respects a user opt-out persisted the
+  // first time they manually toggle it off (localStorage bdoc_warlive_auto=0).
+  setTimeout(()=>{try{
+    if(localStorage.getItem('bdoc_warlive_auto')==='0')return;
+    const el=document.querySelector('.ly[data-layer="warlive"]');
+    if(el&&!el.classList.contains('on')&&!layers.warlive){togLy(el);EventLog.add('info','Global conflict picture auto-armed (War Room)')}
+  }catch(e){console.warn('[Boot] warlive auto-arm failed:',e)}},2500);
   // Auto-enable 3D terrain for Google Earth-quality rendering
   try{toggle3DTerrain();const tb=document.getElementById('btnTerrain');if(tb)tb.classList.add('bm-active')}catch(e){console.warn('[Boot] Terrain auto-enable failed:',e)}
   // Register camera.changed listener for overview map + scale legend.
