@@ -1543,7 +1543,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p94',              // MUST bump on ANY js/modules/* change — p94 = fireperims WFIGS 429 fix (_Current view + quota-aware backoff)
+  _version: 'p95',              // MUST bump on ANY js/modules/* change — p94 = fireperims WFIGS 429 fix (_Current view + quota-aware backoff)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];

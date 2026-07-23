@@ -345,7 +345,7 @@ window.loadFirePerims = async function () {
         n++;
       });
     });
-    af('#DA3633', 'FIRE PERIMETERS: ' + n + ' active burn footprints loaded (WFIGS, 60-day window)'); us(1);
+    af('#DA3633', 'FIRE PERIMETERS: ' + n + ' active burn footprints loaded (WFIGS current incidents)'); us(1);
   } catch (e) { console.warn('[FirePerims]', e); af('var(--yl)', 'Fire perimeters: WFIGS feed unavailable — ' + e.message); }
 };
 
