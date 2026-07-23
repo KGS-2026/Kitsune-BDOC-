@@ -80,7 +80,10 @@ window.ARCGIS = {
     const fetchPage = async (url) => {
       let lastErr;
       for (let att = 0; att < 3; att++) {
-        if (att) await new Promise(r => setTimeout(r, att * 1500));
+        // P94: 429s (shared per-minute quotas on public services like WFIGS)
+        // need a longer backoff than transient network errors — quota resets
+        // per minute, so 1.5s retries just burn attempts.
+        if (att) await new Promise(r => setTimeout(r, /Too many requests|429/i.test(String(lastErr && lastErr.message)) ? att * 12000 : att * 1500));
         try {
           const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
           if (!res.ok) throw new Error('ArcGIS HTTP ' + res.status);
@@ -297,9 +300,11 @@ window.loadDartBuoys = async function () {
 window.loadFirePerims = async function () {
   fireperimEnts.forEach(e => V.entities.remove(e)); fireperimEnts = [];
   try {
+    // P94: use the _Current VIEW (active incidents only, ~166 feats) with a
+    // trivial where — the full historical table + timestamp WHERE cost ~45k
+    // ArcGIS request units against a 28.8k/min shared quota → guaranteed 429.
     const fc = await ARCGIS.fetchGeoJSON(
-      'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters/FeatureServer/0', {
-        where: "poly_DateCurrent >= CURRENT_TIMESTAMP - INTERVAL '60' DAY",
+      'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters_Current/FeatureServer/0', {
         // NB: containment lives under attr_PercentContained (poly_PercentContained was removed upstream)
         outFields: 'poly_IncidentName,poly_GISAcres,attr_PercentContained,poly_DateCurrent',
         precision: 4, maxOffset: 0.001, count: 500, pages: 1, cacheKey: 'wfigs', ttl: 3600 * 1000

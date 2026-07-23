@@ -1543,7 +1543,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p93',              // MUST bump on ANY js/modules/* change — p86 = layers-air (OpenSky browser-direct primary; proxy 502s from Lambda, was spamming warnings + wasting 15s/region/cycle)
+  _version: 'p94',              // MUST bump on ANY js/modules/* change — p94 = fireperims WFIGS 429 fix (_Current view + quota-aware backoff)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
@@ -3520,9 +3520,10 @@ async function loadFirePerimeters(){
     // Previously this safeFetch fired its own query alongside loadFirePerims
     // and the two 429'd each other on WFIGS's shared per-minute quota.
     await BDOC.LazyLoader.load('layers-arcgis');
+    // P94: _Current view (active incidents, trivial where) — the historical
+    // table + timestamp WHERE exceeded WFIGS's shared per-minute quota (429).
     const data=await ARCGIS.fetchGeoJSON(
-      'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters/FeatureServer/0',{
-        where:"poly_DateCurrent >= CURRENT_TIMESTAMP - INTERVAL '60' DAY",
+      'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters_Current/FeatureServer/0',{
         outFields:'poly_IncidentName,poly_GISAcres,attr_PercentContained,poly_DateCurrent',
         precision:4,maxOffset:0.001,count:500,pages:1,cacheKey:'wfigs',ttl:3600*1000
       });
