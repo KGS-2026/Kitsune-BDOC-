@@ -36,6 +36,28 @@ window.loadWarLive = async function () {
   warliveEnts.forEach(e => V.entities.remove(e)); warliveEnts = [];
   let newsN = 0, thermalN = 0;
 
+  // ── 0. P101: ESCALATION TREND — 7-day media-volume curve per theater.
+  // Compares last-24h mean vs prior-6d mean → ▲ ESCALATING / ▼ DE-ESCALATING / ► STEADY.
+  // Turns the dots into a forecast signal — no competitor at this tier has trend arrows.
+  const trends = {};
+  try {
+    const tq = { ukraine: '(ukraine OR kyiv OR kharkiv)', gaza: '(gaza OR israel OR hezbollah)', sudan: '(sudan OR khartoum OR darfur)', redsea: '(yemen OR houthi OR "red sea")', myanmar: '(myanmar OR burma)', sahel: '(mali OR niger OR "burkina faso")' };
+    const rs = await Promise.allSettled(WAR_THEATERS.map(z =>
+      fetch('/.netlify/functions/proxy-gdelt?mode=timelinevol&timespan=7d&query=' + encodeURIComponent(tq[z.id] || z.id), { signal: AbortSignal.timeout(15000) }).then(r => r.json()).then(d => ({ id: z.id, pts: d.points || [] }))));
+    rs.forEach(r => {
+      if (r.status !== 'fulfilled' || r.value.pts.length < 20) return;
+      const pts = r.value.pts, cut = pts.length - Math.max(4, Math.round(pts.length / 7));
+      const mean = a => a.reduce((s, p) => s + p.v, 0) / (a.length || 1);
+      const prior = mean(pts.slice(0, cut)), last = mean(pts.slice(cut));
+      const delta = prior > 0 ? (last - prior) / prior : 0;
+      trends[r.value.id] = { delta,
+        badge: delta > 0.15 ? '<span style="color:#DA3633;font-weight:700">▲ ESCALATING +' + Math.round(delta * 100) + '%</span>'
+             : delta < -0.15 ? '<span style="color:#3FB950;font-weight:700">▼ DE-ESCALATING ' + Math.round(delta * 100) + '%</span>'
+             : '<span style="color:#E8B339;font-weight:700">► STEADY</span>',
+        arrow: delta > 0.15 ? '▲' : delta < -0.15 ? '▼' : '' };
+    });
+  } catch (e) { console.warn('[WarLive trends]', e); }
+
   // ── 1. GDELT live war reporting (single request, zone-matched) ──
   try {
     const q = encodeURIComponent('(strike OR shelling OR offensive OR drone OR missile OR airstrike OR frontline OR casualties)');
@@ -64,9 +86,10 @@ window.loadWarLive = async function () {
         position: Cesium.Cartesian3.fromDegrees(z.lon, z.lat),
         billboard: undefined,
         point: { pixelSize: 11, color: Cesium.Color.fromCssColorString('#DA3633').withAlpha(0.95), outlineColor: Cesium.Color.fromCssColorString('#ff6b6b'), outlineWidth: 2, disableDepthTestDistance: Number.POSITIVE_INFINITY },
-        label: { text: '⚡ ' + z.name + ' — ' + items.length + ' RPT/24H', font: '10px JetBrains Mono', fillColor: Cesium.Color.fromCssColorString('#ff6b6b'), outlineColor: Cesium.Color.BLACK, outlineWidth: 2, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -18), disableDepthTestDistance: Number.POSITIVE_INFINITY },
+        label: { text: (trends[z.id] ? trends[z.id].arrow + ' ' : '') + '⚡ ' + z.name + ' — ' + items.length + ' RPT/24H', font: '10px JetBrains Mono', fillColor: Cesium.Color.fromCssColorString(trends[z.id] && trends[z.id].delta > 0.15 ? '#ff4444' : '#ff6b6b'), outlineColor: Cesium.Color.BLACK, outlineWidth: 2, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -18), disableDepthTestDistance: Number.POSITIVE_INFINITY },
         description: '<div style="font-family:\'JetBrains Mono\',monospace;padding:12px;color:#c8ccd6;background:#0a0e14;border:1px solid #DA3633;max-width:420px">' +
           '<div style="font-size:13px;font-weight:700;color:#DA3633;margin-bottom:4px">⚡ LIVE SITREP — ' + z.name + '</div>' +
+          (trends[z.id] ? '<div style="font-size:10px;margin-bottom:6px">7-DAY TREND: ' + trends[z.id].badge + ' <span style="color:#4a5068;font-size:8px">(media volume, last 24h vs prior 6d)</span></div>' : '') +
           '<div style="font-size:8px;color:#8b949e;letter-spacing:1px;margin-bottom:10px">GDELT OSINT · LAST 24H · ' + items.length + ' REPORTS · AUTO-REFRESH 15MIN</div>' +
           list +
           '<div style="font-size:8px;color:#4a5068;margin-top:4px">Source: GDELT Project — live global news monitoring</div></div>',

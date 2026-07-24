@@ -40,6 +40,25 @@ exports.handler = async (event) => {
   const maxrecords = Math.min(Math.max(parseInt(params.maxpoints || params.maxrecords, 10) || 75, 1), 250);
   const timespan = /^\d+[hdwm]$/.test(params.timespan || '') ? params.timespan : '24h';
 
+  // P101: timelinevol passthrough — 7-day media-volume curve for escalation trend
+  // detection. CDN-cached 1h per query so 1000 users = 1 GDELT hit per theater.
+  if (params.mode === 'timelinevol') {
+    const tlUrl = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=timelinevol&format=json&timespan=${/^\d+[hdwm]$/.test(params.timespan || '') ? params.timespan : '7d'}`;
+    try {
+      const res = await fetch(tlUrl, { signal: AbortSignal.timeout(12000), headers: { 'User-Agent': 'BDOC/1.0 (intelligence dashboard)' } });
+      const text = await res.text();
+      let data; try { data = JSON.parse(text); } catch { data = null; }
+      const pts = (data && data.timeline && data.timeline[0] && data.timeline[0].data) || [];
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json', 'Netlify-Vary': 'query', 'Cache-Control': pts.length ? 'public, max-age=3600' : 'no-store', 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ points: pts.map(p => ({ t: p.date, v: p.value })) })
+      };
+    } catch (e) {
+      return { statusCode: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ points: [], _warn: e.message }) };
+    }
+  }
+
   const empty = (warn) => ({
     statusCode: 200,
     // P78: do NOT let CDN cache failure responses — an empty result cached for 10 min
