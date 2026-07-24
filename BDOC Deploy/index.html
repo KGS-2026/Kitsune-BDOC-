@@ -4289,8 +4289,16 @@ async function loadSevereAlerts(){
   if(!V)return;
   alertEnts.forEach(e=>V.entities.remove(e));alertEnts=[];
   try{
-    let res=await fetch('/.netlify/functions/proxy-weather?type=alerts').catch(()=>null);
-    if(!res||!res.ok){res=await fetch('https://api.weather.gov/alerts/active?status=actual&message_type=alert',{headers:{'User-Agent':'KGS-BDOC/8.0 kitsuneglobal.com'},signal:AbortSignal.timeout(15000)}).catch(()=>null)}
+    // p98b: raw fetch here bypasses Cache's transient-network retry, so give the
+    // NWS chain its own one-shot retry — under preset load the first attempt can
+    // die on connection-pool saturation and succeed 2.5s later.
+    const tryFetch=async()=>{
+      let r=await fetch('/.netlify/functions/proxy-weather?type=alerts').catch(()=>null);
+      if(!r||!r.ok){r=await fetch('https://api.weather.gov/alerts/active?status=actual&message_type=alert',{headers:{'User-Agent':'KGS-BDOC/8.0 kitsuneglobal.com'},signal:AbortSignal.timeout(15000)}).catch(()=>null)}
+      return r;
+    };
+    let res=await tryFetch();
+    if(!res||!res.ok){await new Promise(r=>setTimeout(r,2500));res=await tryFetch()}
     if(!res||!res.ok)throw new Error(`NWS API ${res?res.status:'unreachable'}`);
     const data=await res.json();
     const features=data.features||[];
