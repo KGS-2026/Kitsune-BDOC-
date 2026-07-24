@@ -4195,8 +4195,20 @@ async function loadHurricanes(){
   hurricaneEnts.forEach(e=>V.entities.remove(e));hurricaneEnts=[];
   try{
     // NOAA active tropical storm/hurricane alerts
-    let stormRes=await fetch('/.netlify/functions/proxy-weather?type=hurricanes').catch(()=>null);
-    if(!stormRes||!stormRes.ok){stormRes=await fetch('https://api.weather.gov/alerts/active?event=Hurricane,Typhoon,Tropical%20Storm',{headers:{'User-Agent':'KGS-BDOC/8.0 kitsuneglobal.com'},signal:AbortSignal.timeout(15000)}).catch(()=>null)}
+    // p99: raw-fetch retry chain (same class as p98c NWS alerts fix) — hurricanes uses raw fetch,
+    // so connection-pool saturation under preset load silently blanked the layer. Retry at 5s/8s.
+    const _hurrTry=async()=>{
+      let r=await fetch('/.netlify/functions/proxy-weather?type=hurricanes',{signal:AbortSignal.timeout(15000)}).catch(()=>null);
+      if(!r||!r.ok){r=await fetch('https://api.weather.gov/alerts/active?event=Hurricane,Typhoon,Tropical%20Storm',{headers:{'User-Agent':'KGS-BDOC/8.0 kitsuneglobal.com'},signal:AbortSignal.timeout(15000)}).catch(()=>null)}
+      return r;
+    };
+    let stormRes=await _hurrTry();
+    for(const wait of [5000,8000]){
+      if(stormRes&&stormRes.ok)break;
+      console.warn('[Hurricane] NWS fetch failed — retrying in '+(wait/1000)+'s');
+      await new Promise(r=>setTimeout(r,wait));
+      stormRes=await _hurrTry();
+    }
     let alertCount=0;
     if(stormRes&&stormRes.ok){
       const data=await stormRes.json();
@@ -4238,7 +4250,14 @@ async function loadHurricanes(){
     try{
       const now2=new Date();const from2=new Date(now2.getTime()-30*86400000);
       const fd2=from2.toISOString().split('T')[0],td2=now2.toISOString().split('T')[0];
-      const gdacsRes=await fetch(`/.netlify/functions/proxy-gdacs?eventtype=TC&fromDate=${fd2}&toDate=${td2}`,{signal:AbortSignal.timeout(15000)}).catch(()=>null);
+      // p99: retry the GDACS supplement too — it fired 'Failed to fetch' under preset load
+      let gdacsRes=null;
+      for(const wait of [0,5000,8000]){
+        if(wait)await new Promise(r=>setTimeout(r,wait));
+        gdacsRes=await fetch(`/.netlify/functions/proxy-gdacs?eventtype=TC&fromDate=${fd2}&toDate=${td2}`,{signal:AbortSignal.timeout(15000)}).catch(()=>null);
+        if(gdacsRes&&gdacsRes.ok)break;
+        console.warn('[Hurricane] GDACS supplement fetch failed'+(wait<8000?' — will retry':''));
+      }
       if(gdacsRes&&gdacsRes.ok){
         const gdacsData=await gdacsRes.json();
         if(gdacsData&&Array.isArray(gdacsData.features))gdacsData.features=gdacsData.features.filter(f=>(f.properties?.eventtype||'')==='TC'); // p82
