@@ -3079,15 +3079,20 @@ function bdocApplyPreset(name){
     }
     const wanted=_BDOC_PRESETS[name];if(!wanted)return;
     let on=0,lockedN=0;
+    const queue=[];
     wanted.forEach(layer=>{
       const el=document.querySelector(`.ly[data-layer="${layer}"]`);
       if(!el)return;
       if(el.classList.contains('locked')){lockedN++;return} // p69: don't fire paywall modals mid-preset — count and upsell once
-      // Skip if already on, otherwise toggle on
-      if(!el.classList.contains('on')){
-        try{togLy(el);on++}catch(_){}
-      }
+      if(!el.classList.contains('on'))queue.push(el);
     });
+    // p98: STAGGER preset toggles 500ms apart instead of firing all in one tick.
+    // Arming 10+ layers concurrently saturates the browser connection pool and
+    // individual feeds die with 'Failed to fetch' (verified live 2026-07-24:
+    // FIRMS rendered 32 dots and NWS alerts 2 polys when armed with 14 other
+    // layers, vs 826 / 29 when toggled solo). Staggering keeps every fetch alive.
+    queue.forEach((el,i)=>setTimeout(()=>{try{togLy(el)}catch(_){}} ,i*500));
+    on=queue.length;
     af('var(--kf)',`Preset "${name}" applied — ${on} new layer${on===1?'':'s'} activated`+(lockedN?` · ${lockedN} more with Operator ($9.99/mo)`:''));
     if(typeof EventLog!=='undefined')EventLog.add('info',`Quick-start preset: ${name} (${on} new layers)`);
     // Phase 6: preset usage analytics
