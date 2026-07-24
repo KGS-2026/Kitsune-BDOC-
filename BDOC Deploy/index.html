@@ -4826,9 +4826,17 @@ function makeVesselSVG(color,heading){
 }
 async function loadVesselMetadata(){
   // Fetch vessel names/types from Digitraffic metadata API
+  // p100: 5s/8s two-retry around the proxy→direct chain (p98c pattern) — raw fetch
+  // was blanking under multi-layer connection saturation ('Metadata fetch failed' live).
   try{
-    let res=await fetch('/.netlify/functions/proxy-maritime?type=vessels',{signal:AbortSignal.timeout(20000)}).catch(()=>null);
-    if(!res||!res.ok){res=await fetch('https://meri.digitraffic.fi/api/ais/v1/vessels',{headers:{'Digitraffic-User':'KitsuneGlobal/BDOC-8.0'},signal:AbortSignal.timeout(20000)}).catch(()=>null)}
+    const attempt=async()=>{
+      let r=await fetch('/.netlify/functions/proxy-maritime?type=vessels',{signal:AbortSignal.timeout(20000)}).catch(()=>null);
+      if(!r||!r.ok){r=await fetch('https://meri.digitraffic.fi/api/ais/v1/vessels',{headers:{'Digitraffic-User':'KitsuneGlobal/BDOC-8.0'},signal:AbortSignal.timeout(20000)}).catch(()=>null)}
+      return r;
+    };
+    let res=await attempt();
+    if(!res||!res.ok){await new Promise(s=>setTimeout(s,5000));res=await attempt()}
+    if(!res||!res.ok){await new Promise(s=>setTimeout(s,8000));res=await attempt()}
     if(res&&res.ok){
       const data=await res.json();
       (data||[]).forEach(v=>{
@@ -4844,8 +4852,15 @@ async function loadVessels(){
     // Fetch vessel metadata if not cached — await so names/colors work on first load
     if(_vesselMeta.size===0) await loadVesselMetadata();
     // Fetch live AIS positions from Digitraffic (Finnish/Baltic waters)
-    let res=await fetch('/.netlify/functions/proxy-maritime?type=locations',{signal:AbortSignal.timeout(20000)}).catch(()=>null);
-    if(!res||!res.ok){res=await fetch('https://meri.digitraffic.fi/api/ais/v1/locations',{headers:{'Digitraffic-User':'KitsuneGlobal/BDOC-8.0'},signal:AbortSignal.timeout(20000)}).catch(()=>null)}
+    // p100: same 5s/8s retry chain — '[Vessels] Load failed: Failed to fetch' verified live.
+    const attemptPos=async()=>{
+      let r=await fetch('/.netlify/functions/proxy-maritime?type=locations',{signal:AbortSignal.timeout(20000)}).catch(()=>null);
+      if(!r||!r.ok){r=await fetch('https://meri.digitraffic.fi/api/ais/v1/locations',{headers:{'Digitraffic-User':'KitsuneGlobal/BDOC-8.0'},signal:AbortSignal.timeout(20000)}).catch(()=>null)}
+      return r;
+    };
+    let res=await attemptPos();
+    if(!res||!res.ok){await new Promise(s=>setTimeout(s,5000));res=await attemptPos()}
+    if(!res||!res.ok){await new Promise(s=>setTimeout(s,8000));res=await attemptPos()}
     if(!res||!res.ok)throw new Error('AIS data unavailable');
     let count=0,tankers=0,cargo=0,passenger=0;
     if(res&&res.ok){
@@ -5173,13 +5188,24 @@ async function loadSpaceWeather(){
   try{
     // Phase 16 (2026-05-13): route via Netlify proxy (SWPC has CORS issues from some browsers).
     // Try proxy first; the proxy uses a strict whitelist. Fall back to direct if proxy missing.
-    const tryFetch=(proxyType,directUrl)=>{
-      return fetch(`/.netlify/functions/proxy-spaceweather?type=${proxyType}`,{signal:AbortSignal.timeout(10000)})
-        .then(r=>r.ok?r:Promise.reject('proxy '+r.status))
-        .catch(()=>fetch(directUrl,{signal:AbortSignal.timeout(10000)}));
+    // p100: raw fetch here bypasses Cache's transient-network retry, so the whole
+    // proxy-then-direct chain gets its own 5s/8s two-retry (same pattern as p98c alerts /
+    // p99 hurricanes) — under multi-layer arming, connection-pool saturation was killing
+    // the first attempt ('Failed to fetch' verified live) and blanking the layer.
+    const tryFetch=async(proxyType,directUrl)=>{
+      const attempt=async()=>{
+        let r=await fetch(`/.netlify/functions/proxy-spaceweather?type=${proxyType}`,{signal:AbortSignal.timeout(10000)}).catch(()=>null);
+        if(!r||!r.ok){r=await fetch(directUrl,{signal:AbortSignal.timeout(10000)}).catch(()=>null)}
+        return r;
+      };
+      let r=await attempt();
+      if(!r||!r.ok){await new Promise(s=>setTimeout(s,5000));r=await attempt()}
+      if(!r||!r.ok){await new Promise(s=>setTimeout(s,8000));r=await attempt()}
+      if(!r||!r.ok)throw new Error('SWPC '+proxyType+' unreachable');
+      return r;
     };
     const[scalesRes,auroraRes,alertsRes,kpRes]=await Promise.allSettled([
-      fetch('https://services.swpc.noaa.gov/products/noaa-scales.json',{signal:AbortSignal.timeout(10000)}),
+      tryFetch('scales','https://services.swpc.noaa.gov/products/noaa-scales.json'),
       tryFetch('aurora','https://services.swpc.noaa.gov/json/ovation_aurora_latest.json'),
       tryFetch('alerts','https://services.swpc.noaa.gov/products/alerts.json'),
       tryFetch('kp','https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json')

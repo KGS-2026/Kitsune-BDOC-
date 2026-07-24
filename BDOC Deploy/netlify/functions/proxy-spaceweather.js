@@ -8,6 +8,7 @@ exports.handler = async (event) => {
   // Whitelist endpoints — prevent arbitrary URL injection
   const ENDPOINTS = {
     kp:           'https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',
+    scales:       'https://services.swpc.noaa.gov/products/noaa-scales.json',
     kp_forecast:  'https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json',
     solar_wind:   'https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json',
     xray:         'https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json',
