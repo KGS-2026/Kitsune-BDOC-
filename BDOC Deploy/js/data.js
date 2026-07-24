@@ -52,6 +52,12 @@ const Cache={
       }
       if(!r.ok){const err=new Error(`HTTP ${r.status}`);err.status=r.status;throw err;}
       const data=opts.text?await r.text():await r.json();
+      // p98d: the service worker's offline fallback returns {"error":"OFFLINE...","offline":true}
+      // with HTTP 200 when ITS network fetch dies — without this check we cache the sentinel
+      // as good data for the full TTL and the layer silently renders nothing. Treat it as a
+      // transient network error so the retry path below fires and nothing poisons the cache.
+      const isOffline=typeof data==='string'?(data.length<300&&data.indexOf('"offline":true')!==-1):(data&&data.offline===true&&data.error);
+      if(isOffline)throw new Error('SW offline sentinel (upstream fetch failed)');
       this._evictIfFull();
       this._c.set(key,{data,ts:Date.now()});
       delete this.backoff[ft];
