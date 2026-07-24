@@ -3091,7 +3091,7 @@ function bdocApplyPreset(name){
     // individual feeds die with 'Failed to fetch' (verified live 2026-07-24:
     // FIRMS rendered 32 dots and NWS alerts 2 polys when armed with 14 other
     // layers, vs 826 / 29 when toggled solo). Staggering keeps every fetch alive.
-    queue.forEach((el,i)=>setTimeout(()=>{try{togLy(el)}catch(_){}} ,i*500));
+    queue.forEach((el,i)=>setTimeout(()=>{try{togLy(el)}catch(_){}} ,i*900));
     on=queue.length;
     af('var(--kf)',`Preset "${name}" applied — ${on} new layer${on===1?'':'s'} activated`+(lockedN?` · ${lockedN} more with Operator ($9.99/mo)`:''));
     if(typeof EventLog!=='undefined')EventLog.add('info',`Quick-start preset: ${name} (${on} new layers)`);
@@ -4298,7 +4298,8 @@ async function loadSevereAlerts(){
       return r;
     };
     let res=await tryFetch();
-    if(!res||!res.ok){await new Promise(r=>setTimeout(r,2500));res=await tryFetch()}
+    if(!res||!res.ok){await new Promise(r=>setTimeout(r,5000));res=await tryFetch()}
+    if(!res||!res.ok){await new Promise(r=>setTimeout(r,8000));res=await tryFetch()}
     if(!res||!res.ok)throw new Error(`NWS API ${res?res.status:'unreachable'}`);
     const data=await res.json();
     const features=data.features||[];
