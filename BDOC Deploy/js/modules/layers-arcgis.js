@@ -122,7 +122,10 @@ const _HIFLD = 'https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/servic
 window.loadGridInfra = async function () {
   gridinfraEnts.forEach(e => V.entities.remove(e)); gridinfraEnts = [];
   try {
-    const [tl500, tl345] = await Promise.all([
+    // allSettled (p97): one transient fetch failure must not kill the whole layer —
+    // reproduced live 2026-07-24 when 6 concurrent layer loads saturated connections
+    // and a single 'Failed to fetch' blanked gridinfra entirely.
+    const settled = await Promise.allSettled([
       ARCGIS.fetchGeoJSON(_HIFLD + '/US_Electric_Power_Transmission_Lines/FeatureServer/0', {
         where: 'VOLTAGE >= 500', outFields: 'VOLTAGE,OWNER,VOLT_CLASS,SUB_1,SUB_2',
         maxOffset: 0.01, cacheKey: 'tl500', pages: 2
@@ -132,6 +135,12 @@ window.loadGridInfra = async function () {
         maxOffset: 0.02, cacheKey: 'tl345', pages: 3
       })
     ]);
+    const failed = settled.filter(s => s.status === 'rejected');
+    if (failed.length === settled.length) throw (failed[0].reason || new Error('all grid fetches failed'));
+    const _empty = { features: [] };
+    const tl500 = settled[0].status === 'fulfilled' ? settled[0].value : _empty;
+    const tl345 = settled[1].status === 'fulfilled' ? settled[1].value : _empty;
+    if (failed.length) console.warn('[GridInfra] partial load —', failed.length, 'of 2 tiers failed:', failed[0].reason && failed[0].reason.message);
     let n = 0;
     const addLines = (fc, color, width, tier) => {
       const clr = Cesium.Color.fromCssColorString(color);
@@ -175,7 +184,8 @@ window.loadGridInfra = async function () {
 window.loadPipelines = async function () {
   pipelineEnts.forEach(e => V.entities.remove(e)); pipelineEnts = [];
   try {
-    const [hgl, petro] = await Promise.all([
+    // allSettled (p97): partial data beats a blank layer on transient fetch failure
+    const settled = await Promise.allSettled([
       ARCGIS.fetchGeoJSON(_HIFLD + '/Hydrocarbon_Gas_Liquids_Pipelines_1/FeatureServer/0', {
         outFields: 'Opername,Pipename', maxOffset: 0.02, cacheKey: 'hgl', pages: 1
       }),
@@ -183,6 +193,12 @@ window.loadPipelines = async function () {
         outFields: 'Opername,Pipename', maxOffset: 0.02, cacheKey: 'petro', pages: 1
       })
     ]);
+    const failed = settled.filter(s => s.status === 'rejected');
+    if (failed.length === settled.length) throw (failed[0].reason || new Error('all pipeline fetches failed'));
+    const _empty = { features: [] };
+    const hgl = settled[0].status === 'fulfilled' ? settled[0].value : _empty;
+    const petro = settled[1].status === 'fulfilled' ? settled[1].value : _empty;
+    if (failed.length) console.warn('[Pipelines] partial load —', failed.length, 'of 2 sources failed:', failed[0].reason && failed[0].reason.message);
     let n = 0;
     const addPipes = (fc, color, label) => {
       const clr = Cesium.Color.fromCssColorString(color);
