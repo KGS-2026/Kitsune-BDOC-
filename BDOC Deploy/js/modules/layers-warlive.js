@@ -39,24 +39,71 @@ window.loadWarLive = async function () {
   // ── 0. P101: ESCALATION TREND — 7-day media-volume curve per theater.
   // Compares last-24h mean vs prior-6d mean → ▲ ESCALATING / ▼ DE-ESCALATING / ► STEADY.
   // Turns the dots into a forecast signal — no competitor at this tier has trend arrows.
-  const trends = {};
-  try {
-    const tq = { ukraine: '(ukraine OR kyiv OR kharkiv)', gaza: '(gaza OR israel OR hezbollah)', sudan: '(sudan OR khartoum OR darfur)', redsea: '(yemen OR houthi OR "red sea")', myanmar: '(myanmar OR burma)', sahel: '(mali OR niger OR "burkina faso")' };
-    const rs = await Promise.allSettled(WAR_THEATERS.map(z =>
-      fetch('/.netlify/functions/proxy-gdelt?mode=timelinevol&timespan=7d&query=' + encodeURIComponent(tq[z.id] || z.id), { signal: AbortSignal.timeout(15000) }).then(r => r.json()).then(d => ({ id: z.id, pts: d.points || [] }))));
-    rs.forEach(r => {
-      if (r.status !== 'fulfilled' || r.value.pts.length < 20) return;
-      const pts = r.value.pts, cut = pts.length - Math.max(4, Math.round(pts.length / 7));
-      const mean = a => a.reduce((s, p) => s + p.v, 0) / (a.length || 1);
-      const prior = mean(pts.slice(0, cut)), last = mean(pts.slice(cut));
-      const delta = prior > 0 ? (last - prior) / prior : 0;
-      trends[r.value.id] = { delta,
-        badge: delta > 0.15 ? '<span style="color:#DA3633;font-weight:700">▲ ESCALATING +' + Math.round(delta * 100) + '%</span>'
-             : delta < -0.15 ? '<span style="color:#3FB950;font-weight:700">▼ DE-ESCALATING ' + Math.round(delta * 100) + '%</span>'
-             : '<span style="color:#E8B339;font-weight:700">► STEADY</span>',
-        arrow: delta > 0.15 ? '▲' : delta < -0.15 ? '▼' : '' };
-    });
-  } catch (e) { console.warn('[WarLive trends]', e); }
+  // NON-BLOCKING: markers render immediately; badges patch onto anchor entities when
+  // each trend resolves (sequential fetches, GDELT limits to 1 req/5s per IP).
+  // Cached 1h in sessionStorage — refresh cycles reuse it, so arrows are instant after first load.
+  const trends = window._warTrends = window._warTrends || {};
+  const anchorEnts = {};   // theater id → anchor entity (label patched when trend lands)
+  const applyTrend = (id) => {
+    const tr = trends[id], ent = anchorEnts[id];
+    if (!tr || !ent) return;
+    try {
+      if (ent.label && tr.arrow) {
+        const cur = ent.label.text && ent.label.text.getValue ? ent.label.text.getValue() : '';
+        if (cur && !/^[▲▼]/.test(cur)) ent.label.text = tr.arrow + ' ' + cur;
+        if (tr.delta > 0.15) ent.label.fillColor = Cesium.Color.fromCssColorString('#ff4444');
+      }
+      const desc = ent.description && ent.description.getValue ? String(ent.description.getValue()) : '';
+      if (desc && desc.indexOf('7-DAY TREND') === -1) {
+        ent.description = desc.replace('<div style="font-size:8px;color:#8b949e;letter-spacing:1px;margin-bottom:10px">',
+          '<div style="font-size:10px;margin-bottom:6px">7-DAY TREND: ' + tr.badge + ' <span style="color:#4a5068;font-size:8px">(media volume, last 24h vs prior 6d)</span></div>' +
+          '<div style="font-size:8px;color:#8b949e;letter-spacing:1px;margin-bottom:10px">');
+      }
+    } catch (_) {}
+  };
+  (async () => {
+    try {
+      const CK = 'bdoc_war_trends_v1';
+      try {
+        const c = JSON.parse(sessionStorage.getItem(CK) || 'null');
+        if (c && Date.now() - c.at < 3600e3) { Object.assign(trends, c.trends); WAR_THEATERS.forEach(z => applyTrend(z.id)); return; }
+      } catch (_) {}
+      const tq = { ukraine: '(ukraine OR kyiv OR kharkiv)', gaza: '(gaza OR israel OR hezbollah)', sudan: '(sudan OR khartoum OR darfur)', redsea: '(yemen OR houthi OR "red sea")', myanmar: '(myanmar OR burma)', sahel: '(mali OR niger OR "burkina faso")' };
+      // GDELT throttles datacenter IPs → Netlify Lambda gets 'fetch failed' (verified in prod),
+      // while residential browsers pass. So: browser-direct PRIMARY, proxy fallback.
+      const fetchTrend = async (z) => {
+        const direct = 'https://api.gdeltproject.org/api/v2/doc/doc?query=' + encodeURIComponent(tq[z.id] || z.id) + '&mode=timelinevol&format=json&timespan=7d';
+        try {
+          const r = await fetch(direct, { signal: AbortSignal.timeout(10000) });
+          const d = await r.json();
+          const pts = (d && d.timeline && d.timeline[0] && d.timeline[0].data) || [];
+          if (pts.length) return pts.map(p => ({ t: p.date, v: p.value }));
+        } catch (_) { /* fall through to proxy */ }
+        try {
+          const r = await fetch('/.netlify/functions/proxy-gdelt?mode=timelinevol&timespan=7d&query=' + encodeURIComponent(tq[z.id] || z.id), { signal: AbortSignal.timeout(15000) });
+          const d = await r.json();
+          return d.points || [];
+        } catch (_) { return []; }
+      };
+      for (const z of WAR_THEATERS) {
+        const pts = await fetchTrend(z);
+        if (pts.length >= 20) {
+          const cut = pts.length - Math.max(4, Math.round(pts.length / 7));
+          const mean = a => a.reduce((s, p) => s + p.v, 0) / (a.length || 1);
+          const prior = mean(pts.slice(0, cut)), last = mean(pts.slice(cut));
+          const delta = prior > 0 ? (last - prior) / prior : 0;
+          trends[z.id] = { delta,
+            badge: delta > 0.15 ? '<span style="color:#DA3633;font-weight:700">▲ ESCALATING +' + Math.round(delta * 100) + '%</span>'
+                 : delta < -0.15 ? '<span style="color:#3FB950;font-weight:700">▼ DE-ESCALATING ' + Math.round(delta * 100) + '%</span>'
+                 : '<span style="color:#E8B339;font-weight:700">► STEADY</span>',
+            arrow: delta > 0.15 ? '▲' : delta < -0.15 ? '▼' : '' };
+          applyTrend(z.id);
+        }
+        await new Promise(res => setTimeout(res, 5500));
+      }
+      try { sessionStorage.setItem('bdoc_war_trends_v1', JSON.stringify({ at: Date.now(), trends })); } catch (_) {}
+    } catch (e) { console.warn('[WarLive trends]', e); }
+  })();
 
   // ── 1. GDELT live war reporting (single request, zone-matched) ──
   try {
@@ -95,6 +142,8 @@ window.loadWarLive = async function () {
           '<div style="font-size:8px;color:#4a5068;margin-top:4px">Source: GDELT Project — live global news monitoring</div></div>',
         show: layers.warlive
       }));
+      anchorEnts[z.id] = warliveEnts[warliveEnts.length - 1];
+      applyTrend(z.id); // cached/early trend → badge on immediately
       // individual event dots jittered around anchor
       items.forEach(a => {
         warliveEnts.push(V.entities.add({
