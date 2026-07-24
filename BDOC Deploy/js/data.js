@@ -58,6 +58,14 @@ const Cache={
       return{data,fromCache:false};
     }catch(e){
       this.stats.errors++;
+      // p98: one automatic retry on transient NETWORK errors (Failed to fetch /
+      // aborted) — connection-pool saturation when many layers arm at once kills
+      // individual fetches that would succeed 2s later. HTTP errors (4xx/5xx) are
+      // NOT retried here; they're real answers from the server.
+      if(!e.status&&!opts._retried){
+        await new Promise(res=>setTimeout(res,2500));
+        return this._fetch(key,url,{...opts,_retried:true},stale);
+      }
       // Don't override 429 backoff (already set with Retry-After)
       if(e.status!==429){
         const bo=this.backoff[ft]||{delay:15000};
