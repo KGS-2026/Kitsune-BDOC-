@@ -4742,9 +4742,20 @@ async function loadLightning(){
   // as proxy for "active lightning regions". Blitzortung tile server is not publicly accessible — needs WebSocket auth.
   // OpenWeatherMap has a paid lightning_strikes tile layer; will integrate when key acquired.
   try{
-    let res=await fetch('/.netlify/functions/proxy-weather?type=lightning').catch(()=>null);
-    if(!res||!res.ok){
-      res=await fetch('https://api.weather.gov/alerts/active?status=actual&event=Severe%20Thunderstorm%20Warning,Tornado%20Warning,Special%20Marine%20Warning',{headers:{'User-Agent':'KGS-BDOC/8.0 kitsuneglobal.com'},signal:AbortSignal.timeout(15000)}).catch(()=>null);
+    // p102: raw-fetch retry chain (p98c/p99 class) — retry whole proxy→direct chain at 5s/8s.
+    const _ltTry=async()=>{
+      let r=await fetch('/.netlify/functions/proxy-weather?type=lightning',{signal:AbortSignal.timeout(15000)}).catch(()=>null);
+      if(!r||!r.ok){
+        r=await fetch('https://api.weather.gov/alerts/active?status=actual&event=Severe%20Thunderstorm%20Warning,Tornado%20Warning,Special%20Marine%20Warning',{headers:{'User-Agent':'KGS-BDOC/8.0 kitsuneglobal.com'},signal:AbortSignal.timeout(15000)}).catch(()=>null);
+      }
+      return r;
+    };
+    let res=await _ltTry();
+    for(const wait of [5000,8000]){
+      if(res&&res.ok)break;
+      console.warn('[Lightning] NWS fetch failed — retrying in '+(wait/1000)+'s');
+      await new Promise(r=>setTimeout(r,wait));
+      res=await _ltTry();
     }
     if(!res||!res.ok)throw new Error('NWS '+(res?res.status:'unreachable'));
     const data=await res.json();
@@ -9962,10 +9973,22 @@ async function loadFloods(){
     const now=new Date();const from=new Date(now.getTime()-30*86400000);
     const fd=from.toISOString().split('T')[0],td=now.toISOString().split('T')[0];
     // GDACS lacks CORS — try Netlify proxy first, then direct (will fail in browser but works in dev)
-    let res=await fetch(`/.netlify/functions/proxy-gdacs?eventtype=FL&fromDate=${fd}&toDate=${td}`,{signal:AbortSignal.timeout(20000)}).catch(()=>null);
-    if(!res||!res.ok){
-      const url='https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP?eventtype=FL&alertlevel=Green;Orange;Red&fromDate='+fd+'&toDate='+td;
-      res=await fetch(url,{signal:AbortSignal.timeout(20000),headers:{'Accept':'application/json'}}).catch(()=>null);
+    // p102: raw-fetch retry chain (p98c/p99 class) — floods is in the disasters+emergency presets,
+    // so connection-pool saturation under preset load could silently blank it. Retry whole chain at 5s/8s.
+    const _flTry=async()=>{
+      let r=await fetch(`/.netlify/functions/proxy-gdacs?eventtype=FL&fromDate=${fd}&toDate=${td}`,{signal:AbortSignal.timeout(20000)}).catch(()=>null);
+      if(!r||!r.ok){
+        const url='https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP?eventtype=FL&alertlevel=Green;Orange;Red&fromDate='+fd+'&toDate='+td;
+        r=await fetch(url,{signal:AbortSignal.timeout(20000),headers:{'Accept':'application/json'}}).catch(()=>null);
+      }
+      return r;
+    };
+    let res=await _flTry();
+    for(const wait of [5000,8000]){
+      if(res&&res.ok)break;
+      console.warn('[Floods] GDACS fetch failed — retrying in '+(wait/1000)+'s');
+      await new Promise(r=>setTimeout(r,wait));
+      res=await _flTry();
     }
     if(!res||!res.ok)throw new Error('GDACS '+(res?res.status:'CORS-blocked'));
     const geo=await res.json();
@@ -10005,10 +10028,21 @@ async function loadTsunamis(){
   try{
     const now=new Date();const from=new Date(now.getTime()-90*86400000);
     const fd=from.toISOString().split('T')[0],td=now.toISOString().split('T')[0];
-    let res=await fetch(`/.netlify/functions/proxy-gdacs?eventtype=TS&fromDate=${fd}&toDate=${td}`,{signal:AbortSignal.timeout(20000)}).catch(()=>null);
-    if(!res||!res.ok){
-      const url='https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP?eventtype=TS&alertlevel=Green;Orange;Red&fromDate='+fd+'&toDate='+td;
-      res=await fetch(url,{signal:AbortSignal.timeout(20000),headers:{'Accept':'application/json'}}).catch(()=>null);
+    // p102: raw-fetch retry chain (p98c/p99 class) — tsunamis is in the disasters preset. Retry at 5s/8s.
+    const _tsTry=async()=>{
+      let r=await fetch(`/.netlify/functions/proxy-gdacs?eventtype=TS&fromDate=${fd}&toDate=${td}`,{signal:AbortSignal.timeout(20000)}).catch(()=>null);
+      if(!r||!r.ok){
+        const url='https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP?eventtype=TS&alertlevel=Green;Orange;Red&fromDate='+fd+'&toDate='+td;
+        r=await fetch(url,{signal:AbortSignal.timeout(20000),headers:{'Accept':'application/json'}}).catch(()=>null);
+      }
+      return r;
+    };
+    let res=await _tsTry();
+    for(const wait of [5000,8000]){
+      if(res&&res.ok)break;
+      console.warn('[Tsunamis] GDACS fetch failed — retrying in '+(wait/1000)+'s');
+      await new Promise(r=>setTimeout(r,wait));
+      res=await _tsTry();
     }
     if(!res||!res.ok)throw new Error('GDACS '+(res?res.status:'CORS-blocked'));
     const geo=await res.json();
