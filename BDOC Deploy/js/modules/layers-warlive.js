@@ -139,6 +139,9 @@ window.loadWarLive = async function () {
   })();
 
   // ── 1. GDELT live war reporting (single request, zone-matched) ──
+  // p103b: fetch in its own try so a throttled/failed GDELT artlist can't kill
+  // the anchor loop — theaters must always render (trend badge + card need a home).
+  const byZone = {};
   try {
     const q = encodeURIComponent('(strike OR shelling OR offensive OR drone OR missile OR airstrike OR frontline OR casualties)');
     const url = 'https://api.gdeltproject.org/api/v2/doc/doc?query=' + q + '&mode=artlist&format=json&timespan=24h&maxrecords=200&sort=datedesc';
@@ -146,22 +149,25 @@ window.loadWarLive = async function () {
     const d = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
     const arts = (d && d.articles) || [];
     // bucket articles into theaters by title match
-    const byZone = {};
     arts.forEach(a => {
       const t = a.title || '';
       for (const z of WAR_THEATERS) {
         if (z.rx.test(t)) { (byZone[z.id] = byZone[z.id] || []).push(a); break; }
       }
     });
+  } catch (e) { console.warn('[WarLive GDELT artlist]', e); }
+  try {
     const jit = s => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return ((h % 1000) / 1000 - 0.5) * 3.5; };
     for (const z of WAR_THEATERS) {
       const items = (byZone[z.id] || []).slice(0, 15);
-      if (!items.length) continue;
-      // theater intel card: latest headlines list
-      const list = items.map(a =>
+      // p103b: anchor renders UNCONDITIONALLY — GDELT artlist is throttled for many
+      // IPs (datacenter, some ISPs); without an anchor the trend badge has nowhere
+      // to live and the theater vanishes from the picture entirely.
+      const list = items.length ? items.map(a =>
         '<div style="margin-bottom:7px;padding-bottom:6px;border-bottom:1px solid #1e2436">' +
         '<a href="' + esc(a.url || '#') + '" target="_blank" rel="noopener" style="color:#c8ccd6;text-decoration:none;font-size:10px;font-weight:600">' + esc((a.title || '').slice(0, 110)) + '</a>' +
-        '<div style="font-size:8px;color:#4a5068;margin-top:2px">' + esc(a.domain || '') + ' · ' + esc((a.seendate || '').slice(0, 8)) + '</div></div>').join('');
+        '<div style="font-size:8px;color:#4a5068;margin-top:2px">' + esc(a.domain || '') + ' · ' + esc((a.seendate || '').slice(0, 8)) + '</div></div>').join('')
+        : '<div style="font-size:9px;color:#8b949e">Live headline feed unavailable from this network (GDELT throttle) — trend + kinetic event dots still live.</div>';
       warliveEnts.push(V.entities.add({
         position: Cesium.Cartesian3.fromDegrees(z.lon, z.lat),
         billboard: undefined,
