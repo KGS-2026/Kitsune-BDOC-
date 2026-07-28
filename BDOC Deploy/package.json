@@ -2,7 +2,7 @@
   "name": "kgs-bdoc",
   "version": "8.0.0",
   "private": true,
-  "description": "KGS BDOC — Military-grade geospatial intelligence platform. Offline-capable desktop app.",
+  "description": "KGS BDOC \u2014 Military-grade geospatial intelligence platform. Offline-capable desktop app.",
   "author": {
     "name": "Kitsune Global Solutions LLC",
     "email": "support@kgsbdoc.netlify.app"
@@ -21,7 +21,8 @@
   "dependencies": {
     "stripe": "^17.5.0",
     "@supabase/supabase-js": "^2.49.4",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "@netlify/blobs": "^8.1.0"
   },
   "devDependencies": {
     "electron": "^31.0.0",
@@ -30,7 +31,7 @@
   "build": {
     "appId": "com.kitsuneglobal.bdoc",
     "productName": "KGS BDOC",
-    "copyright": "Copyright © 2026 Kitsune Global Solutions LLC",
+    "copyright": "Copyright \u00a9 2026 Kitsune Global Solutions LLC",
     "directories": {
       "output": "dist-electron"
     },
@@ -59,15 +60,31 @@
     ],
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "portable", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "assets/icon.ico",
       "artifactName": "BDOC-Setup-${version}.${ext}"
     },
     "mac": {
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "icon": "assets/icon.icns",
       "category": "public.app-category.utilities",
@@ -75,8 +92,18 @@
     },
     "linux": {
       "target": [
-        { "target": "AppImage", "arch": ["x64"] },
-        { "target": "deb", "arch": ["x64"] }
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "assets/icon.png",
       "category": "Utility",

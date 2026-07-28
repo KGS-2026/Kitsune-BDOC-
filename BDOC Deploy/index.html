@@ -392,11 +392,11 @@ if('serviceWorker' in navigator){
 <div id="bdocTicker" style="display:none;position:fixed;bottom:0;left:0;right:0;height:24px;z-index:80;background:rgba(8,12,20,0.6));border-top:1px solid rgba(45,114,210,0.25);font-family:var(--m);font-size:10px;color:#c8ccd6;overflow:hidden;display:flex;align-items:center;">
   <div style="flex:0 0 auto;padding:0 12px;background:#1D222A;height:100%;display:flex;align-items:center;gap:8px;border-right:1px solid var(--bdr);font-size:10px;letter-spacing:0.12em;color:#9BA1A8;font-weight:500;text-transform:uppercase"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#3FB950;animation:bk 2s infinite"></span>LIVE INTEL FEED</div>
   <div id="bdocTickerScroll" style="flex:1;overflow:hidden;white-space:nowrap;position:relative;height:100%;display:flex;align-items:center">
-    <div id="bdocTickerInner" style="display:inline-block;padding-left:100%;animation:bdocTickerScroll 60s linear infinite">Awaiting intel feeds…</div>
+    <div id="bdocTickerInner" style="display:inline-block;padding-left:100%;animation:bdocTickerScroll 180s linear infinite">Awaiting intel feeds…</div>
   </div>
   <div style="flex:0 0 auto;padding:0 10px;background:rgba(0,0,0,0.4);height:100%;display:flex;align-items:center;border-left:1px solid rgba(45,114,210,0.15);font-size:8px;letter-spacing:1px;color:#4a5068;cursor:pointer" onclick="document.getElementById('bdocTicker').style.display='none';try{localStorage.setItem('bdoc_ticker_off','1')}catch(_){}">×</div>
 </div>
-<style>@keyframes bdocTickerScroll{from{transform:translateX(0)}to{transform:translateX(-100%)}}</style>
+<style>@keyframes bdocTickerScroll{from{transform:translateX(0)}to{transform:translateX(-100%)}}#bdocTickerInner:hover{animation-play-state:paused!important}</style>
 <!-- LEGEND (press L) -->
 <div id="legend">
 <div class="leg-i"><div class="leg-d" style="background:#DA3633"></div>MIL AIRCRAFT</div>
@@ -2816,8 +2816,12 @@ BDOC.ticker={
       // the regex only removed tags but left attribute-injectable content and HTML entities.
       const html=this._events.slice().reverse().map(e=>`<span style="margin-right:42px;display:inline-flex;align-items:center;gap:10px"><span style="color:#5C636B;font-family:var(--m);font-size:10px">${esc(e.ts)}</span><span style="display:inline-block;padding:2px 8px;background:#1D222A;border-radius:2px;color:#9BA1A8;font-size:9px;letter-spacing:0.08em;font-weight:500">${esc(e.sev.toUpperCase())}</span><span style="color:#E6E8EB;font-size:11px">${esc(e.msg)}</span></span>`).join('');
       inner.innerHTML=html||'Awaiting intel feeds…';
-      // Restart animation cleanly so new content scrolls
-      inner.style.animation='none';void inner.offsetWidth;inner.style.animation='bdocTickerScroll 60s linear infinite';
+      // Restart animation cleanly so new content scrolls.
+      // P105: speed scales with content — 12s per event, min 90s (was fixed 60s
+      // regardless of length → unreadable blur once the feed filled up. Operator
+      // callout 2026-07-27: "slow that shit down, I gotta be able to read it").
+      const dur=Math.max(90,this._events.length*12);
+      inner.style.animation='none';void inner.offsetWidth;inner.style.animation='bdocTickerScroll '+dur+'s linear infinite';
     }catch(_){}
   },
   show(){
