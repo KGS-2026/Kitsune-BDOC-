@@ -1543,7 +1543,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p103b',             // MUST bump on ANY js/modules/* change — p103b = warlive anchors render even when GDELT artlist is throttled
+  _version: 'p104',              // MUST bump on ANY js/modules/* change — p104 = OutageWatch sentinel (always-on infra outage detection)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
@@ -9852,6 +9852,10 @@ async function bootFeeds(){
     const el=document.querySelector('.ly[data-layer="warlive"]');
     if(el&&!el.classList.contains('on')&&!layers.warlive){togLy(el);EventLog.add('info','Global conflict picture auto-armed (War Room)')}
   }catch(e){console.warn('[Boot] warlive auto-arm failed:',e)}},2500);
+  // P102: OUTAGE WATCH sentinel — ALWAYS ON, no toggle. Carriers (T-Mobile/AT&T/Verizon),
+  // ISPs, clouds, payment rails, GPS, FAA, grid — news-detect every 3 min + statuspage
+  // sweep every 2 min. Born from the T-Mobile outage BDOC missed (2026-07-27).
+  setTimeout(()=>{BDOC.LazyLoader.load('outage-watch').catch(e=>console.warn('[Boot] outage-watch load failed:',e))},3500);
   // Auto-enable 3D terrain for Google Earth-quality rendering
   try{toggle3DTerrain();const tb=document.getElementById('btnTerrain');if(tb)tb.classList.add('bm-active')}catch(e){console.warn('[Boot] Terrain auto-enable failed:',e)}
   // Register camera.changed listener for overview map + scale legend.
@@ -10845,7 +10849,7 @@ function injectAllUI() {
     // ═══ GLOBAL THREAT ASSESSMENT (GTA) WIDGET ═══
     // Inspired by World Tension Watch — persistent HUD showing calculated threat level
     injectGTA();
-    setInterval(updateGTA, 10800000); // 3h — GTA score is a daily composite, hourly is sufficient
+    setInterval(updateGTA, 600000); // P102: 10 min (was 3h) — a threat indicator that updates every 3 hours is a decoration, not an indicator. OutageWatch also force-refreshes it the moment an outage is detected.
   }, 3000);
 })();
 
@@ -11016,6 +11020,10 @@ try{ // Phase 22: wrap so a DOM or parse error can't kill the 5-min setInterval
   score+=Math.min(cpThreat*0.12,7);       // chokepoint tension index
   score+=Math.min(acCount*0.02,5);        // military+civil aircraft tracked
   score+=Math.min(vesCount*0.005,4);      // AIS vessels tracked
+  // P102: live infrastructure outage component (OutageWatch sentinel, 0-25) —
+  // carrier/grid/GPS outages are threat signal, not background noise
+  const infraScore=_bSafe(()=>window.OutageWatch.score,0);
+  score+=infraScore;
   score=Math.min(Math.round(score),100);
 
   const level=score>=75?'CRITICAL':score>=55?'HIGH':score>=35?'ELEVATED':score>=20?'MODERATE':'LOW';
