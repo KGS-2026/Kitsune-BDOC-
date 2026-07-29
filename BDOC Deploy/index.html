@@ -1543,7 +1543,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p104',              // MUST bump on ANY js/modules/* change — p104 = OutageWatch sentinel (always-on infra outage detection)
+  _version: 'p106',              // MUST bump on ANY js/modules/* change — p106 = Causal Fusion Engine (outage probable-cause attribution)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];

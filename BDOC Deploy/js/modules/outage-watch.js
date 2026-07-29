@@ -92,6 +92,30 @@
     } catch (_) {}
   }
 
+  function buildDesc(w, a) {
+    var fusionHtml = '';
+    if (a.fusion) {
+      var f = a.fusion;
+      var col = f.cause === 'UNDETERMINED' ? '#8b949e' : (f.confidence === 'HIGH' ? '#DA3633' : '#E8B339');
+      fusionHtml = '<div style="margin:8px 0;padding:8px;border:1px solid ' + col + ';background:rgba(0,0,0,.3)">' +
+        '<div style="font-size:11px;font-weight:700;color:' + col + '">◈ PROBABLE CAUSE: ' + esc(f.cause) + (f.cause !== 'UNDETERMINED' ? ' <span style="font-size:9px">(' + esc(f.confidence) + ' confidence)</span>' : '') + '</div>' +
+        '<div style="font-size:9px;color:#c8ccd6;margin-top:3px">' + esc(f.why) + '</div>' +
+        (f.evidence || []).slice(0, 4).map(function (e2) {
+          return '<div style="font-size:9px;margin-top:3px">↳ ' + (e2.u ? '<a href="' + esc(e2.u) + '" target="_blank" rel="noopener" style="color:#7aa2f7">' + esc(e2.t.slice(0, 90)) + '</a>' : esc(e2.t.slice(0, 90))) + '</div>';
+        }).join('') +
+        '</div>';
+    } else {
+      fusionHtml = '<div style="margin:8px 0;font-size:9px;color:#8b949e">◈ Causal fusion running — correlating cyber / weather / seismic / space-weather / kinetic layers…</div>';
+    }
+    return '<div style="font-family:\'JetBrains Mono\',monospace;padding:12px;color:#c8ccd6;background:#0a0e14;border:1px solid #DA3633;max-width:420px">' +
+      '<div style="font-size:13px;font-weight:700;color:#DA3633">⛔ INFRASTRUCTURE OUTAGE — ' + esc(w.name) + '</div>' +
+      '<div style="font-size:8px;color:#8b949e;letter-spacing:1px;margin:4px 0 8px">' + esc(w.kind) + ' · ' + esc(w.hq) + ' · NEWS-DETECTED · LAST 60 MIN</div>' +
+      '<div style="font-size:10px;margin-bottom:6px">Reports: <b>' + a.count + '</b> in last hour</div>' +
+      a.titles.slice(0, 6).map(function (t) { return '<div style="margin-bottom:5px;font-size:10px"><a href="' + esc(t.u || '#') + '" target="_blank" rel="noopener" style="color:#c8ccd6">' + esc(t.t.slice(0, 100)) + '</a></div>'; }).join('') +
+      fusionHtml +
+      '<div style="font-size:8px;color:#4a5068;margin-top:6px">Source: GDELT 1-hour news monitoring · OutageWatch sentinel + Causal Fusion Engine</div></div>';
+  }
+
   function plot(w, a) {
     try {
       if (typeof V === 'undefined' || a.ent) return;
@@ -99,14 +123,151 @@
         position: Cesium.Cartesian3.fromDegrees(w.lon, w.lat),
         point: { pixelSize: 12, color: Cesium.Color.fromCssColorString('#DA3633').withAlpha(0.95), outlineColor: Cesium.Color.WHITE, outlineWidth: 2, disableDepthTestDistance: Number.POSITIVE_INFINITY },
         label: { text: '⛔ ' + w.name.toUpperCase() + ' OUTAGE', font: '11px JetBrains Mono', fillColor: Cesium.Color.fromCssColorString('#ff4444'), outlineColor: Cesium.Color.BLACK, outlineWidth: 2, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -20), disableDepthTestDistance: Number.POSITIVE_INFINITY },
-        description: '<div style="font-family:\'JetBrains Mono\',monospace;padding:12px;color:#c8ccd6;background:#0a0e14;border:1px solid #DA3633;max-width:420px">' +
-          '<div style="font-size:13px;font-weight:700;color:#DA3633">⛔ INFRASTRUCTURE OUTAGE — ' + esc(w.name) + '</div>' +
-          '<div style="font-size:8px;color:#8b949e;letter-spacing:1px;margin:4px 0 8px">' + esc(w.kind) + ' · ' + esc(w.hq) + ' · NEWS-DETECTED · LAST 60 MIN</div>' +
-          '<div style="font-size:10px;margin-bottom:6px">Reports: <b>' + a.count + '</b> in last hour</div>' +
-          a.titles.slice(0, 6).map(function (t) { return '<div style="margin-bottom:5px;font-size:10px"><a href="' + esc(t.u || '#') + '" target="_blank" rel="noopener" style="color:#c8ccd6">' + esc(t.t.slice(0, 100)) + '</a></div>'; }).join('') +
-          '<div style="font-size:8px;color:#4a5068;margin-top:6px">Source: GDELT 1-hour news monitoring · OutageWatch sentinel</div></div>'
+        description: buildDesc(w, a)
       });
     } catch (e) { console.warn('[OutageWatch plot]', e); }
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // CAUSAL FUSION ENGINE (P106) — when an outage is detected,
+  // correlate against live intel layers within a time/space window
+  // and attribute a probable cause. Gotham-class fusion, v1.
+  //   CYBER   — GDELT 24h cyberattack reporting on the org +
+  //             CISA KEV additions (7d) matching the vendor
+  //   WEATHER — NWS active alerts covering the org's HQ/region
+  //   SEISMIC — USGS M4.5+ within 300 km of HQ in last 24h
+  //   SPACE   — NOAA SWPC scales (G/R storms) for GPS/SATCOM/grid
+  //   KINETIC — HQ inside an active War Room theater bbox
+  // Every fetch is data-gated (SW offline sentinel returns 200s).
+  // ══════════════════════════════════════════════════════════════
+  var SEVERE_WX = /tornado warning|hurricane warning|extreme heat|excessive heat|ice storm|blizzard|high wind warning|severe thunderstorm warning|extreme wind|flash flood emergency|winter storm warning/i;
+  var MILD_WX = /heat advisory|wind advisory|flood (warning|watch)|winter weather|red flag/i;
+
+  function fetchJson(url, ms) {
+    return fetch(url, { signal: AbortSignal.timeout(ms || 10000) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d && d.offline === true) throw new Error('sw-offline-sentinel'); return d; });
+  }
+
+  async function fuseCause(w, a) {
+    var cand = []; // {cause, weight, why, evidence:[{t,u}]}
+    var orgWord = w.name.split('/')[0].trim(); // 'Comcast/Xfinity' → 'Comcast'
+
+    var jobs = [
+      // CYBER a — GDELT: org + attack terms, last 24h (browser-direct; throttled on some IPs → best-effort)
+      fetchJson('https://api.gdeltproject.org/api/v2/doc/doc?query=' +
+        encodeURIComponent('"' + orgWord + '" (cyberattack OR ransomware OR hacked OR "denial of service" OR ddos OR breach)') +
+        '&mode=artlist&format=json&timespan=24h&maxrecords=30&sort=datedesc', 12000)
+        .then(function (d) {
+          if (!Array.isArray(d.articles) || !d.articles.length) return;
+          var seen = {}, arts = [];
+          d.articles.forEach(function (x) {
+            var k = (x.title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').slice(0, 60);
+            if (!k || seen[k]) return; seen[k] = 1;
+            if (w.rx.test(x.title || '')) arts.push({ t: x.title, u: x.url || '' });
+          });
+          if (arts.length >= 2) cand.push({ cause: 'CYBER', weight: arts.length >= 3 ? 5 : 4, why: arts.length + ' independent reports of cyberattack/ransomware targeting ' + w.name + ' in last 24h (GDELT)', evidence: arts });
+          else if (arts.length === 1) cand.push({ cause: 'CYBER', weight: 2, why: '1 report of cyberattack on ' + w.name + ' in last 24h (GDELT, unconfirmed)', evidence: arts });
+        }).catch(function () {}),
+
+      // CYBER b — CISA KEV additions in last 7d matching the vendor
+      fetchJson('/.netlify/functions/proxy-cisa', 15000)
+        .then(function (d) {
+          if (!d || !Array.isArray(d.vulnerabilities)) return;
+          var cutoff = Date.now() - 7 * 864e5;
+          var hits = d.vulnerabilities.filter(function (v2) {
+            if (!v2.dateAdded || new Date(v2.dateAdded).getTime() < cutoff) return false;
+            var hay = (v2.vendorProject || '') + ' ' + (v2.product || '');
+            return w.rx.test(hay) || hay.toLowerCase().indexOf(orgWord.toLowerCase()) !== -1;
+          });
+          if (hits.length) cand.push({
+            cause: 'CYBER', weight: 3,
+            why: hits.length + ' actively-exploited CVE(s) affecting ' + w.name + ' added to CISA KEV in last 7d (' + hits.map(function (h) { return h.cveID; }).slice(0, 3).join(', ') + ')',
+            evidence: hits.slice(0, 3).map(function (h) { return { t: h.cveID + ' — ' + (h.vulnerabilityName || h.shortDescription || '').slice(0, 70), u: 'https://nvd.nist.gov/vuln/detail/' + h.cveID }; })
+          });
+        }).catch(function () {}),
+
+      // WEATHER — NWS active alerts at HQ point (all watchlist HQs are US)
+      fetchJson('https://api.weather.gov/alerts/active?point=' + w.lat + ',' + w.lon, 10000)
+        .then(function (d) {
+          if (!d || !Array.isArray(d.features) || !d.features.length) return;
+          var sev = [], mild = [];
+          d.features.forEach(function (f) {
+            var ev2 = (f.properties && f.properties.event) || '';
+            var item = { t: ev2 + ' — ' + ((f.properties && f.properties.areaDesc) || '').slice(0, 60), u: (f.properties && f.properties.uri) || '' };
+            if (SEVERE_WX.test(ev2)) sev.push(item); else if (MILD_WX.test(ev2)) mild.push(item);
+          });
+          if (sev.length) cand.push({ cause: 'WEATHER', weight: 4, why: sev.length + ' severe weather alert(s) active over ' + w.hq + ' (NWS): ' + sev[0].t.split(' — ')[0], evidence: sev });
+          else if (mild.length) cand.push({ cause: 'WEATHER', weight: 2, why: 'Weather advisory active over ' + w.hq + ' (NWS): ' + mild[0].t.split(' — ')[0], evidence: mild });
+        }).catch(function () {}),
+
+      // SEISMIC — USGS M4.5+ within 300 km of HQ, last 24h
+      fetchJson('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=' + w.lat + '&longitude=' + w.lon + '&maxradiuskm=300&minmagnitude=4.5&starttime=' + new Date(Date.now() - 864e5).toISOString(), 10000)
+        .then(function (d) {
+          if (!d || !Array.isArray(d.features) || !d.features.length) return;
+          var big = d.features.filter(function (f) { return f.properties.mag >= 6; });
+          var q = d.features[0];
+          cand.push({
+            cause: 'SEISMIC', weight: big.length ? 5 : 3,
+            why: 'M' + q.properties.mag.toFixed(1) + ' earthquake ' + (q.properties.place || 'near ' + w.hq) + ' within 300 km of HQ in last 24h (USGS)',
+            evidence: d.features.slice(0, 3).map(function (f) { return { t: 'M' + f.properties.mag.toFixed(1) + ' — ' + (f.properties.place || ''), u: f.properties.url || '' }; })
+          });
+        }).catch(function () {}),
+
+      // SPACE WEATHER — NOAA SWPC scales; weighted for GPS/SATCOM/GRID/AVIATION
+      fetchJson('https://services.swpc.noaa.gov/products/noaa-scales.json', 10000)
+        .then(function (d) {
+          var cur = d && d['0']; if (!cur) return;
+          var g = parseInt((cur.G && cur.G.Scale) || 0, 10) || 0;
+          var r2 = parseInt((cur.R && cur.R.Scale) || 0, 10) || 0;
+          var s2 = parseInt((cur.S && cur.S.Scale) || 0, 10) || 0;
+          var max = Math.max(g, r2, s2);
+          if (max < 3) return;
+          var spaceKind = (w.kind === 'NAVIGATION' || w.kind === 'SATCOM' || w.kind === 'GRID' || w.kind === 'AVIATION');
+          cand.push({
+            cause: 'SPACE WEATHER', weight: spaceKind ? (max >= 4 ? 5 : 3) : 1,
+            why: 'Active geomagnetic/radio storm — G' + g + '/R' + r2 + '/S' + s2 + ' (NOAA SWPC)' + (spaceKind ? ' — ' + w.kind + ' directly susceptible' : ''),
+            evidence: [{ t: 'NOAA Space Weather Scales: G' + g + ' R' + r2 + ' S' + s2, u: 'https://www.swpc.noaa.gov/noaa-scales-explanation' }]
+          });
+        }).catch(function () {})
+    ];
+
+    await Promise.allSettled(jobs);
+
+    // KINETIC — HQ inside an active War Room theater bbox (local, no fetch)
+    try {
+      var th = (window.WAR_THEATERS || []).find(function (t) {
+        return w.lon >= t.bbox[0] && w.lat >= t.bbox[1] && w.lon <= t.bbox[2] && w.lat <= t.bbox[3];
+      });
+      if (th) cand.push({ cause: 'KINETIC', weight: 3, why: w.hq + ' lies inside active conflict theater: ' + th.name, evidence: [{ t: th.name, u: '' }] });
+    } catch (_) {}
+
+    cand.sort(function (x, y) { return y.weight - x.weight; });
+    var top = cand[0];
+    var f;
+    if (top && top.weight >= 3) {
+      f = { cause: top.cause, confidence: top.weight >= 5 ? 'HIGH' : 'MEDIUM', why: top.why, evidence: top.evidence, candidates: cand, at: Date.now() };
+    } else if (top) {
+      f = { cause: top.cause, confidence: 'LOW', why: top.why + ' — weak signal, treat as unconfirmed', evidence: top.evidence, candidates: cand, at: Date.now() };
+    } else {
+      f = { cause: 'UNDETERMINED', confidence: '—', why: 'No correlated cyber / weather / seismic / space-weather / kinetic signal in the time-space window. Likely internal technical failure (config change, software fault, fiber cut).', evidence: [], candidates: [], at: Date.now() };
+    }
+    a.fusion = f;
+
+    // patch UI everywhere the outage surfaces
+    try { if (a.ent) a.ent.description = buildDesc(w, a); } catch (_) {}
+    if (f.cause !== 'UNDETERMINED') {
+      var fCol = f.confidence === 'HIGH' ? '#DA3633' : '#E8B339';
+      banner('<b>⛔ ' + esc(w.name.toUpperCase()) + ' OUTAGE — PROBABLE CAUSE: ' + esc(f.cause) + '</b> (' + esc(f.confidence) + ' confidence)<br>' +
+        esc(f.why).slice(0, 160) +
+        '<br><span style="color:#8b949e;font-size:9px">Causal Fusion Engine · click the ⛔ marker for evidence links</span>', fCol);
+      try { af(fCol, '◈ FUSION: ' + w.name + ' outage → PROBABLE CAUSE: ' + f.cause + ' (' + f.confidence + ')'); } catch (_) {}
+      try { if (typeof EventLog !== 'undefined') EventLog.add('crit', 'FUSION: ' + w.name + ' → ' + f.cause + ' (' + f.confidence + ')'); } catch (_) {}
+    } else {
+      try { af('#8b949e', '◈ FUSION: ' + w.name + ' outage — no external cause correlated; likely internal technical failure'); } catch (_) {}
+    }
+    console.log('[OutageWatch FUSION]', w.id, '→', f.cause, f.confidence, '| candidates:', cand.map(function (c) { return c.cause + ':' + c.weight; }).join(' '));
+    return f;
   }
 
   function raiseAlert(w, a, isNew) {
@@ -118,6 +279,8 @@
       notify('BDOC: ' + w.name + ' outage detected', a.count + ' reports in last hour');
       plot(w, a);
       try { if (typeof EventLog !== 'undefined') EventLog.add('crit', 'OUTAGE: ' + w.name + ' — ' + a.count + ' rpts/1h'); } catch (_) {}
+      // fire the causal fusion engine — correlate this outage against cyber/weather/seismic/space/kinetic layers
+      setTimeout(function () { fuseCause(w, a).catch(function (e) { console.warn('[OutageWatch fusion]', e); }); }, 1200);
     }
   }
 
@@ -206,6 +369,21 @@
   }
 
   // ── boot ──
+  // Simulation hook: exercise the full pipeline (banner → marker → fusion) for any watchlist id.
+  // Console: OutageWatch.simulate('att')  — marked SIMULATED, clears via normal 90-min silence path.
+  window.OutageWatch.simulate = function (id) {
+    var w = WATCH.find(function (x) { return x.id === id; });
+    if (!w) { console.warn('[OutageWatch] unknown id. Valid:', WATCH.map(function (x) { return x.id; }).join(', ')); return; }
+    var a = state.active[w.id] = {
+      name: w.name, kind: w.kind, firstSeen: Date.now(), lastSeen: Date.now(), count: 3,
+      titles: [{ t: '[SIMULATED] ' + w.name + ' outage drill — fusion engine test', u: '' },
+               { t: '[SIMULATED] Users report ' + w.name + ' service disruption', u: '' }]
+    };
+    raiseAlert(w, a, true);
+    recomputeScore();
+    return a;
+  };
+  window.OutageWatch.fuse = fuseCause; // expose for diagnostics
   window.OutageWatch.start = function () {
     if (window.OutageWatch._started) return; window.OutageWatch._started = true;
     try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch (_) {}
