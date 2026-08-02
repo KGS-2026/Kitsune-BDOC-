@@ -79,12 +79,22 @@ const BDOC_Auth={
           await this.loadProfile();
           if(returningFromStripe){setTimeout(()=>this.loadProfile(),4000)} // webhook may land a beat after redirect
           this._initialized=true;
+          this._resumePendingSub();
           return;
         }
       }catch(e){console.warn('[Auth] Session check failed:',e.message)}
     }else{console.warn('[Auth] Supabase not configured — running in guest mode')}
     this._initialized=true;
     this.updateUI();
+  },
+  // P107: if the user clicked SUBSCRIBE while signed out, finish that checkout
+  // right after auth completes (works across the Google-SSO full-page redirect too).
+  _resumePendingSub(){
+    let p=this._pendingSub;
+    if(!p){try{p=JSON.parse(sessionStorage.getItem('bdoc_pending_sub')||'null');}catch(_){p=null}}
+    this._pendingSub=null;
+    try{sessionStorage.removeItem('bdoc_pending_sub');}catch(_){}
+    if(p&&p.tierName&&this.user)setTimeout(()=>this.subscribe(p.tierName,p.annual),300);
   },
   async loadProfile(){
     if(!this.client||!this.user)return;
@@ -132,6 +142,7 @@ const BDOC_Auth={
       if(needsMfa){this._showView('mfa');if(btn){btn.disabled=false;btn.textContent=origLabel||'SIGN IN'}return;}
       await this.loadProfile();
       this.closeModal();
+      this._resumePendingSub();
     }catch(e){
       const msg=(e&&e.message)||'Sign-in failed. Try again.';
       errEl.textContent=msg;errEl.style.display='block';errEl.style.color='var(--crit)';
@@ -232,6 +243,7 @@ const BDOC_Auth={
       await this.loadProfile();
       this.closeModal();
       if(typeof af==='function')af('var(--gn)','Two-factor verified — signed in');
+      this._resumePendingSub();
     }catch(e){this._err((e&&e.message)||'Invalid code — try again');}
   },
   async enrollMFA(){
@@ -339,8 +351,14 @@ const BDOC_Auth={
     try{if(typeof plausible==='function')plausible('Subscribe Click',{props:{tier:tierName,billing:annual?'annual':'monthly',from_tier:this.tier||'recon'}});}catch(_){}
     // Must be signed in — we need a real userId to tie the subscription to the account.
     if(!this.user||!this.user.id){
-      this._err&&this._err('Please sign in (or create an account) before subscribing, so we can link your plan to your account.');
-      try{showLg&&showLg()}catch(_){}
+      // P107 LAUNCH-BLOCKER FIX: previous code wrote the error into the CLOSED auth
+      // modal and called showLg() which doesn't exist — click did visibly nothing.
+      // Now: remember what they wanted, open the sign-in modal, show why, and
+      // auto-resume checkout the moment they finish signing in.
+      this._pendingSub={tierName,annual:!!annual};
+      try{sessionStorage.setItem('bdoc_pending_sub',JSON.stringify(this._pendingSub));}catch(_){}
+      this.showModal();
+      this._err&&this._err('Sign in (or create a free account) to subscribe — your checkout will continue automatically.',true);
       return;
     }
     const email=(this.profile&&this.profile.email)||this.user.email||'';
