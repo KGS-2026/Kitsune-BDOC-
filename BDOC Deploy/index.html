@@ -10932,9 +10932,14 @@ function injectGTA(){
   const w=document.createElement('div');
   w.id='gtaWidget';
   w.style.cssText='position:fixed;bottom:12px;left:12px;z-index:999;font-family:"JetBrains Mono",monospace;background:#0a0e14;border:1px solid rgba(45,114,210,0.15);border-radius:4px;padding:10px 14px;min-width:200px;box-shadow:0 4px 20px rgba(0,0,0,0.5);cursor:grab;transition:box-shadow .3s;user-select:none';
-  // Drag functionality
+  // Drag functionality — P110: disabled on touch devices (iPad/Android). Coarse-pointer
+  // dragging fought with Cesium's touch handling and half-worked at best; on touch the
+  // widget stays pinned and tap still expands/collapses.
+  const _gtaTouch=window.matchMedia&&window.matchMedia('(pointer: coarse)').matches;
   let _gtaDragging=false,_gtaOx=0,_gtaOy=0;
+  if(_gtaTouch){w.style.cursor='default'}
   w.addEventListener('mousedown',function(e){
+    if(_gtaTouch)return;
     if(e.target.tagName==='A'||e.target.tagName==='BUTTON')return;
     _gtaDragging=true;_gtaOx=e.clientX-w.offsetLeft;_gtaOy=e.clientY-w.offsetTop;
     w.style.cursor='grabbing';w.style.transition='none';
@@ -12171,7 +12176,10 @@ WiresharkBridge.connect = async function() {
     if(!bar)return;
     // Restore saved position — Phase 15c: ignore stale positions that overlap the SIGN IN pill
     // (anything with top<50 AND right<200 sits inside the topbar's right cluster — invalid zone).
+    // P110: on touch devices skip restore entirely — bar is pinned to its CSS default there,
+    // and a position saved from a half-broken touch drag could sit off-screen.
     try{
+      if(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches)throw 0;
       const saved=JSON.parse(localStorage.getItem('bdoc_tzbar_pos')||'null');
       if(saved&&typeof saved.top==='number'&&typeof saved.right==='number'){
         const overlapsTopbar=(saved.top<50&&saved.right<200);
@@ -12221,8 +12229,11 @@ WiresharkBridge.connect = async function() {
         }catch(_){}
       }
     });
-    // Touch support (mobile)
+    // Touch support (mobile) — P110: drag disabled on touch devices; bar stays pinned.
+    // Coarse-pointer drag conflicted with Cesium gestures on iPad/Android. Tap-to-toggle still works.
+    const _tzTouch=window.matchMedia&&window.matchMedia('(pointer: coarse)').matches;
     handle.addEventListener('touchstart',e=>{
+      if(_tzTouch)return;
       if(e.touches.length!==1)return;
       const t=e.touches[0];
       dragging=true;moved=false;window._tzDragMoved=false;
