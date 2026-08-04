@@ -42,7 +42,31 @@ exports.handler = async (event) => {
     confirmed: !!user.email_confirmed_at,
   };
 
-  if (action === 'status') return resp(200, summary);
+  // Pull the profile row too (tier + stripe linkage) — needed to verify that a
+  // Stripe payment actually landed (webhook upgraded the tier) and for comps.
+  let profile = null;
+  try {
+    const pr = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}&select=tier,stripe_customer_id,email,updated_at`, { headers: H });
+    if (pr.ok) { const rows = await pr.json(); profile = rows[0] || null; }
+  } catch (_) {}
+
+  if (action === 'status') return resp(200, { ...summary, profile });
+
+  // P110: comp access for friends & family — grant a tier without payment.
+  //   .../admin-user?key=ADMIN_KEY&action=grant&email=x@y.com&tier=enterprise
+  // Only affects profiles.tier; no Stripe object is created, nothing is billed.
+  // Revoke by granting tier=recon.
+  if (action === 'grant') {
+    const tier = (p.tier || 'enterprise').toLowerCase();
+    if (!['recon', 'operator', 'analyst', 'enterprise'].includes(tier)) return resp(400, { error: 'bad tier' });
+    const upd = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
+      method: 'PATCH', headers: { ...H, Prefer: 'return=representation' },
+      body: JSON.stringify({ tier }),
+    });
+    if (!upd.ok) return resp(502, { error: 'grant failed: ' + upd.status, body: await upd.text() });
+    const rows = await upd.json();
+    return resp(200, { email: user.email, tier: rows[0] ? rows[0].tier : tier, note: 'comp granted — user gets ' + tier + ' on next sign-in/refresh' });
+  }
 
   if (action === 'confirm') {
     if (user.email_confirmed_at) return resp(200, { ...summary, note: 'already confirmed' });
