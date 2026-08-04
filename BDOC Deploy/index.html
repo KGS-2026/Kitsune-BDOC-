@@ -7063,6 +7063,14 @@ window.initCursorCoords = initCursorCoords;
 // ═══ COORDINATE HUD DRAG ═══
 (function(){
   const cc=document.getElementById('cursorCoords');if(!cc)return;
+  // P111 (Travon spec): on touch devices (iPad/Android) drag is disabled and the bar is
+  // PINNED bottom-center, splitting the screen. Desktop keeps full drag.
+  if(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches){
+    cc.style.top='auto';cc.style.left='50%';cc.style.right='auto';
+    cc.style.bottom='10px';cc.style.transform='translateX(-50%)';
+    cc.style.cursor='default';cc.style.maxWidth='calc(100vw - 24px)';
+    return;
+  }
   let _ccD=false,_ccOx=0,_ccOy=0;
   cc.addEventListener('mousedown',function(e){
     _ccD=true;_ccOx=e.clientX-cc.offsetLeft;_ccOy=e.clientY-cc.offsetTop;
@@ -10937,7 +10945,13 @@ function injectGTA(){
   // widget stays pinned and tap still expands/collapses.
   const _gtaTouch=window.matchMedia&&window.matchMedia('(pointer: coarse)').matches;
   let _gtaDragging=false,_gtaOx=0,_gtaOy=0;
-  if(_gtaTouch){w.style.cursor='default'}
+  if(_gtaTouch){
+    // P111 (Travon spec): pinned left side, raised above the bottom-left corner so
+    // layer popups that land in that corner sit BEHIND it, and z-index keeps it in front.
+    w.style.cursor='default';
+    w.style.bottom='72px';w.style.left='12px';
+    w.style.zIndex='1200';
+  }
   w.addEventListener('mousedown',function(e){
     if(_gtaTouch)return;
     if(e.target.tagName==='A'||e.target.tagName==='BUTTON')return;
