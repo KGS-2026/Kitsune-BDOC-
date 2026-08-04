@@ -10949,10 +10949,11 @@ function injectGTA(){
   const _gtaTouch=window.matchMedia&&window.matchMedia('(pointer: coarse)').matches;
   let _gtaDragging=false,_gtaOx=0,_gtaOy=0;
   if(_gtaTouch){
-    // P111 (Travon spec): pinned left side, raised above the bottom-left corner so
-    // layer popups that land in that corner sit BEHIND it, and z-index keeps it in front.
+    // P111/P113 (Travon spec, iPad live test): pinned just RIGHT of the Intel layer
+    // panel (--lw:248px) and raised up so it's clear of both the bottom news ticker
+    // and layer popups that land in the bottom-left corner.
     w.style.cursor='default';
-    w.style.bottom='72px';w.style.left='12px';
+    w.style.bottom='140px';w.style.left='260px';
     w.style.zIndex='1200';
   }
   w.addEventListener('mousedown',function(e){
