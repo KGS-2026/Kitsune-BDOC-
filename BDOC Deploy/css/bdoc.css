@@ -1388,3 +1388,15 @@ button.bm-btn[onclick*="bdocNearMe"]:hover{
 .ct2{transition:border-color .15s ease,color .15s ease}
 .ct2:hover{border-color:rgba(255,255,255,0.25);color:var(--t1)}
 /* ═══════════════ END P77 POLISH ═══════════════ */
+/* ═══ P112: TOUCH TOPBAR — iPad/Android. iPads render the full desktop topbar at
+   ~1024-1180px width and the right side (PDF/File menu, LOGIN) gets cut off with no
+   way to reach it (no mouse overflow, pinch-zoom zooms the globe not the chrome).
+   Fix: on coarse pointers the topbar becomes horizontally swipe-scrollable. ═══ */
+@media(pointer:coarse){
+  .tb{flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;scrollbar-width:none;height:48px!important}
+  .tb::-webkit-scrollbar{display:none}
+  .tb>*{flex-shrink:0}
+  /* keep LOGIN/profile reachable: right cluster doesn't collapse */
+  .tb-r{margin-left:auto}
+}

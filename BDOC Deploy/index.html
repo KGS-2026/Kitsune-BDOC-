@@ -7066,8 +7066,11 @@ window.initCursorCoords = initCursorCoords;
   // P111 (Travon spec): on touch devices (iPad/Android) drag is disabled and the bar is
   // PINNED bottom-center, splitting the screen. Desktop keeps full drag.
   if(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches){
+    // P112: raised above the two bottom news/status tickers (~60px stacked) so the
+    // bar is never covered by the scrolling feeds. z-index above ticker (95).
     cc.style.top='auto';cc.style.left='50%';cc.style.right='auto';
-    cc.style.bottom='10px';cc.style.transform='translateX(-50%)';
+    cc.style.bottom='68px';cc.style.transform='translateX(-50%)';
+    cc.style.zIndex='120';
     cc.style.cursor='default';cc.style.maxWidth='calc(100vw - 24px)';
     return;
   }
