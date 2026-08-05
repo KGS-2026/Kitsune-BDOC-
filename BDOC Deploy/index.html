@@ -434,7 +434,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p44</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" title="Global Threat Assessment — composite score from active conflicts, earthquakes, cyber, fires, aircraft activity" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p44</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -1547,7 +1547,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p106',              // MUST bump on ANY js/modules/* change — p106 = Causal Fusion Engine (outage probable-cause attribution)
+  _version: 'p114',              // MUST bump on ANY js/modules/* change — p114 = GTA audit trail (outage-watch pushes score changes incl. recovery)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
@@ -11043,22 +11043,32 @@ try{ // Phase 22: wrap so a DOM or parse error can't kill the 5-min setInterval
   // Calibrated so a normal background day ≈ 25-35 (MODERATE) and the current
   // multi-crisis environment (Ukraine, Gaza, Sudan, SCS, Hormuz) ≈ 55-70 (HIGH)
   let score=10;
-  score+=Math.min(eqCount*0.7,18);        // M4.5+ seismic — global avg ~20/day
-  score+=Math.min(gdeltCount*0.07,22);    // GDELT geo-coded conflict events
-  score+=Math.min(gdacsCount*2.5,10);     // GDACS orange/red disaster alerts
-  score+=Math.min(confZoneCount*0.8,12);  // analyst-defined conflict zones
-  score+=Math.min(fireCount*0.008,8);     // satellite fire hotspots (FIRMS)
-  score+=Math.min(cpThreat*0.12,7);       // chokepoint tension index
-  score+=Math.min(acCount*0.02,5);        // military+civil aircraft tracked
-  score+=Math.min(vesCount*0.005,4);      // AIS vessels tracked
+  // P114: capture per-component contributions so every score change is EXPLAINABLE
+  // (click the GTA pill → changelog of last 20 changes with cause). Never random.
+  const _c={};
+  _c.SEISMIC={v:Math.min(eqCount*0.7,18),d:eqCount+' quakes M4.5+ ('+eqSrc+')'};
+  _c.CONFLICT={v:Math.min(gdeltCount*0.07,22),d:gdeltCount+' conflict events ('+gdeltSrc+')'};
+  _c.DISASTER={v:Math.min(gdacsCount*2.5,10),d:gdacsCount+' GDACS orange/red'};
+  _c.ZONES={v:Math.min(confZoneCount*0.8,12),d:confZoneCount+' conflict zones'};
+  _c.FIRE={v:Math.min(fireCount*0.008,8),d:fireCount+' hotspots'};
+  _c.CHOKEPOINT={v:Math.min(cpThreat*0.12,7),d:'tension index '+cpThreat};
+  _c.AIRCRAFT={v:Math.min(acCount*0.02,5),d:acCount+' tracked'};
+  _c.MARITIME={v:Math.min(vesCount*0.005,4),d:vesCount+' vessels'};
+  score+=_c.SEISMIC.v+_c.CONFLICT.v+_c.DISASTER.v+_c.ZONES.v+_c.FIRE.v+_c.CHOKEPOINT.v+_c.AIRCRAFT.v+_c.MARITIME.v;
   // P102: live infrastructure outage component (OutageWatch sentinel, 0-25) —
   // carrier/grid/GPS outages are threat signal, not background noise
   const infraScore=_bSafe(()=>window.OutageWatch.score,0);
+  const _ow=window.OutageWatch||{};
+  const _owNames=_bSafe(()=>Object.values(_ow.active).map(o=>o.name).concat(Object.keys(_ow.statuspage||{}).filter(n=>_ow.statuspage[n]&&_ow.statuspage[n]!=='none').map(n=>n+':'+_ow.statuspage[n])),[]);
+  _c.INFRA={v:infraScore,d:_owNames.length?_owNames.slice(0,4).join(', '):'no active outages'};
   score+=infraScore;
   score=Math.min(Math.round(score),100);
 
   const level=score>=75?'CRITICAL':score>=55?'HIGH':score>=35?'ELEVATED':score>=20?'MODERATE':'LOW';
   const color=score>=75?'#DA3633':score>=55?'#ff6600':score>=35?'#E8B339':score>=20?'#2D72D2':'#3FB950';
+
+  // P114: event-driven audit trail — every score CHANGE is logged with its cause
+  _gtaLogAppend(score,level,_c);
 
   const el=id=>document.getElementById(id);
   if(el('gtaLevel')){el('gtaLevel').textContent=level;el('gtaLevel').style.color=color;}
@@ -11084,6 +11094,73 @@ try{ // Phase 22: wrap so a DOM or parse error can't kill the 5-min setInterval
   if(gw)gw.style.borderColor=color+'33';
 }catch(e){console.warn('[GTA] updateGTA error:',e);}
 } // end updateGTA
+
+// ═══ P114: GTA AUDIT TRAIL — explainable score changes ═══
+// Every updateGTA() run diffs per-component contributions against the last
+// logged entry; if the composite moved, the change is appended to a persisted
+// changelog (localStorage, last 20) with the dominant cause. Click the GTA
+// pill in the topbar → showGTALog() panel. Score changes are never random.
+function _gtaLogAppend(score,level,comps){
+try{
+  const KEY='bdoc_gta_log_v1';
+  let log=[];try{log=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(_){log=[]}
+  if(!Array.isArray(log))log=[];
+  const last=log.length?log[log.length-1]:null;
+  const compsFlat={};Object.keys(comps).forEach(k=>{compsFlat[k]={v:+comps[k].v.toFixed(1),d:comps[k].d}});
+  if(last&&last.s===score){
+    // score unchanged — refresh stored components silently so next diff is accurate
+    last.c=compsFlat;last.seen=Date.now();
+    localStorage.setItem(KEY,JSON.stringify(log));return;
+  }
+  // Determine dominant cause: biggest absolute component delta vs last entry
+  let cause='baseline (first reading this session)',causeDelta=0;
+  if(last&&last.c){
+    let best=null,bestAbs=0.4; // ignore sub-0.4pt noise as "cause"
+    Object.keys(compsFlat).forEach(k=>{
+      const prev=last.c[k]?last.c[k].v:0;
+      const d=compsFlat[k].v-prev;
+      if(Math.abs(d)>bestAbs){bestAbs=Math.abs(d);best={k,d};}
+    });
+    if(best){cause=best.k+' '+(best.d>0?'+':'')+best.d.toFixed(1)+' — '+compsFlat[best.k].d;causeDelta=best.d;}
+    else cause='minor multi-source drift';
+  }
+  log.push({t:Date.now(),s:score,prev:last?last.s:null,lv:level,cause:cause,c:compsFlat});
+  while(log.length>20)log.shift();
+  localStorage.setItem(KEY,JSON.stringify(log));
+}catch(e){console.warn('[GTA] log append error:',e);}
+}
+
+function showGTALog(){
+try{
+  let p=document.getElementById('gtaLogPanel');
+  if(p){p.remove();return;} // toggle
+  let log=[];try{log=JSON.parse(localStorage.getItem('bdoc_gta_log_v1')||'[]')}catch(_){log=[]}
+  p=document.createElement('div');
+  p.id='gtaLogPanel';
+  p.style.cssText='position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:99991;width:min(560px,calc(100% - 32px));max-height:60vh;overflow-y:auto;font-family:"JetBrains Mono",monospace;background:#0a0e14;border:1px solid rgba(232,179,73,0.3);border-radius:4px;box-shadow:0 12px 40px rgba(0,0,0,0.7);padding:0';
+  const rows=log.slice().reverse().map(e=>{
+    const d=e.prev==null?null:e.s-e.prev;
+    const dTxt=d==null?'—':(d>0?'+'+d:''+d);
+    const dCol=d==null?'#4a5068':d>0?'#DA3633':'#3FB950';
+    const lvCol=e.s>=75?'#DA3633':e.s>=55?'#ff6600':e.s>=35?'#E8B339':e.s>=20?'#2D72D2':'#3FB950';
+    const t=new Date(e.t);
+    const ts=t.toISOString().slice(5,10)+' '+t.toISOString().slice(11,16)+'Z';
+    return '<div style="display:flex;gap:10px;align-items:baseline;padding:7px 14px;border-bottom:1px solid #131826;font-size:10px">'
+      +'<span style="color:#4a5068;flex:0 0 78px">'+ts+'</span>'
+      +'<span style="color:'+lvCol+';font-weight:700;flex:0 0 30px;text-align:right">'+e.s+'</span>'
+      +'<span style="color:'+dCol+';flex:0 0 32px">'+dTxt+'</span>'
+      +'<span style="color:#7a8194;flex:1;word-break:break-word">'+String(e.cause||'').replace(/</g,'&lt;')+'</span>'
+      +'</div>';
+  }).join('');
+  p.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #1e2436;position:sticky;top:0;background:#0a0e14">'
+    +'<div><div style="font-size:7px;color:#4a5068;letter-spacing:2px">GTA AUDIT TRAIL</div>'
+    +'<div style="font-size:12px;color:#E8B339;font-weight:700;letter-spacing:1px">SCORE CHANGELOG · LAST '+log.length+' CHANGES</div></div>'
+    +'<div onclick="document.getElementById(\'gtaLogPanel\').remove()" style="cursor:pointer;color:#8b949e;font-size:16px;padding:0 4px">×</div></div>'
+    +(rows||'<div style="padding:16px 14px;font-size:10px;color:#4a5068">No score changes recorded yet this session. The GTA recomputes every 10 minutes and instantly on outage detection — changes will appear here with their cause.</div>')
+    +'<div style="padding:8px 14px;font-size:8px;color:#2a3044;border-top:1px solid #131826;letter-spacing:.4px">EVERY CHANGE ATTRIBUTED TO ITS DOMINANT COMPONENT · SEISMIC / CONFLICT / DISASTER / INFRA / FIRE / ZONES / CHOKEPOINT / AIR / MARITIME</div>';
+  document.body.appendChild(p);
+}catch(e){console.warn('[GTA] showGTALog error:',e);}
+}
 
 // ═══════════════════════════════════════════════════════════
 // AVIATION WEATHER — METAR per-base lookup (Phase 19b)

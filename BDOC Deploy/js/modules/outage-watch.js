@@ -297,8 +297,15 @@
       if (ind === 'minor') s += 2; else if (ind === 'major' || ind === 'critical') s += 4;
     });
     state.score = Math.min(s, 25);
-    // push GTA refresh so the pill reacts NOW, not in 3 hours
-    try { if (state.score > 0 && typeof updateGTA === 'function') updateGTA(); } catch (_) {}
+    // push GTA refresh so the pill reacts NOW, not in 3 hours.
+    // P114: fire on every recompute where the component CHANGED (including
+    // recovery back to 0) so the audit trail logs both spike and clear.
+    try {
+      if (state.score !== state._lastPushedScore && typeof updateGTA === 'function') {
+        state._lastPushedScore = state.score;
+        updateGTA();
+      }
+    } catch (_) {}
   }
 
   // ── 1. news-detect poll ──
