@@ -107,6 +107,25 @@ try{
   _bloom.uniforms.delta=0.9;
   _bloom.uniforms.sigma=3.0;
   _bloom.uniforms.stepSize=1.0;
+  // ═══ P110: ZOOM-ADAPTIVE BLOOM ═══
+  // Static bloom washes out bright terrain (snow/sunlit rock) at close zoom because those
+  // pixels cross the fixed threshold. Scale bloom by camera height: high altitude keeps the
+  // "alive" city-lights glow; close in, crush brightness/contrast/sigma so only genuine
+  // point-lights & markers bloom and terrain reads crisp. Travon 2026-08: "bloom too much zoomed in."
+  try{
+    const _clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+    const _tuneBloom=()=>{
+      const h=V.camera.positionCartographic.height;           // metres above ellipsoid
+      // t: 0 at/below 8km (fully toned down) → 1 at/above 300km (full glow)
+      const t=_clamp((h-8000)/(300000-8000),0,1);
+      _bloom.uniforms.brightness=-0.55+0.25*t;   // -0.55 close (strict) → -0.30 far (original)
+      _bloom.uniforms.contrast=128-9*t;          // 128 close → 119 far (original)
+      _bloom.uniforms.sigma=1.6+1.4*t;           // 1.6 close (tight) → 3.0 far (original)
+    };
+    _tuneBloom();
+    V.camera.changed.addEventListener(_tuneBloom);
+    V.camera.percentageChanged=0.15;             // fire changed more readily on zoom
+  }catch(e){console.warn('[BDOC bloom adaptive]',e)}
 }catch(e){console.warn('[BDOC bloom]',e)}
 // ═══ P68: PROFESSIONAL IMAGERY COLOR GRADE ═══
 // Stock ESRI World Imagery renders flat/desaturated in Cesium (the "default skin" every hobby
