@@ -532,6 +532,7 @@ if('serviceWorker' in navigator){
 <button class="eb" onclick="exportKML()" title="Export KML">KML</button>
 <button class="eb" onclick="exportGeoJSON()" title="Export GeoJSON">GEO</button>
 <button class="eb" onclick="captureScreen()" title="Screenshot">CAP</button>
+<button class="eb" onclick="BDOC.DeepLink.copy()" title="Copy a shareable link to this exact view — layers + camera. Anyone who opens it lands on the same picture." style="color:#4aa8ff;border-color:rgba(74,168,255,0.28)">&#128279; SHARE</button>
 <button class="eb" onclick="genPDF()" title="Generate Brief">PDF</button>
 <button class="eb" onclick="showCISAKEV()" title="CISA Known Exploited Vulnerabilities — active cyber threats" style="color:#DA3633;border-color:rgba(218,54,51,0.25)">CYBER</button>
 <button class="eb" onclick="showPolymarket()" title="Polymarket Geopolitics — live prediction markets (crowd probability)" style="color:#22c55e;border-color:rgba(34,197,94,0.25)">MKTS</button>
@@ -12459,6 +12460,7 @@ WiresharkBridge.connect = async function() {
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
 <script src="js/cesium-init.js?v=p68b"></script>
+<script src="js/deeplink.js?v=p115"></script>
 <!-- ═════════════════════════════════════════════════════════════════════════
      PHASE 16b (2026-05-13) — FIRST-RUN EXPERIENCE ("Grandma persona")
      On first app open: prompt for location → fly camera there → auto-enable weather radar.
