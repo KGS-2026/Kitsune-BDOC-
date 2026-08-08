@@ -116,11 +116,13 @@ try{
     const _clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
     const _tuneBloom=()=>{
       const h=V.camera.positionCartographic.height;           // metres above ellipsoid
-      // t: 0 at/below 8km (fully toned down) → 1 at/above 300km (full glow)
-      const t=_clamp((h-8000)/(300000-8000),0,1);
-      _bloom.uniforms.brightness=-0.55+0.25*t;   // -0.55 close (strict) → -0.30 far (original)
-      _bloom.uniforms.contrast=128-9*t;          // 128 close → 119 far (original)
-      _bloom.uniforms.sigma=1.6+1.4*t;           // 1.6 close (tight) → 3.0 far (original)
+      // P110b (Travon 2026-08, second pass — still too hot zoomed in): widen the toning band
+      // (floor 8km→40km) and crush harder at close range. t: 0 at/below 40km → 1 at/above 400km.
+      const t=_clamp((h-40000)/(400000-40000),0,1);
+      // below the floor, kill bloom almost entirely so only true point-lights/markers glow.
+      _bloom.uniforms.brightness=-0.75+0.45*t;   // -0.75 close (very strict) → -0.30 far (original)
+      _bloom.uniforms.contrast=136-17*t;         // 136 close (tight) → 119 far (original)
+      _bloom.uniforms.sigma=1.1+1.9*t;           // 1.1 close (very tight) → 3.0 far (original)
     };
     _tuneBloom();
     V.camera.changed.addEventListener(_tuneBloom);
