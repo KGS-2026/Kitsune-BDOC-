@@ -49,66 +49,85 @@ exports.handler = async (event) => {
     return null;
   };
 
+  // Shared collector — both sources dedupe into one incident list.
+  const seen = new Set();
+  const incidents = [];
+  let jitter = 0;
+  const pushIncident = (title, url, domain, seendate) => {
+    title = (title || '').trim();
+    if (!title || !OUTAGE_RX.test(title)) return;
+    const carrier = CARRIERS.find(c => c.rx.test(title));
+    if (!carrier) return;
+    const dkey = title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').slice(0, 55);
+    if (seen.has(dkey)) return;
+    seen.add(dkey);
+    const nationwide = NATION_RX.test(title);
+    let ll = geocode(title);
+    if (!ll) {
+      ll = [US_CENTROID[0] + (jitter % 3) * 0.9 - 0.9, US_CENTROID[1] + Math.floor(jitter / 3) * 1.1 - 1.1];
+      jitter++;
+    }
+    incidents.push({
+      _carrier: true, carrier: carrier.key, lat: ll[0], lon: ll[1],
+      title, url: url || '', domain: domain || '', seendate: seendate || '',
+      scope: nationwide ? 'nationwide' : 'regional', cyberFlag: CYBER_RX.test(title),
+    });
+  };
+
+  let tier = 'unavailable';
+
+  // ── TIER 1: Google News RSS (no rate limit, fast, fresh) ──
   try {
-    const q = encodeURIComponent('(outage OR "no service" OR "down") (T-Mobile OR AT&T OR Verizon OR cellular OR "cell service" OR "wireless network")');
-    const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=artlist&format=json&timespan=3h&maxrecords=75&sort=datedesc`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000), headers: { 'User-Agent': 'KitsuneGlobal/BDOC-8.0' } });
-    if (!res.ok) throw new Error('GDELT ' + res.status);
-    const data = await res.json();
-    const arts = Array.isArray(data.articles) ? data.articles : [];
-
-    const seen = new Set();
-    const incidents = [];
-    let jitter = 0;
-    for (const a of arts) {
-      const title = (a.title || '').trim();
-      if (!title || !OUTAGE_RX.test(title)) continue;
-      const carrier = CARRIERS.find(c => c.rx.test(title));
-      if (!carrier) continue;
-      const dkey = title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').slice(0, 55);
-      if (seen.has(dkey)) continue;
-      seen.add(dkey);
-
-      const nationwide = NATION_RX.test(title);
-      let ll = geocode(title);
-      if (!ll) {
-        // pin nationwide events near US centroid with slight jitter so multiple
-        // markers don't stack into one pixel
-        ll = [US_CENTROID[0] + (jitter % 3) * 0.9 - 0.9, US_CENTROID[1] + Math.floor(jitter / 3) * 1.1 - 1.1];
-        jitter++;
+    const rssUrl = 'https://news.google.com/rss/search?q=' +
+      encodeURIComponent('(T-Mobile OR AT&T OR Verizon OR cellular) (outage OR "no service" OR down) when:1d') +
+      '&hl=en-US&gl=US&ceid=US:en';
+    const r = await fetch(rssUrl, { signal: AbortSignal.timeout(7000), headers: { 'User-Agent': 'Mozilla/5.0 (compatible; KitsuneGlobal/BDOC-8.0)' } });
+    if (r.ok) {
+      const xml = await r.text();
+      const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
+      for (const it of items) {
+        const tm = it.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/);
+        const lm = it.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/);
+        const dm = it.match(/<source[^>]*>([\s\S]*?)<\/source>/);
+        const pm = it.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
+        if (tm) pushIncident(tm[1].replace(/&amp;/g, '&').replace(/&#39;/g, "'"), lm && lm[1], dm && dm[1], pm && pm[1]);
       }
-      incidents.push({
-        _carrier: true,
-        carrier: carrier.key,
-        lat: ll[0], lon: ll[1],
-        title,
-        url: a.url || '',
-        domain: a.domain || '',
-        seendate: a.seendate || '',
-        scope: nationwide ? 'nationwide' : 'regional',
-        cyberFlag: CYBER_RX.test(title),
-      });
-      if (incidents.length >= 40) break;
+      if (incidents.length) tier = 'google-news';
     }
+  } catch (e) { /* fall through to GDELT */ }
 
-    // Roll up outlet counts per carrier+scope so the client can show confidence
-    const rollup = {};
-    for (const i of incidents) {
-      const k = i.carrier + '|' + i.scope;
-      rollup[k] = (rollup[k] || 0) + 1;
+  // ── TIER 2: GDELT (backup — richer geo, but rate-limits this IP) ──
+  if (!incidents.length) try {
+    // CRITICAL GDELT SYNTAX: dash-words MUST be quoted ("T-Mobile") or GDELT
+    // rejects the ENTIRE query with "illegal character" and returns non-JSON.
+    // Unquoted T-Mobile / AT&T was why this returned zero on 2026-08-09.
+    const q = encodeURIComponent('(outage OR "no service" OR down) ("T-Mobile" OR "AT&T" OR Verizon OR cellular OR "cell service" OR "wireless network")');
+    const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=artlist&format=json&timespan=6h&maxrecords=75&sort=datedesc`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(7000), headers: { 'User-Agent': 'KitsuneGlobal/BDOC-8.0' } });
+    if (res.ok) {
+      // GDELT returns plain-text errors (429/illegal-char) with 200 + non-JSON body.
+      const raw = await res.text();
+      let data = null;
+      try { data = JSON.parse(raw); } catch (_) { data = null; }
+      const arts = data && Array.isArray(data.articles) ? data.articles : [];
+      for (const a of arts) pushIncident(a.title, a.url, a.domain, a.seendate);
+      if (incidents.length) tier = 'gdelt-carrier';
     }
-    for (const i of incidents) i.outlets = rollup[i.carrier + '|' + i.scope];
+  } catch (e) { /* graceful empty below */ }
 
-    return {
-      statusCode: 200,
-      headers: { ...headers, 'X-Source-Tier': 'gdelt-carrier', 'X-Incident-Count': String(incidents.length) },
-      body: JSON.stringify(incidents)
-    };
-  } catch (e) {
-    return {
-      statusCode: 200,
-      headers: { ...headers, 'Cache-Control': 'public, max-age=60', 'X-Source-Tier': 'unavailable', 'X-Error': String(e.message || '').slice(0, 120) },
-      body: JSON.stringify([])
-    };
-  }
+  // Roll up outlet counts per carrier+scope so the client can show confidence
+  const rollup = {};
+  for (const i of incidents) { const k = i.carrier + '|' + i.scope; rollup[k] = (rollup[k] || 0) + 1; }
+  for (const i of incidents) i.outlets = rollup[i.carrier + '|' + i.scope];
+
+  return {
+    statusCode: 200,
+    headers: {
+      ...headers,
+      'Cache-Control': incidents.length ? 'public, max-age=180' : 'public, max-age=60',
+      'X-Source-Tier': tier,
+      'X-Incident-Count': String(incidents.length)
+    },
+    body: JSON.stringify(incidents)
+  };
 };
