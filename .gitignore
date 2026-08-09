@@ -1,1 +1,7 @@
 BDOC Deploy/css/*.bak-*
+
+# Electron build output
+dist-electron/
+node_modules/
+"BDOC Deploy/dist-electron/"
+"BDOC Deploy/node_modules/"

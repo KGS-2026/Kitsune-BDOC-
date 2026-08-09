@@ -445,6 +445,8 @@ if('serviceWorker' in navigator){
 <div class="menu-drop-item" onclick="genPDF();closeMenus()"><span>Generate Intel Brief</span></div>
 <div class="menu-drop-sep"></div>
 <div class="menu-drop-item" onclick="captureScreen();closeMenus()"><span>Save Screenshot</span><span class="mdi-key">Ctrl+Shift+P</span></div>
+<div class="menu-drop-sep"></div>
+<div class="menu-drop-item" id="dlDesktopItem" onclick="downloadDesktop();closeMenus()"><span>⬇ Download Desktop App</span><span class="mdi-key">Win/Mac/Linux</span></div>
 </div>
 </div>
 <div class="menu-item">
@@ -2358,6 +2360,24 @@ function captureScreen(){
   if(V&&V.scene){try{V.render();V.scene.canvas.toBlob(function(b){if(b){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='bdoc-capture-'+Date.now()+'.png';a.click();URL.revokeObjectURL(a.href);msg('sy','<b>SCREENSHOT CAPTURED</b><br>Globe view saved. Share on social media.')}},'image/png')}catch(e){msg('al','<b>SCREENSHOT FAILED</b><br>Canvas tainted by cross-origin imagery. Try satellite basemap.');console.warn('[BDOC] Screenshot SecurityError:',e)}}
   setTimeout(()=>wm.classList.remove('show'),3000);EventLog.add('info','Screenshot captured');
 }
+// ═══ DESKTOP APP DOWNLOAD ═══
+// Detects OS, links to the matching installer on GitHub Releases. Hidden inside Electron.
+const BDOC_DESKTOP_VERSION='8.0.0';
+const BDOC_RELEASE_BASE='https://github.com/KGS-2026/Kitsune-BDOC-/releases/latest/download';
+function downloadDesktop(){
+  const p=(navigator.userAgentData&&navigator.userAgentData.platform||navigator.platform||'').toLowerCase();
+  const ua=navigator.userAgent.toLowerCase();
+  let file,label;
+  if(p.includes('win')||ua.includes('windows')){file=`BDOC-Setup-${BDOC_DESKTOP_VERSION}.exe`;label='Windows installer';}
+  else if(p.includes('mac')||ua.includes('mac os')){const arm=ua.includes('arm')||(navigator.userAgentData&&navigator.userAgentData.getHighEntropyValues);file=`BDOC-${BDOC_DESKTOP_VERSION}-${arm?'arm64':'x64'}.dmg`;label='macOS disk image';}
+  else if(ua.includes('linux')){file=`BDOC-${BDOC_DESKTOP_VERSION}-x86_64.AppImage`;label='Linux AppImage';}
+  else{file=`BDOC-Setup-${BDOC_DESKTOP_VERSION}.exe`;label='Windows installer';}
+  const url=`${BDOC_RELEASE_BASE}/${file}`;
+  try{window.open(url,'_blank');}catch(_){location.href=url;}
+  try{msg('sy',`<b>DOWNLOADING DESKTOP APP</b><br>${label} — ${file}<br>Grid-down capable: works offline, load your own data layers. If the download 404s the release isn't published yet — all releases: <a href="https://github.com/KGS-2026/Kitsune-BDOC-/releases" target="_blank" style="color:var(--kf)">here</a>.`);}catch(_){}
+}
+// Inside the packaged Electron app there's nothing to download — hide the item.
+try{if(navigator.userAgent.includes('Electron')){const el=document.getElementById('dlDesktopItem');if(el)el.style.display='none';}}catch(_){}
 // ═══ PDF BRIEF GENERATION ═══
 function genPDF(){
   if(!BDOC_Auth.canAccess('pdf')){showMo();return}
