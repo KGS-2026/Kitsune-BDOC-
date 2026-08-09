@@ -3224,11 +3224,51 @@ function togCat(el){
   }
 }
 function showMo(triggerLayer){
+  // P112: Contextual paywall — show which layer was locked, highlight the right tier card,
+  // and swap the headline so the user knows exactly what they're buying.
+  // Techniques from ATOC (#2) and IntelX (#1): per-item inline paywall, not generic wall.
+  const LAYER_NAMES = {
+    cyber:'Cyber Threat Feed',forcetrack:'Force Tracker',territory:'Territory Control',
+    imint:'IMINT Facility Cards',sat:'Satellite Imagery',sentinel:'Sentinel-2 Imagery',
+    warlive:'War Room Live',replay:'Historical Replay',pdf:'PDF Brief Generation',
+    vessels:'Maritime AIS',celltowers:'Cell Tower Map',substations:'Power Grid Layer',
+    pipelines:'Pipeline Infrastructure',gridinfra:'Grid Infrastructure',
+    airquality:'Air Quality Index',econintel:'Economic Intelligence',darkships:'Dark Vessel Tracking',
+    nucranges:'Nuclear Range Rings',fallout:'Fallout Plume Model',hazardbio:'Biohazard Layer',
+    ioc:'International Observers',landings:'Amphibious Landings',chokepoints:'Maritime Chokepoints',
+    milbases:'Military Bases',milairfields:'Military Airfields',alliances:'Alliance Map',
+  };
+  const LAYER_TIER = {
+    // analyst-only
+    replay:'analyst',pdf:'analyst',imint:'analyst',
+    // default: operator
+  };
+  const lName = triggerLayer ? (LAYER_NAMES[triggerLayer] || triggerLayer.replace(/-/g,' ').toUpperCase()) : null;
+  const requiredTier = triggerLayer ? (LAYER_TIER[triggerLayer] || 'operator') : 'operator';
+  const tierPrice = { operator:'$9.99/mo', analyst:'$29.99/mo' };
+  const tierLabel = { operator:'OPERATOR', analyst:'ANALYST' };
+
+  // Update headline to be specific
+  const h2 = document.querySelector('#moBg h2');
+  if(h2) h2.textContent = lName ? `🔒 ${lName} — ${tierLabel[requiredTier]} TIER` : 'UNLOCK FULL INTELLIGENCE';
+
+  // Highlight the right tier card (remove then add highlight)
+  document.querySelectorAll('#moBg .pc').forEach(el => el.style.outline = '');
+  const tIdx = {recon:0,operator:1,analyst:2,enterprise:3};
+  const card = document.querySelectorAll('#moBg .pc')[tIdx[requiredTier]||1];
+  if(card) card.style.outline = '2px solid var(--kf)';
+
   document.getElementById('moBg').classList.add('show');
-  // Phase 6: track paywall views so operator sees what locks people are hitting
+
+  // P112: ATOC pattern — analytics with exact layer + tier context
   try{
     if(typeof plausible==='function'){
-      plausible('Paywall Shown',{props:{trigger_layer:triggerLayer||'unknown',current_tier:(typeof BDOC_Auth!=='undefined'?BDOC_Auth.tier:'recon')}});
+      plausible('Paywall Shown',{props:{
+        trigger_layer:triggerLayer||'unknown',
+        required_tier:requiredTier,
+        tier_price:tierPrice[requiredTier]||'unknown',
+        current_tier:(typeof BDOC_Auth!=='undefined'?BDOC_Auth.tier:'recon')
+      }});
     }
   }catch(_){}
 }
