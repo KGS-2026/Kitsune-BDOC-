@@ -92,8 +92,38 @@ s.globe.nightFadeOutDistance=1e7;s.globe.nightFadeInDistance=5e7;
 // Sky atmosphere — clean blue glow, no color artifacts
 s.skyAtmosphere.hueShift=0.0;s.skyAtmosphere.saturationShift=0.0;s.skyAtmosphere.brightnessShift=0.0;
 s.skyAtmosphere.show=true;
-// High-DPI rendering — sharper text and labels
-if(window.devicePixelRatio>1){s.globe.maximumScreenSpaceError=1.5}else{s.globe.maximumScreenSpaceError=2}
+// ── P111: GPU-ADAPTIVE QUALITY LADDER (Radio Garden technique, ported to Cesium) ──
+// Three-tier: Tier 1 (weak mobile) → low res, Tier 2 (mid) → standard, Tier 3 (desktop/M-series) → retina.
+// Radio Garden proved this doubles/triples frame rate on weak hardware with imperceptible visual cost.
+// detect-gpu (MIT) not available as CDN module here — use WebGL renderer heuristic instead.
+(function applyGPUQuality() {
+  try {
+    const canvas = V.scene.canvas;
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    const renderer = (gl && (gl.getExtension('WEBGL_debug_renderer_info') || {UNMASKED_RENDERER_WEBGL: null})) || {};
+    const rStr = (renderer.UNMASKED_RENDERER_WEBGL ? gl.getParameter(renderer.UNMASKED_RENDERER_WEBGL) : '') || '';
+    // Tier detection: Tier 3 = discrete GPU / Apple Silicon, Tier 1 = mobile/integrated
+    const isMobile = /android|iphone|ipad|mobile/i.test(navigator.userAgent);
+    const isLowGPU = /Mali-G[0-9]{2}[^0-9]|Mali-T|PowerVR|SGX|Adreno [0-9]{3}[^0-9]/i.test(rStr) || isMobile;
+    const isHighGPU = /NVIDIA|Radeon RX|GeForce|Intel Iris|Apple M[0-9]/i.test(rStr) || (!isMobile && !isLowGPU);
+    const tier = isHighGPU ? 3 : (isLowGPU ? 1 : 2);
+    const dpr = window.devicePixelRatio || 1;
+    // Quality settings per tier
+    const Q = {
+      1: { resScale: Math.min(dpr, 1.0), sse: 2.5, fog: 0.000025 },   // weak mobile — cut res, coarser tiles
+      2: { resScale: Math.min(dpr, 1.5), sse: 2.0, fog: 0.000015 },   // mid — current defaults
+      3: { resScale: Math.min(dpr, 2.0), sse: 1.5, fog: 0.000010 },   // desktop/retina
+    };
+    const q = Q[tier];
+    V.scene.globe.maximumScreenSpaceError = q.sse;
+    V.resolutionScale = q.resScale;
+    V.scene.fog.density = q.fog;
+    window._bdocGPUTier = tier;
+    console.log('[BDOC P111] GPU tier', tier, '| resScale', q.resScale, '| SSE', q.sse, '| renderer:', rStr.slice(0, 60) || '(hidden)');
+    EventLog.add('info', 'GPU quality tier ' + tier + ' applied');
+  } catch(e) { console.warn('[BDOC P111] GPU ladder:', e.message); }
+})();
+
 // Anti-aliasing
 s.postProcessStages.fxaa.enabled=true;
 // ═══ BLOOM — glow on bright markers/city-lights (spike 2026-06-25, the "alive" aesthetic) ═══
@@ -421,8 +451,30 @@ V.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(50,25,18000000),durati
     clearErrorOverlayAndRetry();
   });
 
-  // Debug helper: window.BDOC.diagnoseRender() — dump scene contents
-  window.BDOC=window.BDOC||{};
+  // ── P111: webglcontextlost/restored recovery (Radio Garden technique) ──
+  // Mobile Chrome drops WebGL contexts on tab switch. Without this the globe goes permanently
+  // blank — users close the tab thinking the app is broken. Radio Garden re-adds all layers
+  // on webglcontextrestored; we do the same by re-triggering layer refreshes.
+  V.scene.canvas.addEventListener('webglcontextlost', function(e) {
+    e.preventDefault();
+    console.warn('[BDOC P111] WebGL context lost — waiting for restore');
+    EventLog.add('crit', 'WebGL context lost (tab suspend or GPU reset) — will auto-recover');
+    af('var(--yl)', 'WebGL context lost — recovering...');
+  });
+  V.scene.canvas.addEventListener('webglcontextrestored', function() {
+    console.warn('[BDOC P111] WebGL context restored — triggering layer refresh');
+    EventLog.add('info', 'WebGL context restored — refreshing layers');
+    af('var(--gn)', 'Globe restored — refreshing layers');
+    // Give Cesium 2s to fully reinitialize its GL state, then nudge active layers to redraw
+    setTimeout(function() {
+      try { if(V && V.scene) V.scene.requestRender(); } catch(_) {}
+      // Re-trigger currently active layers — they'll re-fetch and re-add entities
+      if(typeof loadEQ === 'function' && layers && layers.eq)   try { loadEQ(); } catch(_) {}
+      if(typeof loadFires === 'function' && layers && layers.fire) try { loadFires(); } catch(_) {}
+      if(typeof loadAircraft === 'function' && layers && layers.air) try { loadAircraft(); } catch(_) {}
+    }, 2000);
+  });
+
   window.BDOC.diagnoseRender=function(){
     const prims=V.scene.primitives;
     const tilesets=[];

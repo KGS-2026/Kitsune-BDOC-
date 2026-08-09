@@ -12832,6 +12832,53 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
   if(document.readyState==='complete')setTimeout(run,800);
   else window.addEventListener('load',()=>setTimeout(run,800));
 })();
+
+// ═══ P111: BDOC.DeepLink.copy() — URL-as-state share link writer ═══
+// Guerillamap technique: every view encodes camera + active layers into a URL
+// that anyone can open to land on exactly the same picture.
+// The SHARE button (line 535) already calls this — it just had no implementation.
+(function _bdocDeepLinkWriter(){
+  window.BDOC = window.BDOC || {};
+  window.BDOC.DeepLink = {
+    build() {
+      try {
+        const qs = new URLSearchParams();
+        // Camera position
+        if (V && V.camera) {
+          const pos = V.camera.positionCartographic;
+          if (pos) {
+            const lat = Cesium.Math.toDegrees(pos.latitude).toFixed(5);
+            const lon = Cesium.Math.toDegrees(pos.longitude).toFixed(5);
+            const h   = Math.round(pos.height);
+            qs.set('fly', lat + ',' + lon + ',' + h);
+          }
+        }
+        // Active layers — collect all [data-layer].on elements
+        const activeLayers = [...document.querySelectorAll('[data-layer].on')]
+          .map(el => el.dataset.layer)
+          .filter(Boolean)
+          .slice(0, 20); // cap URL length
+        if (activeLayers.length) qs.set('layers', activeLayers.join(','));
+        return location.origin + location.pathname + '?' + qs.toString();
+      } catch(e) {
+        console.warn('[BDOC DeepLink.build]', e);
+        return location.href;
+      }
+    },
+    copy() {
+      const url = this.build();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          if (typeof af === 'function') af('var(--bl)', '📎 Share link copied — paste anywhere to share this exact view');
+        }).catch(() => { prompt('Copy this link:', url); });
+      } else {
+        prompt('Copy this link:', url);
+      }
+    }
+  };
+  console.log('[BDOC P111] DeepLink writer installed — BDOC.DeepLink.copy() ready');
+})();
+
 </script>
 </body>
 </html>
