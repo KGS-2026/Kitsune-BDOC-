@@ -116,13 +116,16 @@ try{
     const _clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
     const _tuneBloom=()=>{
       const h=V.camera.positionCartographic.height;           // metres above ellipsoid
-      // P110b (Travon 2026-08, second pass — still too hot zoomed in): widen the toning band
-      // (floor 8km→40km) and crush harder at close range. t: 0 at/below 40km → 1 at/above 400km.
+      // P110c (Travon 2026-08, THIRD pass — tuning curves still bloomed terrain zoomed in):
+      // stop trying to tune the threshold at close range and just switch bloom OFF below 40km.
+      // Terrain reads perfectly crisp zoomed in; the glow returns as you pull back to altitude.
+      if(h<40000){ _bloom.enabled=false; return; }
+      _bloom.enabled=true;
+      // 40km → 400km fade band back to the original "alive" look.
       const t=_clamp((h-40000)/(400000-40000),0,1);
-      // below the floor, kill bloom almost entirely so only true point-lights/markers glow.
-      _bloom.uniforms.brightness=-0.75+0.45*t;   // -0.75 close (very strict) → -0.30 far (original)
-      _bloom.uniforms.contrast=136-17*t;         // 136 close (tight) → 119 far (original)
-      _bloom.uniforms.sigma=1.1+1.9*t;           // 1.1 close (very tight) → 3.0 far (original)
+      _bloom.uniforms.brightness=-0.6+0.30*t;   // -0.60 near band → -0.30 far (original)
+      _bloom.uniforms.contrast=130-11*t;         // 130 near → 119 far (original)
+      _bloom.uniforms.sigma=1.4+1.6*t;           // 1.4 near → 3.0 far (original)
     };
     _tuneBloom();
     V.camera.changed.addEventListener(_tuneBloom);
