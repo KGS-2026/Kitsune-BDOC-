@@ -5707,9 +5707,10 @@ async function loadCyberAttacks(){
   const targets=attackHotspots.filter(h=>h.intensity!=='SOURCE');
   if(targets.length>0){
     const arcTypes=[
-      {name:'DDoS',col:'#DA3633',width:2.2,glow:0.5},
-      {name:'Intrusion',col:'#E8B339',width:1.8,glow:0.4},
-      {name:'APT/Recon',col:'#2D72D2',width:1.5,glow:0.45},
+      // P111a: bloom reduced — 0.5/0.4/0.45 was too heavy when zoomed in
+      {name:'DDoS',col:'#DA3633',width:2.2,glow:0.18},
+      {name:'Intrusion',col:'#E8B339',width:1.8,glow:0.15},
+      {name:'APT/Recon',col:'#2D72D2',width:1.5,glow:0.16},
     ];
     sources.forEach(src=>{
       // Pick 2-4 targets per source for visual density (NETSCOUT-style)
@@ -9415,7 +9416,7 @@ async function startNavigation(){
         positions:positionsCart,
         width:9,
         material:new Cesium.PolylineGlowMaterialProperty({
-          glowPower:0.35,
+          glowPower:0.12, // P111a: was 0.35 — too bright zoomed in
           color:Cesium.Color.fromCssColorString('#1A73E8') // Google Maps blue
         }),
         clampToGround:true
@@ -12910,6 +12911,43 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
     }
   };
   console.log('[BDOC P111] DeepLink writer installed — BDOC.DeepLink.copy() ready');
+})();
+
+// ═══ P111b: Live URL-as-state — guerillamap pattern ═══
+// Camera + active layers are written into the address bar on every camera moveEnd.
+// history.replaceState (never pushState) — back button stays clean.
+// Net effect: every screenshot, every shared tab URL = a reproducible workspace.
+// Zero cost per navigation since we never push history entries.
+(function _bdocLiveUrl(){
+  let _liveUrlTimer = null;
+  const writeUrl = () => {
+    try {
+      if (!window.BDOC || !window.BDOC.DeepLink) return;
+      const url = window.BDOC.DeepLink.build();
+      if (url !== location.href) history.replaceState({}, '', url);
+    } catch(e) {}
+  };
+  const scheduleWrite = () => {
+    clearTimeout(_liveUrlTimer);
+    _liveUrlTimer = setTimeout(writeUrl, 800); // debounce: don't thrash on continuous pan
+  };
+  // Wire after Cesium is ready
+  const attach = () => {
+    if (typeof V !== 'undefined' && V && V.camera) {
+      V.camera.moveEnd.addEventListener(scheduleWrite);
+      // Also update when layers toggle
+      document.addEventListener('click', e => {
+        if (e.target && e.target.closest && e.target.closest('[data-layer]')) {
+          setTimeout(scheduleWrite, 100);
+        }
+      }, { passive: true });
+      console.log('[BDOC P111b] Live URL updater active');
+    } else {
+      setTimeout(attach, 1000);
+    }
+  };
+  if (document.readyState === 'complete') setTimeout(attach, 2000);
+  else window.addEventListener('load', () => setTimeout(attach, 2000));
 })();
 
 </script>
