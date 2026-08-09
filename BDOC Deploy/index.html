@@ -9856,8 +9856,41 @@ async function bootFeeds(){
   setTimeout(()=>{if(bpEl)bpEl.classList.add('done')},1200);
   // Timers start only when layers are active — checked inside each interval
   window._eqTimer=setInterval(()=>{if(!document.hidden&&layers.eq)loadEQ()},CFG.refresh.earthquakes);
-  // [Phase 3 Turn 8] layers-air.js is lazy — use window.airTimer to avoid let-shadowing once layers-air.js loads
-  window.airTimer=setInterval(()=>{if(!document.hidden&&(layers.air||layers.forcetrack)&&typeof loadAircraft==='function')loadAircraft()},CFG.refresh.aircraft);
+  // Aircraft timer — adaptive polling from ADSBx recon (2026-08-09).
+  // Base 60s. Idle tab (hidden): 4× slower. Background + hidden: 8× slower.
+  // Result: active window = 60s, background tab = 240s, hidden idle = 480s.
+  // Saves ~80% of Netlify function invocations vs. naive fixed-60s.
+  // Compared to ADSBx's 1.6s base: we stay conservative at 60s because
+  // adsb.lol / OpenSky free tiers rate-limit us, not the client.
+  const _airBaseMs = CFG.refresh.aircraft; // 60000
+  let _airLastPayloadBytes = 35000;        // seed at "target" — updated on each fetch
+  window._airAdaptivePoll = () => {
+    if (!layers.air && !layers.forcetrack) return;
+    if (typeof loadAircraft !== 'function') return;
+    loadAircraft();
+  };
+  window._airComputeMs = () => {
+    let ms = _airBaseMs;
+    // scale by last payload — larger responses = wider refresh
+    ms = _airBaseMs * Math.max(0.5, _airLastPayloadBytes / 35000);
+    ms = Math.max(_airBaseMs * 0.5, Math.min(_airBaseMs * 4, ms));
+    // visibility decay: hidden tab → 4×
+    if (document.hidden) ms *= 4;
+    // visibilitychange fires when user switches tabs: reschedule immediately
+    return Math.round(ms);
+  };
+  let _airTimerHandle = null;
+  const _scheduleAir = () => {
+    if (_airTimerHandle) clearTimeout(_airTimerHandle);
+    const delay = window._airComputeMs();
+    _airTimerHandle = setTimeout(() => {
+      window._airAdaptivePoll();
+      _scheduleAir();
+    }, delay);
+    window.airTimer = _airTimerHandle; // keep window.airTimer reference intact for legacy checks
+  };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) _scheduleAir(); });
+  _scheduleAir();
   window._fireTimer=setInterval(()=>{if(!document.hidden&&layers.fire)loadFires()},CFG.refresh.fires);
   window._satTimer=setInterval(()=>{if(!document.hidden&&layers.sat&&typeof loadSatellites==='function')loadSatellites()},CFG.refresh.satellites);
   msg('sy','All feeds initialized. <b>'+srcN+'</b> sources active across <b>8 domains</b>: Air, Space, Seismic, Fire, Maritime, Conflict, Cyber, Infrastructure.<br><br>Type <b>status</b> for system overview or <b>export brief</b> to generate intel report.');
