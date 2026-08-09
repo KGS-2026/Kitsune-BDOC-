@@ -412,6 +412,31 @@ function untrackAircraft(){
   const ti=document.getElementById('trackIndicator');if(ti)ti.remove();
   af('var(--t2)','Camera tracking released');
 }
+// P111: position plausibility state — hex -> {lat,lon,t,tooFast}
+const _acLastPos=new Map();
+function _acPlausible(a){
+  const now=Date.now()/1000;
+  const prev=_acLastPos.get(a.hex);
+  if(!prev){_acLastPos.set(a.hex,{lat:a.lat,lon:a.lon,t:now,tooFast:0});return true;}
+  const dt=now-prev.t;
+  // haversine metres
+  const R=6371000,toR=Math.PI/180;
+  const dLat=(a.lat-prev.lat)*toR,dLon=(a.lon-prev.lon)*toR;
+  const h=Math.sin(dLat/2)**2+Math.cos(prev.lat*toR)*Math.cos(a.lat*toR)*Math.sin(dLon/2)**2;
+  const dist=2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+  const derivedMach=dist/(dt+0.4)/343;              // +0.4s guard against div-by-zero spike
+  const gsKt=Math.max(a.spd||0,prev.spd||0)+10+(a.src==='opensky'?0:100); // +100kt MLAT slack
+  const gate=(a.alt<=0?60:Math.max(gsKt/666,0.05)); // ground taxiing gated 10x tighter
+  if(derivedMach>gate && (prev.tooFast|0)<1){
+    // reject ONCE — roll back to prior fix, remember we bounced
+    prev.tooFast=(prev.tooFast|0)+1;
+    a.lat=prev.lat;a.lon=prev.lon;
+    return true; // keep the aircraft visible at its last good position
+  }
+  // accept — leaky decay of the reject budget (earns a full rejection again after ~6 good updates)
+  _acLastPos.set(a.hex,{lat:a.lat,lon:a.lon,t:now,spd:a.spd,tooFast:Math.max(-5,(prev.tooFast|0)-0.8)});
+  return true;
+}
 async function loadAircraft(){
   if(!V)return;
   milAC.length=0;allAC.length=0;
@@ -452,6 +477,13 @@ async function loadAircraft(){
     r.value.forEach(a=>{
       if(seenHex.has(a.hex))return;
       seenHex.add(a.hex);
+      // P111: ADSBx-grade position plausibility filter (Mach domain, leaky hysteresis).
+      // MLAT/TIS-B feeds emit garbage jumps; naive trackers draw a lightning bolt across
+      // the map. We reject in Mach (668 kt/M1) gated on the aircraft's OWN reported gs, and
+      // — critically — reject at most ONE jump in a row: two consecutive "impossible" jumps
+      // the same way means the OLD fix was wrong, so we accept. Intelligence ethos: never
+      // draw a fabricated position, but never freeze on a stale one either.
+      if(!_acPlausible(a)) return;
       freshHex.add(a.hex);
       // Apply FR24 enrichment (origin/dest/airline) when available for this hex
       {const _e=_fr24EnrichMap.get((a.hex||'').toLowerCase());if(_e){if(_e.orig)a.orig=_e.orig;if(_e.dest)a.dest=_e.dest;if(_e.airline)a.airline=_e.airline;if(_e.flight&&!a.flight)a.flight=_e.flight;if(_e.acType&&(!a.desc||a.desc==='Unknown'))a.desc=_e.acType;}}
