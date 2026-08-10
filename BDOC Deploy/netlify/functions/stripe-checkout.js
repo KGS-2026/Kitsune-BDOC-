@@ -49,10 +49,12 @@ exports.handler = async (event) => {
     // Stripe promotion code. Whitelisted to prevent arbitrary code probing. Non-fatal:
     // on any failure we fall back to manual promo entry on the Checkout page.
     let resolvedPromo = null;
-    const PROMO_WHITELIST = ['MILITARY50', 'VETERAN50', 'GWOT50'];
-    if (promoCode && PROMO_WHITELIST.includes(String(promoCode).toUpperCase())) {
+    const PROMO_WHITELIST = ['MILITARY50', 'VETERAN50', 'GWOT50', 'YUT50'];
+    // normalize "YUT/50" / "YUT 50" -> "YUT50" before whitelist check + Stripe lookup
+    const normalizedPromo = promoCode ? String(promoCode).toUpperCase().replace(/[\s/\\-]+/g, '') : '';
+    if (normalizedPromo && PROMO_WHITELIST.includes(normalizedPromo)) {
       try {
-        const found = await stripe.promotionCodes.list({ code: String(promoCode).toUpperCase(), active: true, limit: 1 });
+        const found = await stripe.promotionCodes.list({ code: normalizedPromo, active: true, limit: 1 });
         if (found.data.length) resolvedPromo = found.data[0].id;
       } catch (e) { console.warn('[stripe-checkout] promo lookup failed:', e.message); }
     }

@@ -2367,14 +2367,14 @@ const BDOC_RELEASE_BASE='https://github.com/KGS-2026/Kitsune-BDOC-/releases/late
 function downloadDesktop(){
   const p=(navigator.userAgentData&&navigator.userAgentData.platform||navigator.platform||'').toLowerCase();
   const ua=navigator.userAgent.toLowerCase();
-  let file,label,note='';
-  if(p.includes('win')||ua.includes('windows')){file=`BDOC-Windows-Portable-${BDOC_DESKTOP_VERSION}.zip`;label='Windows portable';note='Unzip anywhere, then run <b>KGS BDOC.exe</b>. No install needed.';}
-  else if(p.includes('mac')||ua.includes('mac os')){file=`BDOC-Windows-Portable-${BDOC_DESKTOP_VERSION}.zip`;label='macOS build';note='macOS build is coming next release — grab the Windows/Linux build meanwhile, or check <a href="https://github.com/KGS-2026/Kitsune-BDOC-/releases" target="_blank" style="color:var(--kf)">all releases</a>.';}
-  else if(ua.includes('linux')){file=`BDOC-${BDOC_DESKTOP_VERSION}-x86_64.AppImage`;label='Linux AppImage';note='chmod +x then run it.';}
-  else{file=`BDOC-Windows-Portable-${BDOC_DESKTOP_VERSION}.zip`;label='Windows portable';note='Unzip, run KGS BDOC.exe.';}
+  let file,label;
+  if(p.includes('win')||ua.includes('windows')){file=`BDOC-Windows-Portable-${BDOC_DESKTOP_VERSION}.zip`;label='Windows app (portable ZIP — unzip and run "KGS BDOC.exe", no install needed)';}
+  else if(p.includes('mac')||ua.includes('mac os')){file=`BDOC-Windows-Portable-${BDOC_DESKTOP_VERSION}.zip`;label='macOS build is coming soon — grabbing the portable build meanwhile';}
+  else if(ua.includes('linux')){file=`BDOC-${BDOC_DESKTOP_VERSION}-x86_64.AppImage`;label='Linux AppImage (chmod +x then run)';}
+  else{file=`BDOC-Windows-Portable-${BDOC_DESKTOP_VERSION}.zip`;label='Windows app (portable ZIP)';}
   const url=`${BDOC_RELEASE_BASE}/${file}`;
   try{window.open(url,'_blank');}catch(_){location.href=url;}
-  try{msg('sy',`<b>DOWNLOADING DESKTOP APP</b><br>${label} — ${file}<br>${note}<br>Grid-down capable: works offline, load your own data layers. All builds: <a href="https://github.com/KGS-2026/Kitsune-BDOC-/releases" target="_blank" style="color:var(--kf)">here</a>.`);}catch(_){}
+  try{msg('sy',`<b>DOWNLOADING DESKTOP APP</b><br>${label}<br>File: ${file}<br>Grid-down capable: works offline, load your own data layers. All builds: <a href="https://github.com/KGS-2026/Kitsune-BDOC-/releases" target="_blank" style="color:var(--kf)">here</a>.`);}catch(_){}
 }
 // Inside the packaged Electron app there's nothing to download — hide the item.
 try{if(navigator.userAgent.includes('Electron')){const el=document.getElementById('dlDesktopItem');if(el)el.style.display='none';}}catch(_){}
@@ -3322,8 +3322,9 @@ function submitPromoCode(){
   try{
     const input=document.getElementById('promoInput');
     const errEl=document.getElementById('promoErr');
-    const code=(input.value||'').trim().toUpperCase();
-    const validCodes=['MILITARY50','VETERAN50','GWOT50'];
+    // normalize: strip slashes/spaces so "YUT/50" and "YUT 50" both resolve to YUT50
+    const code=(input.value||'').trim().toUpperCase().replace(/[\s/\\-]+/g,'');
+    const validCodes=['MILITARY50','VETERAN50','GWOT50','YUT50'];
     if(!code){errEl.textContent='Please enter a promo code.';errEl.style.display='block';return}
     if(!validCodes.includes(code)){errEl.textContent='Invalid promo code. Check your code and try again.';errEl.style.display='block';return}
     // Store promo in localStorage
