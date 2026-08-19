@@ -1168,6 +1168,8 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <div class="ctx-item" onclick="ctxAction('bloodhound_to')" style="color:#00ff99">🦊 FOXEYE TO Here</div>
 <div class="ctx-item" onclick="ctxAction('nuke')" style="color:#ff2200">☢ Nuclear Detonation</div>
 <div class="ctx-item" onclick="ctxAction('clearnuke')" style="color:#7a8194">✕ Clear Detonation(s)</div>
+<div class="ctx-item" onclick="ctxAction('watchzone')" style="color:#E8B349">⌖ Watch This Area</div>
+<div class="ctx-item" onclick="ctxAction('unwatchzone')" style="color:#7a8194">✕ Remove Watch Zone</div>
 <div class="ctx-sep"></div>
 <!-- Quick markup (always visible) -->
 <div class="ctx-item" onclick="ctxAction('comment')">✎ Add Comment / Pin</div>
@@ -1551,7 +1553,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p114',              // MUST bump on ANY js/modules/* change — p114 = GTA audit trail (outage-watch pushes score changes incl. recovery)
+  _version: 'p118',              // MUST bump on ANY js/modules/* change — p118 = watch-zones module (pin+radius geofenced multi-source sweep)
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
@@ -8322,6 +8324,24 @@ function ctxAction(action){
       else af('var(--t3)','No active detonation to clear');
       break;
     }
+    case 'watchzone':{
+      // P118: user-defined watch zone — pin + radius, 5-min multi-source sweep
+      const wzIn=prompt('Watch zone radius (km) — optionally add a name after a comma:\n\ne.g.  "150"  or  "100, Kharkiv AO"','100');
+      if(wzIn===null)break;
+      const wzParts=wzIn.split(',');
+      const wzRad=parseFloat(wzParts[0])||100;
+      const wzName=wzParts.slice(1).join(',').trim();
+      af('#E8B349','Arming watch zone\u2026');
+      BDOC.LazyLoader.load('watch-zones')
+        .then(()=>window.WatchZones.add(lat,lon,wzRad,wzName))
+        .catch(e=>{console.warn('[lazy watch-zones]',e);af('var(--rd)','Failed to load watch-zone module')});
+      break;
+    }
+    case 'unwatchzone':{
+      if(window.WatchZones){window.WatchZones.removeAt(lat,lon)}
+      else af('var(--t3)','No watch zones armed');
+      break;
+    }
     case 'measure':{
       if(!window._measureStart){
         window._measureStart={lat,lon};
@@ -9972,6 +9992,12 @@ async function bootFeeds(){
   // ISPs, clouds, payment rails, GPS, FAA, grid — news-detect every 3 min + statuspage
   // sweep every 2 min. Born from the T-Mobile outage BDOC missed (2026-07-27).
   setTimeout(()=>{BDOC.LazyLoader.load('outage-watch').catch(e=>console.warn('[Boot] outage-watch load failed:',e))},3500);
+  // P118: WATCH ZONES — re-arm persisted user watch zones (pin+radius multi-source sweep).
+  // Only pay the module cost if the user actually has zones saved.
+  setTimeout(()=>{try{
+    const wz=JSON.parse(localStorage.getItem('bdoc_watch_zones')||'[]');
+    if(Array.isArray(wz)&&wz.length)BDOC.LazyLoader.load('watch-zones').catch(e=>console.warn('[Boot] watch-zones load failed:',e));
+  }catch(_){}} ,4500);
   // Auto-enable 3D terrain for Google Earth-quality rendering
   try{toggle3DTerrain();const tb=document.getElementById('btnTerrain');if(tb)tb.classList.add('bm-active')}catch(e){console.warn('[Boot] Terrain auto-enable failed:',e)}
   // Register camera.changed listener for overview map + scale legend.
