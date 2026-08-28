@@ -1560,7 +1560,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p118',              // MUST bump on ANY js/modules/* change — p118 = watch-zones module (pin+radius geofenced multi-source sweep)
+  _version: 'p120',              // MUST bump on ANY js/modules/* change — p120 = warlive source swap (GDELT dead → proxy-newsgeo) + media cards with photo/video/multi-source + honest uncertainty circles
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];

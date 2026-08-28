@@ -82,12 +82,16 @@ window.loadWarLive = async function () {
         arrow: delta > 0.15 ? '▲' : delta < -0.15 ? '▼' : '' });
       // GDELT throttles datacenter IPs → Netlify Lambda gets 'fetch failed' (verified in prod),
       // while residential browsers pass. So: browser-direct PRIMARY, proxy fallback, wiki tertiary.
+      // P120: GDELT's API is now fully dead (see the source-swap note below), so the
+      // first attempt is guaranteed to fail. Timeout cut 10s→3s so the circuit
+      // breaker trips fast instead of stalling the trend badges for 10 seconds on
+      // every single page load. The wiki-pageview tertiary path still works.
       let gdeltOk = true; // when GDELT direct fails once, it'll fail for the whole session — skip the 5.5s pacing
       const fetchTrend = async (z) => {
         if (gdeltOk) {
           const direct = 'https://api.gdeltproject.org/api/v2/doc/doc?query=' + encodeURIComponent(tq[z.id] || z.id) + '&mode=timelinevol&format=json&timespan=7d';
           try {
-            const r = await fetch(direct, { signal: AbortSignal.timeout(10000) });
+            const r = await fetch(direct, { signal: AbortSignal.timeout(3000) });
             const d = await r.json();
             const pts = (d && d.timeline && d.timeline[0] && d.timeline[0].data) || [];
             if (pts.length) return pts.map(p => ({ t: p.date, v: p.value }));
@@ -141,33 +145,148 @@ window.loadWarLive = async function () {
   // ── 1. GDELT live war reporting (single request, zone-matched) ──
   // p103b: fetch in its own try so a throttled/failed GDELT artlist can't kill
   // the anchor loop — theaters must always render (trend badge + card need a home).
+  // P120: SOURCE SWAP — GDELT's API is dead (verified 2026-06-09: connection
+  // accepted, zero bytes returned, >30s, from both this droplet and Netlify egress,
+  // while www.gdeltproject.org 301s fine). Every call returned an empty article
+  // list, so this layer plotted nothing and the operator correctly reported "no
+  // live feed". Replaced with proxy-newsgeo: 7 major outlets, multi-source failure
+  // isolation, cross-outlet corroboration, gazetteer geocoding with an honest
+  // uncertainty radius, and — the part GDELT never had — a real IMAGE per event.
   const byZone = {};
+  let mediaEvents = [];
+  let feedStatus = 'down';
   try {
-    const q = encodeURIComponent('(strike OR shelling OR offensive OR drone OR missile OR airstrike OR frontline OR casualties)');
-    const url = 'https://api.gdeltproject.org/api/v2/doc/doc?query=' + q + '&mode=artlist&format=json&timespan=24h&maxrecords=200&sort=datedesc';
-    const res = await safeFetch('warlive', 'conflicts', url, { feedType: 'news', staleOk: true });
+    const res = await safeFetch('warlive', 'conflicts',
+      '/.netlify/functions/proxy-newsgeo?max=160', { feedType: 'news', staleOk: true });
     const d = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
-    const arts = (d && d.articles) || [];
-    // bucket articles into theaters by title match
-    arts.forEach(a => {
-      const t = a.title || '';
+    const feats = (d && d.features) || [];
+    feedStatus = (d && d._status) || 'down';
+    mediaEvents = feats.map(f => ({
+      title: f.properties.name,
+      url: f.properties.url,
+      domain: f.properties.domain,
+      img: f.properties.img,
+      video: f.properties.video,
+      cat: f.properties.cat,
+      place: f.properties.place,
+      radius: f.properties.radius,
+      precision: f.properties.precision,
+      corroboration: f.properties.corroboration,
+      sources: f.properties.sources || [],
+      ts: f.properties.ts,
+      lon: f.geometry.coordinates[0],
+      lat: f.geometry.coordinates[1]
+    }));
+    // Bucket into theaters for the SITREP anchors (unchanged contract downstream).
+    mediaEvents.forEach(a => {
       for (const z of WAR_THEATERS) {
-        if (z.rx.test(t)) { (byZone[z.id] = byZone[z.id] || []).push(a); break; }
+        if (z.rx.test(a.title || '')) { (byZone[z.id] = byZone[z.id] || []).push(a); break; }
       }
     });
-  } catch (e) { console.warn('[WarLive GDELT artlist]', e); }
+    console.log('[WarLive] newsgeo ' + feedStatus + ' — ' + mediaEvents.length +
+                ' events, ' + mediaEvents.filter(e => e.img).length + ' with media');
+  } catch (e) { console.warn('[WarLive newsgeo]', e); }
   try {
     const jit = s => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return ((h % 1000) / 1000 - 0.5) * 3.5; };
+
+    // ── P120: MEDIA CARD RENDERER ─────────────────────────────
+    // The operator requirement: click an event, see the PHOTO, the video if there
+    // is one, and every outlet reporting it. Structure follows liveuamap's venue
+    // card (image on top, headline, source chips) and WeatherWise's text-first
+    // load order — the <img> is last in the DOM and has an onerror that removes
+    // its own container, so a dead hotlink degrades to a clean text card instead
+    // of a broken-image icon. Hotlinked outlet CDNs 403 sometimes; that must not
+    // look like a bug.
+    const CAT_COLOR = {
+      strike: '#ff3b30', attack: '#ff6b35', casualty: '#DA3633',
+      military: '#4a9eff', escalation: '#ffb020', cyber: '#bf5af2',
+      disaster: '#ff9500', unrest: '#ffd60a'
+    };
+    const relTime = ts => {
+      if (!ts) return '';
+      const m = Math.floor((Date.now() - ts) / 60000);
+      if (m < 1) return 'just now';
+      if (m < 60) return m + 'm ago';
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + 'h ago';
+      return Math.floor(h / 24) + 'd ago';
+    };
+    function mediaCard(a, theaterName) {
+      const col = CAT_COLOR[a.cat] || '#DA3633';
+      const cid = 'im' + Math.random().toString(36).slice(2, 9);
+      let h = '<div style="font-family:\'JetBrains Mono\',monospace;background:#0a0e14;border:1px solid ' + col +
+              ';max-width:430px;color:#c8ccd6;overflow:hidden">';
+      // header strip: category + freshness
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:' + col + '18;border-bottom:1px solid ' + col + '55">' +
+           '<span style="font-size:9px;font-weight:700;color:' + col + ';letter-spacing:1.5px">' + esc((a.cat || 'event').toUpperCase()) + '</span>' +
+           '<span style="font-size:8px;color:#8b949e">' + esc(relTime(a.ts)) + '</span></div>';
+      // MEDIA — the thing that was missing entirely
+      if (a.img) {
+        h += '<div id="' + cid + '" style="width:100%;background:#05080d;line-height:0">' +
+             '<img src="' + esc(a.img) + '" alt="" referrerpolicy="no-referrer" ' +
+             'style="width:100%;max-height:210px;object-fit:cover;display:block" ' +
+             'onerror="var e=document.getElementById(\'' + cid + '\');if(e)e.remove()">' +
+             '</div>';
+      }
+      h += '<div style="padding:10px 12px 12px">';
+      h += '<div style="font-size:11.5px;font-weight:700;color:#e6edf3;line-height:1.45;margin-bottom:7px">' +
+           esc(String(a.title || '').slice(0, 190)) + '</div>';
+      // provenance: WHERE, and how precisely we actually know it
+      if (a.place) {
+        const pr = a.precision === 'city' ? 'CITY' : a.precision === 'region' ? 'REGION' : 'COUNTRY';
+        h += '<div style="font-size:8.5px;color:#8b949e;margin-bottom:6px">' +
+             '📍 ' + esc(String(a.place).toUpperCase()) +
+             ' <span style="color:#4a5068">· ' + pr + '-LEVEL GEOCODE · ±' +
+             Math.round((a.radius || 0) / 1000) + 'km</span></div>';
+      }
+      // corroboration — multi-outlet agreement is the real signal
+      if (a.corroboration > 1) {
+        h += '<div style="font-size:8.5px;color:#3fb950;margin-bottom:7px;font-weight:600">' +
+             '✓ CORROBORATED — ' + a.corroboration + ' independent outlets reporting</div>';
+      }
+      if (a.video) {
+        h += '<a href="' + esc(a.video) + '" target="_blank" rel="noopener" ' +
+             'style="display:inline-block;font-size:9px;color:#0a0e14;background:' + col +
+             ';padding:4px 9px;text-decoration:none;font-weight:700;margin-bottom:7px">▶ VIDEO</a><br>';
+      }
+      // every source as its own link (liveuamap moreSources)
+      const srcs = (a.sources && a.sources.length ? a.sources : [{ src: a.domain, url: a.url }]);
+      h += '<div style="border-top:1px solid #1e2436;padding-top:7px">';
+      srcs.slice(0, 5).forEach(s => {
+        if (!s || !s.url) return;
+        h += '<a href="' + esc(s.url) + '" target="_blank" rel="noopener" ' +
+             'style="display:block;font-size:9px;color:#58a6ff;text-decoration:none;margin-bottom:3px">' +
+             '↗ ' + esc(s.src || 'source') + '</a>';
+      });
+      h += '</div>';
+      if (theaterName) {
+        h += '<div style="font-size:7.5px;color:#4a5068;margin-top:6px;letter-spacing:1px">THEATER: ' +
+             esc(theaterName) + '</div>';
+      }
+      h += '</div></div>';
+      return h;
+    }
+    // expose so other layers can render the same card shape
+    window.BDOCMediaCard = mediaCard;
+
     for (const z of WAR_THEATERS) {
       const items = (byZone[z.id] || []).slice(0, 15);
       // p103b: anchor renders UNCONDITIONALLY — GDELT artlist is throttled for many
       // IPs (datacenter, some ISPs); without an anchor the trend badge has nowhere
       // to live and the theater vanishes from the picture entirely.
+      // P120: SITREP list now carries a thumbnail per headline (text-first order:
+      // the 44px thumb is a sibling AFTER the text so a slow/blocked image never
+      // delays the headline paint).
       const list = items.length ? items.map(a =>
-        '<div style="margin-bottom:7px;padding-bottom:6px;border-bottom:1px solid #1e2436">' +
-        '<a href="' + esc(a.url || '#') + '" target="_blank" rel="noopener" style="color:#c8ccd6;text-decoration:none;font-size:10px;font-weight:600">' + esc((a.title || '').slice(0, 110)) + '</a>' +
-        '<div style="font-size:8px;color:#4a5068;margin-top:2px">' + esc(a.domain || '') + ' · ' + esc((a.seendate || '').slice(0, 8)) + '</div></div>').join('')
-        : '<div style="font-size:9px;color:#8b949e">Live headline feed unavailable from this network (GDELT throttle) — trend + kinetic event dots still live.</div>';
+        '<div style="display:flex;gap:8px;margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid #1e2436">' +
+        '<div style="flex:1;min-width:0">' +
+        '<a href="' + esc(a.url || '#') + '" target="_blank" rel="noopener" style="color:#c8ccd6;text-decoration:none;font-size:10px;font-weight:600;line-height:1.4">' + esc((a.title || '').slice(0, 110)) + '</a>' +
+        '<div style="font-size:8px;color:#4a5068;margin-top:3px">' + esc(a.domain || '') +
+          (a.corroboration > 1 ? ' <span style="color:#3fb950">· ✓' + a.corroboration + ' outlets</span>' : '') +
+          (a.place ? ' · ' + esc(String(a.place).toUpperCase()) : '') + '</div></div>' +
+        (a.img ? '<img src="' + esc(a.img) + '" alt="" referrerpolicy="no-referrer" style="width:52px;height:40px;object-fit:cover;flex-shrink:0;border:1px solid #1e2436" onerror="this.remove()">' : '') +
+        '</div>').join('')
+        : '<div style="font-size:9px;color:#8b949e">No matching reports for this theater in the current window.</div>';
       warliveEnts.push(V.entities.add({
         position: Cesium.Cartesian3.fromDegrees(z.lon, z.lat),
         billboard: undefined,
@@ -184,20 +303,80 @@ window.loadWarLive = async function () {
       anchorEnts[z.id] = warliveEnts[warliveEnts.length - 1];
       applyTrend(z.id); // cached/early trend → badge on immediately
       // individual event dots jittered around anchor
+      // P120: theater-bucketed dots keep the jittered fan around the anchor, but
+      // now render the full media card on click.
       items.forEach(a => {
         warliveEnts.push(V.entities.add({
           position: Cesium.Cartesian3.fromDegrees(z.lon + jit(a.url || ''), z.lat + jit(a.title || '')),
           point: { pixelSize: 4, color: Cesium.Color.fromCssColorString('#ff8888').withAlpha(0.7), disableDepthTestDistance: 5e6, scaleByDistance: new Cesium.NearFarScalar(5e5, 1.2, 1e7, 0.4) },
-          description: '<div style="font-family:\'JetBrains Mono\',monospace;padding:10px;color:#c8ccd6;background:#0a0e14;border:1px solid #DA363355;max-width:380px">' +
-            '<div style="font-size:11px;font-weight:700;color:#ff8888;margin-bottom:6px">' + esc((a.title || '').slice(0, 130)) + '</div>' +
-            '<div style="font-size:9px;color:#8b949e">' + esc(a.domain || '') + ' · ' + esc(z.name) + '</div>' +
-            (a.url ? '<a href="' + esc(a.url) + '" target="_blank" rel="noopener" style="color:#00ddff;font-size:9px">Read source →</a>' : '') + '</div>',
+          description: mediaCard(a, z.name),
           show: layers.warlive
         }));
         newsN++;
       });
     }
-  } catch (e) { console.warn('[WarLive GDELT]', e); }
+    // ── P120: GLOBAL EVENT PLOT WITH HONEST UNCERTAINTY ────────
+    // Previously only events matching one of the 5 theater regexes appeared, and
+    // they were jittered around a theater anchor — i.e. the position was fiction.
+    // Now every geocoded event is plotted at its OWN coordinate, and the marker
+    // carries an uncertainty circle sized from the gazetteer radius.
+    //
+    // This is the meshmap.net position-precision finding applied to news geocoding:
+    // a country-centroid geocode drawn as a sharp pin is a lie that an analyst
+    // will catch, and once they catch it they discount every other number on the
+    // screen. City-level (<=20km) gets a tight dot; country-level gets a large
+    // translucent ellipse that visibly says "we know the country, not the street".
+    const PREC_STYLE = {
+      city:    { px: 9, alpha: 0.30, ring: true  },
+      region:  { px: 7, alpha: 0.16, ring: true  },
+      country: { px: 5, alpha: 0.07, ring: false }
+    };
+    const theaterMatched = new Set();
+    for (const z of WAR_THEATERS) (byZone[z.id] || []).forEach(a => theaterMatched.add(a.title));
+
+    let plottedN = 0;
+    mediaEvents.forEach(a => {
+      if (a.lon == null || a.lat == null) return;
+      if (theaterMatched.has(a.title)) return;   // already drawn in its theater fan
+      const col = CAT_COLOR[a.cat] || '#ff8888';
+      const ps = PREC_STYLE[a.precision] || PREC_STYLE.country;
+      const card = mediaCard(a, null);
+      // uncertainty footprint — drawn first so the dot sits on top of it
+      if (a.radius && a.radius > 8000) {
+        warliveEnts.push(V.entities.add({
+          position: Cesium.Cartesian3.fromDegrees(a.lon, a.lat),
+          ellipse: {
+            semiMajorAxis: a.radius, semiMinorAxis: a.radius,
+            material: Cesium.Color.fromCssColorString(col).withAlpha(ps.alpha * 0.5),
+            outline: ps.ring,
+            outlineColor: Cesium.Color.fromCssColorString(col).withAlpha(0.45),
+            height: 0
+          },
+          description: card,
+          show: layers.warlive
+        }));
+      }
+      warliveEnts.push(V.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(a.lon, a.lat),
+        point: {
+          pixelSize: ps.px + (a.corroboration > 1 ? 2 : 0),
+          color: Cesium.Color.fromCssColorString(col).withAlpha(0.92),
+          // corroborated events get a green ring — multi-outlet agreement is signal
+          outlineColor: a.corroboration > 1
+            ? Cesium.Color.fromCssColorString('#3fb950')
+            : Cesium.Color.fromCssColorString('#0a0e14'),
+          outlineWidth: a.corroboration > 1 ? 2 : 1,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          scaleByDistance: new Cesium.NearFarScalar(5e5, 1.25, 2e7, 0.55)
+        },
+        description: card,
+        show: layers.warlive
+      }));
+      plottedN++; newsN++;
+    });
+    console.log('[WarLive] plotted ' + plottedN + ' global events at real coordinates (+' +
+                theaterMatched.size + ' in theater fans)');
+  } catch (e) { console.warn('[WarLive render]', e); }
 
   // ── 2. FIRMS thermal anomalies inside war-zone AOIs = kinetic candidates ──
   try {
