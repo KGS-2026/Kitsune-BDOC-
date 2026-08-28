@@ -1442,6 +1442,11 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <script defer src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
 <!-- ═══ BDOC PHASE 2 MODULES ═══ Must execute BEFORE inline script — defines EventLog, togFilter, formatters that the inline script calls during init -->
 <script src="js/telemetry.js?v=p59"></script>
+<!-- P122: pointer-first layer client (Google Earth root.json pattern). Polls an
+     ~160-byte pointer, fetches immutable dated snapshots from edge cache, and
+     falls back to the last-good snapshot with an honest age when everything
+     upstream is down — the grid-down property. Loaded early so layers can use it. -->
+<script src="js/snapshot-client.js?v=p122"></script>
 <script src="js/modules/icon-factory.js?v=p116"></script>
 <script src="js/converters.js?v=p59"></script>
 <script src="js/data.js?v=p119"></script>
@@ -1560,7 +1565,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p121',              // MUST bump on ANY js/modules/* change — p120 = warlive source swap (GDELT dead → proxy-newsgeo) + media cards with photo/video/multi-source + honest uncertainty circles
+  _version: 'p122',              // MUST bump on ANY js/modules/* change — p120 = warlive source swap (GDELT dead → proxy-newsgeo) + media cards with photo/video/multi-source + honest uncertainty circles
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];

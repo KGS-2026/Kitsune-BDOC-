@@ -141,6 +141,69 @@ window.generateSitrep = async function (target) {
         if (/^183/.test(c)) return { icon: '💣', label: 'BOMBING/IED', color: '#ff6b35' };
         return root === '18' ? { icon: '✖', label: 'ASSAULT', color: '#E8B339' } : { icon: '⚔', label: 'ARMED ENGAGEMENT', color: '#DA3633' };
       };
+      // ── P121: MEDIA CARD FOR KINETIC INCIDENTS ──────────────────
+      // The old card was a database dump: Goldstein score, tone, mention count.
+      // An operator clicking a GROUND CLASH marker wants to SEE the incident —
+      // the photo that is already sitting in the source article.
+      //
+      // GDELT event records carry a source URL but no image, so we resolve the
+      // article's og:image through /.netlify/functions/proxy-ogimage, which
+      // 302-redirects straight to the outlet CDN. That means this is a plain
+      // <img src> with zero client JS: no fetch, no await, no race with Cesium's
+      // infobox sanitizer. Measured 5/6 hit rate at ~0.1s on live event URLs.
+      //
+      // The <img> sits in its own container with an onerror that removes that
+      // container, so a 403/404 from a paywalled outlet degrades to a clean
+      // text card rather than a broken-image icon.
+      var relTime = function (t) {
+        if (!t) return '';
+        var m = Math.floor((Date.now() - t) / 60000);
+        if (m < 1) return 'just now';
+        if (m < 60) return m + 'm ago';
+        var h = Math.floor(m / 60);
+        return h < 24 ? h + 'h ago' : Math.floor(h / 24) + 'd ago';
+      };
+      var incidentCard = function (ev, meta) {
+        var cid = 'sc' + Math.random().toString(36).slice(2, 9);
+        var h = '<div style="font-family:\'JetBrains Mono\',monospace;background:#0a0e14;border:1px solid ' +
+                meta.color + ';max-width:420px;color:#c8ccd6;overflow:hidden">';
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:' +
+             meta.color + '18;border-bottom:1px solid ' + meta.color + '55">' +
+             '<span style="font-size:9px;font-weight:700;color:' + meta.color + ';letter-spacing:1.5px">' +
+             meta.icon + ' ' + esc(meta.label) + '</span>' +
+             '<span style="font-size:8px;color:#8b949e">' + esc(relTime(ev.ts)) + '</span></div>';
+        // THE PHOTO — resolved from the source article, not shipped in the feed
+        if (ev.url) {
+          h += '<div id="' + cid + '" style="width:100%;background:#05080d;line-height:0">' +
+               '<img src="' + location.origin + '/.netlify/functions/proxy-ogimage?url=' + encodeURIComponent(ev.url) + '" ' +
+               'alt="" referrerpolicy="no-referrer" ' +
+               'style="width:100%;max-height:200px;object-fit:cover;display:block" ' +
+               'onerror="var e=document.getElementById(\'' + cid + '\');if(e)e.remove()" ' +
+               'onload="if(this.naturalWidth<=2){var e=document.getElementById(\'' + cid + '\');if(e)e.remove()}">' +
+               '</div>';
+        }
+        h += '<div style="padding:10px 12px 12px">';
+        if (ev.title) {
+          h += '<div style="font-size:11.5px;font-weight:700;color:#e6edf3;line-height:1.45;margin-bottom:7px">' +
+               esc(String(ev.title).slice(0, 190)) + '</div>';
+        }
+        h += '<div style="font-size:9px;color:#8b949e;margin-bottom:5px">📍 ' +
+             esc(String(ev.place || 'unknown').toUpperCase()) + '</div>';
+        h += '<div style="font-size:9px;color:#8b949e;margin-bottom:7px">' +
+             '<span style="color:#4a5068">SALIENCE</span> ' + (ev.m || 0) + ' mentions' +
+             (ev.g != null ? ' <span style="color:#4a5068">· GOLDSTEIN</span> ' + ev.g : '') + '</div>';
+        if (ev.url) {
+          var dom = '';
+          try { dom = new URL(ev.url).hostname.replace(/^www\./, ''); } catch (_) { dom = 'source'; }
+          h += '<div style="border-top:1px solid #1e2436;padding-top:7px">' +
+               '<a href="' + esc(ev.url) + '" target="_blank" rel="noopener" ' +
+               'style="display:block;font-size:9px;color:#58a6ff;text-decoration:none">↗ ' + esc(dom) + '</a></div>';
+        }
+        h += '<div style="font-size:7.5px;color:#4a5068;margin-top:6px;letter-spacing:1px">' +
+             'GDELT 2.0 · CAMEO-CODED · MACHINE-GEOCODED · LAST ~4H</div>';
+        h += '</div></div>';
+        return h;
+      };
       evs.forEach(function (ev, i) {
         var meta = codeMeta(ev.code, ev.root);
         var labeled = i < 12 || ev.m >= 15; // label the salient ones, dot the rest
@@ -148,12 +211,7 @@ window.generateSitrep = async function (target) {
           position: Cesium.Cartesian3.fromDegrees(ev.lon, ev.lat),
           point: { pixelSize: labeled ? 9 : 6, color: Cesium.Color.fromCssColorString(meta.color).withAlpha(0.95), outlineColor: Cesium.Color.WHITE, outlineWidth: 1.5, disableDepthTestDistance: Number.POSITIVE_INFINITY },
           label: labeled ? { text: meta.icon + ' ' + meta.label, font: '10px JetBrains Mono', fillColor: Cesium.Color.fromCssColorString(meta.color), outlineColor: Cesium.Color.BLACK, outlineWidth: 2, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -16), disableDepthTestDistance: Number.POSITIVE_INFINITY } : undefined,
-          description: '<div style="font-family:\'JetBrains Mono\',monospace;padding:12px;color:#c8ccd6;background:#0a0e14;border:1px solid ' + meta.color + ';max-width:400px">' +
-            '<div style="font-size:12px;font-weight:700;color:' + meta.color + '">' + meta.icon + ' ' + meta.label + '</div>' +
-            '<div style="font-size:8px;color:#8b949e;letter-spacing:1px;margin:4px 0 8px">SITREP INCIDENT · LAST ~4H · GEOCODED</div>' +
-            '<div style="font-size:10px">Location: <b>' + esc(ev.place || 'unknown') + '</b></div>' +
-            '<div style="font-size:10px">Media salience: <b>' + ev.m + ' mentions</b></div>' +
-            (ev.url ? '<a href="' + esc(ev.url) + '" target="_blank" rel="noopener" style="color:#00ddff;font-size:9px">Read source →</a>' : '') + '</div>'
+          description: incidentCard(ev, meta)
         }));
       });
       // fly the camera to the theater so the operator SEES the answer

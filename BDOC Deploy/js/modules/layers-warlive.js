@@ -419,9 +419,25 @@ window.loadWarLive = async function () {
   // which fuses the last 3h of GDELT 15-min export files server-side.
   let eventN = 0;
   try {
-    const res = await fetch('/.netlify/functions/proxy-gdeltevents?files=12&img=150', { signal: AbortSignal.timeout(25000) });
-    if (res.ok) {
-      const d = await res.json();
+    // P122: POINTER-FIRST FETCH (Google Earth root.json pattern).
+    // Was: every client hit proxy-gdeltevents directly — N viewers = N origin
+    // invocations, ~7s each, and a blank layer whenever GDELT hiccuped.
+    // Now: poll a ~160-byte pointer, pull the immutable dated snapshot from
+    // edge/SW cache, and on total upstream failure fall back to the last good
+    // snapshot with an honest age instead of rendering nothing.
+    const LIVE_EVENTS = '/.netlify/functions/proxy-gdeltevents?files=12&img=150';
+    let d = null, prov = '';
+    if (window.BDOCSnap) {
+      const r = await window.BDOCSnap.fetchLayer('events', LIVE_EVENTS);
+      d = r.data;
+      prov = window.BDOCSnap.provenance(r);
+      if (r.stale) af('#E8B339', 'War Room events: ' + prov + ' — upstream unreachable, showing last good snapshot');
+    } else {
+      const res = await fetch(LIVE_EVENTS, { signal: AbortSignal.timeout(25000) });
+      d = res.ok ? await res.json() : null;
+      prov = 'LIVE · direct';
+    }
+    if (d) {
       // CAMEO taxonomy → display type. root 18=assault, 19=fight, 20=mass violence
       const typeOf = (code, root) => {
         if (root === '20') return { icon: '☢', label: 'MASS VIOLENCE', color: '#ff2d78' };
@@ -451,11 +467,21 @@ window.loadWarLive = async function () {
           // image icon. Numbers are demoted to a compact footer row.
           description: (function () {
             const mid = 'ge' + Math.random().toString(36).slice(2, 9);
-            const media = ev.img
+            // P121: GDELT event records carry a source URL but NO image, so ev.img
+            // was almost always undefined and this card rendered text-only — the
+            // exact complaint. Fall back to resolving the source article's
+            // og:image server-side via proxy-ogimage, which 302s to the outlet
+            // CDN. Plain <img src>, no client JS, no await. Measured 5/6 hit rate
+            // at ~0.1s on live event URLs. onload guards the 1x1 miss-pixel.
+            const imgSrc = ev.img
+              ? esc(ev.img)
+              : (ev.url ? location.origin + '/.netlify/functions/proxy-ogimage?url=' + encodeURIComponent(ev.url) : '');
+            const media = imgSrc
               ? '<div id="' + mid + '" style="width:100%;background:#05080d;line-height:0;border-bottom:1px solid ' + t.color + '55">' +
-                '<img src="' + esc(ev.img) + '" alt="" referrerpolicy="no-referrer" loading="lazy" ' +
+                '<img src="' + imgSrc + '" alt="" referrerpolicy="no-referrer" loading="lazy" ' +
                 'style="width:100%;max-height:190px;object-fit:cover;display:block" ' +
-                'onerror="var n=document.getElementById(\'' + mid + '\');if(n)n.remove()"></div>'
+                'onerror="var n=document.getElementById(\'' + mid + '\');if(n)n.remove()" ' +
+                'onload="if(this.naturalWidth<=2){var n=document.getElementById(\'' + mid + '\');if(n)n.remove()}"></div>'
               : '';
             return '<div style="font-family:\'JetBrains Mono\',monospace;background:#0a0e14;border:1px solid ' + t.color + ';max-width:430px;color:#c8ccd6;overflow:hidden">' +
               '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:' + t.color + '18;border-bottom:1px solid ' + t.color + '55">' +
