@@ -103,14 +103,99 @@ exports.handler = async (event) => {
   events.sort((a, b) => b.m - a.m);
   const capped = events.slice(0, 900).map(({ k, ...rest }) => rest);
 
+  // ── P121: OG:IMAGE ENRICHMENT ────────────────────────────────
+  // GDELT gives us a SOURCEURL per event but no media. A pin that opens a
+  // wall of Goldstein/tone numbers reads like a database dump; the same pin
+  // with the actual news photo reads like intelligence. Every OSINT map worth
+  // anything (liveuamap's `picture`/`twitpic`/`images` fields) treats media as
+  // a first-class field on the event record, so we resolve it server-side.
+  //
+  // Why server-side: the browser CANNOT do this. Cross-origin news sites don't
+  // send CORS headers, so a client-side fetch of the article HTML is blocked.
+  // The function has no such restriction.
+  //
+  // Budget discipline — this runs inside a 10s Netlify function:
+  //  - only the top N most-salient events (the ones a user actually clicks)
+  //  - 8-way concurrency, 2.5s per-article timeout, hard 6s wall-clock ceiling
+  //  - Range header so we pull ~48KB of <head>, not whole 2MB articles
+  //  - module-scope cache survives warm invocations, so repeat polls are free
+  //  - every failure is silent: no image just means no image, never an error
+  const ogCache = (globalThis.__ogCache = globalThis.__ogCache || new Map());
+  const OG_TTL = 6 * 3600 * 1000;
+
+  function pickOg(html) {
+    // og:image / twitter:image, attribute order agnostic (content= can precede property=)
+    const pats = [
+      /<meta[^>]+(?:property|name)=["']og:image(?::secure_url|:url)?["'][^>]*content=["']([^"']+)["']/i,
+      /<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']og:image(?::secure_url|:url)?["']/i,
+      /<meta[^>]+(?:property|name)=["']twitter:image(?::src)?["'][^>]*content=["']([^"']+)["']/i,
+      /<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']twitter:image(?::src)?["']/i
+    ];
+    for (const re of pats) {
+      const m = html.match(re);
+      if (m && m[1]) {
+        let u = m[1].trim().replace(/&amp;/g, '&');
+        if (u.startsWith('//')) u = 'https:' + u;
+        if (/^https:\/\//i.test(u) && u.length < 500) return u;   // https only — page is https
+      }
+    }
+    return null;
+  }
+
+  async function ogFor(link) {
+    if (!link || !/^https?:\/\//i.test(link)) return null;
+    const hit = ogCache.get(link);
+    if (hit && Date.now() - hit.t < OG_TTL) return hit.v;
+    try {
+      const r = await fetch(link, {
+        signal: AbortSignal.timeout(2500),
+        redirect: 'follow',
+        headers: {
+          // Identify honestly; many outlets 403 an unknown agent.
+          'User-Agent': 'Mozilla/5.0 (compatible; BDOC/1.0; +https://kgsbdoc.netlify.app)',
+          'Accept': 'text/html,application/xhtml+xml',
+          'Range': 'bytes=0-49152'      // <head> is always in the first 48KB
+        }
+      });
+      if (!r.ok && r.status !== 206) { ogCache.set(link, { v: null, t: Date.now() }); return null; }
+      const v = pickOg(await r.text());
+      ogCache.set(link, { v, t: Date.now() });
+      return v;
+    } catch (_) {
+      ogCache.set(link, { v: null, t: Date.now() });   // cache the failure too
+      return null;
+    }
+  }
+
+  const wantImg = Math.min(parseInt(params.img, 10) || 120, capped.length);
+  const targets = capped.slice(0, wantImg);
+  const deadline = Date.now() + 6000;
+  let imgN = 0, cursor = 0;
+
+  await Promise.all(Array.from({ length: 8 }, async () => {
+    while (cursor < targets.length && Date.now() < deadline) {
+      const ev = targets[cursor++];
+      const img = await ogFor(ev.url);
+      if (img) { ev.img = img; imgN++; }
+    }
+  }));
+
   return {
     statusCode: 200,
     headers: {
       'Content-Type': 'application/json',
       'Netlify-Vary': 'query',
-      'Cache-Control': 'public, max-age=600',
+      // stale-while-revalidate so the NEXT user gets an instant cached response
+      // while the edge refreshes in the background — og scraping is the slow part.
+      'Cache-Control': 'public, max-age=600, stale-while-revalidate=3600',
       'Access-Control-Allow-Origin': '*'
     },
-    body: JSON.stringify({ generated: new Date().toISOString(), filesRequested: files, filesOk, count: capped.length, events: capped })
+    body: JSON.stringify({
+      generated: new Date().toISOString(),
+      filesRequested: files, filesOk,
+      count: capped.length,
+      withImage: imgN,
+      events: capped
+    })
   };
 };

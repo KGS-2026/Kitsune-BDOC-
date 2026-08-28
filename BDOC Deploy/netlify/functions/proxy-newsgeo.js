@@ -130,20 +130,21 @@ function tag(block, name) {
 
 // Media extraction — the whole point. Try every convention outlets use.
 function extractImage(block) {
-  let m = block.match(/<media:content[^>]*\burl="([^"]+)"[^>]*>/i);
-  if (m) return m[1];
-  m = block.match(/<media:thumbnail[^>]*\burl="([^"]+)"/i);
-  if (m) return m[1];
-  m = block.match(/<enclosure[^>]*\burl="([^"]+)"[^>]*type="image/i);
-  if (m) return m[1];
-  m = block.match(/<enclosure[^>]*\burl="([^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i);
-  if (m) return m[1];
-  m = block.match(/<itunes:image[^>]*href="([^"]+)"/i);
-  if (m) return m[1];
-  // og:image style <img src> inside description/content HTML
-  m = block.match(/<img[^>]*\bsrc="([^"]+)"/i);
-  if (m) return m[1];
-  return null;
+  // P121 FIX: every return path is run through decodeEnt().
+  // RSS/Atom is XML, so a URL like ...?w=140&quality=85 arrives on the wire as
+  // ...?w=140&amp;quality=85. Returning that raw meant the HTML escaper later
+  // turned it into &amp;amp; — a double-escaped URL that 404s, so the <img>
+  // silently failed and the card rendered with no photo. Decode once here, at
+  // the parse boundary, so downstream always holds a real URL.
+  const first = (re) => { const m = block.match(re); return m ? decodeEnt(m[1]) : null; };
+  return first(/<media:content[^>]*\burl="([^"]+)"/i)
+      || first(/<media:thumbnail[^>]*\burl="([^"]+)"/i)
+      || first(/<enclosure[^>]*\burl="([^"]+)"[^>]*type="image/i)
+      || first(/<enclosure[^>]*\burl="([^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i)
+      || first(/<itunes:image[^>]*href="([^"]+)"/i)
+      // og:image style <img src> inside description/content HTML
+      || first(/<img[^>]*\bsrc="([^"]+)"/i)
+      || null;
 }
 
 function extractVideo(block) {

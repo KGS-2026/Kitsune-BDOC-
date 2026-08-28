@@ -419,7 +419,7 @@ window.loadWarLive = async function () {
   // which fuses the last 3h of GDELT 15-min export files server-side.
   let eventN = 0;
   try {
-    const res = await fetch('/.netlify/functions/proxy-gdeltevents?files=12', { signal: AbortSignal.timeout(25000) });
+    const res = await fetch('/.netlify/functions/proxy-gdeltevents?files=12&img=150', { signal: AbortSignal.timeout(25000) });
     if (res.ok) {
       const d = await res.json();
       // CAMEO taxonomy → display type. root 18=assault, 19=fight, 20=mass violence
@@ -441,14 +441,42 @@ window.loadWarLive = async function () {
           position: Cesium.Cartesian3.fromDegrees(ev.lon, ev.lat),
           point: { pixelSize: salient ? 8 : 5, color: Cesium.Color.fromCssColorString(t.color).withAlpha(0.9), outlineColor: Cesium.Color.BLACK, outlineWidth: 1, disableDepthTestDistance: Number.POSITIVE_INFINITY, scaleByDistance: new Cesium.NearFarScalar(5e5, 1.3, 1.2e7, 0.5) },
           label: salient ? { text: t.icon + ' ' + t.label, font: '9px JetBrains Mono', fillColor: Cesium.Color.fromCssColorString(t.color), outlineColor: Cesium.Color.BLACK, outlineWidth: 2, style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -14), disableDepthTestDistance: Number.POSITIVE_INFINITY, distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 8e6) } : undefined,
-          description: '<div style="font-family:\'JetBrains Mono\',monospace;padding:12px;color:#c8ccd6;background:#0a0e14;border:1px solid ' + t.color + ';max-width:400px">' +
-            '<div style="font-size:12px;font-weight:700;color:' + t.color + ';margin-bottom:4px">' + t.icon + ' ' + t.label + '</div>' +
-            '<div style="font-size:8px;color:#8b949e;letter-spacing:1px;margin-bottom:8px">GDELT EVENT ' + esc(ev.code) + ' · LAST 3H · GEOCODED</div>' +
-            '<div style="font-size:10px;margin-bottom:3px">Location: <b>' + esc(ev.place || 'unknown') + '</b></div>' +
-            '<div style="font-size:10px;margin-bottom:3px">Media salience: <b>' + ev.m + ' mentions</b>' + (salient ? ' <span style="color:' + t.color + '">— MAJOR EVENT</span>' : '') + '</div>' +
-            '<div style="font-size:10px;margin-bottom:3px">Conflict intensity (Goldstein): <b>' + ev.g + '</b> · Tone: ' + ev.tone + '</div>' +
-            (ev.url ? '<a href="' + esc(ev.url) + '" target="_blank" rel="noopener" style="color:#00ddff;font-size:9px">Read source →</a>' : '') +
-            '<div style="font-size:8px;color:#4a5068;margin-top:6px">Source: GDELT 2.0 Event Database — CAMEO-coded, machine-geocoded from global media</div></div>',
+          // P121: MEDIA CARD — photo first, numbers second.
+          // The old card led with Goldstein/tone, which reads as a database dump.
+          // The og:image resolved server-side is placed directly under the header
+          // so the very first thing you see on click is the actual news photo of
+          // the incident. Image is LAST in the DOM string but visually second via
+          // order of markup, and its onerror removes its own container so a dead
+          // or hotlink-protected CDN degrades to a clean text card, never a broken
+          // image icon. Numbers are demoted to a compact footer row.
+          description: (function () {
+            const mid = 'ge' + Math.random().toString(36).slice(2, 9);
+            const media = ev.img
+              ? '<div id="' + mid + '" style="width:100%;background:#05080d;line-height:0;border-bottom:1px solid ' + t.color + '55">' +
+                '<img src="' + esc(ev.img) + '" alt="" referrerpolicy="no-referrer" loading="lazy" ' +
+                'style="width:100%;max-height:190px;object-fit:cover;display:block" ' +
+                'onerror="var n=document.getElementById(\'' + mid + '\');if(n)n.remove()"></div>'
+              : '';
+            return '<div style="font-family:\'JetBrains Mono\',monospace;background:#0a0e14;border:1px solid ' + t.color + ';max-width:430px;color:#c8ccd6;overflow:hidden">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:' + t.color + '18;border-bottom:1px solid ' + t.color + '55">' +
+                '<span style="font-size:9px;font-weight:700;color:' + t.color + ';letter-spacing:1.5px">' + t.icon + ' ' + t.label + '</span>' +
+                (salient ? '<span style="font-size:8px;color:' + t.color + ';font-weight:700">MAJOR</span>' : '') +
+              '</div>' +
+              media +
+              '<div style="padding:9px 10px">' +
+                '<div style="font-size:11px;color:#e6edf3;font-weight:600;margin-bottom:6px">📍 ' + esc(ev.place || 'Location unknown') + '</div>' +
+                (ev.url
+                  ? '<a href="' + esc(ev.url) + '" target="_blank" rel="noopener noreferrer" style="display:inline-block;font-size:9px;color:#00ddff;text-decoration:none;border:1px solid #00ddff55;padding:3px 8px;margin-bottom:7px">READ SOURCE ARTICLE →</a>'
+                  : '') +
+                '<div style="display:flex;gap:10px;font-size:8px;color:#8b949e;border-top:1px solid #21262d;padding-top:6px;flex-wrap:wrap">' +
+                  '<span>' + ev.m + ' mentions</span>' +
+                  '<span>Goldstein ' + ev.g + '</span>' +
+                  '<span>Tone ' + ev.tone + '</span>' +
+                  '<span>CAMEO ' + esc(ev.code) + '</span>' +
+                '</div>' +
+                '<div style="font-size:8px;color:#4a5068;margin-top:5px">GDELT 2.0 · last 3h · machine-geocoded' + (ev.img ? ' · photo from source article' : '') + '</div>' +
+              '</div></div>';
+          })(),
           show: layers.warlive
         }));
         eventN++;
