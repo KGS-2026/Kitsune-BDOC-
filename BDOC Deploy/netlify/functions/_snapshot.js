@@ -57,13 +57,22 @@ function stamp(d) {
 }
 
 function store() {
-  // siteID/token are injected by Netlify at runtime; explicit fallback to env
-  // so the same code path works when invoked from a local dev server.
-  return getStore({
-    name: STORE,
-    siteID: process.env.SITE_ID || process.env.NETLIFY_SITE_ID,
-    token: process.env.NETLIFY_BLOBS_TOKEN || process.env.NETLIFY_API_TOKEN
-  });
+  // Netlify auto-configures Blobs for functions at runtime. When that implicit
+  // wiring is absent (some deploy contexts, or local dev) getStore() throws
+  // "The environment has not been configured to use Netlify Blobs". Try the
+  // zero-config path first and only fall back to explicit credentials, so we
+  // never pass undefined siteID/token and break the working case.
+  try {
+    return getStore(STORE);
+  } catch (_) {
+    const siteID = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
+    const token  = process.env.NETLIFY_BLOBS_TOKEN || process.env.NETLIFY_API_TOKEN ||
+                   process.env.NETLIFY_AUTH_TOKEN;
+    if (!siteID || !token) {
+      throw new Error('Netlify Blobs unavailable: set NETLIFY_BLOBS_TOKEN (or NETLIFY_API_TOKEN) + SITE_ID in site env vars');
+    }
+    return getStore({ name: STORE, siteID, token });
+  }
 }
 
 // Write an immutable dated snapshot + rewrite the tiny pointer.

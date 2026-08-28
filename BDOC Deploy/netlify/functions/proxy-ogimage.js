@@ -129,6 +129,44 @@ exports.handler = async (event) => {
     else if (img.startsWith('/')) img = u.origin + img;
     else if (!/^https?:/i.test(img)) img = new URL(img, u.toString()).toString();
 
+    // Netlify was observed appending the incoming query string to a bare
+    // Location value, producing ".../Riversmap.webp?url=https%3A%2F%2F..." and
+    // breaking CDNs that sign or validate query params. Returning the image
+    // BYTES for small files avoids the redirect-rewriting class of bug
+    // entirely; only fall back to 302 for large images.
+    let imgRes = null;
+    try {
+      imgRes = await fetch(img, {
+        signal: AbortSignal.timeout(6000),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; BDOC/1.0; +https://kgsbdoc.netlify.app)',
+          'Accept': 'image/avif,image/webp,image/jpeg,image/png,*/*',
+          'Referer': u.origin + '/'          // some CDNs require a same-site referer
+        }
+      });
+    } catch (_) { /* fall through to redirect */ }
+
+    if (imgRes && imgRes.ok) {
+      const ct = imgRes.headers.get('content-type') || 'image/jpeg';
+      if (/^image\//i.test(ct)) {
+        const buf = Buffer.from(await imgRes.arrayBuffer());
+        if (buf.length && buf.length < 3.5 * 1024 * 1024) {   // under Lambda cap
+          return {
+            statusCode: 200,
+            headers: {
+              'Content-Type': ct,
+              'Cache-Control': CACHE_OK,
+              'Access-Control-Allow-Origin': '*',
+              'X-OG-Source': u.hostname
+            },
+            body: buf.toString('base64'),
+            isBase64Encoded: true
+          };
+        }
+      }
+    }
+
+    // Large or unfetchable → hand the browser the direct URL.
     return {
       statusCode: 302,
       headers: {
