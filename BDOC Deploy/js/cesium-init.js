@@ -18,6 +18,39 @@ Cesium.Ion.defaultAccessToken=CFG.keys.cesium;
 try{
 V=new Cesium.Viewer('cesiumContainer',{animation:false,baseLayerPicker:false,fullscreenButton:false,vrButton:false,geocoder:false,homeButton:false,infoBox:true,sceneModePicker:false,selectionIndicator:true,timeline:false,navigationHelpButton:false,creditContainer:document.createElement('div'),contextOptions:{webgl:{preserveDrawingBuffer:true}},baseLayer:new Cesium.ImageryLayer(new Cesium.UrlTemplateImageryProvider({url:"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",credit:"ESRI",maximumLevel:19}))});
 const s=V.scene;
+// ── P119: ADAPTIVE RENDER GOVERNOR ──────────────────────────────
+// Teardown finding: scene.requestRenderMode was false, so Cesium redrew at full
+// framerate forever with nothing moving — pins the GPU on a laptop and is pure
+// heat on a wall display left up all shift.
+//
+// Naive fix (requestRenderMode=true globally) breaks animated layers: SGP4
+// satellites and ADS-B aircraft interpolate against the clock, and on-demand
+// rendering makes them visibly choppy. So this is refcounted instead:
+// continuous render ONLY while an animated layer is actually on.
+//   BDOCRender.hold('sats')    -> continuous render while satellites are live
+//   BDOCRender.release('sats') -> drop back to on-demand when the last holder exits
+//   BDOCRender.kick()          -> one-shot redraw after a data/style update
+try{
+  s.requestRenderMode=true;
+  s.maximumRenderTimeChange=0.5;   // still ticks for sun/lighting drift
+  window.BDOCRender={
+    _holds:new Set(),
+    hold(tag){ this._holds.add(tag); this._apply(); },
+    release(tag){ this._holds.delete(tag); this._apply(); },
+    kick(){ try{ V.scene.requestRender(); }catch(_){ } },
+    _apply(){
+      const live=this._holds.size>0;
+      try{
+        V.scene.requestRenderMode=!live;
+        if(live)V.scene.requestRender();
+      }catch(_){ }
+    },
+    get active(){ return Array.from(this._holds); }
+  };
+  // Any camera move or entity mutation already triggers Cesium's own
+  // requestRender(); this covers imagery tile loads settling in.
+  V.scene.globe.tileLoadProgressEvent.addEventListener(n=>{ if(n===0)window.BDOCRender.kick(); });
+}catch(e){console.warn('[RenderGovernor] init failed, falling back to continuous render',e);try{V.scene.requestRenderMode=false}catch(_){}}
 // ── INFOBOX SCRIPT FIX (Cesium 1.104) ──
 // Cesium sandboxes the infoBox iframe as "allow-same-origin allow-popups allow-forms"
 // — deliberately OMITTING allow-scripts as an XSS guard. That kills every onclick
@@ -337,7 +370,34 @@ var _bordersLayer=null,_labelsLayer=null;
   // contains country/state outlines AND city labels — one layer, both purposes).
   _bordersLayer=_labelsLayer;
 })();
-V.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(50,25,18000000),duration:0});
+// ── P119: FIRST-PAINT FIX — no more black sphere ────────────────
+// Teardown finding: camera parked at 18,000 km over lon 50 with enableLighting=true
+// meant a cold load frequently landed on the NIGHT hemisphere — first frame was a
+// black ball with floating labels, which reads as "broken app".
+// Fix (teardown's preferred option b): open on the user's saved AOI if we have one;
+// otherwise pick a starting longitude that is currently in DAYLIGHT, so land always
+// reads on first paint. Subsolar longitude ~= 180 - (UTC_minutes / 1440 * 360).
+(function(){
+  let dest=null,alt=18000000;
+  try{
+    const a=JSON.parse(localStorage.getItem('bdoc_home_aoi')||'null');
+    if(a&&typeof a.lat==='number'&&typeof a.lon==='number'&&(Date.now()-(a.ts||0))<30*86400*1000){
+      dest={lon:a.lon,lat:a.lat};alt=2000000;   // open on their AO, not the whole globe
+    }
+  }catch(_){ }
+  if(!dest){
+    const d=new Date();
+    const utcMin=d.getUTCHours()*60+d.getUTCMinutes();
+    let sunLon=180-(utcMin/1440)*360;              // longitude of local solar noon
+    if(sunLon>180)sunLon-=360; if(sunLon<-180)sunLon+=360;
+    dest={lon:sunLon,lat:20};
+  }
+  try{
+    V.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(dest.lon,dest.lat,alt),duration:0});
+  }catch(e){
+    V.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(50,25,18000000),duration:0});
+  }
+})();
 // ═══ CESIUM RENDER ERROR RECOVERY (Phase 15c 2026-05-13) ═══
 // Multi-stage recovery: removes last primitive (3D tilesets) → last entity (markers/polylines)
 // → nukes problem layers as a last resort. Throttled to avoid recovery-loop death spiral.

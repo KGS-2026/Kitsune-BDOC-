@@ -508,11 +508,18 @@ if('serviceWorker' in navigator){
 <button class="nb a" onclick="navTo('globe',this)">GLOBE</button>
 <select id="cocomSelect" onchange="if(this.value){navTo(this.value);this.value=''}" style="background:#0d1117;color:var(--t2);border:1px solid var(--bdr2);border-radius:4px;padding:4px 8px;font-family:var(--m);font-size:8.5px;letter-spacing:1px;cursor:pointer;text-transform:uppercase;outline:none;-webkit-appearance:none">
 <option value="">COCOM ▾</option>
-<option value="mideast">CENTCOM AO</option>
-<option value="europe">EUCOM AO</option>
-<option value="pacific">INDOPACOM</option>
-<option value="africa">AFRICOM</option>
-<option value="dc">WASHINGTON DC</option>
+<optgroup label="GEOGRAPHIC COCOM AORs">
+<option value="mideast">CENTCOM AOR</option>
+<option value="europe">EUCOM AOR</option>
+<option value="pacific">INDOPACOM AOR</option>
+<option value="africa">AFRICOM AOR</option>
+<option value="northcom">NORTHCOM AOR</option>
+<option value="southcom">SOUTHCOM AOR</option>
+<option value="spacecom">SPACECOM AOR</option>
+</optgroup>
+<optgroup label="SAVED VIEWS">
+<option value="dc">Washington DC</option>
+</optgroup>
 </select>
 <div style="position:relative;flex:1;max-width:300px">
 <input id="searchBar" type="text" placeholder="Search location, callsign, vessel..." autocomplete="off"
@@ -1437,7 +1444,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <script src="js/telemetry.js?v=p59"></script>
 <script src="js/modules/icon-factory.js?v=p116"></script>
 <script src="js/converters.js?v=p59"></script>
-<script src="js/data.js?v=p98d"></script>
+<script src="js/data.js?v=p119"></script>
 <script src="js/auth.js?v=p70"></script>
 <script src="js/filters.js?v=p66"></script>
 <!-- layers-military.js is lazy-loaded on first toggle of milbases (Phase 3 Turn 7) -->
@@ -2406,7 +2413,7 @@ function genPDF(){
   doc.setTextColor(0);doc.setFontSize(12);doc.setFont('courier','bold');
   doc.text('1. SITUATION OVERVIEW',M,y);y+=5;
   doc.setFont('courier','normal');doc.setFontSize(9);
-  addText(`Tracking ${allAC.length.toLocaleString()} aircraft across ${CFG.regions.length} COCOM regions. ${milAC.length} military/VIP transponders active. ${document.getElementById('eqV').textContent} seismic events M2.5+. ${document.getElementById('fireV').textContent} fire detections. ${document.getElementById('satV').textContent} satellites tracked via SGP4.`,9);
+  addText(`Tracking ${allAC.length.toLocaleString()} aircraft across ${CFG.regions.length} surveillance regions spanning 7 geographic COCOM AORs. ${milAC.length} military/VIP transponders active. ${document.getElementById('eqV').textContent} seismic events M2.5+. ${document.getElementById('fireV').textContent} fire detections. ${document.getElementById('satV').textContent} satellites tracked via SGP4.`,9);
   y+=3;checkPage();
   doc.setFontSize(12);doc.setFont('courier','bold');
   doc.text('2. MILITARY AIRCRAFT',M,y);y+=5;
@@ -2470,7 +2477,7 @@ function _genPDFhtml(){
   htm+='<div class="cls">OPEN-SOURCE INTELLIGENCE AGGREGATION</div>';
   htm+='<h1>KITSUNE BDOC \u2014 INTELLIGENCE BRIEF</h1>';
   htm+='<div class="meta">Generated: '+ts+'<br>System: '+h.toUpperCase()+'<br>Version: BDOC v'+CFG.version+'<br>Not affiliated with, or endorsed by, any government.</div>';
-  htm+='<h2>1. SITUATION OVERVIEW</h2><p>Tracking '+allAC.length.toLocaleString()+' aircraft across '+CFG.regions.length+' COCOM regions. '+milAC.length+' mil/VIP active. '+document.getElementById('eqV').textContent+' seismic events. '+document.getElementById('fireV').textContent+' fires.</p>';
+  htm+='<h2>1. SITUATION OVERVIEW</h2><p>Tracking '+allAC.length.toLocaleString()+' aircraft across '+CFG.regions.length+' surveillance regions spanning 7 geographic COCOM AORs. '+milAC.length+' mil/VIP active. '+document.getElementById('eqV').textContent+' seismic events. '+document.getElementById('fireV').textContent+' fires.</p>';
   htm+='<h2>2. MILITARY AIRCRAFT</h2><table><tr><th>Callsign</th><th>ICAO</th><th>Type</th><th>Alt</th><th>Region</th></tr>';
   milAC.slice(0,30).forEach(a=>{htm+='<tr><td>'+esc(a.cs||'\u2014')+'</td><td>'+esc(a.hex)+'</td><td>'+esc(a.desc)+'</td><td>'+(a.alt===0?'GND':a.alt.toLocaleString()+'ft')+'</td><td>'+esc(a.reg)+'</td></tr>'});
   htm+='</table>';
@@ -3181,6 +3188,17 @@ function togLy(el){
   const ly=el.dataset.layer;
   if(!BDOC_Auth.canAccess(ly)){el.classList.remove('on');layers[ly]=false;showMo(ly);return}
   el.classList.toggle('on');layers[ly]=el.classList.contains('on');
+  // P119 RENDER GOVERNOR: sat/air/forcetrack interpolate against the Cesium clock,
+  // so they need continuous render. Everything else is static and can run on-demand.
+  // Refcounted so turning off satellites while aircraft are still up keeps the lock.
+  try{
+    if(window.BDOCRender&&['sat','air','forcetrack'].includes(ly)){
+      const anim=layers.sat||layers.air||layers.forcetrack;
+      if(anim)window.BDOCRender.hold('animated-layers');
+      else window.BDOCRender.release('animated-layers');
+    }
+    if(window.BDOCRender)window.BDOCRender.kick();
+  }catch(_){ }
   // Phase 14 fix (2026-05-12): AIR toggle now shows ALL aircraft (civ + mil). FORCE TRACK adds the side panel for mil only.
   if(ly==='forcetrack'){document.getElementById('ftPanel').classList.toggle('show',layers[ly]);if(layers.forcetrack&&airEnts.length===0&&milEnts.length===0){BDOC.layerLoadFx.start('forcetrack');BDOC.LazyLoader.load('layers-air').then(()=>{if(window.loadAircraft)window.loadAircraft();if(window.updateForcePanel)window.updateForcePanel();BDOC.layerLoadFx.done('forcetrack',true)}).catch(e=>{console.warn('[lazy layers-air]',e);BDOC.layerLoadFx.done('forcetrack',false)})}else{_bSafe(()=>window.updateForcePanel&&window.updateForcePanel())}airEnts.forEach(e=>e.show=layers.air);milEnts.forEach(e=>e.show=layers.air||layers.forcetrack)}
   if(ly==='air'){if(layers.air&&airEnts.length===0&&milEnts.length===0){BDOC.layerLoadFx.start('air');BDOC.LazyLoader.load('layers-air').then(()=>{if(window.loadAircraft)window.loadAircraft();BDOC.layerLoadFx.done('air',true)}).catch(e=>{console.warn('[lazy layers-air]',e);BDOC.layerLoadFx.done('air',false)})}airEnts.forEach(e=>e.show=layers.air);milEnts.forEach(e=>e.show=layers.air||layers.forcetrack)}
@@ -3463,7 +3481,7 @@ function exportPACEpdf(){
 function navTo(v,btn){
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('a'));if(btn)btn.classList.add('a');
   if(!V)return;
-  const views={globe:{lon:30,lat:20,alt:18000000},mideast:{lon:50,lat:28,alt:3500000},europe:{lon:15,lat:50,alt:5000000},pacific:{lon:125,lat:22,alt:6000000},africa:{lon:25,lat:5,alt:5500000},dc:{lon:-77.04,lat:38.9,alt:120000}};
+  const views={globe:{lon:30,lat:20,alt:18000000},mideast:{lon:50,lat:28,alt:3500000},europe:{lon:15,lat:50,alt:5000000},pacific:{lon:125,lat:22,alt:6000000},africa:{lon:25,lat:5,alt:5500000},northcom:{lon:-100,lat:45,alt:7000000},southcom:{lon:-70,lat:-15,alt:7000000},spacecom:{lon:-95,lat:38,alt:26000000},dc:{lon:-77.04,lat:38.9,alt:120000}};
   const t=views[v]||views.globe;
   flyToTarget(t.lon,t.lat,t.alt,1.8);
 }
@@ -9882,18 +9900,20 @@ function loadVegetationGrid(){
 Health.init();
 initMobile();
 if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();
-msg('sy','<b>KGS BDOC v7.0 \u2014 ONLINE</b><br><br>Multi-domain intelligence platform initializing across '+CFG.regions.length+' COCOM regions.<br>Type <b>help</b> for available commands. Press <b>?</b> for keyboard shortcuts.');
+msg('sy','<b>KGS BDOC v7.0 \u2014 ONLINE</b><br><br>Multi-domain intelligence platform initializing across '+CFG.regions.length+' surveillance regions (7 geographic COCOM AORs).<br>Type <b>help</b> for available commands. Press <b>?</b> for keyboard shortcuts.');
 af('var(--kf)','KGS BDOC v7.0 initialized \u2014 defense intelligence platform online');
-af('var(--bl)','LIVE INTEL \u2014 Monitoring '+CFG.regions.length+' COCOM regions worldwide');
+af('var(--bl)','LIVE INTEL \u2014 Monitoring '+CFG.regions.length+' surveillance regions across 7 geographic COCOM AORs');
 af('var(--ok)','FEEDS: USGS Seismic \u2022 NASA FIRMS \u2022 OpenSky \u2022 ADS-B \u2022 TeleGeography \u2022 CelesTrak \u2022 NIFC \u2022 NWS');
 af('var(--yl)','DOMAINS: Air \u2022 Space \u2022 Seismic \u2022 Fire \u2022 Maritime \u2022 Conflict \u2022 Cyber \u2022 Infrastructure');
 af('var(--pr)','Kitsune Global Solutions LLC \u2014 Service-Disabled Veteran-Owned Small Business');
 // Periodic ticker refresh — keeps bottom feed alive with current stats every 5 min
 setInterval(()=>{
   const now=new Date().toISOString().slice(11,19)+'Z';
-  const healthyCount=Object.values(Health.feeds||{}).filter(f=>f.status==='healthy').length;
-  const totalFeeds=Object.keys(Health.feeds||{}).length;
-  af('var(--bl)',now+' \u2014 '+healthyCount+'/'+totalFeeds+' feeds healthy \u2022 '+milAC.length+' mil aircraft \u2022 '+eqEnts.length+' earthquakes \u2022 '+fireEnts.length+' fires \u2022 '+satEnts.length+' satellites');
+  // P119: use Health.statusLine() — IDLE feeds no longer counted as failures.
+  const stat=(typeof Health!=='undefined'&&Health.statusLine)?Health.statusLine():'STATUS UNAVAILABLE';
+  const c=(typeof Health!=='undefined'&&Health.counts)?Health.counts():{down:0,degraded:0};
+  const col=c.down>0?'var(--rd)':(c.degraded>0?'var(--yl)':'var(--ok)');
+  af(col,now+' \u2014 '+stat+' \u2022 '+milAC.length+' mil aircraft \u2022 '+eqEnts.length+' earthquakes \u2022 '+fireEnts.length+' fires \u2022 '+satEnts.length+' satellites');
 },300000);
 async function bootFeeds(){
   // Stripe Checkout returns to success_url with ?session_id=... (see netlify/functions/stripe-checkout.js).
@@ -12581,8 +12601,12 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
-<script src="js/cesium-init.js?v=p68b"></script>
+<script src="js/cesium-init.js?v=p119"></script>
 <script src="js/deeplink.js?v=p115"></script>
+<!-- P119: Section 508 / WCAG 2.1 AA remediation pass. Runtime-labels the 40+ layer
+     switches, panels, buttons and the live intel feed; adds h1, skip link, focus
+     rings and keyboard operation. Loaded last so it sees the fully built DOM. -->
+<script src="js/a11y.js?v=p119"></script>
 <!-- ═════════════════════════════════════════════════════════════════════════
      PHASE 16b (2026-05-13) — FIRST-RUN EXPERIENCE ("Grandma persona")
      On first app open: prompt for location → fly camera there → auto-enable weather radar.

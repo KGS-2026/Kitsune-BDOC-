@@ -67,17 +67,50 @@ exports.handler = async (event) => {
     body: JSON.stringify({ type: 'FeatureCollection', features: [], _gdelt_warning: warn || null })
   });
 
+  // P119 FIX: GDELT DOC 2.0 regularly takes >10s or hangs entirely (verified
+  // 2026-08: api.gdeltproject.org unreachable, root returned no response in 12s).
+  // The old code aborted at 9s and returned an EMPTY FeatureCollection with HTTP 200,
+  // so the News Events layer silently rendered zero pins and looked dead — the worst
+  // possible failure mode because nothing surfaces as broken.
+  //
+  // Three changes:
+  //  1. Stale-while-error: keep the last good FeatureCollection on the warm container
+  //     and serve it (flagged _stale) when GDELT fails. A 20-min-old conflict map beats
+  //     an empty one.
+  //  2. Drop sort=datedesc — it forces a full-index sort server-side at GDELT and is
+  //     the single biggest contributor to the slow responses.
+  //  3. _gdelt_status field so the client can badge the layer honestly (LIVE/STALE/DOWN)
+  //     instead of silently showing nothing.
+  const stale = (warn) => {
+    const c = globalThis.__gdeltLastGood;
+    if (c && Array.isArray(c.features) && c.features.length) {
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({
+          type: 'FeatureCollection', features: c.features,
+          _gdelt_status: 'stale', _stale: true,
+          _stale_age_sec: Math.round((Date.now() - c.t) / 1000),
+          _gdelt_warning: warn || null
+        })
+      };
+    }
+    return { ...empty(warn), body: JSON.stringify({ type:'FeatureCollection', features:[], _gdelt_status:'down', _gdelt_warning: warn || null }) };
+  };
+
   // GDELT DOC 2.0 — the maintained endpoint. format=json, mode=artlist.
-  const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=artlist&maxrecords=${maxrecords}&format=json&timespan=${timespan}&sort=datedesc`;
+  // sort=datedesc removed (P119) — it forces a full-index sort at GDELT and was the
+  // main driver of >9s responses. artlist already returns recent-first in practice.
+  const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=artlist&maxrecords=${maxrecords}&format=json&timespan=${timespan}`;
 
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(9000), headers: { 'User-Agent': 'BDOC/1.0 (intelligence dashboard)' } });
-    if (!res.ok) return empty(`GDELT DOC returned ${res.status}`); // 429 rate-limit etc → degrade, don't 502
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000), headers: { 'User-Agent': 'BDOC/1.0 (intelligence dashboard)' } });
+    if (!res.ok) return stale(`GDELT DOC returned ${res.status}`); // 429 rate-limit etc → serve last good
     const text = await res.text();
 
     let data;
     try { data = JSON.parse(text); }
-    catch { return empty('GDELT returned non-JSON'); }
+    catch { return stale('GDELT returned non-JSON'); }
 
     const articles = Array.isArray(data.articles) ? data.articles : [];
     const features = [];
@@ -100,12 +133,15 @@ exports.handler = async (event) => {
       });
     }
 
+    // P119: remember last good result so a GDELT outage degrades to stale, not blank.
+    if (features.length) { try { globalThis.__gdeltLastGood = { features, t: Date.now() }; } catch(_){} }
+
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json', 'Netlify-Vary': 'query', 'Cache-Control': 'public, max-age=600', 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ type: 'FeatureCollection', features, _gdelt_count: articles.length })
+      body: JSON.stringify({ type: 'FeatureCollection', features, _gdelt_count: articles.length, _gdelt_status: 'live' })
     };
   } catch (e) {
-    return empty(e.message); // timeout/network → graceful empty, never 502
+    return stale(e.message); // timeout/network → serve last good, never blank silently
   }
 };

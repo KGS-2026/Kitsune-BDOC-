@@ -92,12 +92,34 @@ const Health={
   start(name){const f=this.feeds[name];if(f){f.totalFetches++;f._t0=performance.now()}},
   ok(name,count=0){const f=this.feeds[name];if(!f)return;f.status='healthy';f.lastOk=Date.now();f.errCount=0;f.dataCount=count;f.responseMs=Math.round(performance.now()-(f._t0||0));this.updateLive()},
   err(name,e){const f=this.feeds[name];if(!f)return;f.errCount++;f.lastErr=e?.message||String(e);f.status=f.errCount>=3?'down':'degraded';f.responseMs=Math.round(performance.now()-(f._t0||0));console.warn(`[Health] ${name} err#${f.errCount}:`,f.lastErr);this.updateLive()},
+  // P119 FIX: a registered-but-never-fetched feed is IDLE (lazy layer nobody toggled),
+  // NOT down. Old code counted 'unknown' against us and printed "0/21 feeds healthy"
+  // on a public ticker while USGS/GDACS/NWS were all returning 200.
+  counts(){
+    const ff=Object.values(this.feeds);
+    return {
+      total:ff.length,
+      ok:ff.filter(f=>f.status==='healthy').length,
+      idle:ff.filter(f=>f.status==='unknown').length,
+      degraded:ff.filter(f=>f.status==='degraded').length,
+      down:ff.filter(f=>f.status==='down').length,
+      active:ff.filter(f=>f.status!=='unknown').length
+    };
+  },
   sysHealth(){
-    const ff=Object.values(this.feeds);if(!ff.length)return'unknown';
-    const down=ff.filter(f=>f.status==='down').length;
-    const deg=ff.filter(f=>f.status==='degraded').length;
-    if(down>ff.length/2)return'critical';if(down>0||deg>ff.length/2)return'degraded';
-    if(deg>0)return'nominal';return'optimal';
+    const c=this.counts();if(!c.total)return'unknown';
+    // Judge health ONLY against feeds that have actually been exercised.
+    if(!c.active)return'standby';
+    if(c.down>c.active/2)return'critical';
+    if(c.down>0||c.degraded>c.active/2)return'degraded';
+    if(c.degraded>0)return'nominal';
+    return'optimal';
+  },
+  // Honest one-line status string for the ticker / HUD.
+  statusLine(){
+    const c=this.counts();
+    if(c.down===0&&c.degraded===0)return c.ok?`ALL SYSTEMS NOMINAL · ${c.ok} OK`+(c.idle?` · ${c.idle} IDLE`:''):'STANDBY — feeds arming';
+    return `OK ${c.ok}/${c.active}`+(c.degraded?` · DEGRADED ${c.degraded}`:'')+(c.down?` · DOWN ${c.down}`:'')+(c.idle?` · IDLE ${c.idle}`:'');
   },
   updateLive(){
     const h=this.sysHealth();const dot=document.getElementById('liveDot');if(!dot)return;
