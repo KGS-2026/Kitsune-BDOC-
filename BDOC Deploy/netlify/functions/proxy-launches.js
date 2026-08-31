@@ -1,100 +1,98 @@
-// Netlify function: Launch Library 2.0 space launches proxy (no auth required)
-// GET /.netlify/functions/proxy-launches?days=7
-// Returns: upcoming space launches within N days
+// Netlify function: Launch Library 2 space launches proxy (no auth required)
+// GET /.netlify/functions/proxy-launches?days=30
+//
+// v2 (Turn 24 audit fix): v1 used deprecated LL 2.0.0 and an invented field
+// shape (rocket.name, image.image_url, integer status). Verified live
+// 2026-08-31 against 2.2.0:
+//   - status is an OBJECT: {id, name, abbrev, description}
+//   - rocket name lives at rocket.configuration.name / .family
+//   - image is a plain URL string in list mode
+//   - pad.latitude/longitude are STRINGS
+// LL free tier is ~15 req/hr — cache 30 min at the edge so BDOC clients
+// share one origin hit instead of burning the budget.
 
 exports.handler = async (event) => {
-  const days = Math.min(parseInt(event.queryStringParameters?.days || '30'), 90); // Cap at 90 days
-  
-  if (isNaN(days) || days < 1) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'days must be a positive integer' })
-    };
-  }
-  
+  let days = parseInt(event.queryStringParameters?.days || '30', 10);
+  if (isNaN(days) || days < 1) days = 30;
+  days = Math.min(days, 90);
+
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
-    
-    // LL2 API: filters by net (launch net) >= today
-    // mode=list for pagination-friendly response
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
     const now = new Date();
-    const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
-    
-    // Format: YYYY-MM-DD
-    const dateGte = now.toISOString().split('T')[0];
-    const dateLte = futureDate.toISOString().split('T')[0];
-    
+    const lte = new Date(now.getTime() + days * 86400000).toISOString().split('T')[0];
+
     const res = await fetch(
-      `https://ll.thespacedevs.com/2.0.0/launch/upcoming/?` +
-      `format=json&limit=100&` +
-      `net__gte=${dateGte}&net__lte=${dateLte}&` +
-      `ordering=net`,
-      {
-        signal: controller.signal,
-        headers: { 'Accept': 'application/json' }
-      }
+      `https://ll.thespacedevs.com/2.2.0/launch/upcoming/?format=json&mode=list&limit=100&net__lte=${lte}&ordering=net`,
+      { signal: controller.signal, headers: { 'Accept': 'application/json' } }
     );
-    
+
     clearTimeout(timeout);
-    
+
+    if (res.status === 429) {
+      return {
+        statusCode: 429,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300', 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'Launch Library rate limit hit — retry later' })
+      };
+    }
+
     if (!res.ok) {
       return {
-        statusCode: res.status,
-        headers: { 'Cache-Control': 'max-age=300' },
+        statusCode: 502,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300', 'Access-Control-Allow-Origin': '*' },
         body: JSON.stringify({ error: `Launch Library returned ${res.status}` })
       };
     }
-    
+
     const data = await res.json();
-    
-    // Normalize response
+
+    const launches = (data.results || []).map(l => ({
+      id: l.id,
+      name: l.name,
+      net: l.net,                                    // ISO 8601
+      net_precision: l.net_precision?.name || null,  // e.g. "Hour"
+      status: l.status?.abbrev || null,              // "Go" | "TBD" | "Hold" ...
+      status_name: l.status?.name || null,
+      rocket: l.rocket?.configuration?.name || null,
+      rocket_family: l.rocket?.configuration?.family || null,
+      provider: l.launch_service_provider?.name || null,
+      pad: l.pad?.name || null,
+      pad_location: l.pad?.location?.name || null,
+      country: l.pad?.location?.country_code || null,
+      // pad coords arrive as strings — parse for direct Cesium use
+      lat: l.pad?.latitude != null ? parseFloat(l.pad.latitude) : null,
+      lon: l.pad?.longitude != null ? parseFloat(l.pad.longitude) : null,
+      mission: l.mission?.name || null,
+      mission_type: l.mission?.type || null,
+      mission_desc: l.mission?.description || null,
+      image: (typeof l.image === 'string') ? l.image : (l.image?.image_url || null),
+      webcast_live: !!l.webcast_live,
+      probability: l.probability ?? null
+    }));
+
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'max-age=600', // 10min cache (launches don't shift that often)
+        // 30 min shared cache: launch NETs rarely move faster, and LL free
+        // tier (~15 req/hr) can't survive per-client fetches.
+        'Cache-Control': 'public, max-age=1800',
         'Access-Control-Allow-Origin': '*'
       },
       body: JSON.stringify({
-        count: data.count || 0,
-        launches: (data.results || []).map(launch => ({
-          id: launch.id,
-          name: launch.name,
-          net: launch.net, // ISO 8601 datetime
-          status: launch.status, // 0=TBD, 1=Go, 2=No Go, 3=Hold, 4=InFlight, 5=Partial Failure, 6=Failure, 7=Success
-          rocket: {
-            id: launch.rocket?.id,
-            name: launch.rocket?.name,
-            family: launch.rocket?.family?.name
-          },
-          pad: {
-            id: launch.pad?.id,
-            name: launch.pad?.name,
-            location: launch.pad?.location?.name,
-            latitude: launch.pad?.latitude,
-            longitude: launch.pad?.longitude,
-            country_code: launch.pad?.location?.country_code
-          },
-          mission: {
-            name: launch.mission?.name,
-            type: launch.mission?.type,
-            description: launch.mission?.description
-          },
-          image_url: launch.image?.image_url,
-          webcast_live: launch.webcast_live,
-          probability: launch.probability,
-          holdreason: launch.holdreason,
-          failreason: launch.failreason
-        })),
-        source: 'thespacedevs.com/launchlibrary2'
+        count: launches.length,
+        window_days: days,
+        launches,
+        source: 'Launch Library 2 (thespacedevs.com)'
       })
     };
   } catch (err) {
-    console.error('[proxy-launches]', err);
+    console.error('[proxy-launches]', err.message);
     return {
       statusCode: 504,
-      headers: { 'Cache-Control': 'max-age=60' },
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60', 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({ error: 'Launch Library request failed', message: err.message })
     };
   }

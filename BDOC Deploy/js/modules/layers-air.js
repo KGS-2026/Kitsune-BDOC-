@@ -64,27 +64,48 @@ let airTimer=null;
 let _satRecords=[];   // {satrec, ent, isISS} for real-time SGP4 re-propagation
 let _satPosTimer=null; // 30s real-time position update timer
 
-// MOTION MODEL INTEGRATION (Turn 23 — render-behind interpolation)
-// Wrapper to get aircraft display position with smoothing + discontinuity absorption
-function getAircraftDisplayPosition(hex, aircraftData) {
-  // Try motion model first (if loaded); fall back to raw position if not available
-  if (typeof motionModel !== 'undefined' && motionModel && motionModel.displayPosition) {
-    try {
-      const interpPos = motionModel.displayPosition(hex, aircraftData);
-      if (interpPos && interpPos instanceof Cesium.Cartesian3) {
-        return interpPos;
-      }
-    } catch(e) {
-      console.warn('[motionModel] displayPosition failed:', e.message);
-      // Fall through to raw position
-    }
+// MOTION MODEL INTEGRATION v2 (Turn 24 — per-frame render-behind interpolation)
+// v1 BUG: assigned a static Cartesian3 once per poll — Cesium sampled it once and
+// the aircraft still snapped. v2 feeds each poll fix to motionModel.updateFix()
+// and binds entity.position to a per-hex CallbackProperty that Cesium evaluates
+// EVERY FRAME, so positions glide between fixes (30s render-behind).
+const _acPosProps = new Map(); // hex -> CallbackProperty (reused across polls)
+function aircraftPositionProperty(hex, a) {
+  // Feed the new fix into the motion model (spd stays in KNOTS here;
+  // motion-model.js converts to m/s exactly once at ingestion).
+  const hasMM = (typeof motionModel !== 'undefined') && motionModel && motionModel.updateFix;
+  if (hasMM) {
+    try { motionModel.updateFix(hex, a); } catch(e) { console.warn('[motionModel] updateFix:', e.message); }
   }
-  // Fallback: raw position
-  return Cesium.Cartesian3.fromDegrees(
-    aircraftData.lon,
-    aircraftData.lat,
-    (aircraftData.alt || 0) * 0.3048
-  );
+  let prop = _acPosProps.get(hex);
+  if (!prop) {
+    // Fallback position (raw last fix) if motion model is unavailable
+    let lastRaw = Cesium.Cartesian3.fromDegrees(a.lon, a.lat, (a.alt || 0) * 0.3048);
+    prop = new Cesium.CallbackProperty(function(time, result) {
+      if (hasMM || (typeof motionModel !== 'undefined' && motionModel)) {
+        try {
+          const p = motionModel.displayPosition(hex, result);
+          if (p) return p;
+        } catch(_) {}
+      }
+      return Cesium.Cartesian3.clone(prop._lastRaw || lastRaw, result);
+    }, false); // isConstant=false -> evaluated per frame
+    prop._lastRaw = lastRaw;
+    _acPosProps.set(hex, prop);
+  }
+  // refresh the raw fallback each poll
+  prop._lastRaw = Cesium.Cartesian3.fromDegrees(a.lon, a.lat, (a.alt || 0) * 0.3048);
+  return prop;
+}
+// Render hold: per-frame interpolation is invisible under requestRenderMode
+// unless we keep frames flowing while aircraft are on screen.
+function _airRenderHold(active) {
+  try {
+    if (window.BDOCRender) {
+      if (active) BDOCRender.hold('air-motion');
+      else BDOCRender.release('air-motion');
+    }
+  } catch(_) {}
 }
 // SECTION 11.5a: AIRCRAFT ICON GENERATION — Phase 14 type-aware (game-style silhouettes)
 // Classify aircraft by description string (ICAO type code + name from adsb.lol .desc field)
@@ -307,6 +328,16 @@ async function fetchOpenSky(reg){
   const lamax=(reg.lat+latR).toFixed(2);
   const lomin=(reg.lon-lonR).toFixed(2);
   const lomax=(reg.lon+lonR).toFixed(2);
+  // ── LEGAL GATE (Turn 24): OpenSky's ToS restrict the free API to research &
+  // non-commercial use. BDOC is a commercial product, so OpenSky is DISABLED
+  // unless explicitly re-enabled (localStorage bdoc_opensky_ok='1' — set this
+  // only under an OpenSky commercial license or in a research deployment).
+  // adsb.lol (ODbL) remains the primary source and carries the full load.
+  try{
+    if(localStorage.getItem('bdoc_opensky_ok')!=='1'){
+      return[];
+    }
+  }catch(_){ return[]; }
   // Browser-direct PRIMARY (p86): OpenSky throttles AWS/datacenter IPs, so the Netlify
   // proxy 502s ~always ("operation aborted due to timeout" after its 7s internal cap) —
   // same pattern as CelesTrak/GDELT. Old order wasted a 15s doomed proxy attempt per
@@ -526,7 +557,7 @@ async function loadAircraft(){
         const _ms=(typeof ms!=='undefined')?(()=>{try{return 'data:image/svg+xml;base64,'+btoa(new ms.Symbol(milSidc,{size:36,colorMode:{Friend:milColor},strokeWidth:2.4,fillOpacity:0.85}).asSVG())}catch(_){return null}})():null;
         const existing=_milEntMap.get(a.hex);
         if(existing){
-          existing.position=getAircraftDisplayPosition(a.hex,a);
+          existing.position=aircraftPositionProperty(a.hex,a);
           existing.billboard.image=getACIcon(milColor,a.hdg,32,a.desc);
           existing.billboard.heightReference=a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE;
           existing.label.text=(a.cs||a.hex).substring(0,8);
@@ -535,7 +566,7 @@ async function loadAircraft(){
           existing.show=layers.air||layers.forcetrack;
           existing._ac=a;
         }else{
-          const ent=V.entities.add({position:Cesium.Cartesian3.fromDegrees(a.lon,a.lat,a.alt*0.3048),billboard:{image:getACIcon(milColor,a.hdg,32,a.desc),width:38,height:38,scaleByDistance:new Cesium.NearFarScalar(5e4,1.3,1e7,0.5),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE,disableDepthTestDistance:5e6},label:{text:(a.cs||a.hex).substring(0,8),font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(milColor),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,22),scaleByDistance:new Cesium.NearFarScalar(1e5,1,6e6,0.35),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},description:buildAircraftCard(a),show:layers.air||layers.forcetrack});
+          const ent=V.entities.add({position:aircraftPositionProperty(a.hex,a),billboard:{image:getACIcon(milColor,a.hdg,32,a.desc),width:38,height:38,scaleByDistance:new Cesium.NearFarScalar(5e4,1.3,1e7,0.5),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE,disableDepthTestDistance:5e6},label:{text:(a.cs||a.hex).substring(0,8),font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(milColor),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,22),scaleByDistance:new Cesium.NearFarScalar(1e5,1,6e6,0.35),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},description:buildAircraftCard(a),show:layers.air||layers.forcetrack});
           ent._ac=a;
           _milEntMap.set(a.hex,ent);
         }
@@ -544,7 +575,7 @@ async function loadAircraft(){
         const civColor=altColor(a.alt);
         const existing=_airEntMap.get(a.hex);
         if(existing){
-          existing.position=getAircraftDisplayPosition(a.hex,a);
+          existing.position=aircraftPositionProperty(a.hex,a);
           existing.billboard.image=getACIcon(civColor,a.hdg,28,a.desc);
           existing.billboard.heightReference=a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE;
           existing.description=buildAircraftCard(a);
@@ -552,7 +583,7 @@ async function loadAircraft(){
           existing.show=layers.air;
           existing._ac=a; // attach data for FR24 side panel
         }else{
-          const ent=V.entities.add({position:Cesium.Cartesian3.fromDegrees(a.lon,a.lat,a.alt*0.3048),billboard:{image:getACIcon(civColor,a.hdg,28,a.desc),width:26,height:26,scaleByDistance:new Cesium.NearFarScalar(5e4,1.1,1e7,0.35),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE,disableDepthTestDistance:5e6},description:buildAircraftCard(a),show:layers.air});
+          const ent=V.entities.add({position:aircraftPositionProperty(a.hex,a),billboard:{image:getACIcon(civColor,a.hdg,28,a.desc),width:26,height:26,scaleByDistance:new Cesium.NearFarScalar(5e4,1.1,1e7,0.35),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE,disableDepthTestDistance:5e6},description:buildAircraftCard(a),show:layers.air});
           ent._ac=a;
           _airEntMap.set(a.hex,ent);
         }
@@ -563,10 +594,14 @@ async function loadAircraft(){
   // PERF FIX: Remove only stale entities (aircraft no longer in feed) instead of removing ALL
   for(const[hex,ent]of _milEntMap){if(!freshHex.has(hex)){V.entities.remove(ent);_milEntMap.delete(hex)}}
   for(const[hex,ent]of _airEntMap){if(!freshHex.has(hex)){V.entities.remove(ent);_airEntMap.delete(hex)}}
-  // Prune motion model history for stale aircraft
+  // Prune motion model history + position properties for stale aircraft
   if(typeof motionModel!=='undefined'&&motionModel&&motionModel.pruneStaleAircraft){
     try{motionModel.pruneStaleAircraft(freshHex)}catch(e){console.warn('[motionModel] pruneStaleAircraft failed:',e.message)}
   }
+  for(const hex of _acPosProps.keys()){if(!freshHex.has(hex))_acPosProps.delete(hex)}
+  // Keep frames flowing while aircraft are visible (per-frame CallbackProperty
+  // interpolation is invisible under requestRenderMode without a hold).
+  _airRenderHold((layers.air||layers.forcetrack)&&(totalAir>0||totalMil>0));
   // Auto-untrack if tracked aircraft disappeared from feed
   if(_trackedHex&&!freshHex.has(_trackedHex)){
     V.trackedEntity=undefined;

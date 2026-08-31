@@ -1565,7 +1565,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p124',              // MUST bump on ANY js/modules/* change — p124 = layer-provenance + attribution lightbox
+  _version: 'p125',              // MUST bump on ANY js/modules/* change — p125 = Turn 24 audit fixes: motion-model v2 (CallbackProperty per-frame interp, knots fix), provenance v2 (Health-backed), lightbox fix + ⓘ triggers, OpenSky legal gate
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
@@ -13073,40 +13073,56 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 // Display per-layer source metadata, TTL, disclaimers, licenses
 // ══════════════════════════════════════════════════════════
 (function(){
-  // Create lightbox modal (injected at end)
+  // Lightbox overlay — display toggles on THIS element (v1 bug: display:none sat
+  // on an inner child while show() flipped the outer wrapper — could never open).
   const modal = document.createElement('div');
   modal.id = 'attributionLightbox';
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:none;z-index:9999;align-items:center;justify-content:center;padding:20px';
   modal.innerHTML = `
-    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:none;z-index:9999;align-items:center;justify-content:center;padding:20px;font-family:var(--m)">
-      <div style="background:#0d1117;border:1px solid #3fb950;border-radius:8px;max-height:90vh;overflow-y:auto;max-width:600px;position:relative">
-        <button onclick="document.getElementById('attributionLightbox').style.display='none'" style="position:absolute;top:12px;right:12px;background:none;border:none;color:#8b949e;cursor:pointer;font-size:20px">&times;</button>
+      <div id="attributionPanel" style="background:#0d1117;border:1px solid #3fb950;border-radius:8px;max-height:90vh;overflow-y:auto;max-width:600px;position:relative">
+        <button id="attributionCloseBtn" style="position:absolute;top:12px;right:12px;background:none;border:none;color:#8b949e;cursor:pointer;font-size:20px">&times;</button>
         <div id="attributionContent" style="padding:20px"></div>
       </div>
-    </div>
   `;
   document.body.appendChild(modal);
-  
-  // Helper to show attribution
+
   window.showLayerAttribution = function(layerId) {
-    if (typeof LayerProvenance === 'undefined' || !LayerProvenance.getAttribution) return;
-    const contentDiv = document.getElementById('attributionContent');
-    contentDiv.innerHTML = LayerProvenance.getAttribution(layerId);
-    document.getElementById('attributionLightbox').style.display = 'flex';
+    if (typeof LayerProvenance === 'undefined' || !LayerProvenance.getAttribution) {
+      // Provenance module not loaded yet — load it, then retry once
+      if (window.BDOC && BDOC.LazyLoader) {
+        BDOC.LazyLoader.load('layer-provenance').then(()=>window.showLayerAttribution(layerId)).catch(()=>{});
+      }
+      return;
+    }
+    const html = LayerProvenance.getAttribution(layerId);
+    if (!html) return; // no provenance entry for this layer — do nothing
+    document.getElementById('attributionContent').innerHTML = html;
+    modal.style.display = 'flex';
   };
-  
-  // Close on Escape key
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && document.getElementById('attributionLightbox')) {
-      document.getElementById('attributionLightbox').style.display = 'none';
-    }
-  });
-  
-  // Close on background click
-  document.getElementById('attributionLightbox').addEventListener('click', e => {
-    if (e.target.id === 'attributionLightbox') {
-      e.target.style.display = 'none';
-    }
-  });
+
+  document.getElementById('attributionCloseBtn').addEventListener('click', () => { modal.style.display = 'none'; });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') modal.style.display = 'none'; });
+  // Background click: close only when the click is on the overlay itself, not the panel
+  modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+
+  // ── UI TRIGGER: inject an ⓘ source button into every layer row that has
+  // a provenance entry. Right-aligned, stops propagation so it doesn't toggle.
+  const PROV_LAYERS = ['air','fire','eq','weather','conf','cable','sat'];
+  function injectInfoButtons(){
+    document.querySelectorAll('.ly[data-layer]').forEach(row => {
+      const id = row.dataset.layer;
+      if (!PROV_LAYERS.includes(id) || row.querySelector('.ly-info')) return;
+      const btn = document.createElement('span');
+      btn.className = 'ly-info';
+      btn.textContent = 'ⓘ';
+      btn.title = 'Data sources & attribution';
+      btn.style.cssText = 'margin-left:6px;color:#8b949e;cursor:pointer;font-size:10px;flex:0 0 auto';
+      btn.addEventListener('click', e => { e.stopPropagation(); window.showLayerAttribution(id); });
+      row.appendChild(btn);
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', injectInfoButtons);
+  else injectInfoButtons();
 })();
 
 </script>

@@ -32,7 +32,10 @@ const s=V.scene;
 //   BDOCRender.kick()          -> one-shot redraw after a data/style update
 try{
   s.requestRenderMode=true;
-  s.maximumRenderTimeChange=Infinity;   // prevent Cesium from re-rendering on sim-time deltas behind the governor's back
+  // 30s: idle scenes re-render at most twice a minute so sun/lighting and the
+  // day/night terminator keep drifting, while still saving ~99% of idle GPU.
+  // (Audit fix: Infinity froze lighting entirely; 0.5 defeated requestRenderMode.)
+  s.maximumRenderTimeChange=30;
   window.BDOCRender={
     _holds:new Set(),
     hold(tag){ this._holds.add(tag); this._apply(); },
