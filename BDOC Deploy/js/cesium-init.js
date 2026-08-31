@@ -32,7 +32,7 @@ const s=V.scene;
 //   BDOCRender.kick()          -> one-shot redraw after a data/style update
 try{
   s.requestRenderMode=true;
-  s.maximumRenderTimeChange=0.5;   // still ticks for sun/lighting drift
+  s.maximumRenderTimeChange=Infinity;   // prevent Cesium from re-rendering on sim-time deltas behind the governor's back
   window.BDOCRender={
     _holds:new Set(),
     hold(tag){ this._holds.add(tag); this._apply(); },
@@ -50,6 +50,13 @@ try{
   // Any camera move or entity mutation already triggers Cesium's own
   // requestRender(); this covers imagery tile loads settling in.
   V.scene.globe.tileLoadProgressEvent.addEventListener(n=>{ if(n===0)window.BDOCRender.kick(); });
+  // Kill rendering when tab is backgrounded (PWA + Meshtastic battery win)
+  document.addEventListener('visibilitychange',()=>{
+    try{
+      V.useDefaultRenderLoop=!document.hidden;
+      if(!document.hidden)window.BDOCRender.kick();
+    }catch(_){ }
+  });
 }catch(e){console.warn('[RenderGovernor] init failed, falling back to continuous render',e);try{V.scene.requestRenderMode=false}catch(_){}}
 // ── INFOBOX SCRIPT FIX (Cesium 1.104) ──
 // Cesium sandboxes the infoBox iframe as "allow-same-origin allow-popups allow-forms"

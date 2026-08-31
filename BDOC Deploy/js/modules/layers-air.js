@@ -63,6 +63,29 @@ function checkSquawkCodes(aircraft) {
 let airTimer=null;
 let _satRecords=[];   // {satrec, ent, isISS} for real-time SGP4 re-propagation
 let _satPosTimer=null; // 30s real-time position update timer
+
+// MOTION MODEL INTEGRATION (Turn 23 — render-behind interpolation)
+// Wrapper to get aircraft display position with smoothing + discontinuity absorption
+function getAircraftDisplayPosition(hex, aircraftData) {
+  // Try motion model first (if loaded); fall back to raw position if not available
+  if (typeof motionModel !== 'undefined' && motionModel && motionModel.displayPosition) {
+    try {
+      const interpPos = motionModel.displayPosition(hex, aircraftData);
+      if (interpPos && interpPos instanceof Cesium.Cartesian3) {
+        return interpPos;
+      }
+    } catch(e) {
+      console.warn('[motionModel] displayPosition failed:', e.message);
+      // Fall through to raw position
+    }
+  }
+  // Fallback: raw position
+  return Cesium.Cartesian3.fromDegrees(
+    aircraftData.lon,
+    aircraftData.lat,
+    (aircraftData.alt || 0) * 0.3048
+  );
+}
 // SECTION 11.5a: AIRCRAFT ICON GENERATION — Phase 14 type-aware (game-style silhouettes)
 // Classify aircraft by description string (ICAO type code + name from adsb.lol .desc field)
 function classifyAircraftType(desc){
@@ -503,7 +526,7 @@ async function loadAircraft(){
         const _ms=(typeof ms!=='undefined')?(()=>{try{return 'data:image/svg+xml;base64,'+btoa(new ms.Symbol(milSidc,{size:36,colorMode:{Friend:milColor},strokeWidth:2.4,fillOpacity:0.85}).asSVG())}catch(_){return null}})():null;
         const existing=_milEntMap.get(a.hex);
         if(existing){
-          existing.position=Cesium.Cartesian3.fromDegrees(a.lon,a.lat,a.alt*0.3048);
+          existing.position=getAircraftDisplayPosition(a.hex,a);
           existing.billboard.image=getACIcon(milColor,a.hdg,32,a.desc);
           existing.billboard.heightReference=a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE;
           existing.label.text=(a.cs||a.hex).substring(0,8);
@@ -521,7 +544,7 @@ async function loadAircraft(){
         const civColor=altColor(a.alt);
         const existing=_airEntMap.get(a.hex);
         if(existing){
-          existing.position=Cesium.Cartesian3.fromDegrees(a.lon,a.lat,a.alt*0.3048);
+          existing.position=getAircraftDisplayPosition(a.hex,a);
           existing.billboard.image=getACIcon(civColor,a.hdg,28,a.desc);
           existing.billboard.heightReference=a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE;
           existing.description=buildAircraftCard(a);
@@ -540,6 +563,10 @@ async function loadAircraft(){
   // PERF FIX: Remove only stale entities (aircraft no longer in feed) instead of removing ALL
   for(const[hex,ent]of _milEntMap){if(!freshHex.has(hex)){V.entities.remove(ent);_milEntMap.delete(hex)}}
   for(const[hex,ent]of _airEntMap){if(!freshHex.has(hex)){V.entities.remove(ent);_airEntMap.delete(hex)}}
+  // Prune motion model history for stale aircraft
+  if(typeof motionModel!=='undefined'&&motionModel&&motionModel.pruneStaleAircraft){
+    try{motionModel.pruneStaleAircraft(freshHex)}catch(e){console.warn('[motionModel] pruneStaleAircraft failed:',e.message)}
+  }
   // Auto-untrack if tracked aircraft disappeared from feed
   if(_trackedHex&&!freshHex.has(_trackedHex)){
     V.trackedEntity=undefined;
