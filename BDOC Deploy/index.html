@@ -1565,7 +1565,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p123',              // MUST bump on ANY js/modules/* change — p123 = motion-model + render governor + aircraft interpolation
+  _version: 'p124',              // MUST bump on ANY js/modules/* change — p124 = layer-provenance + attribution lightbox
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
@@ -10016,6 +10016,7 @@ async function bootFeeds(){
   // P102: OUTAGE WATCH sentinel — ALWAYS ON, no toggle. Carriers (T-Mobile/AT&T/Verizon),
   // ISPs, clouds, payment rails, GPS, FAA, grid — news-detect every 3 min + statuspage
   // sweep every 2 min. Born from the T-Mobile outage BDOC missed (2026-07-27).
+  setTimeout(()=>{BDOC.LazyLoader.load('layer-provenance').catch(e=>console.warn('[Boot] layer-provenance load failed:',e))},500);
   setTimeout(()=>{BDOC.LazyLoader.load('outage-watch').catch(e=>console.warn('[Boot] outage-watch load failed:',e))},3500);
   // P118: WATCH ZONES — re-arm persisted user watch zones (pin+radius multi-source sweep).
   // Only pay the module cost if the user actually has zones saved.
@@ -13065,6 +13066,47 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
   };
   if (document.readyState === 'complete') setTimeout(attach, 2000);
   else window.addEventListener('load', () => setTimeout(attach, 2000));
+})();
+
+// ══════════════════════════════════════════════════════════
+// TURN 23 TASK 6: DATA ATTRIBUTION LIGHTBOX
+// Display per-layer source metadata, TTL, disclaimers, licenses
+// ══════════════════════════════════════════════════════════
+(function(){
+  // Create lightbox modal (injected at end)
+  const modal = document.createElement('div');
+  modal.id = 'attributionLightbox';
+  modal.innerHTML = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:none;z-index:9999;align-items:center;justify-content:center;padding:20px;font-family:var(--m)">
+      <div style="background:#0d1117;border:1px solid #3fb950;border-radius:8px;max-height:90vh;overflow-y:auto;max-width:600px;position:relative">
+        <button onclick="document.getElementById('attributionLightbox').style.display='none'" style="position:absolute;top:12px;right:12px;background:none;border:none;color:#8b949e;cursor:pointer;font-size:20px">&times;</button>
+        <div id="attributionContent" style="padding:20px"></div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  // Helper to show attribution
+  window.showLayerAttribution = function(layerId) {
+    if (typeof LayerProvenance === 'undefined' || !LayerProvenance.getAttribution) return;
+    const contentDiv = document.getElementById('attributionContent');
+    contentDiv.innerHTML = LayerProvenance.getAttribution(layerId);
+    document.getElementById('attributionLightbox').style.display = 'flex';
+  };
+  
+  // Close on Escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('attributionLightbox')) {
+      document.getElementById('attributionLightbox').style.display = 'none';
+    }
+  });
+  
+  // Close on background click
+  document.getElementById('attributionLightbox').addEventListener('click', e => {
+    if (e.target.id === 'attributionLightbox') {
+      e.target.style.display = 'none';
+    }
+  });
 })();
 
 </script>
