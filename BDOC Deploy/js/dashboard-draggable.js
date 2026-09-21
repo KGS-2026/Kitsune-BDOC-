@@ -1,166 +1,126 @@
-// BDOC Dashboard Draggable - Simplified & Verified
-// Makes sure panels are visible and draggable
-
-const bdocDash = {
+// BDOC Dashboard Draggable - Minimal & Working
+const bdocUI = {
   locked: false,
   
   init() {
-    // Force panels to be visible
-    this.ensurePanelsVisible();
-    this.attachDragHandlers();
+    console.log('[BDOC] Dashboard init starting');
+    
+    // Force panels visible IMMEDIATELY
+    this.showAllPanels();
+    
+    // Attach drag handlers
+    this.setupDragging();
+    
+    // Create lock button
     this.createLockButton();
-    console.log('[BDOC Dashboard] Initialized - panels draggable');
+    
+    console.log('[BDOC] Dashboard ready - panels visible');
   },
 
-  ensurePanelsVisible() {
+  showAllPanels() {
     const panels = ['sidebar', 'data-panel', 'entity-panel', 'top-bar'];
-    
     panels.forEach(id => {
-      const panel = document.getElementById(id);
-      if (!panel) {
-        console.warn(`[BDOC Dashboard] Panel #${id} not found`);
+      const el = document.getElementById(id);
+      if (!el) {
+        console.warn(`[BDOC] Missing #${id}`);
         return;
       }
       
-      // Force visibility
-      panel.style.display = 'block';
-      panel.style.visibility = 'visible';
-      panel.style.opacity = '1';
-      panel.style.pointerEvents = 'auto';
+      // FORCE VISIBILITY
+      el.style.display = 'block !important';
+      el.style.visibility = 'visible !important';
+      el.style.opacity = '1 !important';
+      el.style.position = 'fixed';
+      el.style.zIndex = '100';
       
-      // Ensure it's positioned
-      if (!panel.style.position || panel.style.position === 'static') {
-        panel.style.position = 'fixed';
-      }
-      
-      console.log(`[BDOC Dashboard] Panel #${id} visible`);
+      console.log(`[BDOC] Panel visible: #${id}`);
     });
   },
 
-  attachDragHandlers() {
-    const panelIds = ['sidebar', 'data-panel', 'entity-panel', 'top-bar'];
-    
-    panelIds.forEach(id => {
+  setupDragging() {
+    ['sidebar', 'data-panel', 'entity-panel', 'top-bar'].forEach(id => {
       const panel = document.getElementById(id);
       if (!panel) return;
       
       const header = panel.querySelector('.panel-header');
       if (!header) return;
       
-      // Enable dragging on header
       header.style.cursor = 'grab';
       header.style.userSelect = 'none';
-      header.style.touchAction = 'none';
       
-      header.addEventListener('mousedown', (e) => this.dragStart(e, panel, id));
-      header.addEventListener('touchstart', (e) => this.dragStart(e, panel, id), { passive: false });
+      let isDragging = false;
+      let offsetX = 0, offsetY = 0;
+      
+      const onMouseDown = (e) => {
+        if (this.locked) return;
+        isDragging = true;
+        const rect = panel.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        panel.style.zIndex = '10000';
+        panel.style.opacity = '0.9';
+      };
+      
+      const onMouseMove = (e) => {
+        if (!isDragging) return;
+        const x = Math.max(0, e.clientX - offsetX);
+        const y = Math.max(0, e.clientY - offsetY);
+        panel.style.left = x + 'px';
+        panel.style.top = y + 'px';
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
+      };
+      
+      const onMouseUp = () => {
+        if (isDragging) {
+          isDragging = false;
+          panel.style.zIndex = '100';
+          panel.style.opacity = '1';
+        }
+      };
+      
+      header.addEventListener('mousedown', onMouseDown);
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
     });
   },
 
-  dragStart(e, panel, panelId) {
-    if (this.locked) {
-      console.log('[BDOC Dashboard] Panels locked - cannot drag');
-      return;
-    }
-    
-    e.preventDefault();
-    
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    const rect = panel.getBoundingClientRect();
-    const offsetX = clientX - rect.left;
-    const offsetY = clientY - rect.top;
-    
-    // Highlight while dragging
-    panel.style.opacity = '0.9';
-    panel.style.zIndex = '9999';
-    
-    const onMove = (e) => {
-      const moveX = e.touches ? e.touches[0].clientX : e.clientX;
-      const moveY = e.touches ? e.touches[0].clientY : e.clientY;
-      
-      let newX = moveX - offsetX;
-      let newY = moveY - offsetY;
-      
-      // Clamp to viewport
-      newX = Math.max(0, Math.min(newX, window.innerWidth - rect.width));
-      newY = Math.max(0, Math.min(newY, window.innerHeight - rect.height));
-      
-      panel.style.left = newX + 'px';
-      panel.style.top = newY + 'px';
-      panel.style.right = 'auto';
-      panel.style.bottom = 'auto';
-    };
-    
-    const onEnd = () => {
-      panel.style.opacity = '1';
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('touchmove', onMove);
-      document.removeEventListener('mouseup', onEnd);
-      document.removeEventListener('touchend', onEnd);
-      
-      // Save position
-      const pos = { left: panel.style.left, top: panel.style.top };
-      console.log(`[BDOC Dashboard] Saved ${panelId}:`, pos);
-    };
-    
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('touchmove', onMove, { passive: false });
-    document.addEventListener('mouseup', onEnd);
-    document.addEventListener('touchend', onEnd);
-  },
-
   createLockButton() {
-    // Remove if exists
-    const existing = document.getElementById('bdoc-lock-btn');
-    if (existing) existing.remove();
-    
     const btn = document.createElement('button');
-    btn.id = 'bdoc-lock-btn';
-    btn.innerHTML = '🔓 UNLOCK';
+    btn.innerHTML = '🔓 DRAG TO POSITION';
     btn.style.cssText = `
       position: fixed;
-      top: 12px;
+      top: 60px;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 10000;
-      padding: 10px 16px;
-      background: rgba(15, 17, 21, 0.8);
-      border: 1px solid rgba(232, 179, 73, 0.3);
+      z-index: 10001;
+      padding: 12px 20px;
+      background: rgba(232, 179, 73, 0.2);
+      border: 1px solid rgba(232, 179, 73, 0.5);
       color: #E8B349;
-      font-family: 'IBM Plex Sans', sans-serif;
-      font-size: 11px;
-      font-weight: 600;
-      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      font-weight: bold;
       cursor: pointer;
-      transition: all 150ms ease;
+      border-radius: 6px;
+      transition: all 200ms;
     `;
     
     btn.addEventListener('click', () => {
       this.locked = !this.locked;
-      if (this.locked) {
-        btn.innerHTML = '🔒 LOCKED';
-        btn.style.background = 'rgba(232, 179, 73, 0.2)';
-        btn.style.color = '#E8B349';
-        console.log('[BDOC Dashboard] ✓ LOCKED - take screenshot now');
-      } else {
-        btn.innerHTML = '🔓 UNLOCK';
-        btn.style.background = 'rgba(15, 17, 21, 0.8)';
-        btn.style.color = '#D4F24E';
-        console.log('[BDOC Dashboard] ✓ UNLOCKED - panels draggable again');
-      }
+      btn.innerHTML = this.locked ? '🔒 LOCKED' : '🔓 DRAG TO POSITION';
+      btn.style.color = this.locked ? '#D4F24E' : '#E8B349';
     });
     
     document.body.appendChild(btn);
   }
 };
 
-// Initialize immediately on load
+// Init on load
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => bdocDash.init(), 100); // Small delay to let DOM settle
+    setTimeout(() => bdocUI.init(), 200);
   });
 } else {
-  setTimeout(() => bdocDash.init(), 100);
+  setTimeout(() => bdocUI.init(), 200);
 }
