@@ -27,7 +27,7 @@ exports.handler = async (event) => {
   }
 
   if (!supabase) {
-    return { statusCode: 503, body: JSON.stringify({ error: 'Supabase not configured' }) };
+    return { statusCode: 503, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'Supabase not configured' }) };
   }
 
   try {
