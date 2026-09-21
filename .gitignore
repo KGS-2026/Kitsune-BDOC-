@@ -5,3 +5,6 @@ dist-electron/
 node_modules/
 "BDOC Deploy/dist-electron/"
 "BDOC Deploy/node_modules/"
+
+# Local Netlify folder
+.netlify
