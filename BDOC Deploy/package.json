@@ -2,7 +2,7 @@
   "name": "kgs-bdoc",
   "version": "8.0.0",
   "private": true,
-  "description": "KGS BDOC \u2014 Military-grade geospatial intelligence platform. Offline-capable desktop app.",
+  "description": "KGS BDOC — Military-grade geospatial intelligence platform. Offline-capable desktop app.",
   "author": {
     "name": "Kitsune Global Solutions LLC",
     "email": "support@kgsbdoc.netlify.app"
@@ -19,10 +19,11 @@
     "build:all": "electron-builder --win --mac --linux"
   },
   "dependencies": {
-    "stripe": "^17.5.0",
+    "@netlify/blobs": "^8.1.0",
     "@supabase/supabase-js": "^2.49.4",
     "express": "^4.18.2",
-    "@netlify/blobs": "^8.1.0"
+    "mqtt": "^5.16.0",
+    "stripe": "^17.5.0"
   },
   "devDependencies": {
     "electron": "^31.0.0",
@@ -31,7 +32,7 @@
   "build": {
     "appId": "com.kitsuneglobal.bdoc",
     "productName": "KGS BDOC",
-    "copyright": "Copyright \u00a9 2026 Kitsune Global Solutions LLC",
+    "copyright": "Copyright © 2026 Kitsune Global Solutions LLC",
     "directories": {
       "output": "dist-electron"
     },

@@ -1,116 +1,81 @@
 // js/mesh-globe-layer.js
-// Renders Meshtastic mesh nodes on the Cesium globe
+// Renders Meshtastic mesh nodes on the Cesium globe.
+// NOTE: the globe viewer in this app is the global `V` (see js/cesium-init.js), NOT `viewer`.
 
 const meshGlobeLayer = {
   entities: new Map(),
-  refreshInterval: 30000, // 30 seconds
+  refreshInterval: 30000,
   refreshHandle: null,
+  enabled: true,
+
+  get viewer() {
+    return (typeof V !== 'undefined' && V) ? V : (typeof window !== 'undefined' ? window.V : null);
+  },
 
   async init() {
-    console.log('[Mesh Globe] Initializing mesh layer');
-
-    // Initial load
+    if (!this.viewer) { console.warn('[Mesh Globe] Cesium viewer (V) not ready; retrying in 2s'); setTimeout(() => this.init(), 2000); return; }
+    console.log('[Mesh Globe] init');
     await this.fetchAndRender();
-
-    // Auto-refresh every 30 seconds
-    this.refreshHandle = setInterval(() => {
-      this.fetchAndRender().catch(e => console.error('[Mesh Globe] Refresh error:', e));
-    }, this.refreshInterval);
+    this.refreshHandle = setInterval(() => { this.fetchAndRender().catch(e => console.error('[Mesh Globe]', e)); }, this.refreshInterval);
   },
 
   async fetchAndRender() {
+    let result;
     try {
-      const response = await fetch('/.netlify/functions/mesh-nodes');
-      const result = await response.json();
-
-      if (!result.nodes || result.nodes.length === 0) {
-        console.log('[Mesh Globe] No active mesh nodes');
-        return;
-      }
-
-      console.log(`[Mesh Globe] Rendering ${result.count} nodes`);
-      this.renderNodes(result.nodes);
-    } catch (err) {
-      console.error('[Mesh Globe] Fetch error:', err);
-    }
+      const res = await fetch('/.netlify/functions/mesh-nodes');
+      if (!res.ok) { console.debug('[Mesh Globe] mesh-nodes HTTP', res.status); return; }
+      result = await res.json();
+    } catch (err) { console.debug('[Mesh Globe] fetch failed:', err.message); return; }
+    if (!result || !Array.isArray(result.nodes)) return;
+    this.renderNodes(result.nodes);
   },
 
   renderNodes(nodes) {
-    // Track which nodes are still active
-    const activeNodeIds = new Set();
+    const v = this.viewer;
+    if (!v) return;
+    const active = new Set();
 
     for (const node of nodes) {
-      activeNodeIds.add(node.node_id);
+      if (typeof node.latitude !== 'number' || typeof node.longitude !== 'number') continue;
+      const id = 'mesh:' + node.node_id;
+      active.add(id);
+      const position = Cesium.Cartesian3.fromDegrees(node.longitude, node.latitude, node.altitude || 0);
+      const existing = this.entities.get(id) || v.entities.getById(id);
 
-      // Convert lat/lon to Cesium Cartesian3
-      const position = Cesium.Cartesian3.fromDegrees(
-        node.longitude,
-        node.latitude,
-        node.altitude || 0
-      );
-
-      // Check if we already have this node
-      if (this.entities.has(node.node_id)) {
-        // Update existing
-        const entity = this.entities.get(node.node_id);
-        entity.position = position;
-        entity.properties.lastHeard = new Date(node.last_heard);
-      } else {
-        // Create new entity
-        const entity = viewer.entities.add({
-          id: node.node_id,
-          position,
-          point: {
-            pixelSize: 8,
-            color: Cesium.Color.LIME,
-            outlineColor: Cesium.Color.WHITE,
-            outlineWidth: 2
-          },
-          label: {
-            text: node.long_name || node.short_name || node.node_id,
-            font: '12px IBM Plex Mono',
-            fillColor: Cesium.Color.WHITE,
-            outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 1,
-            pixelOffset: new Cesium.Cartesian2(0, -15),
-            showBackground: true,
-            backgroundColor: Cesium.Color.BLACK.withAlpha(0.6)
-          },
-          properties: {
-            type: 'mesh_node',
-            nodeId: node.node_id,
-            hwModel: node.hw_model || 'unknown',
-            lastHeard: new Date(node.last_heard)
-          }
-        });
-
-        this.entities.set(node.node_id, entity);
-        console.log(`[Mesh Globe] Added node: ${node.node_id}`);
+      if (existing) {
+        existing.position = position;
+        continue;
       }
+      const entity = v.entities.add({
+        id,
+        position,
+        point: { pixelSize: 8, color: Cesium.Color.LIME, outlineColor: Cesium.Color.WHITE, outlineWidth: 2,
+                 disableDepthTestDistance: Number.POSITIVE_INFINITY },
+        label: { text: node.long_name || node.short_name || node.node_id, font: '12px monospace',
+                 fillColor: Cesium.Color.WHITE, outlineColor: Cesium.Color.BLACK, outlineWidth: 1,
+                 pixelOffset: new Cesium.Cartesian2(0, -15), showBackground: true,
+                 backgroundColor: Cesium.Color.BLACK.withAlpha(0.6),
+                 disableDepthTestDistance: Number.POSITIVE_INFINITY },
+        properties: { type: 'mesh_node', nodeId: node.node_id, hwModel: node.hw_model || 'unknown', lastHeard: node.last_heard }
+      });
+      this.entities.set(id, entity);
     }
 
-    // Remove nodes that are no longer in the active set
-    for (const [nodeId, entity] of this.entities.entries()) {
-      if (!activeNodeIds.has(nodeId)) {
-        viewer.entities.remove(entity);
-        this.entities.delete(nodeId);
-        console.log(`[Mesh Globe] Removed stale node: ${nodeId}`);
-      }
+    for (const [id, entity] of this.entities.entries()) {
+      if (!active.has(id)) { v.entities.remove(entity); this.entities.delete(id); }
     }
   },
 
   destroy() {
-    if (this.refreshHandle) {
-      clearInterval(this.refreshHandle);
-    }
-    for (const entity of this.entities.values()) {
-      viewer.entities.remove(entity);
-    }
+    if (this.refreshHandle) clearInterval(this.refreshHandle);
+    const v = this.viewer;
+    if (v) for (const e of this.entities.values()) v.entities.remove(e);
     this.entities.clear();
   }
 };
 
-// Auto-init on page load if Cesium is ready
-if (typeof Cesium !== 'undefined' && typeof viewer !== 'undefined') {
-  meshGlobeLayer.init();
+if (typeof window !== 'undefined') {
+  window.meshGlobeLayer = meshGlobeLayer;
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => meshGlobeLayer.init());
+  else meshGlobeLayer.init();
 }

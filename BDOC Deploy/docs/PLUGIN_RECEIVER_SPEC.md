@@ -331,10 +331,50 @@ All render simultaneously, **no performance hit** (uses Cesium instancing + spat
 
 ---
 
+## Shipped Implementation
+
+| Piece | File | Status |
+|---|---|---|
+| IPC receiver (port 9876) | `tools/bdoc-ipc-receiver.js` | working, tested |
+| Globe renderer | `js/bdoc-plugin-renderer.js` | working |
+| Shared adapter client | `tools/adapters/bdoc_client.py` | working |
+| Wireshark adapter | `tools/adapters/wireshark_adapter.py` | working, tested |
+| inSSIDer / WiFi adapter | `tools/adapters/inssider_adapter.py` | working, tested |
+| Meshtastic MQTT bridge | `tools/mesh-mqtt-listener.js` | working, live data verified |
+
+### Read-back endpoints
+
+Every ingest path also serves `GET`, returning `{status, count, nodes:[...]}`.
+The browser renderer polls these every 2s. `GET /api/v1/status` returns per-store counts.
+
+### Quick start
+
+```bash
+# 1. terminal one — the receiver (BDOC catches here)
+node tools/bdoc-ipc-receiver.js
+
+# 2. terminal two — prove the pipeline with no hardware
+python3 tools/adapters/wireshark_adapter.py --test
+BDOC_HOME_LAT=33.749 BDOC_HOME_LON=-84.388 python3 tools/adapters/inssider_adapter.py --test --once
+
+# 3. real capture
+sudo python3 tools/adapters/wireshark_adapter.py -i eth0 --rate 25
+BDOC_HOME_LAT=33.749 BDOC_HOME_LON=-84.388 python3 tools/adapters/inssider_adapter.py
+```
+
+### Notes that cost real debugging time
+
+- The Meshtastic public broker needs credentials (`meshdev` / `large4cats`) and the JSON
+  topic is `msh/<REGION>/2/json/#`. The earlier `msh/2/+/telemetry/position` guess matched
+  nothing and failed silently.
+- Position payloads use fixed-point `latitude_i` / `longitude_i` at 1e-7 degrees.
+- `env.from` is sometimes a string (`"!abcd1234"`); naive `Number()` yields node id `!00000NaN`.
+- WiFi adapters report 0-100% quality, not dBm; `quality_to_dbm()` converts.
+- The globe viewer global in this app is `V`, not `viewer`.
+
 ## Next Steps
 
-1. Build **Node.js IPC server** in BDOC (port 9876)
-2. Implement **receiver handlers** for each endpoint
-3. Build **layer toggles** in UI
-4. Create **sample clients** (wireshark-poller, wifi-scanner, etc.)
-5. Test offline + online sync
+1. FlightRadar24 adapter (`flightradar/aircraft` endpoint is live and waiting)
+2. Shodan/Censys adapter (`shodan/device`)
+3. UI layer toggles wired to `pluginRenderer.toggleLayer(name)`
+4. Offline cache + mesh rebroadcast when internet drops

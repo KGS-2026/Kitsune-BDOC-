@@ -586,6 +586,7 @@ if('serviceWorker' in navigator){
 }
 
 .bdoc-dashboard {
+  --hud-top-h: 64px;
   position: fixed;
   inset: 0;
   pointer-events: none;
@@ -599,11 +600,14 @@ if('serviceWorker' in navigator){
   position: fixed;
 }
 
+/* Default layout: top bar owns the top strip; side panels start BELOW it.
+   Previously sidebar/top-bar/data-panel were all at top:12px and stacked
+   on top of each other. --hud-top-h reserves the top-bar's height. */
 .sidebar {
   left: 12px;
-  top: 12px;
+  top: calc(12px + var(--hud-top-h));
   width: 300px;
-  max-height: 600px;
+  max-height: calc(100vh - var(--hud-top-h) - 36px);
   overflow-y: auto;
   z-index: 10;
 }
@@ -613,14 +617,14 @@ if('serviceWorker' in navigator){
   right: 12px;
   top: 12px;
   height: auto;
-  z-index: 5;
+  z-index: 20;
 }
 
 .data-panel {
   right: 12px;
-  top: 12px;
+  top: calc(12px + var(--hud-top-h));
   width: 380px;
-  max-height: 500px;
+  max-height: calc(100vh - var(--hud-top-h) - 36px);
   overflow-y: auto;
   z-index: 10;
 }
@@ -631,7 +635,7 @@ if('serviceWorker' in navigator){
   width: 380px;
   max-height: 400px;
   overflow-y: auto;
-  z-index: 10;
+  z-index: 30;
   display: none;
 }
 
@@ -13479,9 +13483,10 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 })();
 
 </script>
-<link rel="stylesheet" href="css/dashboard-glassmorphism.css?v=p72">
-<script src="js/dashboard-ui.js?v=p72"></script>
-<script src="js/dashboard-draggable.js?v=p72"></script>
-<script src="js/mesh-globe-layer.js?v=p72"></script>
+<link rel="stylesheet" href="css/dashboard-glassmorphism.css?v=p73">
+<script src="js/dashboard-ui.js?v=p73"></script>
+<script src="js/dashboard-draggable.js?v=p73"></script>
+<script src="js/mesh-globe-layer.js?v=p73"></script>
+<script src="js/bdoc-plugin-renderer.js?v=p73"></script>
 </body>
 </html>

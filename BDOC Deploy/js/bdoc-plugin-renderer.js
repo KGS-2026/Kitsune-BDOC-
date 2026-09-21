@@ -1,411 +1,245 @@
 // js/bdoc-plugin-renderer.js
-// Renders data from IPC receiver onto Cesium globe
-// Handles: Wireshark flows, WiFi heatmaps, Mesh nodes, Aircraft, Exposed devices, Sensors
+// Renders IPC-received plugin data (Wireshark / WiFi / Mesh / Aircraft / Shodan / Sensors)
+// onto the Cesium globe.
+//
+// FIXES vs first draft:
+//  - used `viewer`; the real global is `V` (js/cesium-init.js)
+//  - GET on POST-only IPC paths (405) -> receiver now serves GET, and we read `.nodes`
+//  - Cesium.Cesium3DTilesets.BoxGraphics is not a real API -> aircraft use a billboard-free point
+//  - 6 sequential awaits per tick at 1s -> parallel + 2s, and backs off when IPC is down
+//  - WiFi cleanup used a broken substring() key match, leaking entities forever
 
 const pluginRenderer = {
-  ipcUrl: 'http://localhost:9876/api/v1',
-  pollInterval: 1000, // Query IPC every 1s
+  ipcUrl: 'http://127.0.0.1:9876/api/v1',
+  pollInterval: 2000,
   pollHandle: null,
+  online: false,
+  failures: 0,
   layers: {
-    wireshark: { enabled: true, entities: new Map() },
-    wifi: { enabled: true, entities: new Map() },
-    mesh: { enabled: true, entities: new Map() },
-    aircraft: { enabled: true, entities: new Map() },
-    shodan: { enabled: true, entities: new Map() },
-    sensor: { enabled: true, entities: new Map() }
+    wireshark: { enabled: true, path: 'wireshark/packet',     entities: new Map() },
+    wifi:      { enabled: true, path: 'wifi/scan',            entities: new Map() },
+    mesh:      { enabled: true, path: 'mesh/node',            entities: new Map() },
+    aircraft:  { enabled: true, path: 'flightradar/aircraft', entities: new Map() },
+    shodan:    { enabled: true, path: 'shodan/device',        entities: new Map() },
+    sensor:    { enabled: true, path: 'sensor/reading',       entities: new Map() }
+  },
+
+  get viewer() {
+    return (typeof V !== 'undefined' && V) ? V : (typeof window !== 'undefined' ? window.V : null);
   },
 
   async init() {
-    console.log('[Plugin Renderer] Initializing IPC renderer');
-
-    // Check if IPC server is running
+    if (!this.viewer) { setTimeout(() => this.init(), 2000); return; }
     try {
-      const status = await fetch(`${this.ipcUrl}/status`).then(r => r.json());
-      console.log('[Plugin Renderer] IPC server ready:', status);
-    } catch (e) {
-      console.warn('[Plugin Renderer] IPC server not responding (will retry):', e.message);
-    }
-
-    // Start polling IPC for new data
-    this.pollHandle = setInterval(() => this.pollIPC(), this.pollInterval);
+      const s = await this._json('status');
+      this.online = !!s;
+      console.log('[Plugin Renderer] IPC', this.online ? 'connected' : 'not detected');
+    } catch (e) { console.log('[Plugin Renderer] IPC not detected (local apps not running)'); }
+    this.pollHandle = setInterval(() => this.poll(), this.pollInterval);
   },
 
-  async pollIPC() {
+  async _json(path) {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 1500);
     try {
-      // Get Wireshark flows
-      const wireshark = await fetch(`${this.ipcUrl}/wireshark/packet`)
-        .then(r => r.json())
-        .then(d => d.nodes || [])
-        .catch(e => []);
-      this.renderWiresharkFlows(wireshark);
+      const res = await fetch(`${this.ipcUrl}/${path}`, { signal: ctl.signal });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) { return null; } finally { clearTimeout(t); }
+  },
 
-      // Get WiFi scans
-      const wifi = await fetch(`${this.ipcUrl}/wifi/scan`)
-        .then(r => r.json())
-        .then(d => d.nodes || [])
-        .catch(e => []);
-      this.renderWiFiScans(wifi);
+  async poll() {
+    const jobs = Object.entries(this.layers)
+      .filter(([, l]) => l.enabled)
+      .map(([name, l]) => this._json(l.path).then(r => [name, r]));
+    const results = await Promise.all(jobs);
 
-      // Get Mesh nodes
-      const mesh = await fetch(`${this.ipcUrl}/mesh/node`)
-        .then(r => r.json())
-        .then(d => d.nodes || [])
-        .catch(e => []);
-      this.renderMeshNodes(mesh);
+    const anyOk = results.some(([, r]) => r && Array.isArray(r.nodes));
+    if (!anyOk) {
+      // IPC gone: back off so we don't spam a dead port, and clear stale geometry once.
+      if (this.online) { this.online = false; this.clearAll(); console.log('[Plugin Renderer] IPC offline'); }
+      this.failures++;
+      if (this.failures === 5) { clearInterval(this.pollHandle); this.pollHandle = setInterval(() => this.poll(), 15000); }
+      return;
+    }
+    if (!this.online) { console.log('[Plugin Renderer] IPC online'); }
+    this.online = true; this.failures = 0;
 
-      // Get Aircraft
-      const aircraft = await fetch(`${this.ipcUrl}/flightradar/aircraft`)
-        .then(r => r.json())
-        .then(d => d.nodes || [])
-        .catch(e => []);
-      this.renderAircraft(aircraft);
-
-      // Get Exposed devices
-      const shodan = await fetch(`${this.ipcUrl}/shodan/device`)
-        .then(r => r.json())
-        .then(d => d.nodes || [])
-        .catch(e => []);
-      this.renderShodanDevices(shodan);
-
-      // Get Sensor readings
-      const sensor = await fetch(`${this.ipcUrl}/sensor/reading`)
-        .then(r => r.json())
-        .then(d => d.nodes || [])
-        .catch(e => []);
-      this.renderSensorReadings(sensor);
-    } catch (e) {
-      console.debug('[Plugin Renderer] Poll error:', e.message);
+    for (const [name, r] of results) {
+      if (!r || !Array.isArray(r.nodes)) continue;
+      const fn = { wireshark: 'renderWireshark', wifi: 'renderWiFi', mesh: 'renderMesh',
+                   aircraft: 'renderAircraft', shodan: 'renderShodan', sensor: 'renderSensor' }[name];
+      try { this[fn](r.nodes); } catch (e) { console.error(`[Plugin Renderer] ${name}:`, e.message); }
     }
   },
 
-  renderWiresharkFlows(packets) {
-    if (!this.layers.wireshark.enabled) return;
-
-    const activePackets = new Set();
-    for (const pkt of packets) {
-      const id = `pkt-${pkt.src_ip}-${pkt.dst_ip}`;
-      activePackets.add(id);
-
-      if (!this.layers.wireshark.entities.has(id)) {
-        const srcPos = Cesium.Cartesian3.fromDegrees(pkt.geo_src.lon, pkt.geo_src.lat, 0);
-        const dstPos = Cesium.Cartesian3.fromDegrees(pkt.geo_dst.lon, pkt.geo_dst.lat, 0);
-
-        // Color by protocol
-        let color = Cesium.Color.WHITE;
-        if (pkt.protocol === 'TLS') color = Cesium.Color.BLUE;
-        else if (pkt.protocol === 'HTTP') color = Cesium.Color.YELLOW;
-        else if (pkt.protocol === 'DNS') color = Cesium.Color.CYAN;
-
-        const entity = viewer.entities.add({
-          id,
-          polyline: {
-            positions: [srcPos, dstPos],
-            width: 2,
-            material: color.withAlpha(0.6),
-            clampToGround: false
-          },
-          properties: {
-            type: 'wireshark_flow',
-            src_ip: pkt.src_ip,
-            dst_ip: pkt.dst_ip,
-            protocol: pkt.protocol,
-            packet_size: pkt.packet_size,
-            port: pkt.dst_port
-          }
-        });
-
-        this.layers.wireshark.entities.set(id, entity);
+  // ---- helpers -------------------------------------------------------------
+  _sync(layerName, wanted /* Map<id, addFn> */) {
+    const v = this.viewer; if (!v) return;
+    const layer = this.layers[layerName];
+    for (const [id, addFn] of wanted) {
+      if (!layer.entities.has(id)) {
+        const e = addFn(v, id);
+        if (e) layer.entities.set(id, e);
       }
     }
-
-    // Remove inactive flows
-    for (const [id, entity] of this.layers.wireshark.entities.entries()) {
-      if (!activePackets.has(id)) {
-        viewer.entities.remove(entity);
-        this.layers.wireshark.entities.delete(id);
-      }
+    for (const [id, e] of Array.from(layer.entities.entries())) {
+      if (!wanted.has(id)) { v.entities.remove(e); layer.entities.delete(id); }
     }
   },
 
-  renderWiFiScans(scans) {
-    if (!this.layers.wifi.enabled) return;
+  _label(text, color) {
+    return { text, font: '11px monospace', fillColor: color || Cesium.Color.WHITE,
+             outlineColor: Cesium.Color.BLACK, outlineWidth: 2, style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+             pixelOffset: new Cesium.Cartesian2(0, -16),
+             disableDepthTestDistance: Number.POSITIVE_INFINITY };
+  },
 
-    const activeScans = new Set();
+  // ---- layers --------------------------------------------------------------
+  renderWireshark(packets) {
+    const wanted = new Map();
+    for (const p of packets) {
+      if (!p.geo_src || !p.geo_dst) continue;                 // no geo => nothing to draw
+      const id = `pkt:${p.src_ip}>${p.dst_ip}:${p.dst_port || 0}`;
+      const color = p.protocol === 'TLS' ? Cesium.Color.DEEPSKYBLUE
+                  : p.protocol === 'HTTP' ? Cesium.Color.YELLOW
+                  : p.protocol === 'DNS' ? Cesium.Color.CYAN : Cesium.Color.WHITE;
+      wanted.set(id, (v) => v.entities.add({
+        id,
+        polyline: {
+          positions: [Cesium.Cartesian3.fromDegrees(p.geo_src.lon, p.geo_src.lat, 0),
+                      Cesium.Cartesian3.fromDegrees(p.geo_dst.lon, p.geo_dst.lat, 0)],
+          width: Math.max(1, Math.min(6, (p.packet_size || 0) / 400)),
+          material: new Cesium.PolylineGlowMaterialProperty({ color: color.withAlpha(0.8), glowPower: 0.2 }),
+          arcType: Cesium.ArcType.GEODESIC
+        },
+        properties: { type: 'wireshark_flow', src_ip: p.src_ip, dst_ip: p.dst_ip, protocol: p.protocol, packet_size: p.packet_size, port: p.dst_port }
+      }));
+    }
+    this._sync('wireshark', wanted);
+  },
+
+  renderWiFi(scans) {
+    const wanted = new Map();
     for (const scan of scans) {
-      const id = `wifi-${scan.location.lat}-${scan.location.lon}`;
-      activeScans.add(id);
-
-      if (!this.layers.wifi.entities.has(id)) {
-        for (const net of scan.networks) {
-          const netId = `${id}-${net.bssid}`;
-
-          // Signal strength: -30 dBm (strong) to -90 dBm (weak)
-          const strength = Math.max(0, Math.min(100, (net.signal_dbm + 90) * 10 / 6));
-          const color = strength > 70 ? Cesium.Color.LIME
-                      : strength > 40 ? Cesium.Color.YELLOW
-                      : Cesium.Color.RED;
-
-          const entity = viewer.entities.add({
-            id: netId,
-            position: Cesium.Cartesian3.fromDegrees(scan.location.lon, scan.location.lat, 100),
-            point: {
-              pixelSize: 10,
-              color: color.withAlpha(0.7),
-              outlineColor: Cesium.Color.WHITE,
-              outlineWidth: 1
-            },
-            label: {
-              text: net.ssid,
-              font: '11px IBM Plex Sans',
-              fillColor: Cesium.Color.WHITE,
-              outlineColor: Cesium.Color.BLACK,
-              outlineWidth: 1,
-              pixelOffset: new Cesium.Cartesian2(0, -20)
-            },
-            properties: {
-              type: 'wifi_network',
-              ssid: net.ssid,
-              channel: net.channel,
-              signal_dbm: net.signal_dbm,
-              security: net.security,
-              vendor: net.vendor
-            }
-          });
-
-          this.layers.wifi.entities.set(netId, entity);
-        }
+      if (!scan.location) continue;
+      for (const net of (scan.networks || [])) {
+        const id = `wifi:${scan.location.lat},${scan.location.lon}:${net.bssid || net.ssid}`;
+        const dbm = typeof net.signal_dbm === 'number' ? net.signal_dbm : -90;
+        const strength = Math.max(0, Math.min(100, ((dbm + 90) / 60) * 100));
+        const color = strength > 70 ? Cesium.Color.LIME : strength > 40 ? Cesium.Color.YELLOW : Cesium.Color.ORANGERED;
+        wanted.set(id, (v) => v.entities.add({
+          id,
+          position: Cesium.Cartesian3.fromDegrees(scan.location.lon, scan.location.lat, 50),
+          point: { pixelSize: 10, color: color.withAlpha(0.8), outlineColor: Cesium.Color.WHITE, outlineWidth: 1,
+                   disableDepthTestDistance: Number.POSITIVE_INFINITY },
+          label: this._label(`${net.ssid || '(hidden)'} ch${net.channel ?? '?'} ${dbm}dBm`),
+          properties: { type: 'wifi_network', ssid: net.ssid, channel: net.channel, signal_dbm: dbm, security: net.security, vendor: net.vendor }
+        }));
       }
     }
-
-    // Remove inactive scans
-    for (const [id, entity] of this.layers.wifi.entities.entries()) {
-      if (!activeScans.has(id.substring(0, id.lastIndexOf('-')))) {
-        viewer.entities.remove(entity);
-        this.layers.wifi.entities.delete(id);
-      }
-    }
+    this._sync('wifi', wanted);
   },
 
-  renderMeshNodes(nodes) {
-    if (!this.layers.mesh.enabled) return;
-
-    const activeNodes = new Set();
-    for (const node of nodes) {
-      const id = node.node_id;
-      activeNodes.add(id);
-
-      if (!this.layers.mesh.entities.has(id)) {
-        const entity = viewer.entities.add({
-          id,
-          position: Cesium.Cartesian3.fromDegrees(node.longitude, node.latitude, node.altitude || 0),
-          point: {
-            pixelSize: 8,
-            color: Cesium.Color.LIME,
-            outlineColor: Cesium.Color.WHITE,
-            outlineWidth: 2
-          },
-          label: {
-            text: node.long_name || node.short_name || id,
-            font: '11px IBM Plex Mono',
-            fillColor: Cesium.Color.WHITE,
-            outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 1,
-            pixelOffset: new Cesium.Cartesian2(0, -15)
-          },
-          properties: {
-            type: 'mesh_node',
-            node_id: id,
-            battery: node.battery_level,
-            snr: node.snr,
-            rssi: node.rssi,
-            hw_model: node.hw_model
-          }
-        });
-
-        this.layers.mesh.entities.set(id, entity);
-      }
+  renderMesh(nodes) {
+    const wanted = new Map();
+    for (const n of nodes) {
+      const id = `ipcmesh:${n.node_id}`;
+      wanted.set(id, (v) => v.entities.add({
+        id,
+        position: Cesium.Cartesian3.fromDegrees(n.longitude, n.latitude, n.altitude || 0),
+        point: { pixelSize: 8, color: Cesium.Color.LIME, outlineColor: Cesium.Color.WHITE, outlineWidth: 2,
+                 disableDepthTestDistance: Number.POSITIVE_INFINITY },
+        label: this._label(n.long_name || n.short_name || n.node_id),
+        properties: { type: 'mesh_node', node_id: n.node_id, battery: n.battery_level, snr: n.snr, rssi: n.rssi, hw_model: n.hw_model }
+      }));
     }
-
-    // Remove inactive nodes
-    for (const [id, entity] of this.layers.mesh.entities.entries()) {
-      if (!activeNodes.has(id)) {
-        viewer.entities.remove(entity);
-        this.layers.mesh.entities.delete(id);
-      }
-    }
+    this._sync('mesh', wanted);
   },
 
   renderAircraft(planes) {
-    if (!this.layers.aircraft.enabled) return;
-
-    const activeAircraft = new Set();
-    for (const plane of planes) {
-      const id = plane.icao;
-      activeAircraft.add(id);
-
-      if (!this.layers.aircraft.entities.has(id)) {
-        const entity = viewer.entities.add({
-          id,
-          position: Cesium.Cartesian3.fromDegrees(plane.longitude, plane.latitude, plane.altitude_ft * 0.3048),
-          model: {
-            uri: Cesium.Cesium3DTilesets.BoxGraphics, // Placeholder
-            scale: 100000
-          },
-          label: {
-            text: plane.callsign,
-            font: '12px IBM Plex Mono',
-            fillColor: Cesium.Color.YELLOW,
-            outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 1,
-            pixelOffset: new Cesium.Cartesian2(0, -20)
-          },
-          properties: {
-            type: 'aircraft',
-            callsign: plane.callsign,
-            airline: plane.airline,
-            origin: plane.origin,
-            destination: plane.destination,
-            altitude_ft: plane.altitude_ft,
-            speed_knots: plane.speed_knots,
-            heading: plane.heading
-          }
-        });
-
-        this.layers.aircraft.entities.set(id, entity);
-      }
+    const wanted = new Map();
+    for (const a of planes) {
+      const id = `air:${a.icao}`;
+      wanted.set(id, (v) => v.entities.add({
+        id,
+        position: Cesium.Cartesian3.fromDegrees(a.longitude, a.latitude, (a.altitude_ft || 0) * 0.3048),
+        point: { pixelSize: 7, color: Cesium.Color.YELLOW, outlineColor: Cesium.Color.BLACK, outlineWidth: 1,
+                 disableDepthTestDistance: Number.POSITIVE_INFINITY },
+        label: this._label(a.callsign || a.icao, Cesium.Color.YELLOW),
+        properties: { type: 'aircraft', callsign: a.callsign, airline: a.airline, origin: a.origin,
+                      destination: a.destination, altitude_ft: a.altitude_ft, speed_knots: a.speed_knots, heading: a.heading }
+      }));
     }
+    this._sync('aircraft', wanted);
+  },
 
-    // Remove inactive aircraft
-    for (const [id, entity] of this.layers.aircraft.entities.entries()) {
-      if (!activeAircraft.has(id)) {
-        viewer.entities.remove(entity);
-        this.layers.aircraft.entities.delete(id);
-      }
+  renderShodan(devices) {
+    const wanted = new Map();
+    for (const d of devices) {
+      const id = `dev:${d.ip}`;
+      const color = d.threat_level === 'critical' ? Cesium.Color.RED
+                  : d.threat_level === 'high' ? Cesium.Color.ORANGE
+                  : d.threat_level === 'medium' ? Cesium.Color.YELLOW : Cesium.Color.GRAY;
+      wanted.set(id, (v) => v.entities.add({
+        id,
+        position: Cesium.Cartesian3.fromDegrees(d.longitude, d.latitude, 0),
+        point: { pixelSize: 12, color, outlineColor: Cesium.Color.WHITE, outlineWidth: 2,
+                 disableDepthTestDistance: Number.POSITIVE_INFINITY },
+        label: this._label(d.hostname || d.ip),
+        properties: { type: 'exposed_device', ip: d.ip, hostname: d.hostname, ports: d.ports,
+                      vulnerabilities: d.vulnerabilities, threat_level: d.threat_level }
+      }));
+    }
+    this._sync('shodan', wanted);
+  },
+
+  renderSensor(readings) {
+    const wanted = new Map();
+    for (const r of readings) {
+      const id = `sen:${r.sensor_id}`;
+      const range = Array.isArray(r.normal_range) ? r.normal_range : [-Infinity, Infinity];
+      const tmin = typeof r.threshold_min === 'number' ? r.threshold_min : -Infinity;
+      const tmax = typeof r.threshold_max === 'number' ? r.threshold_max : Infinity;
+      const color = (r.value < tmin || r.value > tmax) ? Cesium.Color.RED
+                  : (r.value < range[0] || r.value > range[1]) ? Cesium.Color.YELLOW : Cesium.Color.LIME;
+      wanted.set(id, (v) => v.entities.add({
+        id,
+        position: Cesium.Cartesian3.fromDegrees(r.longitude, r.latitude, 0),
+        point: { pixelSize: 10, color: color.withAlpha(0.85), outlineColor: Cesium.Color.WHITE, outlineWidth: 1,
+                 disableDepthTestDistance: Number.POSITIVE_INFINITY },
+        label: this._label(`${r.sensor_name || r.sensor_id}: ${r.value}${r.unit || ''}`),
+        properties: { type: 'sensor_reading', sensor_name: r.sensor_name, value: r.value, unit: r.unit, status: r.status }
+      }));
+    }
+    this._sync('sensor', wanted);
+  },
+
+  toggleLayer(name) {
+    const l = this.layers[name];
+    if (!l) return;
+    l.enabled = !l.enabled;
+    if (!l.enabled) {
+      const v = this.viewer;
+      if (v) for (const e of l.entities.values()) v.entities.remove(e);
+      l.entities.clear();
+    }
+    return l.enabled;
+  },
+
+  clearAll() {
+    const v = this.viewer; if (!v) return;
+    for (const l of Object.values(this.layers)) {
+      for (const e of l.entities.values()) v.entities.remove(e);
+      l.entities.clear();
     }
   },
 
-  renderShodanDevices(devices) {
-    if (!this.layers.shodan.enabled) return;
-
-    const activeDevices = new Set();
-    for (const dev of devices) {
-      const id = dev.ip;
-      activeDevices.add(id);
-
-      if (!this.layers.shodan.entities.has(id)) {
-        // Threat level colors
-        let color = Cesium.Color.ORANGE;
-        if (dev.threat_level === 'critical') color = Cesium.Color.RED;
-        else if (dev.threat_level === 'high') color = Cesium.Color.ORANGE;
-        else if (dev.threat_level === 'medium') color = Cesium.Color.YELLOW;
-
-        const entity = viewer.entities.add({
-          id,
-          position: Cesium.Cartesian3.fromDegrees(dev.longitude, dev.latitude, 0),
-          point: {
-            pixelSize: 12,
-            color,
-            outlineColor: Cesium.Color.WHITE,
-            outlineWidth: 2
-          },
-          label: {
-            text: dev.hostname || dev.ip,
-            font: '10px IBM Plex Mono',
-            fillColor: Cesium.Color.WHITE,
-            outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 1,
-            pixelOffset: new Cesium.Cartesian2(0, -18)
-          },
-          properties: {
-            type: 'exposed_device',
-            ip: dev.ip,
-            hostname: dev.hostname,
-            ports: dev.ports,
-            vulnerabilities: dev.vulnerabilities,
-            threat_level: dev.threat_level
-          }
-        });
-
-        this.layers.shodan.entities.set(id, entity);
-      }
-    }
-
-    // Remove inactive devices
-    for (const [id, entity] of this.layers.shodan.entities.entries()) {
-      if (!activeDevices.has(id)) {
-        viewer.entities.remove(entity);
-        this.layers.shodan.entities.delete(id);
-      }
-    }
-  },
-
-  renderSensorReadings(readings) {
-    if (!this.layers.sensor.enabled) return;
-
-    const activeReadings = new Set();
-    for (const reading of readings) {
-      const id = `${reading.sensor_id}-${reading.timestamp}`;
-      activeReadings.add(id);
-
-      if (!this.layers.sensor.entities.has(id)) {
-        // Color by threshold
-        let color = Cesium.Color.GREEN;
-        if (reading.value < reading.threshold_min || reading.value > reading.threshold_max) {
-          color = Cesium.Color.RED;
-        } else if (reading.value < reading.normal_range[0] || reading.value > reading.normal_range[1]) {
-          color = Cesium.Color.YELLOW;
-        }
-
-        const entity = viewer.entities.add({
-          id,
-          position: Cesium.Cartesian3.fromDegrees(reading.longitude, reading.latitude, 0),
-          point: {
-            pixelSize: 10,
-            color: color.withAlpha(0.7),
-            outlineColor: Cesium.Color.WHITE,
-            outlineWidth: 1
-          },
-          label: {
-            text: `${reading.sensor_name}: ${reading.value}${reading.unit}`,
-            font: '11px IBM Plex Mono',
-            fillColor: Cesium.Color.WHITE,
-            outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 1,
-            pixelOffset: new Cesium.Cartesian2(0, -18)
-          },
-          properties: {
-            type: 'sensor_reading',
-            sensor_name: reading.sensor_name,
-            value: reading.value,
-            unit: reading.unit,
-            status: reading.status
-          }
-        });
-
-        this.layers.sensor.entities.set(id, entity);
-      }
-    }
-  },
-
-  toggleLayer(layer) {
-    if (this.layers[layer]) {
-      this.layers[layer].enabled = !this.layers[layer].enabled;
-      console.log(`[Plugin Renderer] ${layer} layer toggled: ${this.layers[layer].enabled}`);
-    }
-  },
-
-  destroy() {
-    if (this.pollHandle) clearInterval(this.pollHandle);
-    for (const layer of Object.values(this.layers)) {
-      for (const entity of layer.entities.values()) {
-        viewer.entities.remove(entity);
-      }
-      layer.entities.clear();
-    }
-  }
+  destroy() { if (this.pollHandle) clearInterval(this.pollHandle); this.clearAll(); }
 };
 
-// Auto-init when Cesium is ready
-if (typeof Cesium !== 'undefined' && typeof viewer !== 'undefined') {
-  pluginRenderer.init();
+if (typeof window !== 'undefined') {
+  window.pluginRenderer = pluginRenderer;
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => pluginRenderer.init());
+  else pluginRenderer.init();
 }
