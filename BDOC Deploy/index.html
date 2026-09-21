@@ -586,19 +586,20 @@ if('serviceWorker' in navigator){
 }
 
 .bdoc-dashboard {
-  position: absolute;
+  position: fixed;
   inset: 0;
   pointer-events: none;
   font-family: var(--font-title);
   color: rgba(255, 255, 255, 0.9);
+  z-index: 100;
 }
 
 .bdoc-dashboard > * {
   pointer-events: auto;
+  position: fixed;
 }
 
 .sidebar {
-  position: fixed;
   left: 12px;
   top: 12px;
   width: 300px;
@@ -608,22 +609,14 @@ if('serviceWorker' in navigator){
 }
 
 .top-bar {
-  position: fixed;
   left: 12px;
   right: 12px;
   top: 12px;
   height: auto;
   z-index: 5;
-  pointer-events: none;
-}
-
-.top-bar .panel-header {
-  border-bottom: none;
-  padding: 12px 16px;
 }
 
 .data-panel {
-  position: fixed;
   right: 12px;
   top: 12px;
   width: 380px;
@@ -633,7 +626,6 @@ if('serviceWorker' in navigator){
 }
 
 .entity-panel {
-  position: fixed;
   right: 12px;
   bottom: 12px;
   width: 380px;
