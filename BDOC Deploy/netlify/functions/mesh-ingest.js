@@ -1,11 +1,14 @@
 // Ingest Meshtastic mesh events (positions, messages, telemetry)
-// Called by meshtastic_receptor.py via HTTP or stored in real-time DB
+// Called by meshtastic_receptor.py via HTTP or stored in real-time db
 const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+let supabase;
+if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
+  supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_KEY
+  );
+}
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -21,6 +24,10 @@ exports.handler = async (event) => {
 
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
+  }
+
+  if (!supabase) {
+    return { statusCode: 503, body: JSON.stringify({ error: 'Supabase not configured' }) };
   }
 
   try {
