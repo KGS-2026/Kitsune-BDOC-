@@ -1,0 +1,238 @@
+<!-- BDOC Premium Dashboard Component
+     Glassmorphism HUD design for live data panels
+-->
+
+<div id="bdoc-dashboard" class="bdoc-dashboard">
+  <!-- Left Sidebar: Layers & Control Panel -->
+  <div class="sidebar glass-panel" id="sidebar">
+    <div class="panel-header">
+      <span>📡 Layers & Control</span>
+      <button class="btn-glass" id="sidebar-toggle" title="Toggle sidebar">×</button>
+    </div>
+    
+    <div class="panel-content">
+      <!-- Layer List -->
+      <div class="data-label" style="margin-bottom: 12px;">Active Layers</div>
+      <div id="layer-list">
+        <!-- Populated dynamically by auth.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Bar: Status & Time -->
+  <div class="top-bar glass-panel" id="top-bar">
+    <div class="panel-header">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="status-dot live"></span>
+        <span id="system-status">SYSTEM LIVE</span>
+      </div>
+      <div id="current-time" style="font-family: var(--font-mono); font-size: 13px;">--:--:--</div>
+    </div>
+  </div>
+
+  <!-- Right Panel: Live Data -->
+  <div class="data-panel glass-panel" id="data-panel">
+    <div class="panel-header">
+      <span>📊 Live Data</span>
+      <span class="badge live">LIVE</span>
+    </div>
+    
+    <div class="panel-content">
+      <!-- Stats Grid -->
+      <div class="hud-grid" id="stats-grid">
+        <!-- Populated dynamically -->
+      </div>
+      
+      <!-- Recent Events -->
+      <div style="margin-top: 24px;">
+        <div class="data-label" style="margin-bottom: 12px;">Recent Events</div>
+        <div class="event-list" id="event-list">
+          <div class="event-item">
+            <span class="event-time">14:32:18</span>
+            Waiting for events...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Right: Entity Details -->
+  <div class="entity-panel glass-panel" id="entity-panel">
+    <div class="panel-header">
+      <span id="entity-title">Entity Details</span>
+      <button class="btn-glass" id="entity-close" title="Close">×</button>
+    </div>
+    
+    <div class="panel-content" id="entity-content">
+      <div style="color: rgba(255,255,255,0.5); text-align: center; padding: 20px;">
+        Click an entity on the map to view details
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.bdoc-dashboard {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--font-title);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.bdoc-dashboard > * {
+  pointer-events: auto;
+}
+
+/* Sidebar */
+.sidebar {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 300px;
+  max-height: 600px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+/* Top Bar */
+.top-bar {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 12px;
+  height: auto;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.top-bar .panel-header {
+  border-bottom: none;
+  padding: 12px 16px;
+}
+
+/* Data Panel */
+.data-panel {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 380px;
+  max-height: 500px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+/* Entity Panel */
+.entity-panel {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 380px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+/* Hide by default */
+.entity-panel {
+  display: none;
+}
+
+.entity-panel.show {
+  display: block;
+  animation: slideIn var(--duration-short) var(--easing-smooth);
+}
+
+/* Layer Item Styling */
+#layer-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.layer-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 13px;
+}
+
+.layer-item input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-primary);
+}
+
+.layer-item label {
+  flex: 1;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+/* Stats Grid */
+#stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .sidebar {
+    width: 260px;
+  }
+  
+  .data-panel,
+  .entity-panel {
+    width: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 250px;
+    left: 0;
+    top: auto;
+    bottom: 0;
+  }
+  
+  .data-panel {
+    display: none;
+  }
+  
+  .entity-panel {
+    width: 100%;
+    max-height: 250px;
+    left: 0;
+    right: auto;
+    bottom: 0;
+  }
+}
+</style>
