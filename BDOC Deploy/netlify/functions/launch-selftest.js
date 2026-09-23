@@ -52,8 +52,11 @@ async function safe(label, fn) {
 
 exports.handler = async (event) => {
   const key = (event.queryStringParameters || {}).key;
-  const expected = process.env.ADMIN_EXPORT_KEY;
-  if (!expected || !key || key !== expected) {
+  // ADMIN_EXPORT_KEY is the existing admin secret; LAUNCH_SELFTEST_KEY is a
+  // separate, rotatable key so a read-only launch audit can be run without
+  // handing out the key that also drives export-contacts/admin-user.
+  const accepted = [process.env.ADMIN_EXPORT_KEY, process.env.LAUNCH_SELFTEST_KEY].filter(Boolean);
+  if (accepted.length === 0 || !key || !accepted.includes(key)) {
     return { statusCode: 401, body: JSON.stringify({ error: 'unauthorized' }) };
   }
 
