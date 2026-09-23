@@ -1,6 +1,10 @@
 // Ingest Meshtastic mesh events (positions, messages, telemetry)
 // Called by meshtastic_receptor.py via HTTP or stored in real-time db
-const { createClient } = require('@supabase/supabase-js');
+//
+// NOTE: do NOT require('@supabase/supabase-js') at module scope here. The site
+// pins NODE_VERSION=18 and supabase-js v2 wants a native WebSocket (Node 20+),
+// which throws at import and 500s the function. ./_supabase requires it lazily
+// inside a try/catch, so go through adminClient() instead.
 
 // P136: SUPABASE_URL is not set on this Netlify site — gate on the SERVICE KEY
 // (the actual secret) and resolve the URL through the shared fallback, or mesh
