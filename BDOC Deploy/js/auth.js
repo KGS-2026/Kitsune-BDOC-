@@ -17,29 +17,19 @@
 // ═══════════════════════════════════════════
 const BDOC_Auth={
   client:null,user:null,profile:null,tier:'recon',mode:'login',_cfg:null,_devMode:false, // PRODUCTION: default tier is recon (free)
-  // ── DEV KEY SYSTEM ──────────────────────────
-  // Bookmark: https://yoursite.com/?dev=KGSBDOC-ADMIN-7X
-  // Once activated, persists in localStorage until you clear it.
-  // Console: BDOC_Auth.devLogout() to revoke dev access
-  _DEV_KEYS:['KGSBDOC-ADMIN-7X'],
+  // ── DEV KEY SYSTEM (local only) ─────────────
+  _DEV_HOSTS:['localhost','127.0.0.1'],
   checkDevKey(){
-    const params=new URLSearchParams(window.location.search);
-    const key=params.get('dev');
-    // Activate via URL param
-    if(key&&this._DEV_KEYS.includes(key)){
-      localStorage.setItem('bdoc_dev_key',key);
-      window.history.replaceState({},'',window.location.pathname); // clean URL
-      console.log('%c[BDOC] DEV MODE ACTIVATED — all features unlocked','color:#3FB950;font-weight:bold;font-size:14px');
+    if(!this._DEV_HOSTS.includes(location.hostname)){
+      localStorage.removeItem('bdoc_dev_key');
+      return false;
     }
-    // Check persisted dev key
-    const saved=localStorage.getItem('bdoc_dev_key');
-    if(saved&&this._DEV_KEYS.includes(saved)){
-      this.tier='enterprise';this._devMode=true;
-      return true;
-    }
+    const key=new URLSearchParams(location.search).get('dev');
+    if(key){localStorage.setItem('bdoc_dev_key',key);history.replaceState({},'',location.pathname);}
+    if(localStorage.getItem('bdoc_dev_key')){this.tier='enterprise';this._devMode=true;return true}
     return false;
   },
-  devLogout(){localStorage.removeItem('bdoc_dev_key');this._devMode=false;this.tier='recon';this.markLockedLayers();this.updateUI();console.log('[BDOC] Dev mode deactivated')},
+  devLogout(){localStorage.removeItem('bdoc_dev_key');this._devMode=false;this.tier='recon';this.markLockedLayers();this.updateUI()},
   // ────────────────────────────────────────────
   async init(){
     // Check dev key FIRST — skip everything if dev
@@ -144,8 +134,17 @@ const BDOC_Auth={
       this.closeModal();
       this._resumePendingSub();
     }catch(e){
-      const msg=(e&&e.message)||'Sign-in failed. Try again.';
-      errEl.textContent=msg;errEl.style.display='block';errEl.style.color='var(--crit)';
+      // P136: distinguish a REAL credential error from the auth backend being
+      // unreachable. A DNS/network failure surfaces as a bare "Failed to fetch"
+      // / "NetworkError", which reads to a user as "my password is wrong" and
+      // makes them retry forever. Name the actual condition instead.
+      const raw=(e&&e.message)||'';
+      const offline=/failed to fetch|networkerror|load failed|err_name_not_resolved|fetch failed|network request failed/i.test(raw);
+      const msg=offline
+        ? 'Authentication service is unreachable right now — this is on our side, not your credentials. The map and all free layers still work. Please try signing in again shortly.'
+        : (raw||'Sign-in failed. Try again.');
+      if(offline)console.error('[Auth] backend unreachable:',raw);
+      errEl.textContent=msg;errEl.style.display='block';errEl.style.color=offline?'var(--warn, #E8B339)':'var(--crit)';
     }finally{
       if(btn){btn.disabled=false;btn.textContent=origLabel||(this.mode==='login'?'SIGN IN':'CREATE ACCOUNT')}
     }
@@ -362,6 +361,17 @@ const BDOC_Auth={
       return;
     }
     const email=(this.profile&&this.profile.email)||this.user.email||'';
+    // P136 (verified live 2026-09-23 via launch-selftest against the Stripe API):
+    // all three *_YEARLY price IDs are type=one_time, NOT recurring. Stripe rejects
+    // them in subscription mode with "You must provide at least one recurring price",
+    // so an annual click dead-ends on a raw API error. Until the prices are recreated
+    // as recurring in the Stripe dashboard, fall back to monthly and say so plainly
+    // rather than sending the user into a broken checkout.
+    if(annual){
+      console.warn('[BDOC] annual billing unavailable (Stripe yearly prices are one-time) — falling back to monthly');
+      this._err&&this._err('Annual billing is temporarily unavailable — continuing with monthly at the same rate. No annual charge will be made.',true);
+      annual=false;
+    }
     // Military promo (verifyMilitary flow) — stored locally, forwarded so checkout can
     // attach the matching Stripe promotion code server-side. Without this the user is
     // promised 50% off but Stripe never hears about it.
