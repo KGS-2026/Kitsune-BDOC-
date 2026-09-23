@@ -2,13 +2,11 @@
 // Called by meshtastic_receptor.py via HTTP or stored in real-time db
 const { createClient } = require('@supabase/supabase-js');
 
-let supabase;
-if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
-  supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-  );
-}
+// P136: SUPABASE_URL is not set on this Netlify site — gate on the SERVICE KEY
+// (the actual secret) and resolve the URL through the shared fallback, or mesh
+// ingest silently no-ops forever.
+const { adminClient } = require('./_supabase');
+const supabase = adminClient();
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {

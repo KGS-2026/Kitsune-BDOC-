@@ -19,7 +19,9 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers, body: JSON.stringify({ status: 'error', error: 'Method not allowed' }) };
   }
 
-  const url = process.env.SUPABASE_URL;
+  // P136: SUPABASE_URL is not set on this Netlify site; resolve via the shared
+  // helper's project-URL fallback so a missing env var doesn't blank the layer.
+  const url = require('./_supabase').supabaseUrl();
   const key = process.env.SUPABASE_SERVICE_KEY;
   if (!url || !key) {
     return { statusCode: 503, headers, body: JSON.stringify({ status: 'offline', error: 'Supabase not configured', nodes: [], count: 0 }) };

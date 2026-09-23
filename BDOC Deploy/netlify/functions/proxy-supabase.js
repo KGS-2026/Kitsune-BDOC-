@@ -4,7 +4,7 @@
 exports.handler = async (event) => {
   const params = event.queryStringParameters || {};
   const table = params.table;
-  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseUrl = require('./_supabase').supabaseUrl(); // P136: env var unset on prod
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {

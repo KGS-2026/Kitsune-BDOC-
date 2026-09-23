@@ -39,7 +39,7 @@ function redactPreserving(text) {
 async function resolveTier(authHeader) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) return 'recon';
   const token = authHeader.slice(7);
-  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseUrl = require('./_supabase').supabaseUrl(); // P136: env var unset on prod
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseKey) return 'recon';
   try {
