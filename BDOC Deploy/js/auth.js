@@ -134,8 +134,17 @@ const BDOC_Auth={
       this.closeModal();
       this._resumePendingSub();
     }catch(e){
-      const msg=(e&&e.message)||'Sign-in failed. Try again.';
-      errEl.textContent=msg;errEl.style.display='block';errEl.style.color='var(--crit)';
+      // P136: distinguish a REAL credential error from the auth backend being
+      // unreachable. A DNS/network failure surfaces as a bare "Failed to fetch"
+      // / "NetworkError", which reads to a user as "my password is wrong" and
+      // makes them retry forever. Name the actual condition instead.
+      const raw=(e&&e.message)||'';
+      const offline=/failed to fetch|networkerror|load failed|err_name_not_resolved|fetch failed|network request failed/i.test(raw);
+      const msg=offline
+        ? 'Authentication service is unreachable right now — this is on our side, not your credentials. The map and all free layers still work. Please try signing in again shortly.'
+        : (raw||'Sign-in failed. Try again.');
+      if(offline)console.error('[Auth] backend unreachable:',raw);
+      errEl.textContent=msg;errEl.style.display='block';errEl.style.color=offline?'var(--warn, #E8B339)':'var(--crit)';
     }finally{
       if(btn){btn.disabled=false;btn.textContent=origLabel||(this.mode==='login'?'SIGN IN':'CREATE ACCOUNT')}
     }
@@ -352,6 +361,17 @@ const BDOC_Auth={
       return;
     }
     const email=(this.profile&&this.profile.email)||this.user.email||'';
+    // P136 (verified live 2026-09-23 via launch-selftest against the Stripe API):
+    // all three *_YEARLY price IDs are type=one_time, NOT recurring. Stripe rejects
+    // them in subscription mode with "You must provide at least one recurring price",
+    // so an annual click dead-ends on a raw API error. Until the prices are recreated
+    // as recurring in the Stripe dashboard, fall back to monthly and say so plainly
+    // rather than sending the user into a broken checkout.
+    if(annual){
+      console.warn('[BDOC] annual billing unavailable (Stripe yearly prices are one-time) — falling back to monthly');
+      this._err&&this._err('Annual billing is temporarily unavailable — continuing with monthly at the same rate. No annual charge will be made.',true);
+      annual=false;
+    }
     // Military promo (verifyMilitary flow) — stored locally, forwarded so checkout can
     // attach the matching Stripe promotion code server-side. Without this the user is
     // promised 50% off but Stripe never hears about it.
