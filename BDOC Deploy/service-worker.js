@@ -3,7 +3,7 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v137';
+const SW_VERSION = 'bdoc-v138';  // p74 grid-down: offline store, link manager, precache tag fix
 const STATIC_CACHE  = SW_VERSION + '-static';
 const CDN_CACHE     = SW_VERSION + '-cdn';
 const API_CACHE     = SW_VERSION + '-api';
@@ -14,15 +14,19 @@ const STATIC_PRECACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/css/bdoc.css?v=p31',
-  '/js/telemetry.js?v=p31',
-  '/js/converters.js?v=p31',
-  '/js/data.js?v=p98d',
-  '/js/auth.js?v=p70',
-  '/js/filters.js?v=p31',
+  // Grid-down core: these MUST be on disk or offline mode cannot start.
+  '/js/bdoc-offline-store.js?v=p74',
+  '/js/bdoc-link-manager.js?v=p74',
+  '/js/bdoc-offline-hud.js?v=p74',
+  '/css/bdoc.css?v=p77',
+  '/js/telemetry.js?v=p59',
+  '/js/converters.js?v=p59',
+  '/js/data.js?v=p119',
+  '/js/auth.js?v=p136',
+  '/js/filters.js?v=p66',
   '/js/kitsune-ai.js?v=p93',
-  '/js/bdoc-atak.js?v=p31',
-  '/js/cesium-init.js?v=p31',
+  '/js/bdoc-atak.js?v=p59',
+  '/js/cesium-init.js?v=p119',
   '/js/deeplink.js?v=p115',
   '/js/modules/layers-military.js?v=p31',
   '/js/modules/layers-conflict.js?v=p31',
@@ -58,10 +62,22 @@ const TILE_HOSTS = [
 ];
 
 // ── Install: pre-cache all static assets ────────────────────────────────────
+// GRID-DOWN NOTE: cache.addAll() is atomic — a single 404 rejects the whole
+// batch and the app ends up with an EMPTY offline cache. The precache list
+// carries stale ?v= tags, so that was a live risk. Cache each entry
+// independently so one bad URL can't wipe out grid-down capability.
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(STATIC_CACHE)
-      .then(cache => cache.addAll(STATIC_PRECACHE.filter(url => !url.includes('undefined'))))
+      .then(async cache => {
+        const urls = STATIC_PRECACHE.filter(url => !url.includes('undefined'));
+        const results = await Promise.allSettled(urls.map(u => cache.add(u)));
+        const failed = results
+          .map((r, i) => (r.status === 'rejected' ? urls[i] : null))
+          .filter(Boolean);
+        if (failed.length) console.warn('[SW] precache misses (non-fatal):', failed);
+        console.log(`[SW] precached ${urls.length - failed.length}/${urls.length}`);
+      })
       .then(() => self.skipWaiting())
       .catch(err => console.warn('[SW] Install cache failed:', err))
   );
@@ -131,8 +147,16 @@ self.addEventListener('fetch', event => {
 // ── Strategies ───────────────────────────────────────────────────────────────
 
 async function cacheFirst(request, cacheName) {
-  const cached = await caches.match(request, { ignoreSearch: false });
+  // GRID-DOWN FIX: cache keys include the ?v= cache-buster. Precaching
+  // '/js/auth.js?v=p136' never matched a live request for '?v=p136', so the app
+  // failed offline even though the bytes were on disk. Fall back to a
+  // search-insensitive match for same-origin assets before giving up.
+  let cached = await caches.match(request, { ignoreSearch: false });
   if (cached) return cached;
+  if (new URL(request.url).origin === self.location.origin) {
+    cached = await caches.match(request, { ignoreSearch: true });
+    if (cached) return cached;
+  }
   try {
     const response = await fetch(request, { signal: AbortSignal.timeout(10000) });
     if (response.ok) {
@@ -169,7 +193,10 @@ async function networkFirst(request, cacheName) {
     }
     return response;
   } catch (e) {
-    const cached = await caches.match(request);
+    let cached = await caches.match(request);
+    if (!cached && new URL(request.url).origin === self.location.origin) {
+      cached = await caches.match(request, { ignoreSearch: true });
+    }
     return cached || offlineFallback(request);
   }
 }
