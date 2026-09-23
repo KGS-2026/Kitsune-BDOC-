@@ -397,6 +397,305 @@ if('serviceWorker' in navigator){
   <div style="flex:0 0 auto;padding:0 10px;background:rgba(0,0,0,0.4);height:100%;display:flex;align-items:center;border-left:1px solid rgba(45,114,210,0.15);font-size:8px;letter-spacing:1px;color:#4a5068;cursor:pointer" onclick="document.getElementById('bdocTicker').style.display='none';try{localStorage.setItem('bdoc_ticker_off','1')}catch(_){}">×</div>
 </div>
 <style>@keyframes bdocTickerScroll{from{transform:translateX(0)}to{transform:translateX(-100%)}}#bdocTickerInner:hover{animation-play-state:paused!important}</style>
+
+<!-- Dashboard Glassmorphism Design System -->
+<style>
+:root {
+  --accent-primary: #E8B349;
+  --accent-secondary: #D4F24E;
+  --accent-danger: #FF4757;
+  --accent-success: #2ED573;
+  --accent-warning: #FFA502;
+  --glass-bg-primary: rgba(15, 17, 21, 0.72);
+  --glass-bg-secondary: rgba(30, 34, 43, 0.68);
+  --glass-bg-focus: rgba(50, 56, 70, 0.80);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --font-title: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  --fs-label: 11px;
+  --fs-data: 15px;
+  --radius-panel: 14px;
+  --duration-micro: 150ms;
+  --easing-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel {
+  background: var(--glass-bg-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all var(--duration-micro) var(--easing-smooth);
+}
+
+.glass-panel:hover {
+  background: var(--glass-bg-secondary);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.panel-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-title);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.panel-content {
+  padding: 16px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: pulse-dot var(--duration-micro) ease-in-out infinite;
+}
+
+.status-dot.live {
+  background: var(--accent-secondary);
+  box-shadow: 0 0 8px var(--accent-secondary);
+}
+
+.status-dot.stale {
+  background: var(--accent-warning);
+  opacity: 0.6;
+  animation: none;
+}
+
+.status-dot.offline {
+  background: var(--accent-danger);
+  opacity: 0.4;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.2); }
+}
+
+.data-label {
+  font-family: var(--font-title);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.data-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-data);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  text-align: right;
+}
+
+.data-value.accent {
+  color: var(--accent-primary);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+}
+
+.badge.live {
+  background: rgba(212, 242, 78, 0.12);
+  border-color: rgba(212, 242, 78, 0.3);
+  color: var(--accent-secondary);
+}
+
+.btn-glass {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
+  color: rgba(255, 255, 255, 0.8);
+  font-family: var(--font-title);
+  font-size: var(--fs-label);
+  cursor: pointer;
+  transition: all var(--duration-micro) var(--easing-smooth);
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 1);
+}
+
+.btn-glass:active {
+  transform: scale(0.98);
+}
+
+.event-list {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.event-item {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid var(--glass-border);
+  border-radius: 4px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.event-time {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 2px;
+}
+
+.event-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.event-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.event-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.bdoc-dashboard {
+  --hud-top-h: 64px;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--font-title);
+  color: rgba(255, 255, 255, 0.9);
+  z-index: 100;
+}
+
+.bdoc-dashboard > * {
+  pointer-events: auto;
+  position: fixed;
+}
+
+/* Default layout: top bar owns the top strip; side panels start BELOW it.
+   Previously sidebar/top-bar/data-panel were all at top:12px and stacked
+   on top of each other. --hud-top-h reserves the top-bar's height. */
+.sidebar {
+  left: 12px;
+  top: calc(12px + var(--hud-top-h));
+  width: 300px;
+  max-height: calc(100vh - var(--hud-top-h) - 36px);
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.top-bar {
+  left: 12px;
+  right: 12px;
+  top: 12px;
+  height: auto;
+  z-index: 20;
+}
+
+.data-panel {
+  right: 12px;
+  top: calc(12px + var(--hud-top-h));
+  width: 380px;
+  max-height: calc(100vh - var(--hud-top-h) - 36px);
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.entity-panel {
+  right: 12px;
+  bottom: 12px;
+  width: 380px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 30;
+  display: none;
+}
+
+.entity-panel.show {
+  display: block;
+  animation: slideIn var(--duration-micro) var(--easing-smooth);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hud-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+@media (max-width: 1200px) {
+  .sidebar { width: 260px; }
+  .data-panel, .entity-panel { width: 320px; }
+}
+
+@media (max-width: 768px) {
+  .sidebar { width: 100%; height: auto; max-height: 250px; left: 0; top: auto; bottom: 0; }
+  .data-panel { display: none; }
+  .entity-panel { width: 100%; max-height: 250px; left: 0; right: auto; bottom: 0; }
+}
+</style>
 <!-- LEGEND (press L) -->
 <div id="legend">
 <div class="leg-i"><div class="leg-d" style="background:#DA3633"></div>MIL AIRCRAFT</div>
@@ -1349,6 +1648,65 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 </div>
 </div>
 <div id="cesiumContainer"></div>
+
+<!-- BDOC Premium Dashboard Glassmorphism HUD -->
+<div id="bdoc-dashboard" class="bdoc-dashboard">
+  <!-- Left Sidebar: Layers & Control Panel -->
+  <div class="sidebar glass-panel" id="sidebar">
+    <div class="panel-header">
+      <span>📡 Layers & Control</span>
+      <button class="btn-glass" id="sidebar-toggle" title="Toggle sidebar">×</button>
+    </div>
+    <div class="panel-content">
+      <div class="data-label" style="margin-bottom: 12px;">Active Layers</div>
+      <div id="layer-list"></div>
+    </div>
+  </div>
+
+  <!-- Top Bar: Status & Time -->
+  <div class="top-bar glass-panel" id="top-bar">
+    <div class="panel-header">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="status-dot live"></span>
+        <span id="system-status">SYSTEM LIVE</span>
+      </div>
+      <div id="current-time" style="font-family: var(--font-mono); font-size: 13px;">--:--:--</div>
+    </div>
+  </div>
+
+  <!-- Right Panel: Live Data -->
+  <div class="data-panel glass-panel" id="data-panel">
+    <div class="panel-header">
+      <span>📊 Live Data</span>
+      <span class="badge live">LIVE</span>
+    </div>
+    <div class="panel-content">
+      <div class="hud-grid" id="stats-grid"></div>
+      <div style="margin-top: 24px;">
+        <div class="data-label" style="margin-bottom: 12px;">Recent Events</div>
+        <div class="event-list" id="event-list">
+          <div class="event-item">
+            <span class="event-time">--:--:--</span>
+            Waiting for events...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Right: Entity Details -->
+  <div class="entity-panel glass-panel" id="entity-panel">
+    <div class="panel-header">
+      <span id="entity-title">Entity Details</span>
+      <button class="btn-glass" id="entity-close" title="Close">×</button>
+    </div>
+    <div class="panel-content" id="entity-content">
+      <div style="color: rgba(255,255,255,0.5); text-align: center; padding: 20px;">
+        Click an entity on the map to view details
+      </div>
+    </div>
+  </div>
+</div>
 <!-- Phase 8B (2026-05-05): First-launch walkthrough — use-case questionnaire then highlighted tour -->
 <div id="bdocOnboard" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,0.85);font-family:var(--s);color:#c8ccd6">
   <!-- STEP 1: Use-case questionnaire -->
@@ -13125,5 +13483,10 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 })();
 
 </script>
+<link rel="stylesheet" href="css/dashboard-glassmorphism.css?v=p73">
+<script src="js/dashboard-ui.js?v=p73"></script>
+<script src="js/dashboard-draggable.js?v=p73"></script>
+<script src="js/mesh-globe-layer.js?v=p73"></script>
+<script src="js/bdoc-plugin-renderer.js?v=p73"></script>
 </body>
 </html>
