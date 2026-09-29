@@ -242,7 +242,19 @@ try{
 }catch(camErr){console.warn('[BDOC] Camera controller config failed:',camErr.message)}
 // ═══ HD MILKY WAY SKYBOX (v2 — pixel-accurate dense starfield) ═══
 (function(){
-const SZ=2048;
+// P76: was a hard 2048. Six faces of 2048^2 RGBA is ~100 MB of canvas memory
+// before texture upload, which throws on integrated GPUs and iPads -- and the
+// resulting exception was being reported to users as a bad Cesium token.
+// Scale the skybox to what the device can actually afford.
+const SZ=(function(){
+  try{
+    var mem=navigator.deviceMemory||4;
+    var mobile=/android|iphone|ipad|mobile/i.test(navigator.userAgent);
+    if(mobile||mem<=2)return 512;
+    if(mem<=4)return 1024;
+    return 2048;
+  }catch(_){return 1024}
+})();
 function H(s,i){return((Math.sin(s+i*127.1)*43758.5453)%1+1)%1;}
 function H2(s,i){return((Math.sin(s+i*269.5)*17624.87)%1+1)%1;}
 function H3(s,i){return((Math.sin(s+i*431.3)*28947.12)%1+1)%1;}
@@ -347,9 +359,40 @@ s.moon.show=true;s.moon.textureUrl=undefined; // Use Cesium default moon texture
 console.log('[BDOC] HD Milky Way skybox v2 — 6 faces @ '+SZ+'px, 60k+ stars/face');
 })();
 }catch(e){
+  // P76: this used to say "Replace YOUR_CESIUM_ION_TOKEN", which was wrong for
+  // every cause except an actually-bad token, and sent people chasing a
+  // billing/API-key problem that did not exist. Report what really happened.
+  console.error('[BDOC] globe init failed:', e);
   const c=document.getElementById('cesiumContainer');
+  var _why='Unknown initialisation error';
+  var _fix='Check the browser console for the full error.';
+  try{
+    var _probe=document.createElement('canvas');
+    var _gl=_probe.getContext('webgl2')||_probe.getContext('webgl');
+    var _msg=String((e&&e.message)||e||'');
+    if(!_gl){
+      _why='WebGL is not available in this browser';
+      _fix='Enable hardware acceleration, or update your graphics driver.';
+    }else if(/ion|token|401|403|unauthor/i.test(_msg)){
+      _why='Cesium ion rejected the access token';
+      _fix='Generate a new token at ion.cesium.com and update CFG.keys.cesium.';
+    }else if(/memory|out of|allocat|texture|context lost/i.test(_msg)){
+      _why='Ran out of GPU/graphics memory while building the scene';
+      _fix='Close other tabs and reload. Low-memory devices fall back automatically.';
+    }else if(/network|fetch|load|CORS/i.test(_msg)){
+      _why='A required map resource failed to download';
+      _fix='Check your connection; BDOC will use cached data if available.';
+    }
+  }catch(_){}
   c.style.background='radial-gradient(ellipse at 50% 45%,#141830 0%,#0a0e1a 60%)';
-  c.innerHTML='<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;font-family:JetBrains Mono,monospace"><div style="font-size:56px;margin-bottom:14px">\uD83C\uDF0D</div><div style="font-size:11px;letter-spacing:3px;color:#444">INITIALIZING 3D GLOBE</div><div style="font-size:9px;color:#333;margin-top:8px">Replace YOUR_CESIUM_ION_TOKEN in the CFG object above</div><div style="font-size:8px;color:#292940;margin-top:4px">ion.cesium.com \u2192 sign up \u2192 get token \u2192 paste in code</div></div>';
+  c.innerHTML='<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;font-family:JetBrains Mono,monospace;max-width:460px">'
+    +'<div style="font-size:56px;margin-bottom:14px">\uD83C\uDF0D</div>'
+    +'<div style="font-size:11px;letter-spacing:3px;color:#888">GLOBE UNAVAILABLE</div>'
+    +'<div style="font-size:10px;color:#E8B349;margin-top:10px">'+_why+'</div>'
+    +'<div style="font-size:9px;color:#666;margin-top:6px">'+_fix+'</div>'
+    +'<div style="font-size:8px;color:#444;margin-top:10px;font-family:monospace">'
+    +String((e&&e.message)||e||'').slice(0,140).replace(/</g,'&lt;')+'</div>'
+    +'</div>';
 }
 // ── NON-FATAL SUBSYSTEMS (isolated try/catch — failures logged, viewer survives) ──
 try{

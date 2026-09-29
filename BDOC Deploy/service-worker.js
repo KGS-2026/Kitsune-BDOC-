@@ -3,7 +3,7 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v138';  // p74 grid-down: offline store, link manager, precache tag fix
+const SW_VERSION = 'bdoc-v139';  // p75 glass system: unified panel chrome, scaffold removed
 const STATIC_CACHE  = SW_VERSION + '-static';
 const CDN_CACHE     = SW_VERSION + '-cdn';
 const API_CACHE     = SW_VERSION + '-api';
@@ -15,9 +15,11 @@ const STATIC_PRECACHE = [
   '/index.html',
   '/manifest.json',
   // Grid-down core: these MUST be on disk or offline mode cannot start.
-  '/js/bdoc-offline-store.js?v=p74',
-  '/js/bdoc-link-manager.js?v=p74',
-  '/js/bdoc-offline-hud.js?v=p74',
+  '/css/bdoc-glass.css?v=p75',
+  '/js/bdoc-glass-guard.js?v=p75',
+  '/js/bdoc-offline-store.js?v=p75',
+  '/js/bdoc-link-manager.js?v=p75',
+  '/js/bdoc-offline-hud.js?v=p75',
   '/css/bdoc.css?v=p77',
   '/js/telemetry.js?v=p59',
   '/js/converters.js?v=p59',
@@ -26,7 +28,7 @@ const STATIC_PRECACHE = [
   '/js/filters.js?v=p66',
   '/js/kitsune-ai.js?v=p93',
   '/js/bdoc-atak.js?v=p59',
-  '/js/cesium-init.js?v=p119',
+  '/js/cesium-init.js?v=p76',
   '/js/deeplink.js?v=p115',
   '/js/modules/layers-military.js?v=p31',
   '/js/modules/layers-conflict.js?v=p31',

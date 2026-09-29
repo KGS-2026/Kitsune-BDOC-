@@ -1,0 +1,206 @@
+/* ============================================================
+ * BDOC GLASS SYSTEM — css/bdoc-glass.css
+ * Loaded AFTER bdoc.css. Converts every real panel, bar, frame and
+ * modal to one glassmorphism spec.
+ *
+ * Spec (from the operator's reference art):
+ *   fill    rgba(15,17,21,0.72)
+ *   border  1px solid rgba(255,255,255,0.10)
+ *   shadow  0 8px 32px rgba(0,0,0,0.30)
+ *   blur    backdrop-filter: blur(10px) saturate(140%)
+ *   radius  14px
+ *
+ * NOTE: an earlier pass (Phase 11) deliberately set --panel-blur:none and
+ * flattened glass to solid. This file intentionally reverses that, per the
+ * current directive that ALL borders and frames read as glass.
+ *
+ * PERFORMANCE: backdrop-filter over a live WebGL globe is the single most
+ * expensive thing in this UI. It is applied ONLY to panel-level containers,
+ * never to list rows or repeated children, and it is disabled outright on
+ * low-end devices and when the user asks for reduced motion.
+ * ============================================================ */
+
+:root {
+  --glass-fill:        rgba(15, 17, 21, 0.72);
+  --glass-fill-raised: rgba(30, 34, 43, 0.68);
+  --glass-fill-focus:  rgba(50, 56, 70, 0.80);
+  --glass-hairline:    rgba(255, 255, 255, 0.10);
+  --glass-hairline-hi: rgba(255, 255, 255, 0.18);
+  --glass-shadow:      0 8px 32px rgba(0, 0, 0, 0.30);
+  --glass-radius:      14px;
+  --glass-blur:        blur(10px) saturate(140%);
+
+  /* Reinstate blur for the legacy var that Phase 11 zeroed out. */
+  --panel-blur: var(--glass-blur);
+}
+
+/* ── The one rule every panel inherits ─────────────────────────────────── */
+.tb,
+.lp,
+.rp,
+.sc,
+.ft-panel,
+.battle-panel,
+#navPanel, #settingsPanel, #watchlistPanel, #presetsPanel, #coaPanel,
+#sitPanel, #cisaPanel, #metarPanel, #spaceWxPanel, #polymarketPanel,
+#vegPanel, #camPanel, #ftPanel, #battlePanel, #spotifyPanel,
+#attributionPanel, #onboardCard, #menuBar, #searchBar, #bsBar, #gtaBar {
+  background: var(--glass-fill) !important;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-hairline) !important;
+  box-shadow: var(--glass-shadow) !important;
+}
+
+/* Edge-docked chrome keeps square outer corners but gains a glass inner edge,
+   so the frame reads as one continuous pane instead of a floating card. */
+.tb {
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+  border-radius: 0 !important;
+}
+
+.lp {
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  border-radius: 0 var(--glass-radius) var(--glass-radius) 0 !important;
+}
+
+.rp {
+  border-top: none !important;
+  border-bottom: none !important;
+  border-right: none !important;
+  border-radius: var(--glass-radius) 0 0 var(--glass-radius) !important;
+}
+
+/* Kill the old hard 1px highlight strips — they fight the glass edge. */
+.rp::before,
+.lp::before { display: none !important; }
+
+/* Floating panels get the full rounded treatment. */
+.sc,
+.ft-panel,
+.battle-panel,
+#navPanel, #settingsPanel, #watchlistPanel, #presetsPanel, #coaPanel,
+#sitPanel, #cisaPanel, #metarPanel, #spaceWxPanel, #polymarketPanel,
+#vegPanel, #camPanel, #ftPanel, #battlePanel, #spotifyPanel,
+#attributionPanel, #onboardCard,
+#replay-bar, #tz-bar, #vfx-flir-bar, #vm-statusbar, #wxPlaybar {
+  border-radius: var(--glass-radius) !important;
+}
+
+/* Late additions found by the selector-coverage audit. These are real chrome
+   containers that the first pass missed.
+   NOTE: #vegNDVIbar is deliberately EXCLUDED — it is a progress-fill element,
+   not a panel, and glass styling would break it. */
+#replay-bar, #tz-bar, #vfx-flir-bar, #vm-statusbar, #wxPlaybar, #vm-sidebar {
+  background: var(--glass-fill) !important;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-hairline) !important;
+  box-shadow: var(--glass-shadow) !important;
+}
+
+/* Docked sidebar: square on its docked edge, rounded on the inner edge. */
+#vm-sidebar {
+  border-radius: 0 var(--glass-radius) var(--glass-radius) 0 !important;
+}
+
+/* Pills / bars read as smaller glass capsules. */
+#searchBar, #bsBar, #gtaBar, #menuBar {
+  border-radius: 10px !important;
+}
+
+/* ── Raised surfaces inside a panel ────────────────────────────────────── */
+/* Children must NOT re-blur: nested backdrop-filter is both wrong (it samples
+   the parent, not the globe) and a serious performance cost. Tint only. */
+.sit-card,
+.panel-section,
+.hazchip,
+.fb,
+.ftb {
+  background: var(--glass-fill-raised) !important;
+  border: 1px solid var(--glass-hairline) !important;
+  border-radius: 10px !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.hazchip:hover,
+.fb:hover {
+  background: var(--glass-fill-focus) !important;
+  border-color: var(--glass-hairline-hi) !important;
+}
+
+/* Active tool state keeps the single amber accent. */
+.fb.a,
+.hazchip.on {
+  border-color: rgba(232, 179, 73, 0.55) !important;
+  box-shadow: inset 0 0 0 1px rgba(232, 179, 73, 0.18) !important;
+}
+
+/* ── Modals / overlays ─────────────────────────────────────────────────── */
+.modal, .modal-content, .dialog, .popup,
+#authQrBox, #authSecretBox {
+  background: var(--glass-fill) !important;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-hairline) !important;
+  border-radius: var(--glass-radius) !important;
+  box-shadow: var(--glass-shadow) !important;
+}
+
+/* ── Internal dividers become hairlines, not hard lines ────────────────── */
+.lp hr, .rp hr, .panel-header, .panel-divider {
+  border-color: var(--glass-hairline) !important;
+}
+
+/* ── Accessibility / performance guards ────────────────────────────────── */
+
+/* Anyone who asked for less motion also gets less GPU load. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .tb, .lp, .rp, .sc, .ft-panel, .battle-panel {
+    background: rgba(15, 17, 21, 0.94) !important;
+  }
+}
+
+/* Coarse pointer + short viewport ~= phone. Blur over WebGL wrecks these. */
+@media (pointer: coarse) and (max-height: 820px) {
+  .tb, .lp, .rp, .sc, .ft-panel, .battle-panel,
+  .modal, .modal-content {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: rgba(15, 17, 21, 0.94) !important;
+  }
+}
+
+/* Escape hatch: <html class="no-glass"> from the perf watchdog in
+   js/bdoc-glass-guard.js when the frame rate cannot afford blur. */
+html.no-glass *,
+html.no-glass *::before,
+html.no-glass *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html.no-glass .tb,
+html.no-glass .lp,
+html.no-glass .rp,
+html.no-glass .sc,
+html.no-glass .ft-panel,
+html.no-glass .battle-panel {
+  background: rgba(15, 17, 21, 0.94) !important;
+}
+
+/* Browsers without backdrop-filter get a heavier fill so text stays legible. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tb, .lp, .rp, .sc, .ft-panel, .battle-panel,
+  .modal, .modal-content {
+    background: rgba(15, 17, 21, 0.94) !important;
+  }
+}
