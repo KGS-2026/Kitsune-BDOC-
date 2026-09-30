@@ -3,7 +3,7 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v141';  // p141 push diag: surface the real Blobs error
+const SW_VERSION = 'bdoc-v142';  // p142 push: Functions v2 (.mjs) — the only form Netlify auto-wires Blobs for
 const STATIC_CACHE  = SW_VERSION + '-static';
 const CDN_CACHE     = SW_VERSION + '-cdn';
 const API_CACHE     = SW_VERSION + '-api';
