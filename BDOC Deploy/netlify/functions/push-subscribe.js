@@ -30,16 +30,24 @@ const HEADERS = {
 };
 
 // Same zero-config-first pattern as _snapshot.js — never pass undefined creds.
+// The real underlying error is preserved: a generic "unavailable" string turns
+// a five-second diagnosis into a guessing game.
 function store() {
+  let zeroConfigErr = '';
   try {
     return getStore(STORE);
-  } catch (_) {
-    const siteID = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
-    const token  = process.env.NETLIFY_BLOBS_TOKEN || process.env.NETLIFY_API_TOKEN ||
-                   process.env.NETLIFY_AUTH_TOKEN;
-    if (!siteID || !token) throw new Error('Netlify Blobs unavailable');
-    return getStore({ name: STORE, siteID, token });
+  } catch (e) {
+    zeroConfigErr = (e && e.message) || String(e);
   }
+  const siteID = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
+  const token  = process.env.NETLIFY_BLOBS_TOKEN || process.env.NETLIFY_API_TOKEN ||
+                 process.env.NETLIFY_AUTH_TOKEN;
+  if (!siteID || !token) {
+    throw new Error('Netlify Blobs unavailable (' + zeroConfigErr.slice(0, 160) +
+      ') and no explicit creds: siteID=' + (siteID ? 'set' : 'MISSING') +
+      ' token=' + (token ? 'set' : 'MISSING'));
+  }
+  return getStore({ name: STORE, siteID, token });
 }
 
 // Endpoint URLs are long and contain '/', which Blobs keys tolerate poorly.
