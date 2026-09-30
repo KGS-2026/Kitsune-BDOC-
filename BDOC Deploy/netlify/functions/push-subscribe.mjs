@@ -53,9 +53,27 @@ export default async (req) => {
   if (req.method === 'OPTIONS') return new Response('', { status: 204, headers: HEADERS });
 
   if (req.method === 'GET') {
+    const qs = new URL(req.url).searchParams;
+
+    // Diagnostic: read back ONE known subscription by endpoint. This separates
+    // "the write never landed" from "list() is eventually consistent" — two
+    // failures that look identical from a count of zero.
+    const probe = qs.get('probe');
+    if (probe) {
+      try {
+        const rec = await store().get(keyFor(probe), { type: 'json', consistency: 'strong' });
+        return J({ probe: keyFor(probe), found: !!rec, created: rec && rec.created });
+      } catch (e) {
+        return J({ probe: keyFor(probe), found: false, err: String(e && e.message).slice(0, 160) });
+      }
+    }
+
     let count = 0, storeErr = null;
     try {
-      const { blobs } = await store().list({ prefix: 'sub_' });
+      // Netlify Blobs list() is eventually consistent by default, which makes a
+      // just-written subscriber invisible for a while. Strong consistency costs
+      // latency we can afford on a call this rare.
+      const { blobs } = await store().list({ prefix: 'sub_', consistency: 'strong' });
       count = blobs.length;
     } catch (e) { storeErr = String(e && e.message).slice(0, 140); }
     return J({

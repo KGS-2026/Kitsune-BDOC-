@@ -69,7 +69,9 @@ export default async (req) => {
   catch (e) { return J({ error: 'blobs unavailable: ' + String(e && e.message).slice(0, 160) }, 503); }
 
   let blobs = [];
-  try { ({ blobs } = await st.list({ prefix: 'sub_' })); }
+  // Strong consistency: a subscriber who armed push thirty seconds before a
+  // crisis alert must still receive it.
+  try { ({ blobs } = await st.list({ prefix: 'sub_', consistency: 'strong' })); }
   catch (e) { return J({ error: 'list failed: ' + String(e && e.message).slice(0, 160) }, 503); }
 
   // dryRun lets the pipe be verified end-to-end (gate, VAPID signing, store
