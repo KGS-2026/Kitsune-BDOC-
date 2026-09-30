@@ -49,6 +49,39 @@ export function keyFor(endpoint) {
 
 const J = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: HEADERS });
 
+// ── Subscriber index ────────────────────────────────────────────────────────
+// Measured on prod: get() is immediately consistent, but list() lags ~60s in
+// BOTH directions even with consistency:'strong' — new keys are invisible and
+// deleted keys linger. A fan-out that enumerates via list() would therefore
+// miss anyone who armed push in the last minute, which is exactly the moment
+// someone arms it (they just saw a crisis banner). So the authoritative roster
+// is a single index blob read with get(): immediate, one round trip, no lag.
+// list() is kept only as a repair path for an index that got out of sync.
+const INDEX_KEY = 'index.json';
+
+export async function readIndex(st) {
+  try {
+    const idx = await st.get(INDEX_KEY, { type: 'json', consistency: 'strong' });
+    return (idx && Array.isArray(idx.keys)) ? idx.keys : [];
+  } catch (_) { return []; }
+}
+
+async function writeIndex(st, keys) {
+  try { await st.setJSON(INDEX_KEY, { keys, updated: new Date().toISOString() }); }
+  catch (_) {}
+}
+
+export async function indexAdd(st, key) {
+  const keys = await readIndex(st);
+  if (!keys.includes(key)) { keys.push(key); await writeIndex(st, keys); }
+}
+
+export async function indexRemove(st, key) {
+  const keys = await readIndex(st);
+  const next = keys.filter(k => k !== key);
+  if (next.length !== keys.length) await writeIndex(st, next);
+}
+
 export default async (req) => {
   if (req.method === 'OPTIONS') return new Response('', { status: 204, headers: HEADERS });
 
@@ -70,16 +103,13 @@ export default async (req) => {
 
     let count = 0, storeErr = null;
     try {
-      // Netlify Blobs list() lags reality in BOTH directions — verified live:
-      // a fresh write is invisible for a while, and a deleted key keeps
-      // appearing after get() already returns null. Strong consistency fixes
-      // the write lag; only reading each key back fixes the delete lag. A
-      // subscriber count that reports ghosts is exactly the "stale picture
-      // that looks live" failure, so pay the reads — this call is rare.
-      const { blobs } = await store().list({ prefix: 'sub_', consistency: 'strong' });
       const st = store();
-      const live = await Promise.all(blobs.map(async b => {
-        try { return !!(await st.get(b.key, { type: 'json', consistency: 'strong' })); }
+      const keys = await readIndex(st);
+      // Read each back: the index is the roster, but a record can still be
+      // gone. A count that overstates reach is the same class of lie as a
+      // stale map that looks live.
+      const live = await Promise.all(keys.map(async k => {
+        try { return !!(await st.get(k, { type: 'json', consistency: 'strong' })); }
         catch (_) { return false; }
       }));
       count = live.filter(Boolean).length;
@@ -116,7 +146,9 @@ export default async (req) => {
   catch (e) { return J({ error: 'blobs unavailable: ' + String(e && e.message).slice(0, 160) }, 503); }
 
   if (body.unsubscribe) {
-    try { await st.delete(keyFor(body.endpoint)); } catch (_) {}
+    const k = keyFor(body.endpoint);
+    try { await st.delete(k); } catch (_) {}
+    await indexRemove(st, k);
     return J({ ok: true, unsubscribed: true });
   }
 
@@ -129,10 +161,12 @@ export default async (req) => {
     created: new Date().toISOString()
   };
 
-  try { await st.setJSON(keyFor(sub.endpoint), rec); }
+  const k = keyFor(sub.endpoint);
+  try { await st.setJSON(k, rec); }
   catch (e) { return J({ error: 'store write failed: ' + String(e && e.message).slice(0, 160) }, 503); }
+  await indexAdd(st, k);
 
-  return J({ ok: true, key: keyFor(sub.endpoint) });
+  return J({ ok: true, key: k });
 };
 
 export const config = { path: '/.netlify/functions/push-subscribe' };

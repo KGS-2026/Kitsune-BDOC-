@@ -15,7 +15,7 @@
 // .mjs is required for Netlify Blobs auto-wiring — see push-subscribe.mjs.
 
 import webpush from 'web-push';
-import { store, keyFor, VAPID_PUBLIC } from './push-subscribe.mjs';
+import { store, keyFor, VAPID_PUBLIC, readIndex, indexRemove } from './push-subscribe.mjs';
 
 const HEADERS = {
   'Content-Type': 'application/json',
@@ -68,11 +68,12 @@ export default async (req) => {
   try { st = store(); }
   catch (e) { return J({ error: 'blobs unavailable: ' + String(e && e.message).slice(0, 160) }, 503); }
 
-  let blobs = [];
-  // Strong consistency: a subscriber who armed push thirty seconds before a
-  // crisis alert must still receive it.
-  try { ({ blobs } = await st.list({ prefix: 'sub_', consistency: 'strong' })); }
-  catch (e) { return J({ error: 'list failed: ' + String(e && e.message).slice(0, 160) }, 503); }
+  // The index is read with get() — immediately consistent, so a user who armed
+  // push seconds ago still gets this alert. list() would lag ~60s and silently
+  // drop them, which defeats the entire point of a crisis notification.
+  let keys = [];
+  try { keys = await readIndex(st); }
+  catch (e) { return J({ error: 'index read failed: ' + String(e && e.message).slice(0, 160) }, 503); }
 
   // dryRun lets the pipe be verified end-to-end (gate, VAPID signing, store
   // enumeration) without actually paging real users.
@@ -81,10 +82,11 @@ export default async (req) => {
   let sent = 0, pruned = 0, failed = 0, skipped = 0;
   const errors = [];
 
-  for (const b of blobs) {
+  for (const k of keys) {
     let rec;
-    try { rec = await st.get(b.key, { type: 'json' }); } catch (_) { continue; }
-    if (!rec || !rec.subscription) continue;
+    try { rec = await st.get(k, { type: 'json', consistency: 'strong' }); } catch (_) { continue; }
+    // Record gone but still indexed — repair the roster as we go.
+    if (!rec || !rec.subscription) { await indexRemove(st, k); continue; }
     if ((TIER_RANK[rec.tier] || 0) < minRank) { skipped++; continue; }
     if (dry) { skipped++; continue; }
 
@@ -97,7 +99,9 @@ export default async (req) => {
     } catch (e) {
       const code = e && e.statusCode;
       if (code === 404 || code === 410) {
-        try { await st.delete(b.key); pruned++; } catch (_) {}
+        try { await st.delete(k); } catch (_) {}
+        await indexRemove(st, k);
+        pruned++;
       } else {
         failed++;
         if (errors.length < 3) errors.push(String(code || (e && e.message)).slice(0, 80));
@@ -105,7 +109,7 @@ export default async (req) => {
     }
   }
 
-  return J({ ok: true, dryRun: dry, subscribers: blobs.length, sent, pruned, failed, skipped, errors });
+  return J({ ok: true, dryRun: dry, subscribers: keys.length, sent, pruned, failed, skipped, errors });
 };
 
 export const config = { path: '/.netlify/functions/push-send' };
