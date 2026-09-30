@@ -70,11 +70,19 @@ export default async (req) => {
 
     let count = 0, storeErr = null;
     try {
-      // Netlify Blobs list() is eventually consistent by default, which makes a
-      // just-written subscriber invisible for a while. Strong consistency costs
-      // latency we can afford on a call this rare.
+      // Netlify Blobs list() lags reality in BOTH directions — verified live:
+      // a fresh write is invisible for a while, and a deleted key keeps
+      // appearing after get() already returns null. Strong consistency fixes
+      // the write lag; only reading each key back fixes the delete lag. A
+      // subscriber count that reports ghosts is exactly the "stale picture
+      // that looks live" failure, so pay the reads — this call is rare.
       const { blobs } = await store().list({ prefix: 'sub_', consistency: 'strong' });
-      count = blobs.length;
+      const st = store();
+      const live = await Promise.all(blobs.map(async b => {
+        try { return !!(await st.get(b.key, { type: 'json', consistency: 'strong' })); }
+        catch (_) { return false; }
+      }));
+      count = live.filter(Boolean).length;
     } catch (e) { storeErr = String(e && e.message).slice(0, 140); }
     return J({
       publicKey: VAPID_PUBLIC,
