@@ -826,6 +826,11 @@ if('serviceWorker' in navigator){
 <label class="set-chk"><input type="checkbox" checked onchange="V.scene.globe.enableLighting=this.checked"> Day/Night cycle</label>
 </div>
 <div class="set-section">
+<div class="set-section-title">Alerts</div>
+<label class="set-chk"><input type="checkbox" id="setPush" onchange="togglePushAlerts(this.checked)"> Push alerts to this device (works with BDOC closed)</label>
+<div id="pushStatus" style="font-family:var(--m);font-size:9px;color:var(--t3);margin:4px 0 0 20px;line-height:1.4">Checking…</div>
+</div>
+<div class="set-section">
 <div class="set-section-title">Units of Measurement</div>
 <div class="set-row"><label>Units</label><select id="setUnits" onchange="BDOC_Settings.units=this.value">
 <option value="metric">Meters, Kilometers</option>
@@ -1567,7 +1572,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p135',              // MUST bump on ANY js/modules/* change — p135 = Turn 25: lazy-load milsymbol (763KB) on military/air layers only
+  _version: 'p140',              // MUST bump on ANY js/modules/* change — p140 = web push fan-out hooked into OutageWatch
   _cache: Object.create(null),  // name → Promise<true>
   load(name){
     if(this._cache[name]) return this._cache[name];
@@ -13129,6 +13134,7 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 
 </script>
 <script src="js/bdoc-glass-guard.js?v=p75"></script>
+<script src="js/bdoc-push.js?v=p140"></script>
 <script src="js/mesh-globe-layer.js?v=p75"></script>
 <script src="js/bdoc-offline-store.js?v=p75"></script>
 <script src="js/bdoc-link-manager.js?v=p75"></script>

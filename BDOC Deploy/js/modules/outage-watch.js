@@ -92,6 +92,22 @@
     } catch (_) {}
   }
 
+  // p140: mirror an in-page alert onto the push pipe so subscribers whose BDOC
+  // tab is CLOSED still get it. Fire-and-forget; the endpoint is key-gated, so
+  // an unprivileged browser simply gets a 403 and nothing breaks. The droplet
+  // sentinel is the primary sender — this is the in-app echo for anything the
+  // browser detects first.
+  function pushAlert(title, body, sev, tag, url) {
+    try {
+      if (!window.BDOCPush || !BDOCPush.status().enabled) return;
+      fetch('/.netlify/functions/push-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title, body: body, severity: sev || 'high', tag: tag, url: url || '/' })
+      }).catch(function () {});
+    } catch (_) {}
+  }
+
   function buildDesc(w, a) {
     var fusionHtml = '';
     if (a.fusion) {
@@ -277,6 +293,7 @@
         a.count + ' news reports in the last hour. Latest: ' + esc((a.titles[0] || {}).t || '').slice(0, 110) +
         '<br><span style="color:#8b949e;font-size:9px">OutageWatch · click the ⛔ marker on the globe for sources</span>');
       notify('BDOC: ' + w.name + ' outage detected', a.count + ' reports in last hour');
+      pushAlert('⛔ BDOC: ' + w.name + ' OUTAGE', a.count + ' reports in the last hour — ' + ((a.titles[0] || {}).t || '').slice(0, 120), 'critical', 'outage-' + w.name.toLowerCase().replace(/\W+/g, '-'), '/');
       plot(w, a);
       try { if (typeof EventLog !== 'undefined') EventLog.add('crit', 'OUTAGE: ' + w.name + ' — ' + a.count + ' rpts/1h'); } catch (_) {}
       // fire the causal fusion engine — correlate this outage against cyber/weather/seismic/space/kinetic layers

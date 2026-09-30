@@ -3,7 +3,7 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v139';  // p75 glass system: unified panel chrome, scaffold removed
+const SW_VERSION = 'bdoc-v140';  // p140 web push: SW push/notificationclick handlers + subscription registry
 const STATIC_CACHE  = SW_VERSION + '-static';
 const CDN_CACHE     = SW_VERSION + '-cdn';
 const API_CACHE     = SW_VERSION + '-api';
@@ -17,6 +17,7 @@ const STATIC_PRECACHE = [
   // Grid-down core: these MUST be on disk or offline mode cannot start.
   '/css/bdoc-glass.css?v=p75',
   '/js/bdoc-glass-guard.js?v=p75',
+  '/js/bdoc-push.js?v=p140',
   '/js/bdoc-offline-store.js?v=p75',
   '/js/bdoc-link-manager.js?v=p75',
   '/js/bdoc-offline-hud.js?v=p75',
@@ -242,4 +243,75 @@ self.addEventListener('message', event => {
   if (event.data === 'CLEAR_CACHE') {
     caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
   }
+});
+
+// ── Web Push (p140) ──────────────────────────────────────────────────────────
+// This is the only path that reaches a user whose BDOC tab is closed. The
+// in-page Notification() calls in outage-watch.js require an open tab; a phone
+// in a pocket during a grid event does not have one.
+self.addEventListener('push', event => {
+  let d = {};
+  try { d = event.data ? event.data.json() : {}; }
+  catch (_) { d = { title: 'BDOC ALERT', body: (event.data && event.data.text()) || '' }; }
+
+  const sev = d.severity || 'info';
+  const title = d.title || 'BDOC ALERT';
+  const opts = {
+    body: d.body || '',
+    icon: '/android-chrome-192x192.png',
+    badge: '/android-chrome-192x192.png',
+    // Tag collapses repeat alerts for the same incident instead of stacking
+    // twenty notifications for one outage.
+    tag: d.tag || 'bdoc-alert',
+    renotify: sev === 'critical',
+    requireInteraction: sev === 'critical',
+    timestamp: d.ts || Date.now(),
+    data: { url: d.url || '/', severity: sev },
+    actions: [{ action: 'open', title: 'OPEN BDOC' }]
+  };
+  // Vibration is Android-only and throws nowhere, but guard anyway.
+  if (sev === 'critical') opts.vibrate = [200, 100, 200, 100, 200];
+
+  event.waitUntil(self.registration.showNotification(title, opts));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    // Reuse an existing BDOC tab if one is open — never spawn duplicates.
+    for (const c of all) {
+      if (c.url.indexOf(self.location.origin) === 0) {
+        try { await c.focus(); } catch (_) {}
+        try { c.postMessage({ type: 'PUSH_NAV', url: url }); } catch (_) {}
+        return;
+      }
+    }
+    if (self.clients.openWindow) await self.clients.openWindow(url);
+  })());
+});
+
+// Some push services rotate subscriptions; without this the user goes silently
+// dark and neither side knows it.
+self.addEventListener('pushsubscriptionchange', event => {
+  event.waitUntil((async () => {
+    try {
+      const old = event.oldSubscription || {};
+      const nu = event.newSubscription || await self.registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: (old.options && old.options.applicationServerKey) || undefined
+      });
+      if (old.endpoint) {
+        await fetch('/.netlify/functions/push-subscribe', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ unsubscribe: true, endpoint: old.endpoint })
+        });
+      }
+      await fetch('/.netlify/functions/push-subscribe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: nu.toJSON ? nu.toJSON() : nu })
+      });
+    } catch (_) {}
+  })());
 });
