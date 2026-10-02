@@ -2,7 +2,7 @@
 
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
-**Last updated by Hermes:** 2026-10-02 · build **p147** · `SW_VERSION bdoc-v147`
+**Last updated by Hermes:** 2026-10-02 · build **p149** · `SW_VERSION bdoc-v149`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -133,6 +133,37 @@ and higher zooms return 403.
 **`BUILD p44` pill was a lie.** Hardcoded literal in `index.html` while the
 deployed SW was already `bdoc-v145` — stale for ~100 revisions. Now tracks the
 build number.
+
+### p149 — aircraft silhouettes + lazy-load cache desync
+
+Symbology went 6 families -> 9: added **drone / bomber / tanker** to the runtime
+SVG factory in `js/modules/layers-air.js`, with ICAO regexes routing to them.
+
+**Classifier ordering is load-bearing.** First match wins, so unmanned/bomber/
+tanker tests MUST precede the civil buckets — `MQ-9` was otherwise caught by
+the prop regex, `B-52` by the wide-body `B7x` pattern. A 36-case table covers
+this and asserts the 6 original families do not regress.
+
+Lesson worth keeping: the first drone glyph **rendered as a stick figure**
+(1.8px-tall wing rect + a floating nose circle = head on a body). Only caught
+by rasterising the sheet and actually looking at it. If you add a glyph,
+render it — `node --check` passing proves nothing about shape.
+
+**Bug found in passing:** `BDOC.LazyLoader._version` was `p140` while the SW
+precached `/js/modules/*.js?v=p31` (6 entries). Cache keys include the query
+string, so the SW was caching URLs nothing requests while every real lazy-load
+went network-or-nothing — those layers simply failed offline. All 7 module
+entries now match `_version` at p149.
+
+**→ When you touch anything in `js/modules/`, bump `LazyLoader._version` in
+index.html AND every `/js/modules/*` entry in `service-worker.js` PRECACHE
+together.** Verify:
+```bash
+curl -s https://kgsbdoc.netlify.app | grep -o "_version: 'p[0-9]*'"
+curl -s https://kgsbdoc.netlify.app/service-worker.js \
+  | grep -oE '/js/modules/[a-z0-9-]+.js.v=p[0-9]+' | sed 's|.*v=||' | sort -u
+# must print the same single version
+```
 
 ### Earlier in the same stretch
 
