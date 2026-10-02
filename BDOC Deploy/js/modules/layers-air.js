@@ -112,6 +112,18 @@ function _airRenderHold(active) {
 function classifyAircraftType(desc){
   if(!desc)return 'jet';
   const d=desc.toUpperCase();
+  // ORDER MATTERS. Each test below is checked in sequence and the first match
+  // wins, so narrow military classes MUST precede the broad civil buckets —
+  // e.g. "MQ-9" would otherwise be swallowed by the prop regex, and "B-52"
+  // by the wide-body B7x pattern.
+  //
+  // Unmanned — UCAV / MALE / HALE / loitering munition.
+  // Matched first because several airframes collide with civil patterns.
+  if(/\bMQ-?[0-9]|\bRQ-?[0-9]|\bXQ-?[0-9]|\bCQ-?[0-9]|REAPER|PREDATOR|GLOBAL ?HAWK|TRITON|BAYRAKTAR|TB-?2|AKINCI|ANKA|WING ?LOONG|CH-?[45]\b|HERON|HERMES ?[49]|SHAHED|ORION|UAV|UCAV|DRONE|UNMANNED|\bGRAY ?EAGLE|SKYGUARDIAN|AVENGER/.test(d))return 'drone';
+  // Strategic bombers.
+  if(/\bB-?1\b|\bB-?1B|\bB-?2\b|\bB-?21|\bB-?52|LANCER|SPIRIT|RAIDER|STRATOFORTRESS|\bTU-?(16|22|95|160)|BACKFIRE|BLACKJACK|BEAR ?[A-H]?\b|\bH-?6\b|XIAN ?H/.test(d))return 'bomber';
+  // Tankers and strategic airlift.
+  if(/\bKC-?[0-9]|\bA330 ?MRTT|MRTT|VOYAGER|STRATOTANKER|PEGASUS|EXTENDER|\bIL-?78|MIDAS|\bYY-?20|TANKER|REFUEL/.test(d))return 'tanker';
   // Helicopters
   if(/\bH[0-9]{2,3}\b|HELI|EC[12]|R[24]4|AS3|AS5|UH-|CH-|AH-|MH-|MD5|S-?7[06]/.test(d))return 'heli';
   // Military fighters / attack
@@ -159,6 +171,37 @@ function makeAircraftSVG(color,size,heading,type){
       // Bizjet — sleek narrow body, swept wings, aft-mounted engines
       path=`<path d="M16,3 L17,12 L24,16 L17,17 L17.3,23 L20,28 L16,26.5 L12,28 L14.7,23 L15,17 L8,16 L15,12 Z"
               fill="${color}" stroke="#000" stroke-width="0.9"/>`;
+      break;
+    case 'drone':
+      // UCAV / MALE drone — slender fuselage, very high aspect-ratio straight
+      // wing, V-tail, bulbous sensor nose. Reads distinctly from 'prop' at
+      // small sizes because the wing is long and perfectly straight.
+      path=`<path d="M16,3.5 C14.9,3.5 14.2,4.6 14.2,6 L14.2,11.5
+                     L1.5,12.6 L1.5,15.8 L14.2,15.2 L14.2,21
+                     L9.5,27.5 L11.8,28.4 L16,23.5 L20.2,28.4 L22.5,27.5
+                     L17.8,21 L17.8,15.2 L30.5,15.8 L30.5,12.6 L17.8,11.5
+                     L17.8,6 C17.8,4.6 17.1,3.5 16,3.5 Z"
+              fill="${color}" stroke="#000" stroke-width="0.9"
+              stroke-linejoin="round"/>`;
+      break;
+    case 'bomber':
+      // Strategic bomber — blended flying-wing delta. Deliberately the widest
+      // planform in the set; at a glance it should never be confused with
+      // 'wide' (which has a visible tube fuselage + engine pods).
+      path=`<path d="M16,2.5 L19,12 L30.5,22 L29,24.5 L17.6,19.5 L17.2,26 L20,30 L16,28.4 L12,30 L14.8,26 L14.4,19.5 L3,24.5 L1.5,22 L13,12 Z"
+              fill="${color}" stroke="#000" stroke-width="1"/>`;
+      break;
+    case 'tanker':
+      // Tanker / strategic airlift — heavy tube with four engine pods and a
+      // refuelling boom hint at the tail. Split out of 'wide' because KC-135
+      // and KC-46 orbits are tactically meaningful, not just "a big plane".
+      path=`<path d="M16,2 L17.6,11 L30,16 L17.6,17.6 L17.6,24 L23,28 L16,26 L9,28 L14.4,24 L14.4,17.6 L2,16 L14.4,11 Z"
+              fill="${color}" stroke="#000" stroke-width="1.1"/>
+            <circle cx="7.5" cy="15.4" r="1.1" fill="#000" opacity="0.4"/>
+            <circle cx="11" cy="14.6" r="1.1" fill="#000" opacity="0.4"/>
+            <circle cx="21" cy="14.6" r="1.1" fill="#000" opacity="0.4"/>
+            <circle cx="24.5" cy="15.4" r="1.1" fill="#000" opacity="0.4"/>
+            <path d="M16,26 L16,30.5" stroke="${color}" stroke-width="1.4" stroke-linecap="round" opacity="0.8"/>`;
       break;
     default: // 'jet' — narrow-body airliner (737/A320 style)
       path=`<path d="M16,2 L17.5,10 L28,14 L17.5,15.5 L17.5,23 L22,27 L16,25.5 L10,27 L14.5,23 L14.5,15.5 L4,14 L14.5,10 Z"
@@ -226,8 +269,8 @@ function getACIcon(color,heading,size,desc){
   const type=classifyAircraftType(desc);
   const key=color+'_'+Math.round(heading/5)*5+'_'+(size||24)+'_'+type;
   if(!_acIconCache[key]){
-    // Evict oldest entries if cache exceeds 1500 (6 types × 72 headings × ~6 colors × 2 sizes = ~5184 worst-case)
-    if(_acIconCacheSize>1500){const keys=Object.keys(_acIconCache);for(let i=0;i<300;i++){delete _acIconCache[keys[i]];_acIconCacheSize--}}
+    // Evict oldest entries if cache exceeds 2200 (9 types × 72 headings × ~6 colors × 2 sizes = ~7776 worst-case)
+    if(_acIconCacheSize>2200){const keys=Object.keys(_acIconCache);for(let i=0;i<300;i++){delete _acIconCache[keys[i]];_acIconCacheSize--}}
     _acIconCache[key]=makeAircraftSVG(color,size||24,Math.round(heading/5)*5,type);
     _acIconCacheSize++;
   }
