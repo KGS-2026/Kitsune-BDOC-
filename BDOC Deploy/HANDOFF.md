@@ -2,7 +2,7 @@
 
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
-**Last updated by Hermes:** 2026-10-02 · build **p149** · `SW_VERSION bdoc-v149`
+**Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -133,6 +133,39 @@ and higher zooms return 403.
 **`BUILD p44` pill was a lie.** Hardcoded literal in `index.html` while the
 deployed SW was already `bdoc-v145` — stale for ~100 revisions. Now tracks the
 build number.
+
+### p150 — real aircraft artwork replaces the drawn glyphs
+
+Travon supplied 17 SVGs. The p149 hand-drawn silhouettes were rightly rejected
+as unprofessional. 8 of 10 families now use his vectors; **bomber** and **heli**
+still use the drawn fallback because no top-down art was supplied for them.
+
+**Sending vector assets: ZIP THEM.** 25 individual `.svg` attachments were
+rejected by the chat image pipeline and never hit disk — which is why p149 was
+drawn blind. A `.zip` worked first try. Source files archived in
+`assets/aircraft-svg/`.
+
+**Only plan-view art is usable.** Most of the set is side-profile or 3/4
+perspective; a marker that rotates to heading needs top-down. The unused files
+are kept for panel/detail views where a profile shot is correct.
+
+Path data is used verbatim — never re-drawn. Each glyph is wrapped in a `<g>`
+whose transform maps its native viewBox (they ranged 64 to 4000 units) into the
+32x32 marker box. Fills are stripped from paths and applied on the group, which
+is what keeps live tint working (altitude banding, red-on-select).
+
+**Two traps worth remembering:**
+1. A Python heredoc turned `\b` in a regex into a literal BACKSPACE (0x08) —
+   seven of them shipped in p149 and the pattern silently never matched. If a
+   regex mysteriously fails, check for control bytes:
+   `grep -cP '\x08' file.js`
+2. `classifyAircraftType` order: the fighter test's `SU-?[0-9]` swallowed SU-57
+   before the mig test. Fixed by moving mig above fighter, not by widening
+   patterns. Ordering is the mechanism.
+
+Verified by running the real `makeAircraftSVG` from the shipped file: 22/22
+classifier cases, all 10 families emit valid SVG, heading rotation and colour
+injection confirmed, every family rendered at heading 0/45 and inspected.
 
 ### p149 — aircraft silhouettes + lazy-load cache desync
 
