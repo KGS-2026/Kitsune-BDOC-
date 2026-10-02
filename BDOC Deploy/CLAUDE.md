@@ -11,6 +11,16 @@ anything.
 
 ## The four rules that will bite you
 
+0. **⚠️ A STALE COPY EXISTS ON THIS LAPTOP** — flagged by Travon 2026-10-02:
+   ```
+   C:\Users\ARNAUTICA\OneDrive\Desktop\Golden Fox Agency\SubSitaries\Kitsune Global Solutions LLC\BDOC Deploy
+   ```
+   It predates p74–p147. **Editing and pushing from it would revert weeks of
+   shipped work.** Verify it against `origin/main` before touching it — see
+   HANDOFF.md §0 rule 0 for the exact commands. Authoritative source is
+   `origin/main`. Also note OneDrive corrupts `.git/`; keep working copies
+   outside the OneDrive tree.
+
 1. **Ship to `main` or it does not go live.** Netlify auto-deploys `main`.
    The checked-out branch is usually `hermes-overnight-2026-06-09`.
    ```bash

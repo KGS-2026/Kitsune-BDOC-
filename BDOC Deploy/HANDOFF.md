@@ -12,6 +12,35 @@ here, update §1 so Hermes knows where you left off.
 
 ## 0. HARD RULES FOR THIS REPO (learned the painful way)
 
+0. **⚠️ THERE IS A STALE COPY OF THIS PROJECT ON THE LAPTOP.** Travon flagged it
+   2026-10-02:
+   ```
+   C:\Users\ARNAUTICA\OneDrive\Desktop\Golden Fox Agency\SubSitaries\Kitsune Global Solutions LLC\BDOC Deploy
+   ```
+   **Do not work in that folder until you have checked it.** It predates the
+   p74–p147 run (grid-down, glass system, basemap fixes, handoff files), so
+   editing it and pushing would **revert weeks of shipped work**.
+
+   The authoritative source is **`origin/main` on GitHub** (`KGS-2026/Kitsune-BDOC-`),
+   mirrored on the droplet at `/root/Kitsune-BDOC-/BDOC Deploy`.
+
+   Check it before anything else:
+   ```powershell
+   cd "C:\Users\ARNAUTICA\OneDrive\Desktop\Golden Fox Agency\SubSitaries\Kitsune Global Solutions LLC\BDOC Deploy"
+   git rev-parse --is-inside-work-tree      # is it even a clone?
+   git log --oneline -3                     # how far behind?
+   git status --porcelain                   # any local work worth keeping?
+   ```
+   - **Not a git clone** → treat as dead weight. Do not copy files out of it
+     into the repo. Clone fresh somewhere outside OneDrive.
+   - **Is a clone, clean** → `git fetch origin && git reset --hard origin/main`.
+   - **Is a clone with real uncommitted work** → stash or branch it and tell
+     Travon before reconciling. Do not `reset --hard` over his changes.
+
+   Also: **OneDrive and git do not mix.** OneDrive syncs `.git/` mid-operation
+   and corrupts index/lock files. Prefer a working copy outside the OneDrive
+   tree (e.g. `C:\dev\Kitsune-BDOC-`).
+
 1. **Production deploys from `main`.** Netlify auto-deploys `main` on push.
    The local branch is usually `hermes-overnight-2026-06-09`. Pushing that
    branch does **nothing** to the live site. Ship with:
@@ -186,7 +215,26 @@ caught 6 panels the first pass missed (`replay-bar`, `tz-bar`, `vfx-flir-bar`,
 `vm-sidebar`, `vm-statusbar`, `wxPlaybar`). `#vegNDVIbar` is deliberately
 **excluded** — it is a progress-fill, not a panel, and glass breaks it.
 
-### F. Grid-down has never touched real radio hardware
+### F. Reconcile (or retire) the stale laptop copy  ← DO THIS EARLY
+Travon flagged 2026-10-02 that an older BDOC folder still exists at:
+```
+C:\Users\ARNAUTICA\OneDrive\Desktop\Golden Fox Agency\SubSitaries\Kitsune Global Solutions LLC\BDOC Deploy
+```
+It predates p74-p147. Risk: someone edits it, pushes, and silently reverts the
+grid-down work, the glass system, the basemap fixes, and these handoff files.
+
+Action for Claude Code (you are on that machine):
+1. Determine whether it is a git clone and how far behind (commands in §0 r0).
+2. If it holds no unique uncommitted work -> reset to `origin/main`, or rename
+   it to `BDOC Deploy _ARCHIVED_pre-p147` so nobody mistakes it for live.
+3. If it holds real local work -> branch/stash it and report to Travon before
+   reconciling. Do not discard his changes.
+4. Recommend a canonical working copy OUTSIDE OneDrive (OneDrive syncs `.git/`
+   mid-write and corrupts index/lock files).
+
+Report back in this file which of the above happened.
+
+### G. Grid-down has never touched real radio hardware
 `tools/grid_down_gateway.py --test` and `tools/satimg_mesh.py` are verified in
 software only. Serial timing, real packet field names, and airtime under
 contention are unproven. Needs a Meshtastic node on a bench.
