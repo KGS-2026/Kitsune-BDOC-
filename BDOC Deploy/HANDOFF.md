@@ -259,6 +259,30 @@ done
 
 ---
 
+## 3b. INTERNAL DOCS ARE NOT PUBLIC (p148)
+
+These very files were being served at `https://kgsbdoc.netlify.app/HANDOFF.md`
+(verified 200). They disclose internal architecture, which subsystems are
+broken, which API keys are absent, and an operator's local filesystem path.
+For a product sold as defense-grade intel tooling, publishing your own gap
+analysis is an own-goal.
+
+`netlify.toml` now 404s (not 403 — do not confirm existence):
+`/HANDOFF.md`, `/CLAUDE.md`, `/CLAUDE-SECURITY-TASK.md`,
+`/LAUNCH_READINESS_AUDIT.md`, `/docs/*`, `/tools/*`.
+
+**If you add a new internal doc, add a matching 404 redirect.** The files stay
+in git — that is how we read them — they just must not be served.
+
+Verify after any deploy:
+```bash
+for p in HANDOFF.md CLAUDE.md docs/GRID_DOWN_OPERATIONS.md tools/satimg_mesh.py; do
+  printf "%-36s %s\n" "$p" "$(curl -s -o /dev/null -w '%{http_code}' https://kgsbdoc.netlify.app/$p)"
+done   # all must be 404
+```
+
+---
+
 ## 4. GOTCHAS WORTH KNOWING
 
 - The Cesium viewer global is **`V`**, not `viewer`. Code written against

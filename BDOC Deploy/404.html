@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Not Found · KITSUNE BDOC</title>
+<style>
+  :root{
+    --bg:#0E1116;
+    --glass:rgba(15,17,21,0.72);
+    --hairline:rgba(255,255,255,0.10);
+    --accent:#E8B349;
+    --t1:#E6E8EB;
+    --t2:rgba(230,232,235,0.55);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(ellipse at 50% 40%, #141830 0%, var(--bg) 62%);
+    color:var(--t1);
+    font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    display:flex;align-items:center;justify-content:center;
+    letter-spacing:.005em;
+  }
+  .card{
+    background:var(--glass);
+    -webkit-backdrop-filter:blur(10px) saturate(140%);
+    backdrop-filter:blur(10px) saturate(140%);
+    border:1px solid var(--hairline);
+    border-radius:14px;
+    box-shadow:0 8px 32px rgba(0,0,0,.30);
+    padding:38px 42px;
+    max-width:440px;
+    text-align:center;
+  }
+  .code{
+    font-family:'IBM Plex Mono',ui-monospace,monospace;
+    font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:14px;
+  }
+  h1{font-size:20px;font-weight:600;letter-spacing:-.005em;margin-bottom:10px}
+  p{font-size:13px;line-height:1.6;color:var(--t2);margin-bottom:24px}
+  a{
+    display:inline-block;
+    font-family:'IBM Plex Mono',ui-monospace,monospace;
+    font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--t1);text-decoration:none;
+    padding:9px 18px;border:1px solid var(--hairline);border-radius:8px;
+    transition:all 150ms cubic-bezier(.4,0,.2,1);
+  }
+  a:hover{border-color:rgba(232,179,73,.55);color:var(--accent)}
+  .rule{height:1px;background:var(--hairline);margin:0 0 22px}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="code">404 · Not Found</div>
+    <div class="rule"></div>
+    <h1>This resource isn't available</h1>
+    <p>The page you requested doesn't exist or isn't publicly accessible.</p>
+    <a href="/">Return to globe</a>
+  </div>
+</body>
+</html>

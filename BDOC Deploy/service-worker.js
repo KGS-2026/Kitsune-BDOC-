@@ -3,7 +3,7 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v147';  // p145 push: index blob roster — list() lags ~60s, get() does not
+const SW_VERSION = 'bdoc-v148';  // p145 push: index blob roster — list() lags ~60s, get() does not
 const STATIC_CACHE  = SW_VERSION + '-static';
 const CDN_CACHE     = SW_VERSION + '-cdn';
 const API_CACHE     = SW_VERSION + '-api';
