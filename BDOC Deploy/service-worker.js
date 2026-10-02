@@ -3,7 +3,7 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v145';  // p145 push: index blob roster — list() lags ~60s, get() does not
+const SW_VERSION = 'bdoc-v146';  // p145 push: index blob roster — list() lags ~60s, get() does not
 const STATIC_CACHE  = SW_VERSION + '-static';
 const CDN_CACHE     = SW_VERSION + '-cdn';
 const API_CACHE     = SW_VERSION + '-api';
@@ -29,7 +29,7 @@ const STATIC_PRECACHE = [
   '/js/filters.js?v=p66',
   '/js/kitsune-ai.js?v=p93',
   '/js/bdoc-atak.js?v=p59',
-  '/js/cesium-init.js?v=p76',
+  '/js/cesium-init.js?v=p146',
   '/js/deeplink.js?v=p115',
   '/js/modules/layers-military.js?v=p31',
   '/js/modules/layers-conflict.js?v=p31',

@@ -412,7 +412,7 @@ var _bordersLayer=null,_labelsLayer=null;
 (function initBordersOverlay(){
   // CartoDB Dark Labels — thin clean white text on satellite, @2x retina, NO stacking
   const labelsProvider=new Cesium.UrlTemplateImageryProvider({
-    url:'https://basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}@2x.png',
+    url:'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
     credit:'CartoDB',maximumLevel:18
   });
   _labelsLayer=V.imageryLayers.addImageryProvider(labelsProvider);
@@ -852,12 +852,28 @@ try{
 // BASEMAP SWITCHER (Satellite, Hybrid, Terrain, Streets, Topo, Dark)
 // ═══════════════════════════════════════════
 let _currentBasemap='satellite';
+// ── P77 BASEMAP FIX ─────────────────────────────────────────────────────────
+// Two providers were serving BLOCK TILES, not imagery. This is the real source
+// of the "API KEY REQUIRED" text tiled across the globe — NOT the Cesium token
+// (which is valid: api.cesium.com/v1/me -> 200).
+//
+//   basemaps.cartocdn.com  -> 256x256 PNG reading "API KEY REQUIRED
+//                             carto.com/basemaps/apikey". Carto ended keyless
+//                             public basemap access; every tile is identical.
+//   tile.openstreetmap.org -> HTTP 200 with a "403 Access blocked / App is not
+//                             following the tile usage policy" image. OSM
+//                             blocks clients that do not send an identifying
+//                             User-Agent or Referer. Verified: the same URL
+//                             with a UA returns real, varied tiles.
+//
+// Replacements are ESRI Canvas basemaps: keyless, no attribution key, same
+// visual role, and verified to return distinct real tiles per coordinate.
 const BASEMAPS={
-  dark:{url:'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',credit:'CartoDB Dark Matter',brightness:1.6,contrast:1.3,saturation:0.4},
+  dark:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',credit:'ESRI Dark Gray Canvas',brightness:1.15,contrast:1.2,saturation:0.5},
   satellite:{type:'arcgis',credit:'ESRI World Imagery',brightness:1.02,contrast:1.12,saturation:1.25,gamma:0.92},
   hybrid:{type:'arcgis_labels',credit:'ESRI + OSM Labels',brightness:1.02,contrast:1.12,saturation:1.25,gamma:0.92},
   terrain:{url:'https://tile.opentopomap.org/{z}/{x}/{y}.png',credit:'OpenTopoMap',brightness:1.0,contrast:1.1,saturation:0.8},
-  streets:{url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',credit:'OpenStreetMap',brightness:1.05,contrast:1.05,saturation:1.1,isLight:true},
+  streets:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',credit:'ESRI World Street Map',brightness:1.05,contrast:1.05,saturation:1.1,isLight:true},
   topo:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',credit:'ESRI World Topo',brightness:1.0,contrast:1.1,saturation:0.9}
 };
 function setBasemap(name){
