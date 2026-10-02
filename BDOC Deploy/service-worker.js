@@ -3,7 +3,7 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v149';  // p145 push: index blob roster — list() lags ~60s, get() does not
+const SW_VERSION = 'bdoc-v150';  // p145 push: index blob roster — list() lags ~60s, get() does not
 const STATIC_CACHE  = SW_VERSION + '-static';
 const CDN_CACHE     = SW_VERSION + '-cdn';
 const API_CACHE     = SW_VERSION + '-api';
@@ -31,13 +31,13 @@ const STATIC_PRECACHE = [
   '/js/bdoc-atak.js?v=p59',
   '/js/cesium-init.js?v=p146',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p149',
-  '/js/modules/layers-conflict.js?v=p149',
-  '/js/modules/layers-infra.js?v=p149',
-  '/js/modules/layers-air.js?v=p149',
-  '/js/modules/layers-nuke.js?v=p149',
-  '/js/modules/nuke-sim.js?v=p149',
-  '/js/modules/layers-airfields.js?v=p149',
+  '/js/modules/layers-military.js?v=p150',
+  '/js/modules/layers-conflict.js?v=p150',
+  '/js/modules/layers-infra.js?v=p150',
+  '/js/modules/layers-air.js?v=p150',
+  '/js/modules/layers-nuke.js?v=p150',
+  '/js/modules/nuke-sim.js?v=p150',
+  '/js/modules/layers-airfields.js?v=p150',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',
