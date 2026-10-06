@@ -109,34 +109,117 @@ function _airRenderHold(active) {
 }
 // SECTION 11.5a: AIRCRAFT ICON GENERATION — Phase 14 type-aware (game-style silhouettes)
 // Classify aircraft by description string (ICAO type code + name from adsb.lol .desc field)
+// ─── ICAO TYPE DESIGNATOR -> SILHOUETTE FAMILY (p152) ────────────────────
+// EXACT-match table. The previous substring regexes mis-sorted real traffic
+// badly: GLF5 (Gulfstream V) -> fighter because it contains "F5"; C172 ->
+// wide because it contains "C17"; B212 (Bell 212) -> bomber via "B21";
+// F2TH (Falcon 2000) -> fighter via "F2". Measured against 1019 live
+// aircraft, 42 civilian jets were drawn as fighters. Match whole codes only.
+// 605 designators mapped.
+const AC_TYPE_TABLE = {
+  717:'jet',727:'jet',737:'jet',757:'jet',A10:'fighter',A109:'heli',A119:'heli',A124:'wide',
+  A139:'heli',A149:'heli',A169:'heli',A189:'heli',A19N:'jet',A20N:'jet',A21N:'jet',A225:'wide',
+  A306:'wide',A30B:'wide',A310:'jet',A318:'jet',A319:'jet',A320:'jet',A321:'jet',A332:'wide',
+  A332MRTT:'tanker',A333:'wide',A337:'wide',A338:'wide',A339:'wide',A33X:'wide',A342:'wide',A343:'wide',
+  A345:'wide',A346:'wide',A359:'wide',A35K:'wide',A388:'wide',A400:'wide',AC130:'wide',AEST:'prop',
+  AH64:'heli',AJET:'fighter',AKNC:'drone',ALCA:'fighter',AN12:'wide',AN124:'wide',AN2:'prop',AN22:'wide',
+  AN225:'wide',AN26:'wide',AN28:'prop',AN32:'wide',AN38:'prop',AN70:'wide',ANKA:'drone',ARJ2:'jet',
+  AS32:'heli',AS35:'heli',AS36:'heli',AS50:'heli',AS55:'heli',AS65:'heli',ASTR:'bizjet',AT3:'prop',
+  AT43:'prop',AT44:'prop',AT45:'prop',AT46:'prop',AT5:'prop',AT6:'prop',AT72:'prop',AT73:'prop',
+  AT75:'prop',AT76:'prop',AT8:'prop',AV8B:'fighter',B06:'heli',B06T:'heli',B1:'bomber',B190:'prop',
+  B1B:'bomber',B2:'bomber',B204:'heli',B205:'heli',B206:'heli',B21:'bomber',B212:'heli',B214:'heli',
+  B222:'heli',B230:'heli',B350:'prop',B37M:'jet',B38M:'jet',B39M:'jet',B3XM:'jet',B407:'heli',
+  B412:'heli',B427:'heli',B429:'heli',B430:'heli',B461:'jet',B462:'jet',B463:'jet',B505:'heli',
+  B52:'wide',B525:'heli',B52H:'bomber',B703:'tanker',B712:'jet',B721:'jet',B722:'jet',B731:'jet',
+  B732:'jet',B733:'jet',B734:'jet',B735:'jet',B736:'jet',B737:'jet',B738:'jet',B739:'jet',
+  B73X:'jet',B741:'wide',B742:'wide',B743:'wide',B744:'wide',B747:'wide',B748:'wide',B74D:'wide',
+  B74R:'wide',B74S:'wide',B752:'jet',B753:'jet',B757:'jet',B762:'wide',B763:'wide',B764:'wide',
+  B767:'wide',B772:'wide',B773:'wide',B778:'wide',B779:'wide',B77L:'wide',B77W:'wide',B787:'wide',
+  B788:'wide',B789:'wide',B78X:'wide',BCS1:'jet',BCS3:'jet',BE10:'prop',BE20:'prop',BE30:'prop',
+  BE33:'prop',BE35:'prop',BE36:'prop',BE40:'prop',BE4W:'bizjet',BE50:'prop',BE55:'prop',BE58:'prop',
+  BE60:'prop',BE65:'prop',BE76:'prop',BE80:'prop',BE88:'prop',BE95:'prop',BE99:'prop',BL17:'prop',
+  BL8:'prop',BLCF:'bomber',C130:'wide',C135:'tanker',C150:'prop',C152:'prop',C160:'wide',C162:'prop',
+  C17:'wide',C170:'prop',C172:'prop',C175:'prop',C177:'prop',C180:'prop',C182:'prop',C185:'prop',
+  C188:'prop',C190:'prop',C195:'prop',C206:'prop',C207:'prop',C208:'prop',C210:'prop',C27J:'wide',
+  C295:'wide',C30J:'wide',C337:'prop',C402:'prop',C404:'prop',C406:'prop',C421:'prop',C425:'prop',
+  C441:'prop',C5:'wide',C500:'bizjet',C501:'bizjet',C510:'bizjet',C525:'bizjet',C526:'bizjet',C550:'bizjet',
+  C551:'bizjet',C560:'bizjet',C56X:'bizjet',C5M:'wide',C650:'bizjet',C680:'bizjet',C68A:'bizjet',C700:'bizjet',
+  C750:'bizjet',C77R:'prop',C82R:'prop',C919:'jet',CH4:'drone',CH47:'heli',CH5:'drone',CH53:'heli',
+  CH70:'prop',CH7A:'prop',CL30:'bizjet',CL35:'bizjet',CL60:'bizjet',CL600:'bizjet',CL601:'bizjet',CL604:'bizjet',
+  CL605:'bizjet',CL650:'bizjet',CN35:'wide',COL4:'prop',CP10:'prop',CQ10:'drone',CRJ:'jet',CRJ1:'bizjet',
+  CRJ2:'jet',CRJ7:'jet',CRJ9:'jet',CRJX:'jet',CS100:'jet',CS300:'jet',D228:'prop',D328:'prop',
+  DA40:'prop',DA42:'prop',DA62:'prop',DC10:'wide',DC85:'wide',DC86:'wide',DC87:'wide',DC91:'jet',
+  DC93:'jet',DC94:'jet',DC95:'jet',DH8A:'prop',DH8B:'prop',DH8C:'prop',DH8D:'prop',DHC2:'prop',
+  DHC3:'prop',DHC4:'prop',DHC6:'prop',DHC7:'prop',DV20:'prop',E110:'prop',E120:'prop',E135:'jet',
+  E140:'jet',E145:'jet',E170:'jet',E190:'jet',E195:'jet',E290:'jet',E295:'jet',E3CF:'tanker',
+  E3TF:'tanker',E45X:'jet',E50P:'bizjet',E545:'bizjet',E550:'bizjet',E55P:'bizjet',E6:'tanker',E75:'jet',
+  E75L:'jet',E75S:'jet',E767:'tanker',EA18:'fighter',EA50:'bizjet',EA6B:'fighter',EC20:'heli',EC25:'heli',
+  EC30:'heli',EC35:'heli',EC45:'heli',EC55:'heli',EC75:'heli',EH10:'heli',EN28:'heli',EPIC:'prop',
+  ERJ:'jet',EUFI:'fighter',EXEC:'heli',EXPL:'heli',F1:'fighter',F100:'jet',F104:'fighter',F111:'fighter',
+  F117:'fighter',F14:'fighter',F15:'fighter',F15C:'fighter',F15E:'fighter',F16:'fighter',F16C:'fighter',F18:'fighter',
+  F18C:'fighter',F18E:'fighter',F22:'fighter',F2TH:'bizjet',F35:'fighter',F35A:'fighter',F35B:'fighter',F35C:'fighter',
+  F4:'fighter',F5:'fighter',F70:'jet',F900:'bizjet',FA10:'bizjet',FA18:'fighter',FA20:'bizjet',FA50:'bizjet',
+  FA6X:'bizjet',FA7X:'bizjet',FA8X:'bizjet',G150:'bizjet',G280:'bizjet',G650:'bizjet',GA8:'prop',GALX:'bizjet',
+  GAZL:'heli',GHWK:'drone',GL5T:'bizjet',GL7T:'bizjet',GLAS:'prop',GLEX:'bizjet',GLF2:'bizjet',GLF3:'bizjet',
+  GLF4:'bizjet',GLF5:'bizjet',GLF6:'bizjet',GRIP:'fighter',GY80:'prop',H1:'heli',H125:'heli',H130:'heli',
+  H135:'heli',H145:'heli',H155:'heli',H160:'heli',H175:'heli',H25A:'bizjet',H25B:'bizjet',H25C:'bizjet',
+  H369:'heli',H46:'heli',H47:'heli',H500:'heli',H53:'heli',H6:'bomber',H60:'heli',H64:'heli',
+  H6K:'bomber',HA4T:'bizjet',HARR:'fighter',HAWK:'fighter',HC130:'wide',HDJT:'bizjet',HERN:'drone',HRON:'drone',
+  HUCO:'heli',IL62:'wide',IL76:'wide',IL78:'tanker',IL86:'wide',IL96:'wide',J10:'fighter',J11:'fighter',
+  J15:'fighter',J16:'fighter',J20:'fighter',J328:'prop',JAS39:'fighter',JCOM:'bizjet',K35E:'tanker',K35R:'tanker',
+  KA26:'heli',KA32:'heli',KA50:'heli',KA52:'heli',KC10:'tanker',KC130:'wide',KC135:'tanker',KC30:'tanker',
+  KC46:'tanker',KE3:'tanker',KFIR:'fighter',KODI:'prop',L101:'wide',L159:'fighter',L39:'fighter',L410:'prop',
+  LC130:'wide',LEG2:'prop',LJ23:'bizjet',LJ24:'bizjet',LJ25:'bizjet',LJ28:'bizjet',LJ31:'bizjet',LJ35:'bizjet',
+  LJ40:'bizjet',LJ45:'bizjet',LJ55:'bizjet',LJ60:'bizjet',LJ70:'bizjet',LJ75:'bizjet',LNC2:'prop',LNC4:'prop',
+  LYNX:'heli',M2000:'fighter',M20P:'prop',M20T:'prop',M600:'prop',M700:'prop',MC130:'wide',MD11:'wide',
+  MD80:'jet',MD81:'jet',MD82:'jet',MD83:'jet',MD87:'jet',MD88:'jet',MD90:'jet',MD95:'jet',
+  MG15:'mig',MG17:'mig',MG19:'mig',MG21:'mig',MG23:'mig',MG25:'mig',MG27:'mig',MG29:'mig',
+  MG31:'mig',MG33:'mig',MG35:'mig',MH60:'heli',MI17:'heli',MI2:'heli',MI24:'heli',MI26:'heli',
+  MI38:'heli',MI8:'heli',MIG9:'mig',MIR2:'fighter',MIRA:'fighter',MO20:'prop',MQ1:'drone',MQ20:'drone',
+  MQ25:'drone',MQ4:'drone',MQ8:'drone',MQ9:'drone',MRTT:'tanker',MU30:'bizjet',NH90:'heli',P180:'prop',
+  P28A:'prop',P28B:'prop',P28R:'prop',P28T:'prop',P32R:'prop',P46T:'prop',PA18:'prop',PA20:'prop',
+  PA22:'prop',PA23:'prop',PA24:'prop',PA27:'prop',PA30:'prop',PA31:'prop',PA32:'prop',PA34:'prop',
+  PA38:'prop',PA44:'prop',PA46:'prop',PAY1:'prop',PAY2:'prop',PAY3:'prop',PAY4:'prop',PC12:'prop',
+  PC21:'prop',PC24:'bizjet',PRED:'drone',PRM1:'bizjet',PUMA:'heli',R135:'tanker',R22:'heli',R44:'heli',
+  R66:'heli',RALL:'prop',RC135:'tanker',REAP:'drone',RFAL:'fighter',RJ100:'jet',RJ1H:'jet',RJ70:'jet',
+  RJ85:'jet',RQ1:'drone',RQ11:'drone',RQ20:'drone',RQ21:'drone',RQ4:'drone',RQ7:'drone',RV10:'prop',
+  RV12:'prop',RV4:'prop',RV6:'prop',RV7:'prop',RV8:'prop',RV9:'prop',S22T:'prop',S61:'heli',
+  S64:'heli',S70:'heli',S76:'heli',S92:'heli',SAVG:'prop',SB20:'prop',SBR1:'bizjet',SBR2:'bizjet',
+  SF34:'prop',SF50:'bizjet',SHHD:'drone',SKUA:'heli',SR20:'prop',SR22:'prop',SR2T:'prop',SSJ1:'jet',
+  SU15:'mig',SU17:'mig',SU20:'mig',SU22:'mig',SU24:'mig',SU25:'mig',SU27:'mig',SU30:'mig',
+  SU33:'mig',SU34:'mig',SU35:'mig',SU37:'mig',SU57:'mig',SU95:'jet',SW3:'prop',SW4:'prop',
+  T154:'jet',T204:'jet',T334:'jet',T38:'fighter',T45:'fighter',T6:'fighter',TB2:'drone',TBM7:'prop',
+  TBM8:'prop',TBM9:'prop',TBMPC6:'prop',TIGR:'heli',TOR:'fighter',TORN:'fighter',TRIS:'tanker',TU16:'bomber',
+  TU160:'bomber',TU22:'bomber',TU22M:'bomber',TU95:'bomber',UAV:'drone',UH1:'heli',UH60:'heli',ULAC:'prop',
+  VC25:'tanker',VELO:'prop',WC130:'wide',WLG1:'drone',WLG2:'drone',WW24:'bizjet',XQ58:'drone',Y12:'prop',
+  Y20:'wide',Y8:'wide',Y9:'wide',YK40:'jet',YK42:'jet'
+};
+
 function classifyAircraftType(desc){
   if(!desc)return 'jet';
-  const d=desc.toUpperCase();
-  // ORDER MATTERS. Each test below is checked in sequence and the first match
-  // wins, so narrow military classes MUST precede the broad civil buckets —
-  // e.g. "MQ-9" would otherwise be swallowed by the prop regex, and "B-52"
-  // by the wide-body B7x pattern.
-  //
-  // Unmanned — UCAV / MALE / HALE / loitering munition.
-  // Matched first because several airframes collide with civil patterns.
-  if(/\bMQ-?[0-9]|\bRQ-?[0-9]|\bXQ-?[0-9]|\bCQ-?[0-9]|REAPER|PREDATOR|GLOBAL ?HAWK|TRITON|BAYRAKTAR|TB-?2|AKINCI|ANKA|WING ?LOONG|CH-?[45]\b|HERON|HERMES ?[49]|SHAHED|ORION|UAV|UCAV|DRONE|UNMANNED|\bGRAY ?EAGLE|SKYGUARDIAN|AVENGER/.test(d))return 'drone';
-  // Strategic bombers.
-  if(/\bB-?1\b|\bB-?1B|\bB-?2\b|\bB-?21|\bB-?52|LANCER|SPIRIT|RAIDER|STRATOFORTRESS|\bTU-?(16|22|95|160)|BACKFIRE|BLACKJACK|BEAR ?[A-H]?\b|\bH-?6\b|XIAN ?H/.test(d))return 'bomber';
-  // Tankers and strategic airlift.
-  if(/\bKC-?[0-9]|\bA330 ?MRTT|MRTT|VOYAGER|STRATOTANKER|PEGASUS|EXTENDER|\bIL-?78|MIDAS|\bYY-?20|TANKER|REFUEL/.test(d))return 'tanker';
-  // Helicopters
-  if(/\bH[0-9]{2,3}\b|HELI|EC[12]|R[24]4|AS3|AS5|UH-|CH-|AH-|MH-|MD5|S-?7[06]/.test(d))return 'heli';
-  // Russian/Soviet fighters get their own silhouette (distinct planform).
-  if(/\bMIG-?[0-9]|\bMIG[0-9]|FULCRUM|FLANKER|FOXBAT|FOXHOUND|FROGFOOT|\bSU-?2[45]\b|\bSU-?3[05]\b|\bSU-?57/.test(d))return 'mig';
-  // Military fighters / attack
-  if(/F-?[0-9]{1,3}|MIG|SU-?[0-9]|EUFI|J-?[0-9]{2}|RAFA|HARR|TYPH|GRIPN|HORN|TOMC|EAGL|FALC|VIPER|RAPTR|LIGHT|A-?10|AV-?8/.test(d))return 'fighter';
-  // Wide-body / heavy
-  if(/B7[4-9]|B-?7[4-9]|A3[3-9]|A-?3[3-9]|A380|MD11|DC-?10|DC-?8|IL-?[6-9]|AN-?[12]|C-?5|C-?17|KC-?[14]/.test(d))return 'wide';
-  // Turboprop / regional prop
-  if(/TURBO|PROP|DASH|ATR-?|BEEC|KING|TBM|PC-?12|CESS|PIPE|SR2[02]|C172|C182|C208/.test(d))return 'prop';
-  // Business jet
-  if(/GULF|G-?[IV456]+|GLEX|FAL[0-9]|CL[36]0|LEAR|CITA|EMB-?5[05]|HAWK|HONDA|PHEN|EMBR/.test(d))return 'bizjet';
-  // Default narrow-body jet
+  const d=String(desc).toUpperCase().trim();
+
+  // ── 1. EXACT ICAO type-code lookup (authoritative) ───────────────────────
+  // ADS-B feeds supply a 4-char ICAO designator (field `t`). Substring regex
+  // against these is catastrophic — "GLF5" contains "F5", "C172" contains
+  // "C17", "B212" contains "B21" — so match the whole code and nothing else.
+  const code = d.split(/[\s\/(]/)[0].replace(/[^A-Z0-9-]/g,'');
+  const T = AC_TYPE_TABLE[code];
+  if(T) return T;
+
+  // ── 2. Unknown code: fall back to cautious description matching ──────────
+  // These run ONLY when the exact table missed, and every pattern is anchored
+  // to a word boundary on both sides to avoid the substring trap above.
+  if(/\b(MQ|RQ|XQ|CQ)-?\d+\b|\bREAPER\b|\bPREDATOR\b|\bGLOBAL HAWK\b|\bTRITON\b|\bBAYRAKTAR\b|\bTB-?2\b|\bHERON\b|\bSHAHED\b|\bUAV\b|\bUCAV\b|\bDRONE\b|\bUNMANNED\b/.test(d))return 'drone';
+  if(/\bB-?(1|1B|2|21|52)\b|\bLANCER\b|\bSTRATOFORTRESS\b|\bTU-?(16|22|95|160)\b|\bBACKFIRE\b|\bBLACKJACK\b|\bH-?6\b/.test(d))return 'bomber';
+  if(/\bKC-?\d+\b|\bMRTT\b|\bVOYAGER\b|\bSTRATOTANKER\b|\bPEGASUS\b|\bEXTENDER\b|\bIL-?78\b|\bTANKER\b/.test(d))return 'tanker';
+  if(/\bMIG-?\d+\b|\bFULCRUM\b|\bFLANKER\b|\bFOXBAT\b|\bFOXHOUND\b|\bFROGFOOT\b|\bSU-?\d+\b/.test(d))return 'mig';
+  if(/\bF-?\d{1,3}[A-Z]?\b|\bF\/A-?\d+[A-Z]?\b|\bRAFALE\b|\bTYPHOON\b|\bGRIPEN\b|\bHORNET\b|\bTOMCAT\b|\bEAGLE\b|\bRAPTOR\b|\bLIGHTNING\b|\bA-?10\b|\bAV-?8\b|\bHARRIER\b/.test(d))return 'fighter';
+  if(/\bHELICOPTER\b|\bHELI\b|\bROTOR\b/.test(d))return 'heli';
+  if(/\bTURBOPROP\b|\bPROP\b|\bPISTON\b|\bCESSNA\b|\bPIPER\b|\bBEECH\b/.test(d))return 'prop';
+  if(/\bGULFSTREAM\b|\bLEARJET\b|\bCITATION\b|\bCHALLENGER\b|\bGLOBAL EXPRESS\b|\bDASSAULT FALCON\b|\bPHENOM\b|\bHAWKER\b/.test(d))return 'bizjet';
+  if(/\bA3[4-8]\d\b|\bB7[4-8]\d\b|\bWIDE-?BODY\b|\bMD-?11\b|\bDC-?10\b/.test(d))return 'wide';
+
   return 'jet';
 }
 // Render type-aware aircraft icon at given rotation

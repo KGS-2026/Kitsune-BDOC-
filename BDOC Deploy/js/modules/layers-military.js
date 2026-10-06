@@ -269,7 +269,58 @@ var MILBASES = [
   {n:'RAAF Tindal',lat:-14.52,lon:132.38,c:'AU',t:'RAAF',d:'RAAF\'s most northern continental base. F-35A Lightning II (75 Sqn). Currently undergoing $1.4B expansion for USAF rotational bomber deployments — fuel storage, apron expansion, and munitions facilities for B-52H Stratofortress operations. Part of AUKUS force posture initiative. 6 hours flying time from South China Sea. Northern Territory. Australia\'s frontline air combat base for Indo-Pacific.'},
   {n:'Jindalee (Laverton)',lat:-31.05,lon:136.81,c:'AU',t:'RAAF',d:'Jindalee Operational Radar Network (JORN) — over-the-horizon radar system detecting aircraft and ships at 1,000-3,000km range. Three transmitter/receiver sites creating a surveillance arc across Australia\'s northern and western approaches. Can detect stealth aircraft at ranges where conventional radar cannot. Provides early warning of air and maritime threats from Southeast Asia and the Indian Ocean. One of the most advanced OTH radar systems in the world.'},
   {n:'Changi Naval Base',lat:1.32,lon:103.98,c:'SG',t:'RSN',d:'Republic of Singapore Navy HQ. Changi Naval Base is the largest naval facility in Southeast Asia. Hosts US Navy logistics command (COMLOG WESTPAC) and Littoral Combat Ships on rotational deployment. Deep-water berth accommodates aircraft carriers — USS Ronald Reagan regularly visits. Strategic position at eastern entrance to Strait of Malacca (25% of global trade passes through). Also houses Singapore\'s Formidable-class stealth frigates and Archer-class submarines.'},
-  {n:'Lumut Naval Base',lat:4.24,lon:100.62,c:'MY',t:'RMN',d:'Royal Malaysian Navy Western Fleet HQ. Lekiu-class frigates, Kedah-class patrol vessels. Patrols Strait of Malacca against piracy, smuggling, and illegal fishing. Located on Perak coast — western approaches to the strait. Coordinates with Singapore and Indonesia under Malacca Strait Patrol (MSP) arrangement. Malaysia\'s primary naval base for South China Sea territorial defense.'},
+  {n:'Lumut Naval Base',lat:4.24,lon:100.62,c:'MY',t:'RMN',d:'Royal Malaysian Navy Western Fleet HQ. Lekiu-class frigates, Kedah-class patrol vessels. Patrols Strait of Malacca against piracy, smuggling, and illegal fishing. Located on Perak coast — western approaches to the strait. Coordinates with Singapore and Indonesia under Malacca Strait Patrol (MSP) arrangement. Malaysia\'s primary naval base for South China Sea territorial defense.'},,
+
+  // ─── p153: USMC installations missing vs the official USMC map ──────────
+  {n:'MCMWTC Bridgeport',lat:38.34,lon:-119.45,c:'US',t:'USMC',d:'Marine Corps Mountain Warfare Training Center, Pickel Meadows, CA. 46,000 acres in the Sierra Nevada at 6,700-11,500ft. Sole USMC mountain/cold-weather training site — Mountain Exercise (MTX) and Mountain Scout Sniper courses. Prepares units for high-altitude and arctic operations.'},
+    {n:'Camp Horno',lat:33.35,lon:-117.42,c:'US',t:'USMC',d:'Camp Horno, northern Camp Pendleton. Home to 1st Marine Regiment elements and School of Infantry-West (SOI-W) field training areas. Separate cantonment within the Pendleton complex.'},
+    {n:'MCLB Barstow',lat:34.89,lon:-117.03,c:'US',t:'USMC',d:'Marine Corps Logistics Base Barstow, CA. West Coast depot-level maintenance and supply hub. Production Plant Barstow rebuilds combat vehicles and ordnance. Counterpart to MCLB Albany, supporting I MEF and Pacific-bound materiel.'},
+    {n:'Camp Kinser',lat:26.27,lon:127.72,c:'JP',t:'USMC',d:'Camp Kinser, Urasoe, Okinawa. 3rd Marine Logistics Group (3rd MLG) HQ. Primary USMC supply and maintenance installation in the Western Pacific. Slated for eventual return to Japan under the Okinawa consolidation plan.'},
+    {n:'Camp Hansen',lat:26.49,lon:127.92,c:'JP',t:'USMC',d:'Camp Hansen, Kin, Okinawa. 12th Marine Littoral Regiment and 3rd Reconnaissance Battalion. Live-fire training ranges and jungle warfare areas. Key III MEF forward-deployed infantry installation.'},
+    {n:'Camp Schwab',lat:26.53,lon:128.05,c:'JP',t:'USMC',d:'Camp Schwab, Henoko, Okinawa. 4th Marine Regiment. Site of the Futenma Replacement Facility construction — the contested runway project relocating MCAS Futenma air operations. 3rd Marine Division elements.'},
+
+  // ─── p153: NATIONAL GUARD & RESERVE ────────────────────────────────────
+  // Previously ZERO Guard/Reserve records existed despite 230 bases. These
+  // are the installations that actually matter for domestic response: they
+  // are what activates for hurricanes, civil unrest, and homeland defense.
+    {n:'Joint Base Andrews (DC ANG)',lat:38.81,lon:-76.87,c:'US',t:'ANG',d:'113th Wing "Capital Guardians," DC Air National Guard. F-16C Fighting Falcons on Aerospace Control Alert for the National Capital Region — scrambles for airspace violations over Washington. Also home to Air Force One.'},
+    {n:'Selfridge ANGB',lat:42.61,lon:-82.83,c:'US',t:'ANG',d:'Selfridge Air National Guard Base, MI. 127th Wing — A-10C Thunderbolt II and KC-135T Stratotanker. One of the oldest continuously operating air bases in the US (est. 1917). Great Lakes air sovereignty.'},
+    {n:'Burlington ANGB',lat:44.47,lon:-73.15,c:'US',t:'ANG',d:'158th Fighter Wing "Green Mountain Boys," Vermont ANG. First Air National Guard unit to field the F-35A Lightning II. Northeast air defense alert mission.'},
+    {n:'Buckley SFB (CO ANG)',lat:39.70,lon:-104.75,c:'US',t:'ANG',d:'140th Wing, Colorado ANG. F-16C Fighting Falcons. Co-located with Space Base Delta 2 and the Aerospace Data Facility supporting SBIRS missile-warning operations.'},
+    {n:'Fresno Yosemite ANGB',lat:36.78,lon:-119.72,c:'US',t:'ANG',d:'144th Fighter Wing, California ANG. F-15EX Eagle II — among the first operational F-15EX units. West Coast air sovereignty alert covering central California.'},
+    {n:'Jacksonville ANGB',lat:30.49,lon:-81.69,c:'US',t:'ANG',d:'125th Fighter Wing, Florida ANG. F-35A Lightning II (transitioning from F-15C). Southeast air defense and Caribbean approaches alert coverage.'},
+    {n:'Portland ANGB',lat:45.56,lon:-122.60,c:'US',t:'ANG',d:'142nd Wing, Oregon ANG. F-15EX Eagle II. Pacific Northwest air sovereignty alert — covers Seattle/Portland metro approaches.'},
+    {n:'Joint Base Elmendorf-Richardson (AK ANG)',lat:61.25,lon:-149.81,c:'US',t:'ANG',d:'176th Wing, Alaska ANG. C-17 Globemaster III, HC-130J Combat King II, HH-60G Pave Hawk. Alaska Rescue Coordination Center — civil search-and-rescue across the state plus Arctic air defense.'},
+    {n:'Hickam Field (HI ANG)',lat:21.33,lon:-157.94,c:'US',t:'ANG',d:'154th Wing, Hawaii ANG. F-22 Raptor (associate with 15th Wing), KC-135R, C-17. Pacific air sovereignty and INDOPACOM alert.'},
+    {n:'Rosecrans ANGB',lat:39.77,lon:-94.91,c:'US',t:'ANG',d:'139th Airlift Wing, Missouri ANG. C-130H Hercules. Hosts the Advanced Airlift Tactics Training Center (AATTC) — joint/allied tactical airlift schoolhouse.'},
+    {n:'Camp Shelby JFTC',lat:31.17,lon:-89.19,c:'US',t:'ARNG',d:'Camp Shelby Joint Forces Training Center, MS. Largest state-owned ARNG training site — 134,000 acres. Primary mobilization station for deploying Guard and Reserve units. Mississippi Army National Guard.'},
+    {n:'Camp Atterbury',lat:39.34,lon:-86.04,c:'US',t:'ARNG',d:'Camp Atterbury, IN. Power Projection Platform and mobilization center. Muscatatuck Urban Training Center (MUTC) — 1,000-acre simulated urban/disaster complex used for CBRN, homeland response, and interagency exercises.'},
+    {n:'Fort Indiantown Gap',lat:40.43,lon:-76.58,c:'US',t:'ARNG',d:'Fort Indiantown Gap, PA. Pennsylvania ARNG HQ and the busiest ARNG training center in the nation. Eastern ARNG Aviation Training Site (EAATS). 17,000 acres.'},
+    {n:'Camp Ripley',lat:46.09,lon:-94.36,c:'US',t:'ARNG',d:'Camp Ripley, MN. 53,000-acre Minnesota ARNG training center. Cold-weather operations training for Guard, Reserve, and allied forces. Regional homeland-response staging.'},
+    {n:'Camp Blanding JTC',lat:29.95,lon:-82.01,c:'US',t:'ARNG',d:'Camp Blanding Joint Training Center, FL. Florida ARNG primary training site, 73,000 acres. Hurricane-response staging base and Florida National Guard mobilization hub.'},
+    {n:'Gowen Field',lat:43.55,lon:-116.23,c:'US',t:'ARNG',d:'Gowen Field, Boise, ID. Idaho ARNG and 124th Fighter Wing (A-10C). Orchard Combat Training Center — 143,000-acre maneuver and gunnery range.'},
+    {n:'Camp Grayling JMTC',lat:44.67,lon:-84.72,c:'US',t:'ARNG',d:'Camp Grayling Joint Maneuver Training Center, MI. Largest National Guard training center by area — 148,000 acres. Northern Strike, a major annual joint/multinational exercise.'},
+    {n:'Dobbins ARB',lat:33.92,lon:-84.52,c:'US',t:'AFRC',d:'Dobbins Air Reserve Base, GA. 94th Airlift Wing — C-130H Hercules. Co-located with Lockheed Martin Marietta (C-130J/F-22 production). Southeast reserve airlift hub.'},
+    {n:'March ARB',lat:33.88,lon:-117.26,c:'US',t:'AFRC',d:'March Air Reserve Base, CA. 452nd Air Mobility Wing — KC-135R Stratotanker and C-17 Globemaster III. Largest air mobility reserve wing. Southern California disaster-response staging.'},
+    {n:'Westover ARB',lat:42.19,lon:-72.53,c:'US',t:'AFRC',d:'Westover Air Reserve Base, MA. 439th Airlift Wing — C-5M Super Galaxy. Largest reserve installation by area. Strategic airlift for Northeast mobilization.'},
+    {n:'Youngstown ARS',lat:41.26,lon:-80.68,c:'US',t:'AFRC',d:'Youngstown Air Reserve Station, OH. 910th Airlift Wing — C-130H Hercules. Sole DoD unit flying fixed-wing aerial-spray missions (vector control, oil-spill dispersant).'},
+    {n:'Grissom ARB',lat:40.65,lon:-86.15,c:'US',t:'AFRC',d:'Grissom Air Reserve Base, IN. 434th Air Refueling Wing — KC-135R Stratotanker. Largest KC-135 unit in Air Force Reserve Command.'},
+    {n:'Fort McCoy',lat:44.02,lon:-90.67,c:'US',t:'USAR',d:'Fort McCoy, WI. US Army Reserve total-force training center, 60,000 acres. Major mobilization station — processed Operation Allies Welcome Afghan evacuee support in 2021. 88th Readiness Division.'},
+    {n:'Fort Dix (JB MDL)',lat:40.03,lon:-74.60,c:'US',t:'USAR',d:'Fort Dix, part of Joint Base McGuire-Dix-Lakehurst, NJ. US Army Reserve power-projection platform and East Coast mobilization center. 99th Readiness Division.'},
+    {n:'NAS JRB Fort Worth',lat:32.77,lon:-97.44,c:'US',t:'USNR',d:'Naval Air Station Joint Reserve Base Fort Worth, TX. Navy, Marine, Air Force Reserve and Texas ANG flying units co-located — F/A-18, F-35B, C-130, F-16. Adjacent to Lockheed Martin F-35 final assembly.'},
+    {n:'NAS JRB New Orleans',lat:29.83,lon:-90.02,c:'US',t:'USNR',d:'NAS JRB New Orleans (Belle Chasse), LA. Navy and Marine Forces Reserve aviation. MARFORRES HQ is in New Orleans. Gulf Coast hurricane-response staging.'},
+    {n:'MCB Camp Butler',lat:26.28,lon:127.78,c:'JP',t:'USMC',d:'Marine Corps Base Camp Smedley D. Butler — the administrative umbrella for all USMC installations on Okinawa (Foster, Kinser, Hansen, Schwab, Courtney). III MEF support.'},
+
+  // ─── p153b: remaining Okinawa installations ────────────────────────────
+  // Okinawa hosts the densest USMC presence outside CONUS but held a single
+  // record (Kadena AB) before p153. Futenma and Foster are the two that
+  // matter most: Futenma drives US-Japan basing politics, Foster is III MEF HQ.
+  {n:'MCAS Futenma',lat:26.27,lon:127.76,c:'JP',t:'USMC',d:'Marine Corps Air Station Futenma, Ginowan, Okinawa. Marine Aircraft Group 36 (MAG-36), 1st Marine Aircraft Wing — MV-22B Osprey, CH-53E Super Stallion, UH-1Y/AH-1Z. Sits in dense urban Ginowan; its relocation to Camp Schwab/Henoko is the central dispute in US-Japan basing politics. Primary USMC rotary-wing hub in the Western Pacific.'},
+  {n:'Camp Foster',lat:26.28,lon:127.77,c:'JP',t:'USMC',d:'Camp Foster, Okinawa. Headquarters, III Marine Expeditionary Force (III MEF) and Marine Corps Installations Pacific (MCIPAC). Largest USMC administrative installation on Okinawa — command, medical (US Naval Hospital Okinawa), and support infrastructure for all Marine forces in Japan.'},
+  {n:'Camp Courtney',lat:26.38,lon:127.87,c:'JP',t:'USMC',d:'Camp Courtney, Uruma, Okinawa. Headquarters, 3rd Marine Division. Command element for ground combat forces across the Indo-Pacific. Overlooks Kin Bay on the east coast.'},
+  {n:'Camp Gonsalves (JWTC)',lat:26.73,lon:128.25,c:'JP',t:'USMC',d:'Camp Gonsalves, northern Okinawa. Jungle Warfare Training Center (JWTC) — the only US jungle warfare school in the Pacific. 17,000 acres of Yanbaru subtropical forest. Endurance Course and jungle survival training for III MEF and allied units.'},
+  {n:'Torii Station',lat:26.35,lon:127.74,c:'JP',t:'USA',d:'Torii Station, Yomitan, Okinawa. US Army Japan garrison hosting 1st Battalion, 1st Special Forces Group (Airborne) — the Army SF element forward-deployed for Indo-Pacific contingencies. 10th Support Group.'},
+  {n:'White Beach Naval Facility',lat:26.30,lon:127.93,c:'JP',t:'USN',d:'White Beach Naval Facility, Uruma, Okinawa. Deep-water port and amphibious staging area on the Katsuren Peninsula. Supports III MEF embarkation, amphibious ready group operations, and submarine/surface vessel port visits.'}
 ];
 
 // ═══ MILITARY ICON GENERATOR — US BRANCH INSIGNIA SVG MARKERS ═══
@@ -382,6 +433,13 @@ function getBranch(t){
   if(t==='USA') return 'usa';
   if(t==='USMC') return 'usmc';
   if(t==='USSF') return 'ussf';
+  // p153: Guard & Reserve reuse their parent service's insignia — an ANG wing
+  // flies USAF aircraft and wears USAF heraldry; the distinction is component,
+  // not branch. Component is carried in the record type and shown in the popup.
+  if(t==='ANG'||t==='AFRC') return 'usaf';
+  if(t==='ARNG'||t==='USAR') return 'usa';
+  if(t==='USNR') return 'usn';
+  if(t==='USMCR') return 'usmc';
   if(t==='DOD') return 'dod';
   if(t==='NATO') return 'nato';
   if(t==='PLA Rocket Force') return 'missile';
@@ -411,6 +469,11 @@ function getSIDC(branchType,countryCode,iconKind){
   if(branchType==='USMC')return `S${aff}GPUCI---*****`; // Ground unit infantry (Marines)
   if(branchType==='USA')return  `S${aff}GPIBA---*****`; // Ground installation, base
   if(branchType==='USSF')return `S${aff}PT------*****`; // Space track
+  // p153: Guard/Reserve take the same 2525 frame as their parent service.
+  if(branchType==='ANG'||branchType==='AFRC')return `S${aff}AP------*****`;
+  if(branchType==='ARNG'||branchType==='USAR')return `S${aff}GPIBA---*****`;
+  if(branchType==='USNR')return `S${aff}SP------*****`;
+  if(branchType==='USMCR')return `S${aff}GPUCI---*****`;
   if(branchType==='DOD')return  `S${aff}GPIBA---*****`; // Generic base
   if(branchType==='NATO')return `S${aff}GPIBA---*****`;
   if(branchType==='missile'||branchType==='PLA Rocket Force')return `S${aff}GPUWS---*****`; // Surface-to-surface missile
