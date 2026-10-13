@@ -4,15 +4,18 @@ Reads all Claude Code .jsonl transcripts, extracts facts via Claude, writes to m
 
 Setup:
     pip install anthropic mem0ai
-    Set ANTHROPIC_API_KEY below, then run: python mem0_importer.py
+    Set MEM0_API_KEY and ANTHROPIC_API_KEY as environment variables, then run:
+    python mem0_importer.py
+
+Never paste keys into this file — it lives in a public repo.
 """
 
 import os, json, time, glob, hashlib
 from pathlib import Path
 
-# ── KEYS (fill in ANTHROPIC_API_KEY) ─────────────────────────────────────────
-MEM0_API_KEY      = "m0-lXJXL2c0us8nKM4RFDaFpSK6r06XEvFK6Ie3PSRm"
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")  # paste your key here
+# ── KEYS (from environment only) ─────────────────────────────────────────────
+MEM0_API_KEY      = os.getenv("MEM0_API_KEY", "")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 TRANSCRIPT_DIRS = [r"C:\Users\ARNAUTICA\.claude\projects"]
@@ -104,8 +107,8 @@ def write_mem0(mc, facts):
     return n
 
 def main():
-    if not ANTHROPIC_API_KEY:
-        print("ERROR: paste your Anthropic API key into ANTHROPIC_API_KEY at top of file")
+    if not (ANTHROPIC_API_KEY and MEM0_API_KEY):
+        print("ERROR: set MEM0_API_KEY and ANTHROPIC_API_KEY environment variables")
         return
 
     import anthropic

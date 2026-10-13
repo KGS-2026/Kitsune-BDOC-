@@ -70,6 +70,13 @@
   status = 404
   force = true
 
+# Operator tooling. This one shipped a hardcoded mem0 key and was served at 200 (2026-10-13).
+[[redirects]]
+  from = "/mem0_importer.py"
+  to = "/404.html"
+  status = 404
+  force = true
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
