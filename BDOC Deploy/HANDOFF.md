@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
-**Last updated by Claude Code:** 2026-10-14 · build **p155** (patches, not pushed) · `SW_VERSION bdoc-v155`
+**Last updated by Claude Code:** 2026-10-14 · build **p156** (patches, not pushed) · `SW_VERSION bdoc-v156`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,35 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
+
+### Claude Code — p156 (2026-10-14) — Skybridge: satellite data over the mesh, NOT yet on `main`
+
+Patch `0004` on top of p155. SW `bdoc-v156`; LazyLoader `_version` + module keys
+`p156`; `auth.js?v=p156`.
+
+- `tools/skybridge.py` — BDSB/1 binary format (raster grid / warning polygons / text),
+  8-byte chunk header, 199-byte payloads, CRC32, one XOR parity chunk per message.
+  `raster` (SatDump/goestools PNG + bbox, `--enhanced` for colour IR, median, despeckle),
+  `warnings` (NWS GeoJSON), `text`, `send --radio serial:COM5 | tcp:host` (meshtastic lib,
+  port 256, paced per preset) or `--sim` into the local receiver, `demo`, `decode`.
+- `tools/bdoc-ipc-receiver.js` — `mesh/packet` route + `GET /api/v1/mesh/events`.
+- `tools/grid_down_gateway.py` — forwards EVERY packet heard to `mesh/packet`
+  (port-256 payloads as base64, text, hop/SNR/RSSI).
+- `js/modules/skybridge.js` — reassembly + parity rebuild + CRC + inflate in the browser;
+  rasters as an imagery layer (clouds or E-INK), warnings as ground polygons, bulletins
+  in the panel/EventLog; products saved to IndexedDB and restored offline. Layer row
+  `skybridge` (COMMS) + Tools menu. Gate `skybridge` (operator).
+- `js/modules/net-builder.js` — LIVE also polls `mesh/events`: every mesh packet (TEXT,
+  POS, TELEM, SKY …) animates; broadcasts fan out one hop to each radio neighbour;
+  new `dish` device; SKYBRIDGE DEMO topology (node ids match `skybridge.py demo`);
+  raised cables keep a depth-fail material so terrain can't hide them.
+
+Verified here: Python round-trip of all three types; every single-chunk loss rebuilt,
+two losses correctly refused, corruption caught by CRC; gateway path with real-shaped
+Meshtastic packet dicts; a real GOES-19 band-13 image (Oct 14 13:01Z) encoded to 353 B
+and drawn over the Southeast in the browser; browser parity rebuild of a dropped
+chunk; Network Builder animation of the simulated mesh. Not verified: a physical
+Meshtastic radio, a physical dish.
 
 ### Claude Code — p155 (2026-10-14) — Network Builder + Meshtastic World, NOT yet on `main`
 
@@ -376,6 +405,13 @@ caught 6 panels the first pass missed (`replay-bar`, `tz-bar`, `vfx-flir-bar`,
 3. Toggle NVG at night and FLIR over a city; watch FPS on the 1660 Ti.
 4. Tag `desktop-v8.1.0` to run `.github/workflows/desktop-release.yml`, then
    Help/File → Download Desktop App should pick the new asset.
+
+### K. p156 checks on a real machine  ← after applying 0004
+1. Two Meshtastic radios on a private channel (index 1). Radio A on the "station"
+   machine: `python tools/skybridge.py demo --save out` then
+   `python tools/skybridge.py send out/ir.bin out/warnings.bin out/bulletin.bin --radio serial:COMx --channel 1`.
+2. Radio B on the BDOC laptop: `node tools/bdoc-ipc-receiver.js` + `python tools/grid_down_gateway.py --serial COMy`.
+   Turn on COMMS → Skybridge. Clouds, 3 warnings and a bulletin should appear with Wi-Fi off.
 
 ### J. p155 checks on a real machine  ← after applying 0003
 1. `node tools/bdoc-ipc-receiver.js`, then `python tools/adapters/wireshark_adapter.py -D`

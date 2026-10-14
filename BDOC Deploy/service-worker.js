@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v155';  // p155: Network Builder (Packet Tracer + live Wireshark) + Meshtastic World relay router
+const SW_VERSION = 'bdoc-v156';  // p156: Skybridge (satellite data over mesh) + mesh traffic in Network Builder
+// (prev) const SW_VERSION = 'bdoc-v155';  // p155: Network Builder (Packet Tracer + live Wireshark) + Meshtastic World relay router
 // (prev) const SW_VERSION = 'bdoc-v154';  // p154: Travon's 25-item field list (NVG/FLIR GPU, depth, drawing, undo, aircraft ID…)
 // (prev) const SW_VERSION = 'bdoc-v153';  // p153: Cesium 1.104 -> 1.146 + createOsmBuildingsAsync
 // (prev) const SW_VERSION = 'bdoc-v152';  // p145 push: index blob roster — list() lags ~60s, get() does not
@@ -29,21 +30,22 @@ const STATIC_PRECACHE = [
   '/js/telemetry.js?v=p59',
   '/js/converters.js?v=p59',
   '/js/data.js?v=p119',
-  '/js/auth.js?v=p155',
+  '/js/auth.js?v=p156',
   '/js/filters.js?v=p154',
   '/js/kitsune-ai.js?v=p93',
   '/js/bdoc-atak.js?v=p59',
   '/js/cesium-init.js?v=p154',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p155',
-  '/js/modules/layers-conflict.js?v=p155',
-  '/js/modules/layers-infra.js?v=p155',
-  '/js/modules/layers-air.js?v=p155',
-  '/js/modules/layers-nuke.js?v=p155',
-  '/js/modules/nuke-sim.js?v=p155',
-  '/js/modules/layers-airfields.js?v=p155',
-  '/js/modules/net-builder.js?v=p155',
-  '/js/modules/mesh-world.js?v=p155',
+  '/js/modules/layers-military.js?v=p156',
+  '/js/modules/layers-conflict.js?v=p156',
+  '/js/modules/layers-infra.js?v=p156',
+  '/js/modules/layers-air.js?v=p156',
+  '/js/modules/layers-nuke.js?v=p156',
+  '/js/modules/nuke-sim.js?v=p156',
+  '/js/modules/layers-airfields.js?v=p156',
+  '/js/modules/net-builder.js?v=p156',
+  '/js/modules/mesh-world.js?v=p156',
+  '/js/modules/skybridge.js?v=p156',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',

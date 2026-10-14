@@ -43,7 +43,8 @@ const DEVICES={
   mesh:    {label:'Meshtastic',    color:'#76FF03'},
   tower:   {label:'Cell Tower',    color:'#90A4AE'},
   sat:     {label:'Sat Terminal',  color:'#18FFFF'},
-  cloud:   {label:'Internet',      color:'#90CAF9'}
+  cloud:   {label:'Internet',      color:'#90CAF9'},
+  dish:    {label:'Sat Ground Stn', color:'#9CC4FF'}
 };
 const CABLES={
   cat6:   {label:'Copper Cat6',     color:'#4FC3F7', dash:0,  width:3},
@@ -58,7 +59,13 @@ const CABLES={
 const PROTO_COLORS={TCP:'#4FC3F7',TLS:'#448AFF',HTTP:'#FFEB3B',DNS:'#18FFFF',ICMP:'#FF80AB',ARP:'#FFD180',
   UDP:'#B388FF',SSH:'#69F0AE',RTSP:'#FFAB40',MQTT:'#76FF03',SMB:'#EA80FC',NTP:'#80CBC4',DHCP:'#FFF59D',
   MDNS:'#80DEEA',SNMP:'#BCAAA4',MODBUS:'#FF6E40',QUIC:'#82B1FF',IP:'#E0E0E0'};
-const PROTO_FILTERS=['TCP','TLS','HTTP','DNS','ICMP','ARP','UDP','OTHER'];
+const PROTO_FILTERS=['TCP','TLS','HTTP','DNS','ICMP','ARP','UDP','MESH','OTHER'];
+// p156: Meshtastic portnums -> short labels (Wireshark for the mesh)
+const MESH_LABELS={TEXT_MESSAGE_APP:'TEXT',POSITION_APP:'POS',NODEINFO_APP:'NODEINFO',ROUTING_APP:'ROUTING',TELEMETRY_APP:'TELEM',TRACEROUTE_APP:'TRACE',
+  NEIGHBORINFO_APP:'NBRINFO',WAYPOINT_APP:'WAYPT',RANGE_TEST_APP:'RANGE',STORE_FORWARD_APP:'S&F',ATAK_PLUGIN:'ATAK',MAP_REPORT_APP:'MAPRPT',ADMIN_APP:'ADMIN',
+  PRIVATE_APP:'SKY',SAT_DOWNLINK:'SAT'};
+const MESH_SET=new Set(Object.values(MESH_LABELS).concat(['MESH']));
+Object.assign(PROTO_COLORS,{SKY:'#9CC4FF',SAT:'#18FFFF',TEXT:'#76FF03',POS:'#B2FF59',NODEINFO:'#CCFF90',ROUTING:'#69F0AE',TELEM:'#A7FFEB',TRACE:'#EEFF41',NBRINFO:'#C6FF00',MESH:'#76FF03'});
 
 // ── icons (Packet Tracer-ish line art, tinted per device) ───
 function iconSvg(type,sel){
@@ -79,7 +86,8 @@ function iconSvg(type,sel){
     mesh:`<path d="M24 8v24" stroke="${c}" stroke-width="2.4"/><circle cx="24" cy="8" r="2.4" fill="${c}"/><rect x="17" y="30" width="14" height="10" rx="2" fill="none" stroke="${c}" stroke-width="2.2"/><path d="M14 14a14 14 0 0 0 0 12M34 14a14 14 0 0 1 0 12" stroke="${c}" stroke-width="2" fill="none"/>`,
     tower:`<path d="M24 7l-9 34M24 7l9 34M18 27h12M20 19h8M16 35h16" stroke="${c}" stroke-width="2.1" fill="none"/><circle cx="24" cy="7" r="2.2" fill="${c}"/>`,
     sat:`<path d="M12 33a16 16 0 0 1 20-20z" fill="none" stroke="${c}" stroke-width="2.2"/><path d="M22 23l10-10M14 41h18M23 33v8" stroke="${c}" stroke-width="2.2"/><circle cx="33" cy="12" r="2.2" fill="${c}"/>`,
-    cloud:`<path d="M15 33h19a7 7 0 0 0 0-14 10 10 0 0 0-19-2 8 8 0 0 0 0 16z" fill="none" stroke="${c}" stroke-width="2.4"/>`
+    cloud:`<path d="M15 33h19a7 7 0 0 0 0-14 10 10 0 0 0-19-2 8 8 0 0 0 0 16z" fill="none" stroke="${c}" stroke-width="2.4"/>`,
+    dish:`<path d="M10 30a16 16 0 0 0 22-22" fill="none" stroke="${c}" stroke-width="2.4"/><path d="M10 30L32 8M21 19l8 8M18 33l-3 7h14l-3-7" stroke="${c}" stroke-width="2.1" fill="none"/><circle cx="34" cy="6" r="2.2" fill="${c}"/><path d="M37 12a8 8 0 0 0-6-6" stroke="${c}" stroke-width="1.6" fill="none"/>`
   }[type]||'';
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><rect x="1.5" y="1.5" width="45" height="45" rx="9" fill="rgba(8,12,20,0.88)" stroke="${ring}" stroke-width="${sel?3:1.2}"/>${g}</svg>`;
   return 'data:image/svg+xml;base64,'+btoa(svg);
@@ -120,11 +128,11 @@ function screenToLL(pos){
 }
 function groundH(lat,lon){try{const h=V.scene.globe.getHeight(Cesium.Cartographic.fromDegrees(lon,lat));return isFinite(h)?h:0}catch(_){return 0}}
 // cable geometry: on the ground for short runs, a lifted 3D arc for long-haul links
-function linkPath(a,b){
+function linkPath(a,b,peakFrac){
   const d=hav(a,b);
   if(d<4000)return{clamp:true,pos:[Cesium.Cartesian3.fromDegrees(a.lon,a.lat),Cesium.Cartesian3.fromDegrees(b.lon,b.lat)],dist:d};
   const n=Math.min(96,Math.max(16,Math.round(d/20000)));
-  const peak=Math.min(d*0.12,900000);
+  const peak=Math.min(d*(peakFrac||0.12),900000);
   const ha=groundH(a.lat,a.lon),hb=groundH(b.lat,b.lon);
   const g=new Cesium.EllipsoidGeodesic(Cesium.Cartographic.fromDegrees(a.lon,a.lat),Cesium.Cartographic.fromDegrees(b.lon,b.lat));
   const pos=[];
@@ -204,11 +212,14 @@ function drawLink(l){
   ['', ':la', ':lb'].forEach(s=>{const o=NB.ents.get(id+s);if(o){try{V.entities.remove(o)}catch(_){}NB.ents.delete(id+s);}});
   const c=CABLES[l.cable]||CABLES.cat6;
   const col=Cesium.Color.fromCssColorString(c.color);
-  const path=linkPath(a,b);l._path=path;
+  // radio links run almost straight (line of sight); wired long-haul links arc high between cities
+  const path=linkPath(a,b,['lora','wifi'].includes(l.cable)?0.03:0.12);l._path=path;
   const sel=NB.selected&&NB.selected.kind==='link'&&NB.selected.id===l.id;
   const mat=c.dash?new Cesium.PolylineDashMaterialProperty({color:sel?Cesium.Color.fromCssColorString('#E8B349'):col,dashLength:c.dash}):(sel?Cesium.Color.fromCssColorString('#E8B349'):col);
   const e=V.entities.add({id,name:(c.label)+': '+(a.name||'')+' ↔ '+(b.name||''),
     polyline:{positions:path.pos,width:sel?c.width+3:c.width,material:mat,clampToGround:path.clamp,
+      // terrain heights aren't loaded when a cable is drawn, so a raised link can dip under the hills: keep it visible through them
+      depthFailMaterial:path.clamp?undefined:(c.dash?new Cesium.PolylineDashMaterialProperty({color:col.withAlpha(0.55),dashLength:c.dash}):new Cesium.ColorMaterialProperty(col.withAlpha(0.55))),
       arcType:path.clamp?Cesium.ArcType.GEODESIC:Cesium.ArcType.NONE},
     description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;color:#E6E9EE">${E(c.label)}<br>${E(a.name||'')} ↔ ${E(b.name||'')}<br>${(path.dist/1000).toFixed(path.dist<10000?2:0)} km</div>`});
   e._nb={kind:'link',id:l.id};NB.ents.set(id,e);
@@ -345,11 +356,11 @@ function ghostFor(ip,geo){
     // fan unknown LAN hosts around the capture device so they don't stack
     const i=Array.from(NB.ghosts.values()).filter(x=>x.kind==='lan').length;
     const ang=i*2.399963,rad=0.0012*(1+Math.floor(i/8)*0.6);
-    lat=c.lat+rad*Math.cos(ang);lon=c.lon+rad*Math.sin(ang)/Math.cos(c.lat*Math.PI/180);kind=isPrivate(ip)?'lan':'internet';
+    lat=c.lat+rad*Math.cos(ang);lon=c.lon+rad*Math.sin(ang)/Math.cos(c.lat*Math.PI/180);kind=/^!/.test(ip)?'mesh':isPrivate(ip)?'lan':'internet';
   }
   if(NB.ghosts.size>=300){let old=null;for(const x of NB.ghosts.values())if(!old||x.lastSeen<old.lastSeen)old=x;if(old){try{V.entities.remove(old.ent)}catch(_){}NB.ghosts.delete(old.ip);}}
   g={ip,lat,lon,kind,lastSeen:Date.now(),id:'nb:ghost:'+ip};
-  const col=kind==='internet'?'#90CAF9':'#FFD54F';
+  const col=kind==='internet'?'#90CAF9':kind==='mesh'?'#76FF03':'#FFD54F';
   g.ent=V.entities.add({id:g.id,name:(kind==='internet'?'Internet host ':'LAN host ')+ip,position:Cesium.Cartesian3.fromDegrees(lon,lat),
     point:{pixelSize:9,color:Cesium.Color.fromCssColorString(col).withAlpha(0.9),outlineColor:Cesium.Color.BLACK,outlineWidth:1.5,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
     label:{text:ip,font:'9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,
@@ -442,15 +453,36 @@ function tickPdus(){
 }
 
 // ── packet intake (live + sim) ──────────────────────────────
-function protoBucket(p){const k=(p||'IP').toUpperCase();return PROTO_FILTERS.includes(k)?k:(k==='QUIC'||k==='DHCP'||k==='NTP'||k==='MDNS'?'UDP':'OTHER');}
+function protoBucket(p){const k=(p||'IP').toUpperCase();return MESH_SET.has(k)?'MESH':PROTO_FILTERS.includes(k)?k:(k==='QUIC'||k==='DHCP'||k==='NTP'||k==='MDNS'?'UDP':'OTHER');}
 function ingest(pkt,origin){
   if(!pkt||!pkt.src_ip||!pkt.dst_ip)return;
   NB.stats.pkts++;NB.stats.bytes+=(pkt.packet_size||0);
   const pr=(pkt.protocol||'IP').toUpperCase();NB.stats.byProto[pr]=(NB.stats.byProto[pr]||0)+1;
   if(!NB.filters.has(protoBucket(pr)))return;
+  if(pkt.broadcast){
+    // a mesh broadcast is one RF transmission heard by every radio neighbour of the sender
+    const src=endpoint(pkt.src_ip);
+    logPdu(pkt,src,{name:'broadcast'},origin);
+    if(NB.paused||src.kind!=='dev')return;
+    for(const l of NB.state.links){
+      if(l.a!==src.id&&l.b!==src.id)continue;
+      if(!['lora','wifi','sat'].includes(l.cable))continue;
+      const o=dev(l.a===src.id?l.b:l.a);if(!o)continue;
+      launch(pkt,src,{kind:'dev',id:o.id,lat:o.lat,lon:o.lon,name:o.name});
+    }
+    return;
+  }
   const src=endpoint(pkt.src_ip,pkt.geo_src),dst=endpoint(pkt.dst_ip,pkt.geo_dst);
   logPdu(pkt,src,dst,origin);
   if(!NB.paused)launch(pkt,src,dst);
+}
+function meshToPkt(e){
+  const label=MESH_LABELS[e.portnum]||(typeof e.portnum==='string'?e.portnum.replace(/_APP$/,''):'MESH');
+  const bc=!e.to||e.to==='^all'||e.to==='!ffffffff';
+  const hop=(e.hop_limit!=null&&e.hop_start!=null)?` · hop ${e.hop_start-e.hop_limit}/${e.hop_start}`:'';
+  const sig=e.snr!=null?` · ${e.snr} dB`:'';
+  return {protocol:label,src_ip:String(e.from),dst_ip:bc?'^all':String(e.to),broadcast:bc,packet_size:e.size||0,
+    info:(e.info||(e.text?'"'+e.text.slice(0,60)+'"':label))+hop+sig};
 }
 function logPdu(p,src,dst,origin){
   const info=p.info||(p.tcp_flags?`${p.src_port||''} → ${p.dst_port||''} [${p.tcp_flags}]`:(p.icmp_type===8?'Echo request':p.icmp_type===0?'Echo reply':(p.dst_port?`→ :${p.dst_port}`:'')));
@@ -477,6 +509,11 @@ async function pollLive(){
     if(NB.seq===0&&j.seq)NB.seq=Math.max(0,j.seq-(j.events||[]).length);
     for(const e of (j.events||[]))ingest(e,'live');
     if(j.seq)NB.seq=j.seq;
+    try{   // p156: mesh RF packets (grid_down_gateway.py / skybridge.py) ride the same LIVE switch
+      const rm=await fetch(`${IPC}/mesh/events?since=${NB.meshSeq||0}&limit=600`,{cache:'no-store'});
+      if(rm.ok){const jm=await rm.json();if(!NB.meshSeq&&jm.seq)NB.meshSeq=Math.max(0,jm.seq-(jm.events||[]).length);
+        for(const e of (jm.events||[]))ingest(meshToPkt(e),'mesh');if(jm.seq)NB.meshSeq=jm.seq;}
+    }catch(_){}
     NB.liveFails=0;setLiveBadge('LIVE','#3DFFB0');
   }catch(e){
     NB.liveFails++;
@@ -491,7 +528,7 @@ function toggleLive(on){
   NB.live=typeof on==='boolean'?on:!NB.live;
   const b=document.getElementById('nbLiveBtn');if(b)b.classList.toggle('on',NB.live);
   clearTimeout(NB.liveTimer);
-  if(NB.live){NB.seq=0;NB.liveFails=0;setLiveBadge('CONNECTING…','#E8B349');try{window.pluginRenderer&&pluginRenderer.enable()}catch(_){}pollLive();}
+  if(NB.live){NB.seq=0;NB.meshSeq=0;NB.liveFails=0;setLiveBadge('CONNECTING…','#E8B349');try{window.pluginRenderer&&pluginRenderer.enable()}catch(_){}pollLive();}
   else setLiveBadge('OFF','#8B919A');
 }
 
@@ -588,6 +625,27 @@ function demoNetwork(){
   // frame the campus in the part of the screen the dock doesn't cover
   V.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(lon-0.002,lat-0.062,7400),orientation:{heading:0,pitch:Cesium.Math.toRadians(-52),roll:0},duration:1.6});
   toast('var(--gn)','Demo network built — press SIM TRAFFIC, or LIVE with the adapter in --demo-lan mode');
+}
+
+// p156: Skybridge demo -- satellite -> dish -> Pi -> mesh gateway -> relays -> laptops.
+// Node ids match `python tools/skybridge.py demo`, so its simulated RF traffic animates here.
+function skybridgeDemo(){
+  const P=(t,name,ips,lat,lon,extra)=>addDevice(t,lat,lon,Object.assign({name,ips},extra||{}));
+  const sat=P('sat','GOES-19 (75.2°W)',['GOES-19'],0.0,-75.2,{notes:'Geostationary sub-satellite point. HRIT/EMWIN downlink 1694.1 MHz.'});
+  // co-located in reality; spread a few km here so every device stays readable
+  const gs=P('dish','Ground Station',['GS-ATL'],34.030,-84.640,{notes:'1.2 m dish + LNA/filter + SDR, solar powered.'});
+  const pi=P('server','Skybridge Pi',['10.0.0.5'],34.035,-84.560,{notes:'SatDump/goestools -> tools/skybridge.py'});
+  const gw=P('mesh','Mesh Gateway · Kennesaw Mtn',['!b0c00001'],33.977,-84.578,{notes:'Meshtastic router on high ground, dedicated Skybridge channel.'});
+  const r1=P('mesh','Relay Marietta',['!b0c00002'],33.930,-84.470);
+  const r2=P('mesh','Relay Midtown',['!b0c00003'],33.790,-84.385);
+  const l1=P('laptop','Field Laptop (offline)',['!b0c00011'],33.700,-84.300,{capture:true});
+  const l2=P('laptop','Shelter Laptop',['!b0c00012'],33.840,-84.560);
+  addLink(sat.id,gs.id,'sat');addLink(gs.id,pi.id,'coax');addLink(pi.id,gw.id,'serial');
+  addLink(gw.id,r1.id,'lora');addLink(r1.id,r2.id,'lora');addLink(r2.id,l1.id,'lora');addLink(r1.id,l2.id,'lora');
+  select(null);
+  // north-up, tilted: the whole mesh above the dock, the satellite downlink running off to the south
+  V.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(-84.47,33.19,68000),orientation:{heading:0,pitch:Cesium.Math.toRadians(-52),roll:0},duration:1.8});
+  toast('var(--gn)','Skybridge demo built — press LIVE WIRESHARK, then run: python tools/skybridge.py demo --loop 0');
 }
 
 // ── import / export ─────────────────────────────────────────
@@ -789,7 +847,7 @@ function buildDock(){
   </div>
   <div class="nb-top nb-more">
     <div class="nb-sec" id="nbFilters"><span class="nb-lbl">SHOW</span>${PROTO_FILTERS.map(p=>`<label><input type="checkbox" data-f="${p}" checked>${p}</label>`).join('')}</div>
-    <div class="nb-sec"><button id="nbExpBtn">EXPORT</button><button id="nbImpBtn">IMPORT</button><button id="nbClrBtn" class="nb-danger">CLEAR ALL</button></div>
+    <div class="nb-sec"><button id="nbSkyBtn" title="Satellite -> ground station -> mesh -> laptop, matching tools/skybridge.py demo">SKYBRIDGE DEMO</button><button id="nbExpBtn">EXPORT</button><button id="nbImpBtn">IMPORT</button><button id="nbClrBtn" class="nb-danger">CLEAR ALL</button></div>
   </div>
   <div id="nbLog"><table><thead><tr><th>TIME</th><th>FROM</th><th>TO</th><th>TYPE</th><th>INFO</th></tr></thead><tbody id="nbLogRows"></tbody></table></div>`;
   document.body.appendChild(d);
@@ -811,6 +869,7 @@ function buildDock(){
   d.querySelectorAll('#nbFilters input').forEach(i=>i.onchange=()=>{if(i.checked)NB.filters.add(i.dataset.f);else NB.filters.delete(i.dataset.f);});
   document.getElementById('nbDemoBtn').onclick=demoNetwork;
   document.getElementById('nbExpBtn').onclick=exportJson;
+  document.getElementById('nbSkyBtn').onclick=skybridgeDemo;
   document.getElementById('nbImpBtn').onclick=importJson;
   document.getElementById('nbClrBtn').onclick=clearAll;
   document.getElementById('nbCloseBtn').onclick=()=>close();
@@ -849,6 +908,6 @@ function close(){
   select(null);try{V.scene.canvas.style.cursor=''}catch(_){}
 }
 function flyTo(id){const d=dev(id);if(d)V.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(d.lon,d.lat-0.01,2500),orientation:{heading:0,pitch:Cesium.Math.toRadians(-45),roll:0},duration:1.1});}
-Object.assign(NB,{open,close,toggle:()=>NB.open_?close():open(),select,removeDevice,removeLink,flyTo,startPing,ping,adopt,ingest,toggleLive,toggleSim,demoNetwork,
+Object.assign(NB,{skybridgeDemo,open,close,toggle:()=>NB.open_?close():open(),select,removeDevice,removeLink,flyTo,startPing,ping,adopt,ingest,toggleLive,toggleSim,demoNetwork,
   exportJson,importJson,addDevice,addLink,graphPath,matchIp,_hopsFor:hopsFor});
 })();

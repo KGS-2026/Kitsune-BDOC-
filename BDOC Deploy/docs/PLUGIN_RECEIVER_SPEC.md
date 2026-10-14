@@ -385,6 +385,22 @@ Since p155 `bdoc-plugin-renderer.js` only polls after the user turns on a local 
 (Wireshark Live, local Meshtastic, Network Builder LIVE) — before, every visitor got the
 prompt at page load. Opt-in is remembered in `localStorage.bdoc_local_ipc`.
 
+### Mesh packet stream (p156)
+
+`POST /api/v1/mesh/packet` — one record per RF packet heard (tools/grid_down_gateway.py
+sends them; tools/skybridge.py --sim fakes them). Required: `from`, `portnum`.
+Optional: `to` (`^all` = broadcast), `id`, `channel`, `hop_limit`, `hop_start`,
+`relay_node`, `rssi`, `snr`, `size`, `text` (first 200 chars of a text message),
+`payload_b64` (port-256 Skybridge chunk, at most 400 base64 characters), `info`.
+
+`GET /api/v1/mesh/events?since=N&limit=M` — same contract as wireshark/events; `since=0`
+returns the last 300 so a reconnecting decoder still gets whole messages.
+
+Passive capture of a whole band (every channel, every node, no radio of your own) is
+possible with an SDR running [meshtastic-sniffer](https://github.com/alphafox02/meshtastic-sniffer)
+(GPL-3.0; JSON over UDP/MQTT/ZMQ, pcap). Mapping its JSON into mesh/packet is a small
+adapter, not built yet.
+
 ### Quick start
 
 ```bash

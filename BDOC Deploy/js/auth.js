@@ -336,7 +336,7 @@ const BDOC_Auth={
       // silently locked for paying operator-tier users:
       //   cyber, floods, tsunamis, volcanoes, nucranges, hillshade, popdensity,
       //   borders, embassies, wireshark, econintel, darkships
-      operator:['eq','conf','cable','news','spaceweather','community','headlines','mesh','milbases','nukes','milairfields','air','fire','sat','weather','clouds','temp','hurricanes','alerts','wind','forecastradar','lightning','airquality','vessels','outages','downdetect','forcetrack','territory','landings','chokepoints','celltowers','deflock','internet','radio','webcams','deforest','sentinel','imint','alliances','powerplants','oilgas','sanctions','vegetation','cyber','floods','tsunamis','volcanoes','nucranges','hillshade','popdensity','borders','embassies','wireshark','econintel','darkships','ioc','google3d','fallout','hazardbio','gridinfra','substations','pipelines','metar','dartbuoys','fireperims','warlive','meshworld','netbuilder'],
+      operator:['eq','conf','cable','news','spaceweather','community','headlines','mesh','milbases','nukes','milairfields','air','fire','sat','weather','clouds','temp','hurricanes','alerts','wind','forecastradar','lightning','airquality','vessels','outages','downdetect','forcetrack','territory','landings','chokepoints','celltowers','deflock','internet','radio','webcams','deforest','sentinel','imint','alliances','powerplants','oilgas','sanctions','vegetation','cyber','floods','tsunamis','volcanoes','nucranges','hillshade','popdensity','borders','embassies','wireshark','econintel','darkships','ioc','google3d','fallout','hazardbio','gridinfra','substations','pipelines','metar','dartbuoys','fireperims','warlive','meshworld','netbuilder','skybridge'],
       analyst:['*'],
       enterprise:['*']
     };

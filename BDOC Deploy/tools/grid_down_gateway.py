@@ -14,8 +14,10 @@ Modes:
   --tcp 192.168.1.50        Meshtastic node over LAN wifi
   --test                    Simulated mesh traffic, no hardware
 
-Also handles inbound satellite imagery chunks (see satimg_reassembler.py),
-which arrive as numbered fragments over the same radio link.
+Also forwards EVERY packet heard (any portnum) to the receiver's mesh/packet
+stream (p156). That is what lets BDOC
+  - rebuild Skybridge satellite products (portnum 256, see tools/skybridge.py),
+  - show live mesh traffic node-to-node in the Network Builder (Wireshark for the mesh).
 
 Install:
   pip install meshtastic pypubsub
@@ -26,6 +28,7 @@ Run:
 """
 
 import argparse
+import base64
 import json
 import os
 import random
@@ -53,6 +56,7 @@ class GridDownGateway:
         self.verbose = verbose
         self.counts = {"position": 0, "nodeinfo": 0, "telemetry": 0, "text": 0, "satimg": 0}
         self.nodes = {}   # node_id -> merged record, so partial updates accumulate
+        self.packets = BDOCClient("mesh/packet", quiet=True)   # every RF packet, for Skybridge + Network Builder
 
     # -- record handling ---------------------------------------------------
     def _merge_and_send(self, node_id, fields):
@@ -70,6 +74,38 @@ class GridDownGateway:
             return False
         return self.client.send(rec)
 
+    def _forward_packet(self, packet, dec, portnum, src):
+        """One mesh/packet event per RF packet heard. Skybridge chunks carry their raw
+        bytes (base64); text carries the first 200 characters; everything else carries
+        just the header fields the Network Builder animates."""
+        payload = dec.get("payload")
+        raw = payload if isinstance(payload, (bytes, bytearray)) else b""
+        if isinstance(payload, str):        # some library versions hand back base64 already
+            try:
+                raw = base64.b64decode(payload)
+            except Exception:
+                raw = b""
+        to = packet.get("to")
+        ev = {
+            "from": src,
+            "to": "^all" if to in (0xFFFFFFFF, "^all", None) else (node_id_from(to) or str(to)),
+            "id": packet.get("id"),
+            "portnum": str(portnum or "UNKNOWN"),
+            "channel": packet.get("channel", 0),
+            "hop_limit": packet.get("hopLimit"),
+            "hop_start": packet.get("hopStart"),
+            "relay_node": packet.get("relayNode"),
+            "rssi": packet.get("rxRssi"),
+            "snr": packet.get("rxSnr"),
+            "size": len(raw) or len((dec.get("text") or "").encode()),
+        }
+        if portnum in ("PRIVATE_APP", 256) and raw and len(raw) <= 290:
+            ev["payload_b64"] = base64.b64encode(bytes(raw)).decode()
+            self.counts["skybridge"] = self.counts.get("skybridge", 0) + 1
+        elif portnum == "TEXT_MESSAGE_APP":
+            ev["text"] = (dec.get("text") or "")[:200]
+        self.packets.send(ev)
+
     def on_packet(self, packet, interface=None):
         try:
             dec = packet.get("decoded") or {}
@@ -77,6 +113,7 @@ class GridDownGateway:
             src = node_id_from(packet.get("from"))
             if not src:
                 return
+            self._forward_packet(packet, dec, portnum, src)
 
             common = {
                 "rssi": packet.get("rxRssi"),

@@ -438,7 +438,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p155</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p156</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -480,6 +480,7 @@ if('serviceWorker' in navigator){
 <div class="menu-drop-item" onclick="enterBattleMode();closeMenus()"><span>Battle Tracker</span></div>
 <div class="menu-drop-item" onclick="openNetBuilder();closeMenus()"><span>🖧 Network Builder</span><span class="mdi-key">Packet Tracer</span></div>
 <div class="menu-drop-item" onclick="toggleMeshWorld();closeMenus()"><span>📡 Meshtastic World + Relay Route</span></div>
+<div class="menu-drop-item" onclick="toggleSkybridge();closeMenus()"><span>🛰 Skybridge — Satellite Data over Mesh</span></div>
 <div class="menu-drop-sep"></div>
 <div class="menu-drop-item" onclick="if(Replay.active)Replay.exit();else Replay.open();closeMenus()"><span>Historical Replay</span><span class="mdi-key">R</span></div>
 <div class="menu-drop-item" onclick="SituationManager.togglePanel();closeMenus()"><span>⚠ Situations</span><span class="mdi-key">Ctrl+Shift+S</span></div>
@@ -709,6 +710,7 @@ if('serviceWorker' in navigator){
 <div class="ly" onclick="openPACE()" style="cursor:pointer"><div class="ly-d" style="background:#00ccff;margin-left:4px"></div><span class="ly-n" style="margin-left:6px">Comms / Community Network</span><span class="ly-tg" style="color:#00ccff;background:rgba(0,204,255,0.1);font-size:7px">OPEN</span></div>
 <div class="ly" data-layer="mesh" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#3FB950"></div><span class="ly-n">Meshtastic Mesh Network</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="meshworld" onclick="togLy(this)" title="Every public Meshtastic node worldwide + relay route finder"><div class="sw"></div><div class="ly-d" style="background:#76FF03"></div><span class="ly-n">Meshtastic World (~20k nodes)</span><span class="ly-tg tg-l">LIVE</span></div>
+<div class="ly" data-layer="skybridge" onclick="togLy(this)" title="Weather satellite data from a BDOC ground station, sent as binary over the mesh and rebuilt here — works with no internet"><div class="sw"></div><div class="ly-d" style="background:#9CC4FF"></div><span class="ly-n">Skybridge Sat-over-Mesh</span><span class="ly-tg" style="color:#9CC4FF;background:rgba(156,196,255,0.08)">OFFLINE</span></div>
 <div class="ly" data-layer="community" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#2D72D2"></div><span class="ly-n">Community Intel Reports</span><span class="ly-tg tg-l">LIVE</span></div>
 </div>
 <div class="lg-title lg-collapse collapsed" onclick="togCat(this)">AUXILIARY <span class="lg-arrow">&#9660;</span></div>
@@ -1483,7 +1485,7 @@ if(!window.Cesium){
 <script src="js/modules/icon-factory.js?v=p116"></script>
 <script src="js/converters.js?v=p59"></script>
 <script src="js/data.js?v=p119"></script>
-<script src="js/auth.js?v=p155"></script>
+<script src="js/auth.js?v=p156"></script>
 <script src="js/filters.js?v=p154"></script>
 <!-- layers-military.js is lazy-loaded on first toggle of milbases (Phase 3 Turn 7) -->
 <!-- layers-airfields.js is lazy-loaded on first toggle of milairfields (Phase 3 Turn 6) -->
@@ -1598,7 +1600,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p155',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p156',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
@@ -3023,6 +3025,13 @@ function bdocPlayScanner(feedUrl,name,color){
 }
 // Phase 5C (2026-05-04): Changelog popup wired to top-bar BUILD pill — deploy verification at a glance.
 const _BDOC_CHANGELOG=[
+  {ver:'p156 (2026-10-14) — SKYBRIDGE: SATELLITE DATA OVER THE MESH',items:[
+    'Skybridge layer (COMMS, or Tools menu): weather satellite data received by a BDOC ground station is sent as binary over the Meshtastic mesh and rebuilt on your map — cloud tops, warning polygons and bulletins, with no internet',
+    'Lost radio packets are rebuilt on arrival (one parity packet per message), and every message is CRC-checked before it is drawn',
+    'E-INK mode draws the received data as black-on-paper, like a Kindle; products are kept on this device and survive a reload offline',
+    'Network Builder now shows the mesh itself: every radio packet (text, position, telemetry, Skybridge chunks) animates node to node with hop count and signal strength',
+    'New Sat Ground Station device and a SKYBRIDGE DEMO topology: satellite -> dish -> Pi -> mesh gateway -> relays -> laptops'
+  ]},
   {ver:'p155 (2026-10-14) — NETWORK BUILDER + MESHTASTIC WORLD',items:[
     'Network Builder (Tools menu, or CYBER / DIGITAL → Network Builder): drag routers, switches, firewalls, servers, PCs, phones, cameras, IoT, PLCs, Meshtastic, towers and sat terminals onto the globe in any city',
     'Cable them with Cat6, crossover, fiber, serial/WAN, coax, Wi-Fi, LoRa or satellite links — short runs lie on the ground, long-haul links arc between cities',
@@ -3300,7 +3309,7 @@ const milAC=[],allAC=[],feed=[];
 // Phase 8C (2026-05-05): every layer defaults to OFF — clean canvas on first load
 // Phase 22: added internet/landings/chokepoints here so markLockedLayers() can zero them on logout
 // (they were previously set lazily; 'key in layers' was false so markLockedLayers skipped them)
-const layers={forcetrack:false,air:false,eq:false,fire:false,conf:false,warlive:false,cable:false,sat:false,territory:false,imint:false,weather:false,clouds:false,temp:false,hurricanes:false,alerts:false,wind:false,forecastradar:false,lightning:false,airquality:false,vessels:false,cyber:false,outages:false,downdetect:false,webcams:false,radio:false,deforest:false,sentinel:false,news:false,headlines:false,spaceweather:false,mesh:false,community:false,floods:false,tsunamis:false,volcanoes:false,nucranges:false,borders:false,hillshade:false,popdensity:false,alliances:false,powerplants:false,gridinfra:false,substations:false,pipelines:false,metar:false,dartbuoys:false,fireperims:false,oilgas:false,sanctions:false,embassies:false,wireshark:false,vegetation:false,econintel:false,milbases:false,milairfields:false,nukes:false,darkships:false,ioc:false,internet:false,landings:false,chokepoints:false,deflock:false,celltowers:false,fallout:false,meshworld:false};
+const layers={forcetrack:false,air:false,eq:false,fire:false,conf:false,warlive:false,cable:false,sat:false,territory:false,imint:false,weather:false,clouds:false,temp:false,hurricanes:false,alerts:false,wind:false,forecastradar:false,lightning:false,airquality:false,vessels:false,cyber:false,outages:false,downdetect:false,webcams:false,radio:false,deforest:false,sentinel:false,news:false,headlines:false,spaceweather:false,mesh:false,community:false,floods:false,tsunamis:false,volcanoes:false,nucranges:false,borders:false,hillshade:false,popdensity:false,alliances:false,powerplants:false,gridinfra:false,substations:false,pipelines:false,metar:false,dartbuoys:false,fireperims:false,oilgas:false,sanctions:false,embassies:false,wireshark:false,vegetation:false,econintel:false,milbases:false,milairfields:false,nukes:false,darkships:false,ioc:false,internet:false,landings:false,chokepoints:false,deflock:false,celltowers:false,fallout:false,meshworld:false,skybridge:false};
 let eqEnts=[],fireEnts=[],confEnts=[],warliveEnts=[],airEnts=[],milEnts=[],cableEnts=[],satEnts=[],territoryEnts=[],imintEnts=[],newsEnts=[],headlineEnts=[],spwxEnts=[],meshEnts=new Set(),communityEnts=[],floodEnts=[],tsunamiEnts=[],volcanoEnts=[],nucRangeEnts=[],allianceEnts=[],powerplantEnts=[],gridinfraEnts=[],substationEnts=[],pipelineEnts=[],metarEnts=[],dartEnts=[],fireperimEnts=[],oilgasEnts=[],sanctionEnts=[],embassyEnts=[],wiresharkEnts=[],vegEnts=[],darkshipEnts=[],iocEnts=[],falloutEnts=[];
 // XSS sanitizer — escapes HTML in any API-sourced string before injection into innerHTML/description
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -3344,6 +3353,7 @@ function openNetBuilder(){
   BDOC.LazyLoader.load('net-builder').then(()=>window.NetBuilder.open()).catch(e=>{console.warn('[lazy net-builder]',e);af('var(--rd)','Network Builder failed to load')});
 }
 function toggleMeshWorld(){const r=document.querySelector('.ly[data-layer="meshworld"]');if(r)togLy(r);}
+function toggleSkybridge(){const r=document.querySelector('.ly[data-layer="skybridge"]');if(r)togLy(r);}
 function togLy(el){
   const ly=el.dataset.layer;
   if(!BDOC_Auth.canAccess(ly)){el.classList.remove('on');layers[ly]=false;showMo(ly);return}
@@ -3394,6 +3404,7 @@ function togLy(el){
   if(ly==='news'){if(layers.news){BDOC.layerLoadFx.start('news');loadGDELTNews();}else{newsEnts.forEach(e=>V.entities.remove(e));newsEnts=[];document.getElementById('newsV').textContent='--';if(loadGDELTNews._interval){clearInterval(loadGDELTNews._interval);loadGDELTNews._interval=null}}}
   if(ly==='headlines'){if(layers.headlines)loadNewsAPI();else{headlineEnts.forEach(e=>V.entities.remove(e));headlineEnts=[];document.getElementById('headlineV').textContent='--'}}
   if(ly==='spaceweather'){if(layers.spaceweather)loadSpaceWeather();else{spwxEnts.forEach(e=>V.entities.remove(e));spwxEnts=[];document.getElementById('spwxV').textContent='--'}}
+  if(ly==='skybridge'){if(layers.skybridge){BDOC.layerLoadFx.start('skybridge');BDOC.LazyLoader.load('skybridge').then(()=>window.Skybridge.enable()).then(()=>BDOC.layerLoadFx.done('skybridge',true)).catch(e=>{console.warn('[lazy skybridge]',e);BDOC.layerLoadFx.done('skybridge',false);af('var(--rd)','Skybridge failed to load')})}else if(window.Skybridge)Skybridge.disable()}
   if(ly==='meshworld'){if(layers.meshworld){BDOC.layerLoadFx.start('meshworld');BDOC.LazyLoader.load('mesh-world').then(()=>window.MeshWorld.enable()).then(()=>BDOC.layerLoadFx.done('meshworld',!!(window.MeshWorld&&MeshWorld.data))).catch(e=>{console.warn('[lazy mesh-world]',e);BDOC.layerLoadFx.done('meshworld',false);af('var(--rd)','Meshtastic World failed to load')})}else if(window.MeshWorld)MeshWorld.disable()}
   if(ly==='mesh'){if(layers.mesh){try{window.pluginRenderer&&pluginRenderer.enable()}catch(_){}_meshRetries=0;connectMeshtastic()}else{disconnectMeshtastic();meshEnts.forEach(e=>V.entities.remove(e));meshEnts.clear();_meshNodes.clear();document.getElementById('meshV').textContent='--'}}
   if(ly==='community'){if(layers.community){loadCommunityReports();showCommunityHint()}else{communityEnts.forEach(e=>V.entities.remove(e));communityEnts=[];_communityListenerOff=true}}

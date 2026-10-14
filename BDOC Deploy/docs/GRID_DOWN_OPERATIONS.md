@@ -103,6 +103,59 @@ are reported by index (`missing()`) so only the gaps need retransmission;
 corrupted payloads are caught by CRC32 and discarded rather than rendered;
 malformed packets never kill the listener.
 
+## Skybridge — satellite data over the mesh (p156)
+
+`tools/skybridge.py` supersedes `satimg_mesh.py` for satellite products. The
+differences: geo-referenced (it lands on the map, not as a loose PNG), binary on
+Meshtastic's private port 256 instead of base64 text (no 33 % bloat), one XOR
+parity chunk per message (any single lost packet is rebuilt on arrival), no
+"header must be heard" failure mode, and three product types:
+
+| Product | What goes over the air | Typical size | Packets (incl. parity) |
+|---|---|---|---|
+| RASTER | 128-cell grid, 2 bits/cell (clear / thin / thick / coldest tops), deflate | 350–800 B | 3–5 |
+| POLYGONS | warning areas at 0.01°, event type, expiry | ~85 B for 3 warnings | 2 |
+| TEXT | bulletin, UTF-8, deflate | 80–170 B | 2 |
+
+Airtime per hop for a 207-byte chunk: LongFast 2.2 s, MediumFast 0.64 s,
+ShortFast 0.20 s. A real GOES-19 band-13 Southeast sector (Oct 14, 13:01Z)
+encoded to 353 B = 3 packets = 2.3 s on MediumFast.
+
+Chain:
+
+```
+dish + LNA + SDR  ->  SatDump / goestools  ->  skybridge.py raster|warnings|text
+   ->  skybridge.py send --radio serial:COM5 --channel 1 --preset MEDIUM_FAST
+   ~~ LoRa mesh (relays re-broadcast) ~~
+   ->  customer radio on USB  ->  grid_down_gateway.py  ->  bdoc-ipc-receiver.js
+   ->  BDOC layer "Skybridge Sat-over-Mesh" (js/modules/skybridge.js)
+```
+
+```bash
+# ground station
+python tools/skybridge.py raster ir.png --bbox 24,-92,37,-75 --size 128 --out ir.bin
+python tools/skybridge.py warnings alerts.geojson --out warn.bin
+python tools/skybridge.py text "GRID ALERT ..." --priority 3 --out msg.bin
+python tools/skybridge.py send ir.bin warn.bin msg.bin --radio serial:COM5 --channel 1 --preset MEDIUM_FAST \
+       --plain-text "GRID ALERT ..."      # stock phone apps can't read port 256; give them the text too
+# customer laptop
+node tools/bdoc-ipc-receiver.js
+python tools/grid_down_gateway.py --serial COM5
+# no hardware: full simulated broadcast into the local receiver
+python tools/skybridge.py demo --loop 0
+```
+
+Rules: put Skybridge on its own channel (index 1+), never the public LongFast
+channel; run on 902–928 MHz unlicensed (Part 15), not ham mode (Part 97 bars
+commercial traffic and encryption). Receive-only reception of unencrypted
+weather broadcasts needs no license in the US; do not decrypt encrypted streams.
+
+What a Georgia station can hear: GOES-19 East / GOES-18 West (HRIT/EMWIN,
+~1.2 m dish), Meteor-M N2-3/N2-4 (Russian polar, 137 MHz, V-dipole), FY-3 and
+MetOp (polar, L-band tracking dish). Russian, Chinese, Korean and Japanese
+GEOSTATIONARY satellites are below the horizon from the US — those need a
+station abroad. NOAA-15/18/19 APT is decommissioned.
+
 ## On-device storage
 
 `js/bdoc-offline-store.js` (IndexedDB):

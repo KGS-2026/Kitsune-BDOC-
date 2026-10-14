@@ -6,8 +6,11 @@
 //   GET  /api/v1/<source>/<datatype>   read back {status,count,nodes:[...]}
 //   GET  /api/v1/status                health
 //
-// Sources: wireshark/packet, wifi/scan, mesh/node, flightradar/aircraft,
+// Sources: wireshark/packet, wifi/scan, mesh/node, mesh/packet, flightradar/aircraft,
 //          shodan/device, sensor/reading
+//
+//   GET  /api/v1/wireshark/events?since=N   every captured IP packet (Network Builder)
+//   GET  /api/v1/mesh/events?since=N        every mesh RF packet heard (Skybridge + Network Builder)
 
 const http = require('http');
 const { URL } = require('url');
@@ -21,6 +24,9 @@ const ROUTES = {
   'wireshark/packet':     { key: d => `pkt-${d.src_ip}-${d.dst_ip}-${d.dst_port || 0}`, validate: v => { req(v, 'src_ip', 'dst_ip', 'protocol'); geo(v.geo_src); geo(v.geo_dst); } },
   'wifi/scan':            { key: d => `wifi-${d.location.lat},${d.location.lon}`,        validate: v => { if (!v.location || typeof v.location.lat !== 'number' || typeof v.location.lon !== 'number') throw new Error('location.lat/lon required'); if (!Array.isArray(v.networks)) throw new Error('networks must be an array'); } },
   'mesh/node':            { key: d => d.node_id,                                          validate: v => { req(v, 'node_id'); latlon(v); } },
+  // p156: one record per RF packet heard on the mesh (any portnum). Skybridge chunks ride
+  // portnum 256 with payload_b64; the Network Builder animates all of them.
+  'mesh/packet':          { key: d => `${d.from}-${d.id || ''}-${d.hop_limit === undefined ? '' : d.hop_limit}`, validate: v => { req(v, 'from', 'portnum'); if (v.payload_b64 !== undefined && (typeof v.payload_b64 !== 'string' || v.payload_b64.length > 400)) throw new Error('payload_b64 must be a base64 string <= 400 chars'); } },
   'flightradar/aircraft': { key: d => d.icao,                                             validate: v => { req(v, 'icao'); latlon(v); } },
   'shodan/device':        { key: d => d.ip,                                               validate: v => { req(v, 'ip'); latlon(v); } },
   'sensor/reading':       { key: d => `sensor-${d.sensor_id}`,                            validate: v => { req(v, 'sensor_id'); if (typeof v.value !== 'number') throw new Error('value must be a number'); latlon(v); } }
@@ -39,12 +45,14 @@ for (const r of Object.keys(ROUTES)) stores[r] = new Map();
 // Every wireshark/packet POST is also appended here with a monotonically increasing
 // seq; the browser asks for "everything after seq N" twice a second.
 const EVENT_CAP = 5000;
-let eventSeq = 0;
-const events = [];
-function pushEvent(d) {
-  const e = Object.assign({}, d, { seq: ++eventSeq });
-  events.push(e);
-  if (events.length > EVENT_CAP) events.splice(0, events.length - EVENT_CAP);
+const EVENT_ROUTES = ['wireshark/packet', 'mesh/packet'];
+const rings = {};
+for (const r of EVENT_ROUTES) rings[r] = { seq: 0, events: [] };
+function pushEvent(route, d) {
+  const ring = rings[route];
+  const e = Object.assign({}, d, { seq: ++ring.seq });
+  ring.events.push(e);
+  if (ring.events.length > EVENT_CAP) ring.events.splice(0, ring.events.length - EVENT_CAP);
 }
 
 let windowStart = Date.now(), windowCount = 0;
@@ -92,13 +100,16 @@ const server = http.createServer((req_, res) => {
     return send(res, 200, { status: 'running', uptime_s: Math.round(process.uptime()), port: PORT, stores: counts });
   }
 
-  if (path === '/api/v1/wireshark/events' && req_.method === 'GET') {
+  const evm = path.match(/^\/api\/v1\/(wireshark|mesh)\/events$/);
+  if (evm && req_.method === 'GET') {
+    const ring = rings[evm[1] === 'mesh' ? 'mesh/packet' : 'wireshark/packet'];
     const since = Number(u.searchParams.get('since') || 0);
     const limit = Math.min(2000, Number(u.searchParams.get('limit') || 800));
     // first call (since=0) only gets the tail so a reconnect doesn't replay 5,000 packets
-    let out = since > 0 ? events.filter(e => e.seq > since) : events.slice(-50);
+    // (mesh keeps 300: a reconnecting Skybridge decoder still gets whole messages)
+    let out = since > 0 ? ring.events.filter(e => e.seq > since) : ring.events.slice(evm[1] === 'mesh' ? -300 : -50);
     if (out.length > limit) out = out.slice(-limit);
-    return send(res, 200, { status: 'ok', seq: eventSeq, count: out.length, events: out });
+    return send(res, 200, { status: 'ok', seq: ring.seq, count: out.length, events: out });
   }
 
   const m = path.match(/^\/api\/v1\/(\w+)\/(\w+)$/);
@@ -131,7 +142,7 @@ const server = http.createServer((req_, res) => {
     data._received_ms = Date.now();
     if (!data.timestamp) data.timestamp = new Date(data._received_ms).toISOString();
     stores[route].set(id, data);
-    if (route === 'wireshark/packet') pushEvent(data);
+    if (rings[route]) pushEvent(route, data);
     send(res, 200, { status: 'received', id, stored_at: data.timestamp });
   });
 });
