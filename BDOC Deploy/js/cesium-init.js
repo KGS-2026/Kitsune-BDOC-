@@ -930,14 +930,16 @@ function setBasemap(name){
 }
 // ═══ 3D TOGGLE FUNCTIONS ═══
 let _3dBuildingsOn=false,_3dTerrainOn=false;
-function toggle3DBuildings(){
+// P153: async so it can await createOsmBuildingsAsync (current Cesium dropped the sync createOsmBuildings).
+// var-assigned like toggle3DTerrain: async function DECLARATIONS don't hoist out of the try{} block.
+var toggle3DBuildings=async function toggle3DBuildings(){
   if(!V)return;
   _3dBuildingsOn=!_3dBuildingsOn;
   if(_3dBuildingsOn){
     // Create buildings tileset on first enable
     if(!_buildingsTileset){
       try{
-        _buildingsTileset=V.scene.primitives.add(Cesium.createOsmBuildings());
+        _buildingsTileset=V.scene.primitives.add(Cesium.createOsmBuildingsAsync?await Cesium.createOsmBuildingsAsync():Cesium.createOsmBuildings());
         // Style: subtle dark blue tint, lighter edges visible against satellite
         _buildingsTileset.style=new Cesium.Cesium3DTileStyle({
           color:{conditions:[
