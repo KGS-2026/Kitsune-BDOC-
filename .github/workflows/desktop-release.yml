@@ -1,0 +1,55 @@
+name: BDOC Desktop Release
+
+# P154 — builds the downloadable desktop app and attaches it to a GitHub Release.
+# Runs ONLY when a tag like `desktop-v8.1.0` is pushed (or by hand from the
+# Actions tab). Normal pushes to main never trigger it.
+#
+#   git tag desktop-v8.1.0 && git push origin desktop-v8.1.0
+#
+# The web app's "Download Desktop App" menu asks GitHub for the latest release
+# and picks the right file per OS, so nothing else needs to change.
+
+on:
+  push:
+    tags: ['desktop-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            args: --win nsis portable
+          - os: ubuntu-latest
+            args: --linux AppImage deb
+          - os: macos-latest
+            args: --mac dmg
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: BDOC Deploy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npx electron-builder ${{ matrix.args }} --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Attach to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            BDOC Deploy/dist-electron/*.exe
+            BDOC Deploy/dist-electron/*.AppImage
+            BDOC Deploy/dist-electron/*.deb
+            BDOC Deploy/dist-electron/*.dmg
+          fail_on_unmatched_files: false

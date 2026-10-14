@@ -14,6 +14,42 @@
 // ═══════════════════════════════════════════
 // SECTION 7: CESIUM INIT
 // ═══════════════════════════════════════════
+// ── P154: HORIZON-AWARE DEPTH TEST (bug: "markers visible through the earth") ──
+// ~180 markers set disableDepthTestDistance to 5e6 m or Infinity so clamped icons
+// are never swallowed by terrain. Side effect: anything within that distance draws
+// THROUGH the planet once it slips past the horizon (Infinity = always). Fix in one
+// place: every large/infinite value is swapped for ONE shared dynamic property whose
+// value is the camera's current horizon distance. Inside the horizon → depth test off
+// (terrain can't eat clamped icons); beyond it → normal depth test, globe occludes.
+// Set before any entity exists; covers billboards, points and labels everywhere.
+window.BDOC_DDTD=(function(){
+  const p={_v:5e6,get isConstant(){return false},definitionChanged:new Cesium.Event(),
+    getValue(){return this._v},equals(o){return o===this},clone(){return this}};
+  const R=6378137;
+  p.update=function(h){
+    h=Math.max(1,h||1);
+    // straight-line distance from camera to its geometric horizon, minus 2% margin
+    p._v=Math.min(5e6,Math.sqrt((R+h)*(R+h)-R*R)*0.98);
+  };
+  // Cesium's graphics properties are non-configurable accessors, but every graphics
+  // constructor funnels its options through prototype.merge() — wrap that.
+  function swap(g){
+    try{
+      const cur=g.disableDepthTestDistance;
+      if(!cur||cur===p||!cur.isConstant)return;
+      const n=cur.getValue();
+      if(typeof n==='number'&&n>=1e6)g.disableDepthTestDistance=p;
+    }catch(_){}
+  }
+  [Cesium.BillboardGraphics,Cesium.PointGraphics,Cesium.LabelGraphics].forEach(function(G){
+    try{
+      const om=G.prototype.merge;
+      if(typeof om!=='function')return;
+      G.prototype.merge=function(src){om.call(this,src);swap(this);};
+    }catch(e){console.warn('[P154 depth patch]',e)}
+  });
+  return p;
+})();
 Cesium.Ion.defaultAccessToken=CFG.keys.cesium;
 try{
 V=new Cesium.Viewer('cesiumContainer',{animation:false,baseLayerPicker:false,fullscreenButton:false,vrButton:false,geocoder:false,homeButton:false,infoBox:true,sceneModePicker:false,selectionIndicator:true,timeline:false,navigationHelpButton:false,creditContainer:document.createElement('div'),contextOptions:{webgl:{preserveDrawingBuffer:true}},baseLayer:new Cesium.ImageryLayer(new Cesium.UrlTemplateImageryProvider({url:"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",credit:"ESRI",maximumLevel:19}))});
@@ -52,7 +88,20 @@ try{
   };
   // Any camera move or entity mutation already triggers Cesium's own
   // requestRender(); this covers imagery tile loads settling in.
-  V.scene.globe.tileLoadProgressEvent.addEventListener(n=>{ if(n===0)window.BDOCRender.kick(); });
+  // P154: a single kick when the queue hits 0 was not enough — Cesium uploads and
+  // reprojects the last imagery textures over the NEXT few frames, so on-demand mode
+  // froze on a half-drawn globe (blank navy streets/topo at city zoom, terrain with
+  // holes) until the user nudged the camera. Hold continuous render for the whole
+  // load and ~1.2 s past the drain, then drop back to on-demand.
+  let _tileRelease=null;
+  V.scene.globe.tileLoadProgressEvent.addEventListener(n=>{
+    if(n>0){
+      if(_tileRelease){clearTimeout(_tileRelease);_tileRelease=null;}
+      if(!window.BDOCRender._holds.has('tiles'))window.BDOCRender.hold('tiles');
+    }else if(window.BDOCRender._holds.has('tiles')&&!_tileRelease){
+      _tileRelease=setTimeout(()=>{_tileRelease=null;window.BDOCRender.release('tiles');window.BDOCRender.kick();},1200);
+    }
+  });
   // Kill rendering when tab is backgrounded (PWA + Meshtastic battery win)
   document.addEventListener('visibilitychange',()=>{
     try{
@@ -61,6 +110,8 @@ try{
     }catch(_){ }
   });
 }catch(e){console.warn('[RenderGovernor] init failed, falling back to continuous render',e);try{V.scene.requestRenderMode=false}catch(_){}}
+// P154: horizon-aware depth test value tracks the camera every frame (one sqrt).
+try{V.scene.preRender.addEventListener(()=>{try{window.BDOC_DDTD.update(V.camera.positionCartographic.height)}catch(_){}})}catch(_){}
 // ── INFOBOX SCRIPT FIX (Cesium 1.104) ──
 // Cesium sandboxes the infoBox iframe as "allow-same-origin allow-popups allow-forms"
 // — deliberately OMITTING allow-scripts as an XSS guard. That kills every onclick
@@ -74,6 +125,47 @@ try{
     V.infoBox.frame.src='about:blank';
   }
 }catch(e){console.warn('[infoBox sandbox fix]',e)}
+// ── P154: DOUBLE-CLICK NO LONGER HIJACKS THE CAMERA ──
+// Cesium's stock double-click sets viewer.trackedEntity on whatever is under the
+// cursor. Finishing an FSCL/phase line with a double-click therefore locked the
+// camera onto the vertex just placed, and a bullseye's invisible ring fill caught
+// every "double-click off target" and re-locked it ("won't detach"). New rules:
+//   • drawing (battle mode) owns double-click — camera is never touched
+//   • moving tracks (aircraft/ships/sats) still follow on double-click
+//   • static or user-drawn markers: smooth zoom toward them, no lock
+//   • double-click empty map or press ESC → release any lock
+try{
+  const _dbl=V.cesiumWidget.screenSpaceEventHandler;
+  const _release=function(){
+    if(V.trackedEntity){V.trackedEntity=undefined;}
+    try{const ti=document.getElementById('trackIndicator');if(ti)ti.remove()}catch(_){}
+    try{if(typeof _trackedHex!=='undefined')_trackedHex=null}catch(_){}
+  };
+  window.BDOC_releaseCamera=_release;
+  _dbl.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+  _dbl.setInputAction(function(e){
+    if(typeof battleMode!=='undefined'&&battleMode)return;
+    let ent=null;
+    try{const pk=V.scene.pick(e.position);if(pk&&pk.id instanceof Cesium.Entity)ent=pk.id;}catch(_){}
+    if(!ent){_release();return;}
+    const now=V.clock.currentTime;
+    let pos=null;try{pos=ent.position&&ent.position.getValue(now)}catch(_){}
+    const userDrawn=!!(window.BDOCUndo&&BDOCUndo.owns&&BDOCUndo.owns(ent));
+    const moving=!!(ent.position&&!ent.position.isConstant);
+    if(pos&&moving&&!userDrawn&&(ent.billboard||ent.point||ent.model)){V.trackedEntity=ent;return;}
+    _release();
+    if(pos){
+      const c=Cesium.Cartographic.fromCartesian(pos);
+      const h=Math.max(1500,V.camera.positionCartographic.height*0.45);
+      V.camera.flyTo({destination:Cesium.Cartesian3.fromRadians(c.longitude,c.latitude,h),duration:1.0});
+    }
+  },Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+  document.addEventListener('keydown',function(ev){
+    if(ev.key!=='Escape')return;
+    const t=ev.target&&ev.target.tagName;if(t==='INPUT'||t==='TEXTAREA')return;
+    if(V.trackedEntity){_release();try{af('var(--t2)','Camera released')}catch(_){}}
+  });
+}catch(e){console.warn('[P154 dblclick]',e)}
 // ── UNIVERSAL SELECTION SAFETY NET ──
 // PDF #1 issue ("nothing propagates when selected"): the infoBox engine works, but
 // individual layers create click-targets that are missing a name (→ UUID title looks
@@ -167,6 +259,16 @@ s.skyAtmosphere.show=true;
   } catch(e) { console.warn('[BDOC P111] GPU ladder:', e.message); }
 })();
 
+// P154: tile cache sized to the GPU tier. Cesium's default (100 tiles) evicts terrain +
+// imagery the moment you pan back, so 3D terrain re-downloads and re-meshes on every
+// pass ("terrain not fully rendering / loading slow"). Siblings preloaded on desktop
+// so panning reveals already-meshed tiles instead of holes.
+try{
+  const _t=window._bdocGPUTier||2;
+  s.globe.tileCacheSize=_t>=3?400:_t===2?250:120;
+  s.globe.preloadSiblings=_t>=3;
+  s.globe.preloadAncestors=true;
+}catch(e){console.warn('[P154 tile cache]',e)}
 // Anti-aliasing
 s.postProcessStages.fxaa.enabled=true;
 // ═══ BLOOM — glow on bright markers/city-lights (spike 2026-06-25, the "alive" aesthetic) ═══
@@ -192,7 +294,9 @@ try{
       // P110d (Travon 2026-08, FOURTH pass — still too much bloom zoomed in per screenshot):
       // raise the hard-off cutoff from 40km to 120km, and start the fade band higher so the
       // glow only returns at real orbital-ish altitude. Terrain stays crisp through city-zoom.
-      if(h<120000){ _bloom.enabled=false; return; }
+      // P154: light basemaps (streets/topo/terrain) are already near-white — any bloom
+      // turns them into a white sheet at regional zoom. Bloom is a dark-map effect only.
+      if(h<120000||window._bdocBloomOff||window._bdocFilterBloomOff){ _bloom.enabled=false; return; }
       _bloom.enabled=true;
       // 120km → 600km fade band back to the original "alive" look.
       const t=_clamp((h-120000)/(600000-120000),0,1);
@@ -201,6 +305,7 @@ try{
       _bloom.uniforms.sigma=1.4+1.6*t;           // 1.4 near → 3.0 far (original)
     };
     _tuneBloom();
+    window._bdocRetuneBloom=function(){_tuneBloom();try{V.scene.requestRender()}catch(_){}};
     V.camera.changed.addEventListener(_tuneBloom);
     V.camera.percentageChanged=0.15;             // fire changed more readily on zoom
   }catch(e){console.warn('[BDOC bloom adaptive]',e)}
@@ -573,6 +678,34 @@ var _bordersLayer=null,_labelsLayer=null;
     console.warn('[BDOC P111] WebGL context lost — waiting for restore');
     EventLog.add('crit', 'WebGL context lost (tab suspend or GPU reset) — will auto-recover');
     af('var(--yl)', 'WebGL context lost — recovering...');
+    // P154 ("randomly shutting down"): Cesium never rebuilds its GPU resources after a
+    // context loss — even when the browser restores the context the globe stays black.
+    // The only real recovery is a reload. The deep-link hash already carries camera +
+    // active layers, so the operator lands back exactly where they were. Loop guard:
+    // at most 3 auto-reloads per 10 minutes, then hand control to the user.
+    try{
+      const now=Date.now();
+      let hist=[];try{hist=JSON.parse(sessionStorage.getItem('bdoc_ctx_reloads')||'[]').filter(t=>now-t<600000)}catch(_){}
+      const ov=document.createElement('div');
+      ov.id='bdocCtxLost';
+      ov.style.cssText='position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(5,8,14,0.92);font-family:var(--m,monospace);color:#E6E9EE;text-align:center';
+      if(hist.length<3){
+        hist.push(now);try{sessionStorage.setItem('bdoc_ctx_reloads',JSON.stringify(hist))}catch(_){}
+        try{const _dl=window.BDOC&&window.BDOC.DeepLink;if(_dl&&_dl.save)_dl.save()}catch(_){}
+        // self-contained snapshot (doesn't depend on the deep-link hash being current)
+        try{
+          const c=V.camera.positionCartographic;
+          const on=(typeof layers!=='undefined')?Object.keys(layers).filter(k=>layers[k]):[];
+          sessionStorage.setItem('bdoc_ctx_restore',JSON.stringify({t:Date.now(),lon:Cesium.Math.toDegrees(c.longitude),lat:Cesium.Math.toDegrees(c.latitude),h:c.height,heading:V.camera.heading,pitch:V.camera.pitch,layers:on,basemap:(typeof _currentBasemap!=='undefined')?_currentBasemap:null}));
+        }catch(_){}
+        ov.innerHTML='<div><div style="font-size:13px;font-weight:700;letter-spacing:2px;color:#E8B349">GPU RESET DETECTED</div><div style="font-size:11px;margin-top:8px;color:#AEB4BE">Restoring the globe and your view in 2 s…</div></div>';
+        document.body.appendChild(ov);
+        setTimeout(function(){location.reload()},2000);
+      }else{
+        ov.innerHTML='<div><div style="font-size:13px;font-weight:700;letter-spacing:2px;color:#DA3633">GPU KEEPS RESETTING</div><div style="font-size:11px;margin:8px 0 14px;color:#AEB4BE;max-width:420px;line-height:1.5">The graphics driver dropped the globe 3 times in 10 minutes. Close other GPU-heavy tabs, plug in power, or turn off Google 3D / 3D buildings, then reload.</div><button onclick="location.reload()" style="padding:8px 18px;background:#0a2a2a;color:#E6E9EE;border:1px solid #2D72D2;border-radius:3px;cursor:pointer;font-family:inherit">RELOAD NOW</button></div>';
+        document.body.appendChild(ov);
+      }
+    }catch(_){}
   });
   V.scene.canvas.addEventListener('webglcontextrestored', function() {
     console.warn('[BDOC P111] WebGL context restored — triggering layer refresh');
@@ -588,6 +721,19 @@ var _bordersLayer=null,_labelsLayer=null;
     }, 2000);
   });
 
+  // P154: after an automatic GPU-reset reload, put the operator back where they were.
+  try{
+    const snap=JSON.parse(sessionStorage.getItem('bdoc_ctx_restore')||'null');
+    if(snap&&Date.now()-snap.t<120000){
+      sessionStorage.removeItem('bdoc_ctx_restore');
+      setTimeout(function(){
+        try{V.camera.cancelFlight();V.camera.setView({destination:Cesium.Cartesian3.fromDegrees(snap.lon,snap.lat,snap.h),orientation:{heading:snap.heading||0,pitch:snap.pitch||-Math.PI/2,roll:0}});}catch(_){}
+        try{if(snap.basemap&&typeof setBasemap==='function'&&snap.basemap!==_currentBasemap)setBasemap(snap.basemap)}catch(_){}
+        try{(snap.layers||[]).forEach(function(k){if(typeof layers!=='undefined'&&!layers[k]){const row=document.querySelector('.ly[data-layer="'+k+'"]');if(row)row.click();}})}catch(_){}
+        try{af('var(--gn)','Globe restored after GPU reset — view and layers recovered')}catch(_){}
+      },4500);
+    }
+  }catch(_){}
   window.BDOC.diagnoseRender=function(){
     const prims=V.scene.primitives;
     const tilesets=[];
@@ -829,11 +975,22 @@ window.flyToTarget=flyToTarget;
   // — RIGHT PANEL open/close: update widget position —
   const nw=document.getElementById('nav-widget');
   if(nw){
-    new MutationObserver(function(){
+    // P154: was observing EVERY attribute/child mutation in the whole document
+    // (clocks, tickers, Cesium credits…) — thousands of callbacks a minute for
+    // one class flip. Watch only the AI panel's class attribute.
+    // AI panel collapsed (mini) or closed → the nav widget shrinks and parks in
+    // the top-right corner, out of the map's way (Travon bug #16).
+    const _syncNw=function(){
       const rp=document.getElementById('rp');
-      if(rp&&rp.classList.contains('shut'))nw.classList.add('rp-closed');
-      else nw.classList.remove('rp-closed');
-    }).observe(document.body,{childList:true,subtree:true,attributes:true});
+      const shut=!!(rp&&rp.classList.contains('shut'));
+      const mini=!!(rp&&rp.classList.contains('mini'));
+      nw.classList.toggle('rp-closed',shut);
+      nw.classList.toggle('rp-mini',mini&&!shut);
+      nw.classList.toggle('nw-parked',shut||mini);
+    };
+    const _rpEl=document.getElementById('rp');
+    if(_rpEl)new MutationObserver(_syncNw).observe(_rpEl,{attributes:true,attributeFilter:['class']});
+    _syncNw();
   }
 })();
 // Auto-untrack when user selects a different entity
@@ -872,9 +1029,11 @@ const BASEMAPS={
   dark:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',credit:'ESRI Dark Gray Canvas',brightness:1.15,contrast:1.2,saturation:0.5},
   satellite:{type:'arcgis',credit:'ESRI World Imagery',brightness:1.02,contrast:1.12,saturation:1.25,gamma:0.92},
   hybrid:{type:'arcgis_labels',credit:'ESRI + OSM Labels',brightness:1.02,contrast:1.12,saturation:1.25,gamma:0.92},
-  terrain:{url:'https://tile.opentopomap.org/{z}/{x}/{y}.png',credit:'OpenTopoMap',brightness:1.0,contrast:1.1,saturation:0.8},
-  streets:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',credit:'ESRI World Street Map',brightness:1.05,contrast:1.05,saturation:1.1,isLight:true},
-  topo:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',credit:'ESRI World Topo',brightness:1.0,contrast:1.1,saturation:0.9}
+  // P154: light basemaps flagged isLight (bloom off) and toned ~10% down so labels and
+  // roads keep contrast instead of clipping to white under the sun lighting.
+  terrain:{url:'https://tile.opentopomap.org/{z}/{x}/{y}.png',credit:'OpenTopoMap',brightness:0.92,contrast:1.08,saturation:0.85,gamma:1.05,isLight:true,maximumLevel:17},
+  streets:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',credit:'ESRI World Street Map',brightness:0.88,contrast:1.12,saturation:1.05,gamma:1.08,isLight:true,maximumLevel:19},
+  topo:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',credit:'ESRI World Topo',brightness:0.9,contrast:1.12,saturation:0.95,gamma:1.06,isLight:true,maximumLevel:19}
 };
 function setBasemap(name){
   if(!V||!BASEMAPS[name])return;
@@ -897,7 +1056,7 @@ function setBasemap(name){
   if(bm.type==='arcgis'||bm.type==='arcgis_labels'){
     provider=new Cesium.UrlTemplateImageryProvider({url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',credit:bm.credit,maximumLevel:19});
   }else{
-    provider=new Cesium.UrlTemplateImageryProvider({url:bm.url,credit:bm.credit});
+    provider=new Cesium.UrlTemplateImageryProvider({url:bm.url,credit:bm.credit,maximumLevel:bm.maximumLevel||19});
   }
   const newLayer=il2.addImageryProvider(provider);
   il2.lowerToBottom(newLayer);
@@ -925,6 +1084,9 @@ function setBasemap(name){
   const activeBtn=document.querySelector(`.bm-btn[data-bm="${name}"]`);
   if(activeBtn)activeBtn.classList.add('bm-active');
   _currentBasemap=name;
+  window._bdocBloomOff=!!bm.isLight;
+  try{if(window._bdocRetuneBloom)window._bdocRetuneBloom()}catch(_){}
+  try{window.BDOCRender&&window.BDOCRender.kick()}catch(_){}
   EventLog.add('info',`Basemap: ${name.charAt(0).toUpperCase()+name.slice(1)}`);
   af('var(--bl)',`Map style: ${name.toUpperCase()}`);
 }

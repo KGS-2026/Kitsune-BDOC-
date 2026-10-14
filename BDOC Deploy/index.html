@@ -175,8 +175,9 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p77">
+<link rel="stylesheet" href="css/bdoc.css?v=p154">
 <link rel="stylesheet" href="css/bdoc-glass.css?v=p75">
+<link rel="stylesheet" href="css/bdoc-p154.css?v=p154">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -241,7 +242,8 @@ if('serviceWorker' in navigator){
 <div class="hud-frame"></div>
 <div class="hud-corner tl"></div><div class="hud-corner tr"></div><div class="hud-corner bl"></div><div class="hud-corner br"></div>
 <div class="vfx-crt" id="vfxCrt"></div>
-<div id="vfx-flir-bar"><span>FLIR</span><span>WHOT</span><span id="flir-zoom">1.0x</span><span id="flir-temp">--.-°C</span><span>NAR FOV</span></div>
+<div id="vfx-flir-bar"><span>FLIR</span><span id="flir-pal" class="vfx-chip" onclick="cycleFlirPalette()" title="Click to cycle WHOT / BHOT / IRONBOW">WHOT</span><span id="flir-zoom">1.0x</span><span id="flir-fov">WIDE FOV</span></div>
+<div id="vfx-nvg-bar"><span>NVG</span><span id="nvg-phosphor" class="vfx-chip" onclick="toggleNvgPhosphor()" title="Click (or Shift+2) to swap green / white phosphor">P43 GREEN</span><span id="nvg-gain">GAIN AUTO</span></div>
 <div id="nvgBloomWarn">NVG BLOOM — DAYLIGHT DETECTED</div>
 <div class="anomaly-banner" id="anomBanner"></div>
 <!-- NAVIGATION PANEL -->
@@ -436,7 +438,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p152</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p154</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -1063,7 +1065,8 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <div class="bp-header">
 <span style="font-weight:600;letter-spacing:1px;color:var(--bl)">BATTLE TRACKER</span>
 <div style="display:flex;gap:4px">
-<button class="bp-tool" onclick="undoLastBattle()" title="Undo last">UNDO</button>
+<button class="bp-tool" id="bpCompactBtn" onclick="toggleBattlePanelCompact()" title="Collapse / expand the tool panel (it collapses automatically when you pick a tool so the map is clear)">▾ TOOLS</button>
+<button class="bp-tool" onclick="undoLastBattle()" title="Undo last (Ctrl+Z)">UNDO</button>
 <button class="bp-tool" onclick="clearBattleEntities()">CLEAR</button>
 <button onclick="exitBattleMode()" style="background:none;border:1px solid var(--bdr);color:var(--t3);padding:2px 8px;border-radius:2px;cursor:pointer;font-size:10px;font-family:var(--m)">EXIT</button>
 </div>
@@ -1170,25 +1173,39 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <!-- UNIVERSAL RIGHT-CLICK CONTEXT MENU -->
 <div id="battle-ctx">
 <div class="ctx-header" id="ctx-header-text">ACTIONS</div>
+<!-- P154: entity actions FIRST (was buried at the bottom, cut off on short screens) -->
+<div id="ctx-entity-block" style="display:none">
+<div class="ctx-entity-name" id="ctx-entity-name"></div>
+<div class="ctx-item danger" onclick="ctxAction('delete')" id="ctx-delete-item">✕ Delete This Marker</div>
+<div class="ctx-item" onclick="ctxAction('editnote')" id="ctx-editnote-item" style="display:none">✎ Edit Note</div>
+<div class="ctx-item" onclick="ctxAction('recolor')" id="ctx-recolor-item" style="display:none">🎨 Change Color</div>
+<div class="ctx-item" onclick="ctxAction('fillsolid')" id="ctx-fillsolid-item" style="display:none">◼ Fill Solid / Thick Line</div>
+<div class="ctx-item" onclick="ctxAction('watchlist')" style="color:#F2C14E">⭐ Add This To Watchlist</div>
+<div class="ctx-sep"></div>
+</div>
 <!-- Universal actions (always visible) -->
 <div class="ctx-item" onclick="ctxAction('coords')">📋 Copy Coordinates</div>
 <div class="ctx-item" onclick="ctxAction('flyhere')">🎯 Fly To This Location</div>
 <div class="ctx-item" onclick="ctxAction('whatshere')">🔍 What's Nearby</div>
 <div class="ctx-item" onclick="ctxAction('measure')">📏 Measure Distance</div>
+<div class="ctx-item" onclick="ctxAction('watchlist_loc')" id="ctx-watchlist-loc" style="color:#F2C14E">⭐ Add Location To Watchlist</div>
+<div class="ctx-item" onclick="ctxAction('weather')" style="color:#5FD3FF">🌦 Weather Forecast</div>
 <div class="ctx-item" onclick="ctxAction('screenshot')">📸 Capture Screenshot</div>
-<div class="ctx-item" onclick="ctxAction('weather')" style="color:#00ccff">🌦 Weather Forecast</div>
-<div class="ctx-item" onclick="ctxAction('beacon')" style="color:#ff6600">🔥 FOXFIRE</div>
-<div class="ctx-item" onclick="ctxAction('bloodhound_from')" style="color:#00ff99">🦊 FOXEYE FROM Here</div>
-<div class="ctx-item" onclick="ctxAction('bloodhound_to')" style="color:#00ff99">🦊 FOXEYE TO Here</div>
-<div class="ctx-item" onclick="ctxAction('nuke')" style="color:#ff2200">☢ Nuclear Detonation</div>
-<div class="ctx-item" onclick="ctxAction('clearnuke')" style="color:#7a8194">✕ Clear Detonation(s)</div>
-<div class="ctx-item" onclick="ctxAction('watchzone')" style="color:#E8B349">⌖ Watch This Area</div>
-<div class="ctx-item" onclick="ctxAction('unwatchzone')" style="color:#7a8194">✕ Remove Watch Zone</div>
 <div class="ctx-sep"></div>
 <!-- Quick markup (always visible) -->
-<div class="ctx-item" onclick="ctxAction('comment')">✎ Add Comment / Pin</div>
+<div class="ctx-item" onclick="ctxAction('comment')">✎ Add Note / Pin</div>
 <div class="ctx-item" onclick="ctxAction('tag')">⚑ Tag / Label</div>
 <div class="ctx-item" onclick="ctxAction('quickarrow')">➤ Quick Arrow</div>
+<div class="ctx-item" onclick="ctxAction('watchzone')" style="color:#F2C14E">⌖ Watch This Area</div>
+<div class="ctx-item" onclick="ctxAction('unwatchzone')">✕ Remove Watch Zone</div>
+<div class="ctx-item" onclick="ctxAction('report')" id="ctx-report-item" style="color:#6AA8FF">📡 Submit Intel Report</div>
+<div class="ctx-sep"></div>
+<div class="ctx-sub-h">TACTICAL</div>
+<div class="ctx-item" onclick="ctxAction('beacon')" style="color:#FF8A3D">🔥 FOXFIRE</div>
+<div class="ctx-item" onclick="ctxAction('bloodhound_from')" style="color:#3DFFB0">🦊 FOXEYE FROM Here</div>
+<div class="ctx-item" onclick="ctxAction('bloodhound_to')" style="color:#3DFFB0">🦊 FOXEYE TO Here</div>
+<div class="ctx-item" onclick="ctxAction('nuke')" style="color:#FF5A3D">☢ Nuclear Detonation</div>
+<div class="ctx-item" onclick="ctxAction('clearnuke')">✕ Clear Detonation(s)</div>
 <div class="ctx-sep ctx-battle-only"></div>
 <!-- Battle mode extras (shown only in battle mode) -->
 <div class="ctx-item ctx-battle-only" onclick="ctxAction('outline')">⬓ Outline Area</div>
@@ -1198,14 +1215,10 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <div class="ctx-item ctx-battle-only" onclick="ctxAction('marker_rally')">⚐ Rally Point</div>
 <div class="ctx-item ctx-battle-only" onclick="ctxAction('marker_fob')">⌂ FOB Marker</div>
 <div class="ctx-sep"></div>
-<div class="ctx-item" onclick="ctxAction('layers')">☰ Toggle Nearby Layers</div>
-<div class="ctx-item" onclick="ctxAction('editnote')" id="ctx-editnote-item" style="display:none">✎ Edit Note</div>
-<div class="ctx-item" onclick="ctxAction('recolor')" id="ctx-recolor-item" style="display:none">🎨 Change Color</div>
-<div class="ctx-item" onclick="ctxAction('fillsolid')" id="ctx-fillsolid-item" style="display:none">◼ Fill Solid</div>
-<div class="ctx-item" onclick="ctxAction('report')" id="ctx-report-item" style="color:#2D72D2">📡 Submit Intel Report</div>
-<div class="ctx-item" onclick="ctxAction('watchlist')" style="color:#E8B339">⭐ Add to Watchlist</div>
-<div class="ctx-item danger" onclick="ctxAction('delete')" id="ctx-delete-item">✕ Delete Selected</div>
+<div class="ctx-item" onclick="ctxAction('undo')" id="ctx-undo-item">↶ Undo Last Action <span class="ctx-k">Ctrl+Z</span></div>
 </div>
+<!-- P154: global undo (Ctrl+Z) — shows only when there is something to undo -->
+<button id="bdocUndoBtn" onclick="BDOCUndo.undo()" title="Undo last action (Ctrl+Z)">↶ UNDO <span>Ctrl+Z</span></button>
 <!-- BATTLE HOVER TOOLTIP -->
 <div id="battle-tooltip">
 <div class="btt-label"></div>
@@ -1444,6 +1457,15 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js"></script>
 <!-- REMOVED: P135 — milsymbol lazy-loaded on military layer enable (763KB early-load → 0B for recon-only users) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Cesium.js" crossorigin="anonymous"></script>
+<script>
+// P154 ("randomly not loading"): a single CDN hiccup on Cesium.js left a dead page —
+// every script after it threw on `Cesium` and the globe never appeared. Fall back to
+// jsDelivr (same 1.146.0 build) synchronously so boot order is unchanged.
+if(!window.Cesium){
+  console.warn('[BDOC] cdnjs Cesium failed — loading jsDelivr fallback');
+  document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Widgets/widgets.css"><script src="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Cesium.js" crossorigin="anonymous"><\/script>');
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
 <script defer src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
@@ -1458,7 +1480,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <script src="js/converters.js?v=p59"></script>
 <script src="js/data.js?v=p119"></script>
 <script src="js/auth.js?v=p136"></script>
-<script src="js/filters.js?v=p66"></script>
+<script src="js/filters.js?v=p154"></script>
 <!-- layers-military.js is lazy-loaded on first toggle of milbases (Phase 3 Turn 7) -->
 <!-- layers-airfields.js is lazy-loaded on first toggle of milairfields (Phase 3 Turn 6) -->
 <!-- layers-nuke.js is lazy-loaded on first toggle of nukes (Phase 3 Turn 5) -->
@@ -1572,7 +1594,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p152',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p154',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
@@ -2314,20 +2336,37 @@ const Watchlist={
   init(){try{this._items=JSON.parse(localStorage.getItem(this._key)||'[]')}catch(_){this._items=[]}},
   save(){try{localStorage.setItem(this._key,JSON.stringify(this._items))}catch(_){}},
   add(item){
-    const id=item.id||('wl_'+Date.now()+'_'+Math.random().toString(36).slice(2,7));
-    if(this._items.find(i=>i.id===id)){af('var(--yl)','Already on watchlist: '+item.name);return}
-    const entry={id,name:item.name||'Unknown Location',lat:item.lat,lon:item.lon,type:item.type||'location',description:item.description||'',added:new Date().toISOString()};
+    const id=String(item.id||('wl_'+Date.now()+'_'+Math.random().toString(36).slice(2,7))).replace(/[\\'"<>]/g,'');
+    if(!isFinite(item.lat)||!isFinite(item.lon)){af('var(--rd)','Watchlist: no position for that target');return}
+    if(this._items.find(i=>String(i.id)===id)){af('var(--yl)','Already on watchlist: '+item.name);this.open();return}
+    const entry={id,name:item.name||'Unknown Location',lat:+item.lat,lon:+item.lon,type:item.type||'location',entityId:item.entityId||null,description:item.description||'',added:new Date().toISOString()};
     this._items.push(entry);this.save();
     af('var(--gn)','⭐ Added to watchlist: '+entry.name);
     EventLog.add('info','Watchlist: added '+entry.name);
     this.renderPanel();
   },
-  remove(id){this._items=this._items.filter(i=>i.id!==id);this.save();this.renderPanel()},
+  remove(id){this._items=this._items.filter(i=>String(i.id).replace(/[\\'"<>]/g,'')!==String(id));this.save();this.renderPanel()},
   clear(){
     if(this._items.length===0)return;
     if(!confirm('Clear all '+this._items.length+' watchlist items?'))return;
     this._items=[];this.save();this.renderPanel();
     af('var(--t2)','Watchlist cleared');
+  },
+  open(){
+    this._panelOpen=true;
+    const p=document.getElementById('watchlistPanel');
+    if(p)p.style.display='block';
+    this.renderPanel();
+  },
+  // FLY: follow the live entity if it still exists (aircraft move), else the saved point
+  fly(id){
+    const it=this._items.find(i=>String(i.id)===String(id));if(!it)return;
+    try{
+      const e=it.entityId&&V.entities.getById(it.entityId);
+      const p=e&&e.position&&e.position.getValue(V.clock.currentTime);
+      if(p){const c=Cesium.Cartographic.fromCartesian(p);flyToTarget(Cesium.Math.toDegrees(c.longitude),Cesium.Math.toDegrees(c.latitude),Math.max(5000,c.height+20000),1.2);V.selectedEntity=e;return}
+    }catch(_){}
+    flyToTarget(it.lon,it.lat,5000,1.2);
   },
   togglePanel(){
     this._panelOpen=!this._panelOpen;
@@ -2344,7 +2383,7 @@ const Watchlist={
       p.innerHTML='<div style="padding:12px;text-align:center;color:var(--t3);font-size:9px;line-height:1.6">No watchlist items.<br>Right-click any entity or location \u2192 \u2b50 Add to Watchlist</div>';
       return;
     }
-    p.innerHTML=this._items.map(function(it){return '<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.04)"><div style="flex:1;min-width:0"><div style="color:var(--text-primary);font-weight:600;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div><div style="color:var(--t3);font-size:8px;margin-top:1px">'+it.lat.toFixed(4)+'\u00b0, '+it.lon.toFixed(4)+'\u00b0 \u00b7 '+(it.type||'location')+'</div></div><div style="display:flex;gap:3px;flex-shrink:0"><button onclick="flyToTarget('+it.lon+','+it.lat+',5000,1.2)" style="padding:2px 5px;background:rgba(45,114,210,0.1);border:1px solid rgba(45,114,210,0.25);border-radius:2px;color:var(--kf);font-family:var(--m);font-size:7px;cursor:pointer;letter-spacing:.5px">FLY</button><button onclick="Watchlist.remove(\''+it.id.replace(/'/g,"\\'")+'\')" style="padding:2px 5px;background:rgba(218,54,51,0.1);border:1px solid rgba(218,54,51,0.25);border-radius:2px;color:#f87171;font-family:var(--m);font-size:7px;cursor:pointer">\u2715</button></div></div>';}).join('');
+    p.innerHTML=this._items.map(function(it){return '<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.04)"><div style="flex:1;min-width:0"><div style="color:var(--text-primary);font-weight:600;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div><div style="color:var(--t3);font-size:8px;margin-top:1px">'+(+it.lat||0).toFixed(4)+'\u00b0, '+(+it.lon||0).toFixed(4)+'\u00b0 \u00b7 '+esc(it.type||'location')+'</div></div><div style="display:flex;gap:3px;flex-shrink:0"><button onclick="Watchlist.fly(\''+String(it.id).replace(/[\\'"<>]/g,'')+'\')" style="padding:2px 5px;background:rgba(45,114,210,0.1);border:1px solid rgba(45,114,210,0.25);border-radius:2px;color:var(--kf);font-family:var(--m);font-size:7px;cursor:pointer;letter-spacing:.5px">FLY</button><button onclick="Watchlist.remove(\''+String(it.id).replace(/[\\'"<>]/g,'')+'\')" style="padding:2px 5px;background:rgba(218,54,51,0.1);border:1px solid rgba(218,54,51,0.25);border-radius:2px;color:#f87171;font-family:var(--m);font-size:7px;cursor:pointer">\u2715</button></div></div>';}).join('');
   }
 };
 Watchlist.init();
@@ -2387,17 +2426,33 @@ function captureScreen(){
 // Detects OS, links to the matching installer on GitHub Releases. Hidden inside Electron.
 const BDOC_DESKTOP_VERSION='8.0.0';
 const BDOC_RELEASE_BASE='https://github.com/KGS-2026/Kitsune-BDOC-/releases/latest/download';
-function downloadDesktop(){
+// P154 (Travon bug #22): the link was hard-coded to v8.0.0 file names, so every new
+// desktop build needed a web deploy to become downloadable (and a rename broke it).
+// Now it asks GitHub for the LATEST release and picks the right asset for this OS.
+// The installed app itself now loads the live site whenever it's online (see
+// electron/main.js), so web fixes reach desktop users without a re-download.
+async function downloadDesktop(){
   const p=(navigator.userAgentData&&navigator.userAgentData.platform||navigator.platform||'').toLowerCase();
   const ua=navigator.userAgent.toLowerCase();
-  let file,label;
-  if(p.includes('win')||ua.includes('windows')){file=`BDOC-Windows-Portable-${BDOC_DESKTOP_VERSION}.zip`;label='Windows app (portable ZIP — unzip and run "KGS BDOC.exe", no install needed)';}
-  else if(p.includes('mac')||ua.includes('mac os')){file=`BDOC-Windows-Portable-${BDOC_DESKTOP_VERSION}.zip`;label='macOS build is coming soon — grabbing the portable build meanwhile';}
-  else if(ua.includes('linux')){file=`BDOC-${BDOC_DESKTOP_VERSION}-x86_64.AppImage`;label='Linux AppImage (chmod +x then run)';}
-  else{file=`BDOC-Windows-Portable-${BDOC_DESKTOP_VERSION}.zip`;label='Windows app (portable ZIP)';}
-  const url=`${BDOC_RELEASE_BASE}/${file}`;
-  try{window.open(url,'_blank');}catch(_){location.href=url;}
-  try{msg('sy',`<b>DOWNLOADING DESKTOP APP</b><br>${label}<br>File: ${file}<br>Grid-down capable: works offline, load your own data layers. All builds: <a href="https://github.com/KGS-2026/Kitsune-BDOC-/releases" target="_blank" style="color:var(--kf)">here</a>.`);}catch(_){}
+  const os=(p.includes('win')||ua.includes('windows'))?'win':(p.includes('mac')||ua.includes('mac os'))?'mac':ua.includes('linux')?'linux':'win';
+  const releases='https://github.com/KGS-2026/Kitsune-BDOC-/releases/latest';
+  const win=window.open('about:blank','_blank'); // opened inside the click so it isn't popup-blocked
+  let url=`${BDOC_RELEASE_BASE}/BDOC-Windows-Portable-${BDOC_DESKTOP_VERSION}.zip`,label='Windows app (portable ZIP)',ver=BDOC_DESKTOP_VERSION;
+  try{
+    const r=await fetch('https://api.github.com/repos/KGS-2026/Kitsune-BDOC-/releases/latest',{headers:{Accept:'application/vnd.github+json'},signal:AbortSignal.timeout(6000)});
+    if(r.ok){
+      const j=await r.json();const as=j.assets||[];const pick=re=>as.find(a=>re.test(a.name));
+      let a=null;
+      if(os==='win')a=pick(/setup.*\.exe$/i)||pick(/windows.*portable.*\.(zip|exe)$/i)||pick(/\.exe$/i)||pick(/win.*\.zip$/i);
+      else if(os==='mac')a=pick(/arm64.*\.dmg$/i)||pick(/\.dmg$/i);
+      else a=pick(/\.appimage$/i)||pick(/\.deb$/i);
+      ver=(j.tag_name||ver).replace(/^desktop-v|^v/,'');
+      if(a){url=a.browser_download_url;label=a.name+' — '+(a.size/1e6).toFixed(0)+' MB';}
+      else{url=releases;label=os==='mac'?'No macOS build in this release yet — opening the release page':'Opening the release page';}
+    }
+  }catch(_){}
+  try{if(win)win.location.href=url;else location.href=url;}catch(_){location.href=url;}
+  try{msg('sy',`<b>DOWNLOADING DESKTOP APP v${esc(ver)}</b><br>${esc(label)}<br>Grid-down capable: works offline, auto-loads the live version whenever you're online. All builds: <a href="${releases}" target="_blank" style="color:var(--kf)">release page</a>.`);}catch(_){}
 }
 // Inside the packaged Electron app there's nothing to download — hide the item.
 try{if(navigator.userAgent.includes('Electron')){const el=document.getElementById('dlDesktopItem');if(el)el.style.display='none';}}catch(_){}
@@ -2504,6 +2559,29 @@ function _genPDFhtml(){
 // ═══ TOGGLE RIGHT PANEL ═══
 function togR(){rpOpen=!rpOpen;const rp=document.getElementById('rp');rp.classList.toggle('shut');const sideBySide=window.innerWidth>767;document.body.classList.toggle('ai-open',rpOpen&&!rp.classList.contains('mini')&&sideBySide);const nw=document.getElementById('nav-widget');if(nw)nw.classList.toggle('rp-closed',rp.classList.contains('shut'))}
 function togAiSize(){const rp=document.getElementById('rp');const btn=document.getElementById('aiCollapse');const isMini=rp.classList.toggle('mini');btn.textContent=isMini?'▶':'◀';btn.title=isMini?'Expand AI Panel':'Collapse AI Panel';document.body.classList.toggle('ai-open',!isMini&&rpOpen&&window.innerWidth>767)}
+// P154 (Travon bug #21 "don't crowd the screen based on the device"):
+// three density tiers by the browser's real viewport (a 17" 1080p laptop at 125%
+// Windows scaling is only 1536x864 of CSS pixels):
+//   wide  ≥1600x860  → full layout
+//   compact <1600 or <860 → narrower side panels, smaller chrome
+//   tight <1366 or <720  → AI panel starts collapsed to its rail on first visit
+// Mobile (<768) keeps its own layout.
+(function bdocDensity(){
+  function apply(){
+    const w=window.innerWidth,h=window.innerHeight;
+    const mobile=w<768;
+    document.body.classList.toggle('bdoc-compact',!mobile&&(w<1600||h<860));
+    document.body.classList.toggle('bdoc-tight',!mobile&&(w<1366||h<720));
+  }
+  apply();
+  window.addEventListener('resize',apply,{passive:true});
+  try{
+    if(window.innerWidth>=768&&(window.innerWidth<1366||window.innerHeight<720)&&localStorage.getItem('bdoc_ai_mini_auto')!=='1'){
+      localStorage.setItem('bdoc_ai_mini_auto','1');
+      setTimeout(()=>{const rp=document.getElementById('rp');if(rp&&!rp.classList.contains('mini')&&!rp.classList.contains('shut'))togAiSize();},1200);
+    }
+  }catch(_){}
+})();
 // Reconcile ai-open on resize so the globe margin never gets stranded when the breakpoint is crossed
 window.addEventListener('resize',()=>{const rp=document.getElementById('rp');if(!rp)return;const sideBySide=window.innerWidth>767;document.body.classList.toggle('ai-open',rpOpen&&!rp.classList.contains('mini')&&!rp.classList.contains('shut')&&sideBySide)},{ passive:true });
 // ── END v5.0 SYSTEMS ──
@@ -2882,35 +2960,83 @@ BDOC.ticker={
 };
 // Show ticker after page settles (1.2s gives boot events a chance to populate)
 setTimeout(()=>BDOC.ticker.show(),1200);
+// P154 (Travon bug #17 "live audio broken when you click a PD broadcast"):
+// the modal embedded Broadcastify's webPlayer PAGE in an iframe — a page that can
+// refuse framing, wants its own consent/ads, and gave no error signal to us. Now we
+// play the feed's direct Icecast stream (broadcastify.cdnstream1.com/<feedId>) in a
+// native <audio> element: real LIVE / BUFFERING / OFFLINE status, volume, stop.
+// If the stream errors or stalls (premium-only or offline feed) it falls back to
+// the webPlayer iframe, and the Broadcastify page link is always one click away.
 function bdocPlayScanner(feedUrl,name,color){
   try{
-    // Extract feed ID from URL like https://www.broadcastify.com/listen/feed/12345
-    const idMatch=feedUrl.match(/feed\/(\d+)/);
+    color=color||'#3DFFB0';
+    const idMatch=String(feedUrl||'').match(/feed\/(\d+)/);
     const feedId=idMatch?idMatch[1]:null;
-    // Remove any existing player
-    const old=document.getElementById('bdocScannerModal');if(old)old.remove();
+    const old=document.getElementById('bdocScannerModal');
+    if(old){try{const oa=old.querySelector('audio');if(oa){oa.pause();oa.removeAttribute('src');oa.load();}}catch(_){}old.remove();}
+    const listenUrl=feedId?'https://www.broadcastify.com/listen/feed/'+feedId:String(feedUrl||'https://www.broadcastify.com/');
     const modal=document.createElement('div');
     modal.id='bdocScannerModal';
-    modal.style.cssText='position:fixed;bottom:14px;right:14px;z-index:9200;background:rgba(15,17,21,0.72);border:1px solid '+color+'44;border-radius:6px;padding:14px 16px;font-family:var(--m);color:#c8ccd6;width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.6)';
+    modal.style.cssText='position:fixed;bottom:14px;right:14px;z-index:9200;background:rgba(10,13,20,0.97);border:1px solid '+color+'66;border-radius:6px;padding:14px 16px;font-family:var(--m);color:#E6E9EE;width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.6)';
     modal.innerHTML=`
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid `+color+`22">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid ${color}33">
         <div>
-          <div style="color:`+color+`;font-size:8px;letter-spacing:2px;font-weight:700">▶ LIVE SCANNER AUDIO</div>
-          <div style="color:#c8ccd6;font-size:11px;font-weight:600;margin-top:2px">${esc(name)}</div>
+          <div style="color:${color};font-size:8px;letter-spacing:2px;font-weight:700">▶ LIVE SCANNER AUDIO</div>
+          <div style="color:#E6E9EE;font-size:11px;font-weight:600;margin-top:2px">${esc(name||'Scanner feed')}</div>
         </div>
-        <button onclick="document.getElementById('bdocScannerModal').remove()" style="background:none;border:none;color:#7a8194;font-size:18px;cursor:pointer;padding:0 4px">&times;</button>
+        <button id="bdocScanClose" style="background:none;border:none;color:#AEB4BE;font-size:18px;cursor:pointer;padding:0 4px" title="Stop and close">&times;</button>
       </div>
-      ${feedId?`<iframe src="https://www.broadcastify.com/webPlayer/${feedId}" width="100%" height="60" frameborder="0" allow="autoplay" style="border-radius:3px;background:#000" title="Live scanner audio"></iframe>`:`<div style="font-size:10px;color:#ff8855;padding:10px;background:rgba(255,136,85,0.06);border:1px solid rgba(255,136,85,0.2);border-radius:3px;text-align:center">Feed ID not detected. Open the link below.</div>`}
-      <div style="margin-top:8px;font-size:8px;color:#4a5068;line-height:1.4">
-        Some feeds require <a href="https://www.broadcastify.com/premium/" target="_blank" rel="noopener" style="color:`+color+`">Broadcastify Premium</a>. If audio fails to play, click "↗ Open on Broadcastify.com" in the popup.
-      </div>
-    `;
+      <div id="bdocScanStatus" style="font-size:9px;letter-spacing:1.5px;color:#E8B349;margin-bottom:6px">${feedId?'CONNECTING…':'NO FEED ID'}</div>
+      <div id="bdocScanBody">${feedId?'<audio id="bdocScanAudio" controls preload="none" style="width:100%;height:34px"></audio>':''}</div>
+      <a href="${safeUrl(listenUrl)}" target="_blank" rel="noopener" style="display:block;margin-top:8px;font-size:9px;color:${color};text-decoration:none;letter-spacing:1px">↗ OPEN ON BROADCASTIFY.COM</a>
+      <div style="margin-top:6px;font-size:8px;color:#8B919A;line-height:1.4">Feeds go offline when the volunteer's scanner is down; some are Premium-only.</div>`;
     document.body.appendChild(modal);
+    const statusEl=modal.querySelector('#bdocScanStatus');
+    const setStatus=(t,c)=>{statusEl.textContent=t;statusEl.style.color=c||'#E8B349'};
+    modal.querySelector('#bdocScanClose').onclick=()=>{try{const au=modal.querySelector('audio');if(au){au.pause();au.removeAttribute('src');au.load();}}catch(_){}modal.remove();};
+    if(!feedId)return;
+    const au=modal.querySelector('audio');
+    let fellBack=false;
+    const fallback=(why)=>{
+      if(fellBack||!modal.isConnected)return;fellBack=true;
+      try{au.pause();au.removeAttribute('src');au.load();}catch(_){}
+      setStatus('DIRECT STREAM '+why+' — TRYING BROADCASTIFY PLAYER','#FF8A3D');
+      modal.querySelector('#bdocScanBody').innerHTML='<iframe src="https://www.broadcastify.com/webPlayer/'+feedId+'" width="100%" height="64" frameborder="0" allow="autoplay" style="border-radius:3px;background:#000" title="Live scanner audio"></iframe>';
+    };
+    au.addEventListener('playing',()=>setStatus('● LIVE','#3DFFB0'));
+    au.addEventListener('waiting',()=>{if(!fellBack)setStatus('BUFFERING…')});
+    au.addEventListener('error',()=>fallback('UNAVAILABLE'));
+    au.volume=0.85;
+    au.src='https://broadcastify.cdnstream1.com/'+feedId;
+    const pr=au.play();
+    if(pr&&pr.catch)pr.catch(err=>{
+      if(err&&err.name==='NotAllowedError')setStatus('PRESS ▶ TO START AUDIO');
+      else fallback('FAILED');
+    });
+    setTimeout(()=>{if(modal.isConnected&&!fellBack&&au.readyState<3&&!au.paused)fallback('TIMED OUT');},12000);
     if(typeof plausible==='function')plausible('Scanner Played',{props:{name:name,feed_id:feedId||'unknown'}});
   }catch(e){console.warn('[Scanner]',e);if(typeof af==='function')af('var(--rd)','Scanner audio failed: '+esc(e.message))}
 }
 // Phase 5C (2026-05-04): Changelog popup wired to top-bar BUILD pill — deploy verification at a glance.
 const _BDOC_CHANGELOG=[
+  {ver:'p154 (2026-10-14) — FIELD LIST: 25 FIXES',items:[
+    'Markers no longer show through the earth: depth test follows the live horizon distance',
+    'Streets / Topo / Terrain basemaps: no bloom wash-out, toned for the dark UI, and the globe finishes drawing every tile (render stall fixed)',
+    '3D terrain: larger tile cache + sibling preload; no more half-drawn terrain',
+    'NVG rebuilt on the GPU: auto-gain by sun angle, tube halo, grain, vignette, green/white phosphor (Shift+2). City lights only on the night side',
+    'FLIR rebuilt: real heat palette (WHOT / BHOT / IRONBOW, click the chip), cold sky, no crosshair',
+    'Helicopters identified from the transponder category (A7) + 60 more rotorcraft codes; every aircraft type has its own colour (legend under All Aircraft)',
+    'Right-click menu: readable on any map, marker actions on top, never runs off-screen; Delete This Marker removes just that item (Delete key works on a selected marker too)',
+    'Undo: Ctrl+Z or the UNDO button removes the last thing you placed (or the last point of a line you are drawing)',
+    'FSCL / phase lines / zones: double-click finishes cleanly, live rubber-band, no camera lock, globe stops when you let go, tool panel collapses out of the way; on-screen instructions',
+    'Bullseye / range rings / zones now draw real borders; double-click no longer locks the camera (ESC or double-click empty map releases)',
+    'Watchlist adds the target and opens; Tools-menu Measure / Draw Arrow / Annotation / Intel Report now work (click the map after choosing)',
+    'Scanner audio plays the direct stream with LIVE status and fallbacks; webcams open in-app when allowed, otherwise in a pop-up viewer',
+    'Population density opacity slider; navigation: both addresses geocoded at once with providers raced, route drawn as 1 line with ~6x fewer vertices (was 2 full-detail ground lines)',
+    'Screen density adapts to laptop/desktop size; outage banner steps aside after 12 s; nav widget parks top-right when the AI panel collapses',
+    'Desktop app: download always resolves the latest release; installed app loads the live version when online',
+    'Recovery: GPU reset auto-restores your view; Cesium CDN fallback'
+  ]},
   {ver:'p11 (2026-05-05) — SURGICAL FIX PASS',items:[
     'Single accent enforced: #2D72D2 muted blue. KILLED all pink/magenta (639 color replacements across 9 files), cyan, multi-orange — single source of truth in :root',
     'No more colored glows: 44 box-shadow/text-shadow declarations stripped of colored rgba, replaced with subtle 0 1px 2px rgba(0,0,0,0.4) drop shadow only',
@@ -3215,6 +3341,7 @@ function togLy(el){
   }catch(_){ }
   // Phase 14 fix (2026-05-12): AIR toggle now shows ALL aircraft (civ + mil). FORCE TRACK adds the side panel for mil only.
   if(ly==='forcetrack'){document.getElementById('ftPanel').classList.toggle('show',layers[ly]);if(layers.forcetrack&&airEnts.length===0&&milEnts.length===0){BDOC.layerLoadFx.start('forcetrack');BDOC.LazyLoader.loadMany(['motion-model','milsymbol-loader','layers-air']).then(()=>{if(window.loadAircraft)window.loadAircraft();if(window.updateForcePanel)window.updateForcePanel();BDOC.layerLoadFx.done('forcetrack',true)}).catch(e=>{console.warn('[lazy layers-air]',e);BDOC.layerLoadFx.done('forcetrack',false)})}else{_bSafe(()=>window.updateForcePanel&&window.updateForcePanel())}airEnts.forEach(e=>e.show=layers.air);milEnts.forEach(e=>e.show=layers.air||layers.forcetrack)}
+  if(ly==='air'||ly==='forcetrack'){try{if(window._acRenderLegend)window._acRenderLegend()}catch(_){}}
   if(ly==='air'){if(layers.air&&airEnts.length===0&&milEnts.length===0){BDOC.layerLoadFx.start('air');BDOC.LazyLoader.loadMany(['motion-model','milsymbol-loader','layers-air']).then(()=>{if(window.loadAircraft)window.loadAircraft();BDOC.layerLoadFx.done('air',true)}).catch(e=>{console.warn('[lazy layers-air]',e);BDOC.layerLoadFx.done('air',false)})}airEnts.forEach(e=>e.show=layers.air);milEnts.forEach(e=>e.show=layers.air||layers.forcetrack)}
   if(ly==='eq'){if(layers.eq&&eqEnts.length===0){BDOC.layerLoadFx.start('eq');loadEQ();}eqEnts.forEach(e=>e.show=layers.eq)}
   if(ly==='fire'){if(layers.fire&&fireEnts.length===0){BDOC.layerLoadFx.start('fire');loadFires();}fireEnts.forEach(e=>e.show=layers.fire);firePerimEnts.forEach(e=>e.show=layers.fire)}
@@ -7020,7 +7147,8 @@ document.addEventListener('keydown',e=>{
     if(e.key==='1')togFilter('crt',document.querySelector('.fb[data-f="crt"]'));
     if(e.key==='2')togFilter('nvg',document.querySelector('.fb[data-f="nvg"]'));
     if(e.key==='3')togFilter('flir',document.querySelector('.fb[data-f="flir"]'));
-    if(e.key==='0'){activeFilter=null;document.body.classList.remove('filter-nvg','filter-flir');document.getElementById('vfxCrt').classList.remove('on');document.querySelectorAll('.fb').forEach(b=>b.classList.remove('a'));if(V&&V.scene){V.scene.globe.enableLighting=true;V.scene.light=new Cesium.SunLight({intensity:2.0});if(window._cityLightsLayer){window._cityLightsLayer.dayAlpha=0.0;window._cityLightsLayer.nightAlpha=0.9;window._cityLightsLayer.brightness=2.2}if(window._nightEarthLayer){window._nightEarthLayer.dayAlpha=0.0;window._nightEarthLayer.nightAlpha=0.6}}}
+    if(e.key==='0'){if(typeof clearVisualFilter==='function')clearVisualFilter();}
+    if(e.key==='@'||(e.shiftKey&&e.code==='Digit2')){if(typeof toggleNvgPhosphor==='function')toggleNvgPhosphor();}
     if(e.key==='?')document.getElementById('kb-help').classList.toggle('show');
     if(e.key==='l'||e.key==='L')document.getElementById('legend').classList.toggle('show');
     if(e.key==='r'||e.key==='R'){if(Replay.active)Replay.exit();else Replay.open()}
@@ -7392,7 +7520,97 @@ function updateOverviewMap(){
 // Units: NATO APP-6 standard symbology
 // ═══════════════════════════════════════════
 let battleMode=false;
-var battleEntities=[]; // Phase 22: var not let — bdoc-atak.js checks window.battleEntities
+// ═══ P154: GLOBAL UNDO + PER-MARKER DELETE (Travon bugs #13, #14) ═══
+// Every user-placed thing (notes, tags, drawings, units, bullseyes, range rings,
+// measurements, quick arrows, FOXFIRE beacons, watch zones) is recorded in order.
+//   Ctrl+Z / ↶ button → removes the most recent one (or the last vertex of a shape
+//   you are still drawing). Right-click a marker → "Delete This Marker" removes just
+//   that one — no more CLEAR ALL to fix a mis-click.
+window.BDOCUndo=(function(){
+  const stack=[];
+  const _ents=x=>Array.isArray(x)?x.flat(Infinity).filter(Boolean):(x?[x]:[]);
+  const _alive=r=>{if(r.custom)return !r.dead;return _ents(r.ref).some(e=>{try{return V.entities.contains(e)}catch(_){return false}})};
+  const _rm=ref=>_ents(ref).forEach(e=>{try{V.entities.remove(e)}catch(_){}});
+  function _label(ref){
+    const e=_ents(ref)[0];if(!e)return 'marker';
+    try{const m=battleMeta.get(e);if(m&&m.label)return m.label}catch(_){}
+    try{if(e.name)return e.name;if(e.label&&e.label.text)return String(e.label.text.getValue(V.clock.currentTime)).split('\n')[0]}catch(_){}
+    return 'marker';
+  }
+  function _drawPts(){try{return Math.floor(((typeof battleTool!=='undefined'&&battleTool==='outline')?outlinePoints.length:battleDrawPoints.length)/2)}catch(_){return 0}}
+  function _popVertex(){
+    const isO=battleTool==='outline';
+    const arr=isO?outlinePoints:battleDrawPoints;
+    arr.splice(-2,2);
+    const pts=arr.slice();
+    clearTempEntities();
+    arr.length=0;
+    for(let i=0;i<pts.length;i+=2){arr.push(pts[i],pts[i+1]);addTempVertex(pts[i+1],pts[i]);}
+    const st=document.getElementById('bp-status');
+    if(st)st.textContent=arr.length?(arr.length/2)+' point(s) set — keep clicking, DOUBLE-CLICK to finish. Ctrl+Z removes the last point.':'Last point removed. Click the map to start again.';
+    try{V.scene.requestRender()}catch(_){}
+  }
+  function _btn(){
+    const b=document.getElementById('bdocUndoBtn');
+    if(b)b.classList.toggle('show',api.canUndo());
+  }
+  const api={
+    record(ref,lbl,custom){stack.push({ref:ref||null,lbl:lbl||null,custom:custom||null});if(stack.length>400)stack.shift();_btn();},
+    owns(ent){
+      if(!ent)return false;
+      if(stack.some(r=>r.ref&&_ents(r.ref).includes(ent)))return true;
+      try{return battleEntities.some(x=>x===ent||(Array.isArray(x)&&x.includes(ent)))}catch(_){return false}
+    },
+    canUndo(){return _drawPts()>0||stack.some(_alive)},
+    remove(ent){
+      let rec=null;for(let i=stack.length-1;i>=0;i--){if(stack[i].ref&&_ents(stack[i].ref).includes(ent)){rec=stack[i];break}}
+      const ref=rec?rec.ref:ent;
+      _rm(ref);
+      try{for(let i=battleEntities.length-1;i>=0;i--){const x=battleEntities[i];if(x===ref||x===ent||(Array.isArray(x)&&x.includes(ent)))battleEntities.splice(i,1)}}catch(_){}
+      if(rec&&rec.custom&&rec.custom.onRemove){try{rec.custom.onRemove()}catch(_){}}
+      if(rec&&rec.custom)rec.dead=true;
+      try{if(V.selectedEntity&&_ents(ref).includes(V.selectedEntity))V.selectedEntity=undefined}catch(_){}
+      try{V.scene.requestRender()}catch(_){}
+      _btn();
+      return _label(ref);
+    },
+    undo(){
+      if(_drawPts()>0){_popVertex();_btn();return}
+      while(stack.length){
+        const r=stack.pop();
+        if(!_alive(r))continue;
+        if(r.custom&&r.custom.undo){try{r.custom.undo()}catch(e){console.warn('[undo]',e)}}
+        else{
+          _rm(r.ref);
+          try{const i=battleEntities.indexOf(r.ref);if(i>=0)battleEntities.splice(i,1)}catch(_){}
+          if(r.custom&&r.custom.onRemove){try{r.custom.onRemove()}catch(_){}}
+        }
+        af('var(--bl)','↶ Undone: '+(r.lbl||_label(r.ref)));
+        try{V.scene.requestRender()}catch(_){}
+        _btn();return;
+      }
+      af('var(--t3)','Nothing to undo');_btn();
+    },
+    refresh:_btn
+  };
+  return api;
+})();
+// battleEntities records every push into the undo history (covers bdoc-atak.js too)
+function _bdocTrackedArray(){
+  const a=[];
+  Object.defineProperty(a,'push',{value:function(){for(let i=0;i<arguments.length;i++){try{BDOCUndo.record(arguments[i])}catch(_){}}return Array.prototype.push.apply(this,arguments)},writable:true,configurable:true});
+  return a;
+}
+var battleEntities=_bdocTrackedArray(); // Phase 22: var not let — bdoc-atak.js checks window.battleEntities
+document.addEventListener('keydown',function(e){
+  const t=e.target&&e.target.tagName;
+  if(t==='INPUT'||t==='TEXTAREA'||(e.target&&e.target.isContentEditable))return;
+  if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&(e.key==='z'||e.key==='Z')){e.preventDefault();BDOCUndo.undo();return}
+  // Delete / Backspace removes the selected marker if the user placed it
+  if((e.key==='Delete'||e.key==='Backspace')&&V&&V.selectedEntity&&BDOCUndo.owns(V.selectedEntity)){
+    e.preventDefault();const n=BDOCUndo.remove(V.selectedEntity);af('var(--bl)','Deleted: '+n);
+  }
+});
 let battleTempEntities=[]; // temporary drawing vertices
 let battleDrawPoints=[];
 let battleTool='unit'; // unit|polygon|circle|rect|line|annotation
@@ -7632,17 +7850,23 @@ function enterBattleMode(){
   if(BDOC_Auth.tier!=='enterprise'&&BDOC_Auth.tier!=='analyst'){showMo();return}
   if(!V){af('var(--rd)','Battle Tracker requires active globe');return}
   battleMode=true;
+  // P154 ("issues with letting go"): camera inertia kept the globe sliding after a
+  // drag, so the next click landed somewhere else. Drawing = no inertia.
+  try{const c=V.scene.screenSpaceCameraController;window._bdocInertia=window._bdocInertia||{s:c.inertiaSpin,t:c.inertiaTranslate,z:c.inertiaZoom};c.inertiaSpin=0;c.inertiaTranslate=0;c.inertiaZoom=0;}catch(_){}
   document.getElementById('battlePanel').style.display='flex';
   _initBattleDrag();
   document.body.classList.add('battle-mode');
   // Populate NATO icon grid with all categories
   populateBattleIcons('all');
-  setBattleTool('unit');
+  window._bpNoAutoCompact=true;setBattleTool('unit');window._bpNoAutoCompact=false;
+  toggleBattlePanelCompact(false);
   af('var(--bl)','BATTLE TRACKER activated — '+Object.keys(BATTLE_ICONS).length+' NATO APP-6D symbols available. Select a tool and click the map.');
   EventLog.add('info','Battle Tracking Mode engaged — '+Object.keys(BATTLE_ICONS).length+' symbols loaded');
 }
 function exitBattleMode(){
   battleMode=false;
+  try{const c=V.scene.screenSpaceCameraController,i=window._bdocInertia;if(i){c.inertiaSpin=i.s;c.inertiaTranslate=i.t;c.inertiaZoom=i.z;}}catch(_){}
+  try{_drawHint(null)}catch(_){}
   battleTool='unit';
   battleDrawPoints=[];
   battleCircleCenter=null;
@@ -7695,6 +7919,16 @@ function setBattleTool(tool){
   };
   const st=document.getElementById('bp-status');
   if(st)st.textContent=msgs[tool]||'';
+  _drawHint(_MULTI_POINT_TOOLS.has(tool)?tool:null);
+  // P154: the full tool panel covered the middle of the map, so draw clicks landed on
+  // buttons instead of the globe. Picking a tool collapses it to a slim strip.
+  if(!window._bpNoAutoCompact)toggleBattlePanelCompact(true);
+}
+function toggleBattlePanelCompact(force){
+  const bp=document.getElementById('battlePanel');if(!bp)return;
+  const on=typeof force==='boolean'?force:!bp.classList.contains('bp-compact');
+  bp.classList.toggle('bp-compact',on);
+  const b=document.getElementById('bpCompactBtn');if(b)b.textContent=on?'▴ TOOLS':'▾ TOOLS';
 }
 function setBattleColor(el){
   document.querySelectorAll('.bp-color').forEach(c=>c.classList.remove('active'));
@@ -7714,6 +7948,83 @@ function selectBattleIcon(type){
   const el=document.querySelector(`.bt-icon[data-type="${type}"]`);
   if(el)el.classList.add('active');
   setBattleTool('unit');
+}
+// P154: Cesium silently DISABLES outlines on ground-clamped polygons/ellipses
+// ("Entity geometry outlines are unsupported on terrain"). Zones, circles, buildings
+// and — worst — bullseye/range rings (transparent fill + outline only) therefore drew
+// no border at all, yet their invisible fill still caught every click/double-click.
+// Fix: a real ground-clamped polyline border; transparent-fill rings lose the
+// invisible disk entirely so they can't be grabbed by accident.
+function _ringPositions(lon,lat,rM,n){
+  n=n||128;const R=6371008.8,d=rM/R,la=lat*Math.PI/180,lo=lon*Math.PI/180,pts=[];
+  for(let i=0;i<=n;i++){
+    const b=2*Math.PI*i/n;
+    const la2=Math.asin(Math.sin(la)*Math.cos(d)+Math.cos(la)*Math.sin(d)*Math.cos(b));
+    const lo2=lo+Math.atan2(Math.sin(b)*Math.sin(d)*Math.cos(la),Math.cos(d)-Math.sin(la)*Math.sin(la2));
+    pts.push(Cesium.Cartesian3.fromRadians(lo2,la2));
+  }
+  return pts;
+}
+function _groundBorder(ent){
+  try{
+    const now=V.clock.currentTime;
+    if(ent.polygon){
+      const oc=ent.polygon.outlineColor&&ent.polygon.outlineColor.getValue(now);
+      const h=ent.polygon.hierarchy&&ent.polygon.hierarchy.getValue(now);
+      if(h&&h.positions&&h.positions.length>=3){
+        ent.polyline=new Cesium.PolylineGraphics({positions:h.positions.concat([h.positions[0]]),width:2.5,material:oc||Cesium.Color.WHITE.withAlpha(0.8),clampToGround:true});
+      }
+    }else if(ent.ellipse){
+      const oc=ent.ellipse.outlineColor&&ent.ellipse.outlineColor.getValue(now);
+      const r=ent.ellipse.semiMajorAxis&&ent.ellipse.semiMajorAxis.getValue(now);
+      const p=ent.position&&ent.position.getValue(now);
+      if(r&&p){
+        const c=Cesium.Cartographic.fromCartesian(p);
+        ent.polyline=new Cesium.PolylineGraphics({positions:_ringPositions(Cesium.Math.toDegrees(c.longitude),Cesium.Math.toDegrees(c.latitude),r),width:2,material:oc||Cesium.Color.WHITE.withAlpha(0.8),clampToGround:true});
+        const m=ent.ellipse.material&&ent.ellipse.material.getValue&&ent.ellipse.material.getValue(now);
+        if(m&&m.color&&m.color.alpha===0)ent.ellipse=undefined; // no invisible click-catching disk
+      }
+    }
+  }catch(e){console.warn('[groundBorder]',e)}
+  return ent;
+}
+// P154: battle labels used the raw marker colour (default #2D72D2 blue) as text on a
+// black chip — readable as a dot, unreadable as lettering (Travon bug #8). Text is
+// lifted toward white until it clears ~60% luminance; the marker keeps its colour.
+function _readable(css){
+  try{
+    const c=(css instanceof Cesium.Color)?css:Cesium.Color.fromCssColorString(css||'#ffffff');
+    const L=0.2126*c.red+0.7152*c.green+0.0722*c.blue;
+    if(L>=0.6)return Cesium.Color.clone(c);
+    return Cesium.Color.lerp(c,Cesium.Color.WHITE,Math.min(1,(0.6-L)/(1-L)+0.08),new Cesium.Color());
+  }catch(_){return Cesium.Color.WHITE}
+}
+// P154 drawing helpers
+const _MULTI_POINT_TOOLS=new Set(['polygon','line','outline','phase_line','feba','coord_line','msr','engagement_area','minefield_area']);
+function _liftPt(lon,lat){
+  let h=0;
+  try{const g=V.scene.globe.getHeight(Cesium.Cartographic.fromDegrees(lon,lat));if(isFinite(g))h=g;}catch(_){}
+  return Cesium.Cartesian3.fromDegrees(lon,lat,h+4);
+}
+// drop consecutive points closer than ~1 m (double-click artefacts → zero-length segments)
+function _dedupePts(arr){
+  const out=[];
+  for(let i=0;i<arr.length;i+=2){
+    const n=out.length;
+    if(n>=2&&Math.abs(out[n-2]-arr[i])<1e-5&&Math.abs(out[n-1]-arr[i+1])<1e-5)continue;
+    out.push(arr[i],arr[i+1]);
+  }
+  return out;
+}
+// Floating instruction pill while a multi-point tool is armed (Travon bug #11:
+// users didn't know a DOUBLE-CLICK finishes the line).
+function _drawHint(tool){
+  let el=document.getElementById('bdocDrawHint');
+  if(!tool){if(el)el.style.display='none';return}
+  if(!el){el=document.createElement('div');el.id='bdocDrawHint';document.body.appendChild(el);}
+  const names={polygon:'ZONE',line:'LINE',outline:'OUTLINE',phase_line:'PHASE LINE',feba:'FEBA/FLOT',coord_line:'FSCL',msr:'MSR/ASR',engagement_area:'ENGAGEMENT AREA',minefield_area:'MINEFIELD'};
+  el.innerHTML='<b>'+(names[tool]||tool.toUpperCase())+'</b><span>CLICK</span> add point<span>DOUBLE-CLICK</span> finish<span>CTRL+Z</span> remove last point<span>ESC</span> cancel';
+  el.style.display='flex';
 }
 function clearTempEntities(){
   battleTempEntities.forEach(e=>{try{V.entities.remove(e)}catch(x){}});
@@ -7741,6 +8052,10 @@ function addTempVertex(lat,lon){
     battleTempEntities.push(seg);
   }
   // Create or update preview rubber-band line (follows cursor)
+  // P154: was clampToGround with a per-frame CallbackProperty — Cesium rebuilds a ground
+  // primitive asynchronously every frame for that, so the band lagged, flickered and
+  // vanished. Now a plain line lifted to the sampled terrain height (instant), drawn
+  // through terrain via depthFailMaterial so it never disappears behind a ridge.
   if(!window._previewLine){
     window._previewLine=V.entities.add({
       polyline:{positions:new Cesium.CallbackProperty(()=>{
@@ -7748,21 +8063,24 @@ function addTempVertex(lat,lon){
         const srcPts=battleTool==='outline'?outlinePoints:battleDrawPoints;
         if(srcPts.length<2)return[];
         const lastLon=srcPts[srcPts.length-2],lastLat=srcPts[srcPts.length-1];
-        return Cesium.Cartesian3.fromDegreesArray([lastLon,lastLat,window._previewLinePos.lon,window._previewLinePos.lat]);
-      },false),width:2,material:new Cesium.PolylineDashMaterialProperty({color:col.withAlpha(0.5),dashLength:8}),clampToGround:true}
+        return [_liftPt(lastLon,lastLat),_liftPt(window._previewLinePos.lon,window._previewLinePos.lat)];
+      },false),width:2.5,arcType:Cesium.ArcType.GEODESIC,material:new Cesium.PolylineDashMaterialProperty({color:col.withAlpha(0.85),dashLength:10}),depthFailMaterial:new Cesium.PolylineDashMaterialProperty({color:col.withAlpha(0.45),dashLength:10})}
     });
   }
   // Create or update preview polygon fill (shows shape being drawn)
-  if(!window._previewPoly&&(battleTool==='polygon'||battleTool==='outline')){
+  if(!window._previewPoly&&(battleTool==='polygon'||battleTool==='outline'||battleTool==='engagement_area'||battleTool==='minefield_area')){
     window._previewPoly=V.entities.add({
       polygon:{hierarchy:new Cesium.CallbackProperty(()=>{
         const srcPts=battleTool==='outline'?outlinePoints:battleDrawPoints;
         if(srcPts.length<4||!window._previewLinePos)return new Cesium.PolygonHierarchy([]);
-        const arr=[...srcPts,window._previewLinePos.lon,window._previewLinePos.lat];
-        return new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(arr));
-      },false),material:Cesium.Color.fromCssColorString(battleColor).withAlpha(0.08),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND}
+        const arr=[];
+        for(let i=0;i<srcPts.length;i+=2)arr.push(_liftPt(srcPts[i],srcPts[i+1]));
+        arr.push(_liftPt(window._previewLinePos.lon,window._previewLinePos.lat));
+        return new Cesium.PolygonHierarchy(arr);
+      },false),perPositionHeight:true,material:Cesium.Color.fromCssColorString(battleColor).withAlpha(0.12)}
     });
   }
+  try{V.scene.requestRender()}catch(_){}
 }
 
 // ═══ PLACE UNIT (NATO APP-6) ═══
@@ -7778,7 +8096,7 @@ function placeBattleUnit(lat,lon){
   const ent=V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(lon,lat),
     billboard:{image:imgUrl,width:48,height:48,scaleByDistance:new Cesium.NearFarScalar(5e4,1.4,5e6,0.4),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-    label:{text:icon.label.toUpperCase()+echLabel,font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,28),scaleByDistance:new Cesium.NearFarScalar(1e5,1,4e6,0.3),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},
+    label:{text:icon.label.toUpperCase()+echLabel,font:'bold 9px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,28),scaleByDistance:new Cesium.NearFarScalar(1e5,1,4e6,0.3),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},
     description:buildEntityPopup({title:icon.label.toUpperCase()+echLabel,subtitle:aff.toUpperCase(),lat,lon,comment:'',color:col,extras:`<b style="color:#4a5068">AFFILIATION:</b> ${aff.toUpperCase()}<br><b style="color:#4a5068">ECHELON:</b> ${(battleEchelon||'none').toUpperCase()}<br><b style="color:#4a5068">FRAME:</b> NATO APP-6D ${icon.frame.toUpperCase()}`})
   });
   // Persist SALT/symbology fields in meta so editEntityNote() can rebuild the
@@ -7799,17 +8117,18 @@ function handlePolygonClick(lat,lon){
   document.getElementById('bp-status').textContent=`Polygon: ${battleDrawPoints.length/2} points. Double-click to finish.`;
 }
 function finishPolygon(){
+  battleDrawPoints=_dedupePts(battleDrawPoints);
   if(battleDrawPoints.length<6)return;
   clearTempEntities();
   const col=battleColor;
   const positions=Cesium.Cartesian3.fromDegreesArray(battleDrawPoints);
   const zoneName=prompt('Zone name (e.g. "AO EAGLE"):')||'Zone';
-  const ent=V.entities.add({
+  const ent=_groundBorder(V.entities.add({
     polygon:{hierarchy:new Cesium.PolygonHierarchy(positions),material:Cesium.Color.fromCssColorString(col).withAlpha(0.15),outline:true,outlineColor:Cesium.Color.fromCssColorString(col).withAlpha(0.7),outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND},
-    label:{text:esc(zoneName),font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
+    label:{text:String(zoneName),font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
     position:Cesium.Cartesian3.fromDegrees(battleDrawPoints[0],battleDrawPoints[1]),
     description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(zoneName)}</b><br><br><b style="color:#4a5068">TYPE:</b> Polygon Zone<br><b style="color:#4a5068">VERTICES:</b> ${battleDrawPoints.length/2}<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
-  });
+  }));
   battleEntities.push(ent);
   battleDrawPoints=[];
   af('var(--bl)',`Zone created: ${esc(zoneName)}`);
@@ -7834,12 +8153,12 @@ function handleCircleClick(lat,lon){
     const radius=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
     const col=battleColor;
     const zoneName=prompt('Circle name (e.g. "KEZ ALPHA"):')||'Circle Zone';
-    const ent=V.entities.add({
+    const ent=_groundBorder(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(c.lon,c.lat),
       ellipse:{semiMajorAxis:radius,semiMinorAxis:radius,material:Cesium.Color.fromCssColorString(col).withAlpha(0.15),outline:true,outlineColor:Cesium.Color.fromCssColorString(col).withAlpha(0.7),outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND},
-      label:{text:esc(zoneName)+' ('+Math.round(radius/1000)+'km)',font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
+      label:{text:String(zoneName)+' ('+Math.round(radius/1000)+'km)',font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
       description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(zoneName)}</b><br><br><b style="color:#4a5068">TYPE:</b> Circular Zone<br><b style="color:#4a5068">CENTER:</b> ${c.lat.toFixed(5)}\u00B0N, ${c.lon.toFixed(5)}\u00B0E<br><b style="color:#4a5068">RADIUS:</b> ${(radius/1000).toFixed(1)} km (${Math.round(radius/1852)} nm)<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
-    });
+    }));
     battleEntities.push(ent);
     battleCircleCenter=null;
     af('var(--bl)',`Circle zone: ${esc(zoneName)} (${Math.round(radius/1000)}km radius)`);
@@ -7861,12 +8180,12 @@ function handleRectClick(lat,lon){
     const zoneName=prompt('Rectangle name (e.g. "ROZ BRAVO"):')||'Rect Zone';
     const pts=[c.lon,c.lat, lon,c.lat, lon,lat, c.lon,lat];
     const positions=Cesium.Cartesian3.fromDegreesArray(pts);
-    const ent=V.entities.add({
+    const ent=_groundBorder(V.entities.add({
       polygon:{hierarchy:new Cesium.PolygonHierarchy(positions),material:Cesium.Color.fromCssColorString(col).withAlpha(0.15),outline:true,outlineColor:Cesium.Color.fromCssColorString(col).withAlpha(0.7),outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND},
-      label:{text:esc(zoneName),font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
+      label:{text:String(zoneName),font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
       position:Cesium.Cartesian3.fromDegrees((c.lon+lon)/2,(c.lat+lat)/2),
       description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(zoneName)}</b><br><br><b style="color:#4a5068">TYPE:</b> Rectangular Zone<br><b style="color:#4a5068">CORNERS:</b> ${c.lat.toFixed(3)}\u00B0,${c.lon.toFixed(3)}\u00B0 \u2194 ${lat.toFixed(3)}\u00B0,${lon.toFixed(3)}\u00B0<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
-    });
+    }));
     battleEntities.push(ent);
     battleRectCorner=null;
     af('var(--bl)',`Rectangle zone: ${esc(zoneName)}`);
@@ -7882,6 +8201,7 @@ function handleLineClick(lat,lon){
   document.getElementById('bp-status').textContent=`Line: ${battleDrawPoints.length/2} points. Double-click to finish.`;
 }
 function finishLine(){
+  battleDrawPoints=_dedupePts(battleDrawPoints);
   if(battleDrawPoints.length<4)return;
   clearTempEntities();
   const col=battleColor;
@@ -7889,7 +8209,7 @@ function finishLine(){
   const positions=Cesium.Cartesian3.fromDegreesArray(battleDrawPoints);
   const ent=V.entities.add({
     polyline:{positions:positions,width:3,material:new Cesium.PolylineDashMaterialProperty({color:Cesium.Color.fromCssColorString(col).withAlpha(0.8),dashLength:12}),clampToGround:true},
-    label:{text:esc(lineName),font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
+    label:{text:String(lineName),font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
     position:Cesium.Cartesian3.fromDegrees(battleDrawPoints[0],battleDrawPoints[1]),
     description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(lineName)}</b><br><br><b style="color:#4a5068">TYPE:</b> Line/Route<br><b style="color:#4a5068">WAYPOINTS:</b> ${battleDrawPoints.length/2}<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
   });
@@ -7908,7 +8228,7 @@ function placeAnnotation(lat,lon){
   const col=battleMode?battleColor:'#2D72D2';
   const ent=V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(lon,lat),
-    label:{text:esc(note.trim()),font:'11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(8,4),scaleByDistance:new Cesium.NearFarScalar(5e4,1,3e6,0.3),disableDepthTestDistance:5e6},
+    label:{text:String(note.trim()),font:'11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(8,4),scaleByDistance:new Cesium.NearFarScalar(5e4,1,3e6,0.3),disableDepthTestDistance:5e6},
     point:{pixelSize:8,color:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:1,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
     description:buildEntityPopup({title:'ANNOTATION',lat,lon,comment:note.trim(),color:col})
   });
@@ -7929,14 +8249,7 @@ function removeBattleEntity(){
     EventLog.add('info','Battle entity removed');
   }
 }
-function undoLastBattle(){
-  if(battleEntities.length===0){af('var(--t3)','Nothing to undo');return}
-  const last=battleEntities.pop();
-  // Arrows are stored as arrays of entities
-  if(Array.isArray(last)){last.forEach(e=>{try{V.entities.remove(e)}catch(x){}})}
-  else{try{V.entities.remove(last)}catch(x){}}
-  af('var(--bl)','Last battle entity removed');
-}
+function undoLastBattle(){BDOCUndo.undo()} // P154: battle-panel UNDO = global undo
 function clearBattleEntities(){
   if(battleEntities.length===0)return;
   if(!confirm(`Remove all ${battleEntities.length} battle markers and zones?`))return;
@@ -7944,7 +8257,8 @@ function clearBattleEntities(){
     if(Array.isArray(e)){e.forEach(sub=>{try{V.entities.remove(sub)}catch(x){}})}
     else{try{V.entities.remove(e)}catch(x){}}
   });
-  battleEntities=[];
+  battleEntities.length=0; // P154: keep the tracked array instance (undo hook)
+  try{BDOCUndo.refresh()}catch(_){}
   af('var(--bl)','All battle markers cleared');
 }
 
@@ -8000,10 +8314,10 @@ function placeRangeRings(lat,lon,customRings){
   }
   const group=[];
   rings.forEach((r,i)=>{
-    group.push(V.entities.add({
+    group.push(_groundBorder(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(lon,lat),
       ellipse:{semiMajorAxis:r,semiMinorAxis:r,material:Cesium.Color.TRANSPARENT,outline:true,outlineColor:clr.withAlpha(0.3+i*0.1),outlineWidth:1.5,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND}
-    }));
+    })));
     // Label at north of ring
     const labelLat=lat+(r/111320);
     group.push(V.entities.add({
@@ -8015,7 +8329,7 @@ function placeRangeRings(lat,lon,customRings){
   group.push(V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(lon,lat),
     point:{pixelSize:6,color:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:1.5,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-    label:{text:'RANGE',font:'bold 10px JetBrains Mono',fillColor:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,14),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6}
+    label:{text:'RANGE',font:'bold 10px JetBrains Mono',fillColor:_readable(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,14),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6}
   }));
   battleEntities.push(group);
   af('var(--bl)',`Range rings placed: ${labels.join(', ')}`);
@@ -8032,10 +8346,10 @@ function placeBullseye(lat,lon){
   const group=[];
   // Range rings
   rings.forEach((r,i)=>{
-    group.push(V.entities.add({
+    group.push(_groundBorder(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(lon,lat),
       ellipse:{semiMajorAxis:r,semiMinorAxis:r,material:Cesium.Color.TRANSPARENT,outline:true,outlineColor:clr.withAlpha(0.45+i*0.1),outlineWidth:1.5,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND}
-    }));
+    })));
     const labelLat=lat+(r/111320);
     group.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(lon,labelLat),
@@ -8057,7 +8371,7 @@ function placeBullseye(lat,lon){
       const dir=deg===0?'N':deg===90?'E':deg===180?'S':'W';
       group.push(V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(lblLon,lblLat),
-        label:{text:dir,font:'bold 10px JetBrains Mono',fillColor:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6}
+        label:{text:dir,font:'bold 10px JetBrains Mono',fillColor:_readable(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6}
       }));
     }
   }
@@ -8077,7 +8391,7 @@ function placeBullseye(lat,lon){
   group.push(V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(lon,lat),
     point:{pixelSize:7,color:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-    label:{text:'BULLSEYE\n'+mgrs,font:'bold 9px JetBrains Mono',fillColor:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,14),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.75),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6}
+    label:{text:'BULLSEYE\n'+mgrs,font:'bold 9px JetBrains Mono',fillColor:_readable(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,14),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.75),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6}
   }));
   battleEntities.push(group);
   af('var(--bl)',`Bullseye placed at ${mgrs} — rings: ${rings.map(r=>(r/1000)+'km').join(', ')}`);
@@ -8097,6 +8411,7 @@ function placeCASEVAC(lat,lon){
 
 // ═══ PHASE LINE / FEBA / FSCL / MSR — all multi-point line tools ═══
 function finishTacticalLine(type){
+  battleDrawPoints=_dedupePts(battleDrawPoints);
   if(battleDrawPoints.length<4)return;
   clearTempEntities();
   const col=battleColor;const clr=Cesium.Color.fromCssColorString(col);
@@ -8115,7 +8430,7 @@ function finishTacticalLine(type){
   // For FEBA, add teeth on hostile side
   const ent=V.entities.add({
     polyline:{positions,width:s.width,material:mat,clampToGround:true},
-    label:{text:esc(lineName),font:'bold 11px JetBrains Mono',fillColor:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
+    label:{text:String(lineName),font:'bold 11px JetBrains Mono',fillColor:_readable(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
     position:Cesium.Cartesian3.fromDegrees(battleDrawPoints[0],battleDrawPoints[1]),
     description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(lineName)}</b><br><br><b style="color:#4a5068">TYPE:</b> ${prefix}<br><b style="color:#4a5068">WAYPOINTS:</b> ${battleDrawPoints.length/2}<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
   });
@@ -8128,6 +8443,7 @@ function finishTacticalLine(type){
 
 // ═══ ENGAGEMENT AREA / MINEFIELD — polygon-based tactical zones ═══
 function finishTacticalZone(type){
+  battleDrawPoints=_dedupePts(battleDrawPoints);
   if(battleDrawPoints.length<6)return;
   clearTempEntities();
   const col=battleColor;const clr=Cesium.Color.fromCssColorString(col);
@@ -8136,12 +8452,12 @@ function finishTacticalZone(type){
   const prefix=defaults[type]||'ZONE';
   const zoneName=prompt(`${prefix} name (e.g. "${prefix} ALPHA"):`)||prefix;
   const fillAlpha=type==='minefield_area'?0.2:0.12;
-  const ent=V.entities.add({
+  const ent=_groundBorder(V.entities.add({
     polygon:{hierarchy:new Cesium.PolygonHierarchy(positions),material:clr.withAlpha(fillAlpha),outline:true,outlineColor:clr.withAlpha(0.8),outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND},
-    label:{text:esc(zoneName),font:'bold 11px JetBrains Mono',fillColor:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
+    label:{text:String(zoneName),font:'bold 11px JetBrains Mono',fillColor:_readable(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
     position:Cesium.Cartesian3.fromDegrees(battleDrawPoints[0],battleDrawPoints[1]),
     description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(zoneName)}</b><br><br><b style="color:#4a5068">TYPE:</b> ${prefix}<br><b style="color:#4a5068">VERTICES:</b> ${battleDrawPoints.length/2}<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br>${type==='minefield_area'?'<br><span style="color:#ff6600">⚠ MINEFIELD — DO NOT ENTER</span>':''}<br><br><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
-  });
+  }));
   battleEntities.push(ent);
   battleDrawPoints=[];
   af('var(--bl)',`${prefix}: ${esc(zoneName)}`);
@@ -8182,7 +8498,7 @@ function handleMeasureClick(lat,lon){
     }));
     group.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees((lon+_measureState.lon1)/2,(lat+_measureState.lat1)/2),
-      label:{text:`${km} km | ${nm} nm\n${brg.toFixed(1)}° → ${brgBack.toFixed(1)}°`,font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6}
+      label:{text:`${km} km | ${nm} nm\n${brg.toFixed(1)}° → ${brgBack.toFixed(1)}°`,font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6}
     }));
     battleEntities.push(group);
     af('var(--bl)',`R&B: ${km} km | ${brg.toFixed(1)}° true (back ${brgBack.toFixed(1)}°)`);
@@ -8285,39 +8601,90 @@ let ctxPos=null; // {lat,lon,screenX,screenY}
 let ctxEntity=null; // entity that was right-clicked (if any)
 const ctxEl=document.getElementById('battle-ctx');
 
+function _ctxEntityTitle(e){
+  try{
+    if(!e)return '';
+    const t=V&&V.clock?V.clock.currentTime:undefined;
+    const meta=(typeof battleMeta!=='undefined'&&battleMeta.get)?battleMeta.get(e):null;
+    let n=(meta&&meta.label)||e.name||'';
+    if(!n&&e.label&&e.label.text){try{n=e.label.text.getValue(t)}catch(_){}}
+    if(!n&&e._ac)n=(e._ac.cs||e._ac.hex||'').trim();
+    return (''+(n||'Selected marker')).split('\n')[0].slice(0,46);
+  }catch(_){return 'Selected marker'}
+}
 function showCtxMenu(x,y,lat,lon,entity){
   ctxPos={lat,lon,screenX:x,screenY:y};
   ctxEntity=entity||null;
-  // Position menu, keep on screen
-  const menuW=220,menuH=400;
-  ctxEl.style.left=Math.min(x,window.innerWidth-menuW)+'px';
-  ctxEl.style.top=Math.min(y,window.innerHeight-menuH)+'px';
-  ctxEl.classList.add('show');
   // Update header based on mode
   const hdr=document.getElementById('ctx-header-text');
-  if(hdr)hdr.textContent=battleMode?'BATTLE TRACKER':'ACTIONS';
-  // Show/hide entity-specific actions based on whether we right-clicked an entity
+  if(hdr)hdr.textContent=(battleMode?'BATTLE TRACKER':'ACTIONS')+(lat!==undefined?' — '+lat.toFixed(4)+'°, '+lon.toFixed(4)+'°':'');
+  // P154: entity block (delete / edit / colour / watchlist) sits at the TOP of the menu
+  const eb=document.getElementById('ctx-entity-block');
+  if(eb)eb.style.display=entity?'block':'none';
+  const en=document.getElementById('ctx-entity-name');
+  if(en)en.textContent=entity?_ctxEntityTitle(entity):'';
   const delItem=document.getElementById('ctx-delete-item');
-  if(delItem)delItem.style.display=entity?'flex':'none';
+  if(delItem){
+    const own=!!(entity&&window.BDOCUndo&&BDOCUndo.owns(entity));
+    delItem.style.display=entity?'flex':'none';
+    delItem.textContent=own?'✕ Delete This Marker':'✕ Hide This Item';
+    delItem.title=own?'Removes just this marker (Ctrl+Z brings it back)':'Removes this item from the map until its layer refreshes';
+  }
   const editItem=document.getElementById('ctx-editnote-item');
   if(editItem)editItem.style.display=(entity&&battleMeta.has(entity))?'flex':'none';
   const recolorItem=document.getElementById('ctx-recolor-item');
-  if(recolorItem)recolorItem.style.display=entity?'flex':'none';
+  if(recolorItem)recolorItem.style.display=(entity&&window.BDOCUndo&&BDOCUndo.owns(entity))?'flex':'none';
   const fillItem=document.getElementById('ctx-fillsolid-item');
   if(fillItem)fillItem.style.display=(entity&&(entity.polygon||entity.polyline||entity.ellipse))?'flex':'none';
-  // Show coordinates in header subtitle
-  if(hdr&&lat!==undefined)hdr.textContent+=' — '+lat.toFixed(4)+'°, '+lon.toFixed(4)+'°';
+  const undoItem=document.getElementById('ctx-undo-item');
+  if(undoItem)undoItem.style.display=(window.BDOCUndo&&BDOCUndo.canUndo())?'flex':'none';
+  // Position: measure the REAL menu height (it is ~600px — the old fixed 400px guess
+  // pushed Watchlist / Delete off the bottom of laptop screens). Scrolls if taller.
+  ctxEl.style.maxHeight=(window.innerHeight-16)+'px';
+  ctxEl.style.left='-9999px';ctxEl.style.top='0px';
+  ctxEl.classList.add('show');
+  const mh=Math.min(ctxEl.offsetHeight,window.innerHeight-16);
+  const mw=ctxEl.offsetWidth||230;
+  let left=x+2,top=y+2;
+  if(left+mw>window.innerWidth-8)left=Math.max(8,x-mw-2);
+  if(top+mh>window.innerHeight-8)top=Math.max(8,window.innerHeight-8-mh);
+  ctxEl.style.left=left+'px';ctxEl.style.top=top+'px';
+  ctxEl.scrollTop=0;
 }
 function hideCtxMenu(){ctxEl.classList.remove('show');ctxPos=null;ctxEntity=null}
 // Close on any left-click or escape
 document.addEventListener('click',e=>{if(!ctxEl.contains(e.target))hideCtxMenu()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')hideCtxMenu()});
 
+// P154: Tools/Add menu entries (Measure, Draw Arrow, Place Annotation, Submit Intel
+// Report) called ctxAction() with no map position, which returned instantly — the
+// menu items did nothing. They now arm a one-shot map pick: next click on the map
+// supplies the location. ESC cancels.
+const _CTX_ALIASES={annotate:'comment',intel:'report'};
+function armMapPick(action,label){
+  window._bdocPendingPick=action;
+  try{V.scene.canvas.style.cursor='crosshair'}catch(_){}
+  af('var(--yl)',(label||'Click the map')+' — click a point on the map (ESC to cancel)');
+}
+function cancelMapPick(){
+  if(!window._bdocPendingPick)return false;
+  window._bdocPendingPick=null;
+  try{V.scene.canvas.style.cursor=''}catch(_){}
+  af('var(--t3)','Cancelled');
+  return true;
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')cancelMapPick()});
 function ctxAction(action){
+  action=_CTX_ALIASES[action]||action;
   const _savedPos=ctxPos;
   const _savedEntity=ctxEntity;
   hideCtxMenu();
-  if(!_savedPos)return;
+  if(action==='undo'){if(window.BDOCUndo)BDOCUndo.undo();return}
+  if(!_savedPos){
+    const labels={measure:'MEASURE: first point',quickarrow:'ARROW: start point',comment:'NOTE: where should it go?',report:'INTEL REPORT: location',tag:'TAG: location',watchzone:'WATCH ZONE: centre',watchlist_loc:'WATCHLIST: location',weather:'WEATHER: location',whatshere:"WHAT'S NEARBY: location"};
+    if(labels[action])armMapPick(action,labels[action]);
+    return;
+  }
   const{lat,lon}=_savedPos;
   switch(action){
     // ═══ UNIVERSAL ACTIONS (always available) ═══
@@ -8351,7 +8718,7 @@ function ctxAction(action){
       const yieldTok=toks.find(t=>t!=='surface'&&t!=='ground'&&t!=='s')||'w87';
       af('#ff2200',`Computing ${surface?'surface':'air'}burst effects…`);
       BDOC.LazyLoader.load('nuke-sim')
-        .then(()=>window.detonateNuke(lon,lat,yieldTok,{surface}))
+        .then(()=>{window.detonateNuke(lon,lat,yieldTok,{surface});try{if(typeof nukeSimEnts!=='undefined'&&nukeSimEnts.length)BDOCUndo.record(nukeSimEnts.slice(),'Detonation')}catch(_){}})
         .catch(e=>{console.warn('[lazy nuke-sim]',e);af('var(--rd)','Failed to load detonation module')});
       break;
     }
@@ -8369,7 +8736,7 @@ function ctxAction(action){
       const wzName=wzParts.slice(1).join(',').trim();
       af('#E8B349','Arming watch zone\u2026');
       BDOC.LazyLoader.load('watch-zones')
-        .then(()=>window.WatchZones.add(lat,lon,wzRad,wzName))
+        .then(()=>{window.WatchZones.add(lat,lon,wzRad,wzName);try{BDOCUndo.record(null,'Watch zone',{undo:()=>window.WatchZones.removeAt(lat,lon)})}catch(_){}})
         .catch(e=>{console.warn('[lazy watch-zones]',e);af('var(--rd)','Failed to load watch-zone module')});
       break;
     }
@@ -8381,7 +8748,7 @@ function ctxAction(action){
     case 'measure':{
       if(!window._measureStart){
         window._measureStart={lat,lon};
-        af('var(--yl)','MEASURE MODE: Right-click another point to get distance. ESC to cancel.');
+        af('var(--yl)','MEASURE: click the second point (left or right click). ESC to cancel.');
         // Add temp marker
         if(V){
           window._measureMarker=V.entities.add({
@@ -8412,22 +8779,34 @@ function ctxAction(action){
             label:{text:`${dist.toFixed(1)} km | ${distNm} nm\n${brg.toFixed(1)}° → ${brgBack.toFixed(1)}°`,font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.YELLOW,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(5,3),disableDepthTestDistance:5e6}
           });
           window._measureLines.push(ml,lbl);
+          try{BDOCUndo.record([ml,lbl],'Measurement')}catch(_){}
           if(window._measureMarker){try{V.entities.remove(window._measureMarker)}catch(x){}}
         }
         window._measureStart=null;window._measureMarker=null;
       }
       break;
     }
+    case 'watchlist_loc':{
+      Watchlist.add({id:'loc_'+lat.toFixed(5)+'_'+lon.toFixed(5),name:'Location '+lat.toFixed(4)+'°, '+lon.toFixed(4)+'°'+' ('+latLonToMGRS(lat,lon,4)+')',lat,lon,type:'location'});
+      Watchlist.open();
+      break;
+    }
     case 'watchlist':{
       // Phase 22: was reading ctxEntity directly — but hideCtxMenu() nulls it. Use _savedEntity.
+      // P154: an entity's OWN position is stored (was the ground point under the cursor,
+      // which for an aircraft at FL350 is miles off), and the panel opens so the add is visible.
+      let _wlLat=lat,_wlLon=lon;
+      try{const _p=_savedEntity&&_savedEntity.position&&_savedEntity.position.getValue(V.clock.currentTime);if(_p){const _c=Cesium.Cartographic.fromCartesian(_p);_wlLat=Cesium.Math.toDegrees(_c.latitude);_wlLon=Cesium.Math.toDegrees(_c.longitude);}}catch(_){}
       const _wlName=_savedEntity?(_savedEntity.name||(_savedEntity.label&&_savedEntity.label.text&&typeof _savedEntity.label.text.getValue==='function'?_savedEntity.label.text.getValue(V.clock.currentTime):'Entity')||'Entity'):('Location '+lat.toFixed(4)+'°, '+lon.toFixed(4)+'°');
       Watchlist.add({
-        id:_savedEntity?_savedEntity.id:('loc_'+lat.toFixed(5)+'_'+lon.toFixed(5)),
-        name:_wlName,
-        lat,lon,
-        type:_savedEntity?'entity':'location',
-        description:_savedEntity&&_savedEntity.description&&typeof _savedEntity.description.getValue==='function'?String(_savedEntity.description.getValue(V.clock.currentTime)||'').slice(0,120):''
+        id:_savedEntity?String(_savedEntity.id):('loc_'+lat.toFixed(5)+'_'+lon.toFixed(5)),
+        name:_savedEntity?_ctxEntityTitle(_savedEntity)||_wlName:_wlName,
+        lat:_wlLat,lon:_wlLon,
+        type:_savedEntity?(_savedEntity._ac?'aircraft':'entity'):'location',
+        entityId:_savedEntity?String(_savedEntity.id):null,
+        description:''
       });
+      Watchlist.open();
       break;
     }
     case 'beacon':{
@@ -8458,6 +8837,7 @@ function ctxAction(action){
       });
       if(!window._battleBeacons)window._battleBeacons=[];
       window._battleBeacons.push(bEnt);
+      try{BDOCUndo.record(bEnt,'FOXFIRE beacon')}catch(_){}
       af('var(--rd)',`${bLabel} activated at ${bMGRS}`+(bNote?' — '+bNote.slice(0,40):''));
       EventLog.add('warn',`EMERGENCY BEACON: ${bLabel} at ${bLat.toFixed(4)}, ${bLon.toFixed(4)}`+(bNote?' — '+bNote:''));
       break;
@@ -8491,7 +8871,7 @@ function ctxAction(action){
       const col=battleMode?battleColor:'#2D72D2';
       const ent=V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(lon,lat),
-        label:{text:esc(label.trim()),font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(6,3),scaleByDistance:new Cesium.NearFarScalar(5e4,1.2,3e6,0.3),disableDepthTestDistance:5e6},
+        label:{text:String(label.trim()),font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(6,3),scaleByDistance:new Cesium.NearFarScalar(5e4,1.2,3e6,0.3),disableDepthTestDistance:5e6},
         point:{pixelSize:8,color:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:1,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
         description:buildEntityPopup({title:label.trim(),lat,lon,comment:tagComment,color:col})
       });
@@ -8504,7 +8884,7 @@ function ctxAction(action){
       // Quick arrow: click start, then click end
       if(!window._quickArrowStart){
         window._quickArrowStart={lat,lon};
-        af('var(--yl)','ARROW: Right-click destination point to place arrow.');
+        af('var(--yl)','ARROW: click the destination point. ESC to cancel.');
         if(V){
           window._quickArrowMarker=V.entities.add({
             position:Cesium.Cartesian3.fromDegrees(lon,lat),
@@ -8633,18 +9013,16 @@ function ctxAction(action){
     }
     case 'delete':
       if(_savedEntity){
-        const idx=battleEntities.indexOf(_savedEntity);
-        if(idx!==-1)battleEntities.splice(idx,1);
-        // Also check array entries (arrow groups)
-        const arrIdx=battleEntities.findIndex(e=>Array.isArray(e)&&e.includes(_savedEntity));
-        if(arrIdx!==-1){
-          battleEntities[arrIdx].forEach(e=>{try{V.entities.remove(e)}catch(x){}});
-          battleEntities.splice(arrIdx,1);
+        // P154: removes the WHOLE item the click landed on (a bullseye spoke deletes the
+        // bullseye, a measurement line takes its label with it), not just one piece.
+        if(BDOCUndo.owns(_savedEntity)){
+          const n=BDOCUndo.remove(_savedEntity);
+          af('var(--bl)','Deleted: '+n);
         }else{
-          try{V.entities.remove(_savedEntity)}catch(x){}
+          try{_savedEntity.show=false}catch(x){}
+          V.selectedEntity=undefined;
+          af('var(--t3)','Hidden until the layer refreshes');
         }
-        V.selectedEntity=undefined;
-        af('var(--bl)','Entity deleted');
       }
       break;
   }
@@ -8682,12 +9060,12 @@ function finishBuilding(lat,lon){
   const comment=prompt('Add a note (optional):')||'';
   const positions=Cesium.Cartesian3.fromDegreesArray([c1.lon,c1.lat,lon,c1.lat,lon,lat,c1.lon,lat]);
   const cLon=(c1.lon+lon)/2,cLat=(c1.lat+lat)/2;
-  const ent=V.entities.add({
+  const ent=_groundBorder(V.entities.add({
     polygon:{hierarchy:new Cesium.PolygonHierarchy(positions),material:Cesium.Color.fromCssColorString(col).withAlpha(0.12),outline:true,outlineColor:Cesium.Color.fromCssColorString(col).withAlpha(0.9),outlineWidth:3,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND},
     position:Cesium.Cartesian3.fromDegrees(cLon,cLat),
-    label:{text:esc(label),font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(6,3),scaleByDistance:new Cesium.NearFarScalar(1e4,1.2,2e6,0.3),disableDepthTestDistance:5e6},
+    label:{text:String(label),font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(6,3),scaleByDistance:new Cesium.NearFarScalar(1e4,1.2,2e6,0.3),disableDepthTestDistance:5e6},
     description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(label)}</b><br><br>${comment?'<div style="color:#c8ccd6;padding:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:2px;margin:6px 0;white-space:pre-wrap">'+esc(comment)+'</div>':''}<b style="color:#4a5068">TYPE:</b> Building Outline<br><b style="color:#4a5068">CORNERS:</b> ${c1.lat.toFixed(5)}, ${c1.lon.toFixed(5)} → ${lat.toFixed(5)}, ${lon.toFixed(5)}<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.editOutlineComment()" style="padding:4px 12px;background:#0a0e14;color:#2D72D2;border:1px solid rgba(45,114,210,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;margin-right:4px">EDIT NOTE</button><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
-  });
+  }));
   attachMeta(ent,{label:label,comment:comment,type:'building',color:col});
   battleEntities.push(ent);
   _buildingCorner1=null;
@@ -8717,12 +9095,12 @@ function finishOutline(){
   let cLat=0,cLon=0;const n=outlinePoints.length/2;
   for(let i=0;i<outlinePoints.length;i+=2){cLon+=outlinePoints[i];cLat+=outlinePoints[i+1]}
   cLon/=n;cLat/=n;
-  const ent=V.entities.add({
+  const ent=_groundBorder(V.entities.add({
     polygon:{hierarchy:new Cesium.PolygonHierarchy(positions),material:Cesium.Color.fromCssColorString(col).withAlpha(0.12),outline:true,outlineColor:Cesium.Color.fromCssColorString(col).withAlpha(0.8),outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND},
     position:Cesium.Cartesian3.fromDegrees(cLon,cLat),
-    label:{text:esc(label),font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.75),backgroundPadding:new Cesium.Cartesian2(6,3),scaleByDistance:new Cesium.NearFarScalar(1e4,1.2,2e6,0.3),disableDepthTestDistance:5e6},
+    label:{text:String(label),font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.75),backgroundPadding:new Cesium.Cartesian2(6,3),scaleByDistance:new Cesium.NearFarScalar(1e4,1.2,2e6,0.3),disableDepthTestDistance:5e6},
     description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(label)}</b><br><br>${comment?'<div style="color:#c8ccd6;padding:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:2px;margin:6px 0;white-space:pre-wrap">'+esc(comment)+'</div>':''}<b style="color:#4a5068">TYPE:</b> Tagged Area<br><b style="color:#4a5068">CORNERS:</b> ${n}<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.editOutlineComment()" style="padding:4px 12px;background:#0a0e14;color:#2D72D2;border:1px solid rgba(45,114,210,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;margin-right:4px">EDIT COMMENT</button><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
-  });
+  }));
   attachMeta(ent,{label:label,comment:comment,type:'outline',color:col});
   battleEntities.push(ent);
   outlinePoints=[];
@@ -8909,7 +9287,7 @@ function finishArrow(lat,lon){
   const midLon=(s.lon+lon)/2,midLat=(s.lat+lat)/2;
   const label=V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(midLon,midLat),
-    label:{text:`${Math.round(bearing)}\u00B0 / ${dist>1000?(dist/1000).toFixed(1)+'km':Math.round(dist)+'m'}`,font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),scaleByDistance:new Cesium.NearFarScalar(5e4,1,2e6,0.3),pixelOffset:new Cesium.Cartesian2(0,-12),disableDepthTestDistance:5e6},
+    label:{text:`${Math.round(bearing)}\u00B0 / ${dist>1000?(dist/1000).toFixed(1)+'km':Math.round(dist)+'m'}`,font:'bold 9px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),scaleByDistance:new Cesium.NearFarScalar(5e4,1,2e6,0.3),pixelOffset:new Cesium.Cartesian2(0,-12),disableDepthTestDistance:5e6},
     description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">DIRECTIONAL ARROW</b><br><br><b style="color:#4a5068">BEARING:</b> ${Math.round(bearing)}\u00B0<br><b style="color:#4a5068">DISTANCE:</b> ${(dist/1000).toFixed(2)} km (${(dist/1852).toFixed(1)} nm)<br><b style="color:#4a5068">FROM:</b> ${s.lat.toFixed(5)}\u00B0N, ${s.lon.toFixed(5)}\u00B0E<br><b style="color:#4a5068">TO:</b> ${lat.toFixed(5)}\u00B0N, ${lon.toFixed(5)}\u00B0E<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
   });
   // Group all parts as an array so undo removes them together
@@ -9035,7 +9413,7 @@ function placeTacticalMarker(type,lat,lon){
   const ent=V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(lon,lat),
     billboard:{image:imgUrl,width:32,height:32,scaleByDistance:new Cesium.NearFarScalar(5e4,1.3,5e6,0.4),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-    label:{text:mk.label,font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,20),scaleByDistance:new Cesium.NearFarScalar(1e5,1,4e6,0.3),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},
+    label:{text:mk.label,font:'bold 9px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,20),scaleByDistance:new Cesium.NearFarScalar(1e5,1,4e6,0.3),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},
     description:buildEntityPopup({title:mk.label,lat,lon,comment:'',color:col})
   });
   attachMeta(ent,{label:mk.label,comment:'',type:'tactical',color:col});
@@ -9050,6 +9428,8 @@ function placeTacticalMarker(type,lat,lon){
 // called from the end of cesium-init.js after V is built, same pattern as bootFeeds().
 function _initBattleClickHandlers(){if(!V)return;
   const bHandler=new Cesium.ScreenSpaceEventHandler(V.scene.canvas);
+  // P154: a click that drifts a few px while the hand settles still counts as a click
+  try{bHandler._clickPixelTolerance=8}catch(_){}
   // Helper: get lat/lon from screen position (works with globe AND 3D tiles)
   function screenToLatLon(position){
     // Primary: globe.pick — ray-casts against the ellipsoid/terrain surface.
@@ -9087,12 +9467,15 @@ function _initBattleClickHandlers(){if(!V)return;
     const ll=screenToLatLon(movement.endPosition);
     if(!ll)return;
     // Arrow drag preview
-    if(arrowDragging){updateArrowPreview(ll.lat,ll.lon);return}
+    if(arrowDragging){updateArrowPreview(ll.lat,ll.lon);try{V.scene.requestRender()}catch(_){}return}
     // Building rectangle preview
     if(battleTool==='building'&&_buildingCorner1){updateBuildingPreview(ll.lat,ll.lon);return}
     // Rubber-band preview for polygon/outline/line drawing
     if((battleTool==='polygon'||battleTool==='outline'||battleTool==='line'||battleTool==='phase_line'||battleTool==='feba'||battleTool==='coord_line'||battleTool==='msr'||battleTool==='engagement_area'||battleTool==='minefield_area')&&(battleDrawPoints.length>=2||outlinePoints.length>=2)){
       window._previewLinePos={lat:ll.lat,lon:ll.lon};
+      // P154: on-demand render mode never redrew for a mouse move, so the rubber band
+      // froze until the camera moved ("buggy with drawing").
+      try{V.scene.requestRender()}catch(_){}
     }
   },Cesium.ScreenSpaceEventType.MOUSE_MOVE);
   // LEFT_UP — finish arrow (with minimum drag distance check)
@@ -9130,8 +9513,31 @@ function _initBattleClickHandlers(){if(!V)return;
     }
   },Cesium.ScreenSpaceEventType.LEFT_UP);
   // LEFT_CLICK — all other tools
+  let _lastDrawClick=null;
   bHandler.setInputAction(function(click){
+    // P154: one-shot map pick armed from the Tools / Add menus
+    if(window._bdocPendingPick){
+      const pll=screenToLatLon(click.position);if(!pll)return;
+      const act=window._bdocPendingPick;window._bdocPendingPick=null;
+      try{V.scene.canvas.style.cursor=''}catch(_){}
+      ctxPos={lat:pll.lat,lon:pll.lon,screenX:click.position.x,screenY:click.position.y};ctxEntity=null;
+      ctxAction(act);return;
+    }
+    // Measure / quick-arrow second point: left-click works too (was right-click only)
+    if(!battleMode&&(window._measureStart||window._quickArrowStart)){
+      const pll=screenToLatLon(click.position);if(!pll)return;
+      ctxPos={lat:pll.lat,lon:pll.lon};ctxEntity=null;
+      ctxAction(window._measureStart?'measure':'quickarrow');return;
+    }
     if(!battleMode||arrowDragging)return;
+    // P154: Cesium fires LEFT_CLICK for BOTH clicks of a double-click before the
+    // DOUBLE_CLICK event. The second one used to add a duplicate final vertex
+    // (zero-length segment → broken FSCL/phase-line ends). Ignore it.
+    if(_MULTI_POINT_TOOLS.has(battleTool)){
+      const now=performance.now(),p=click.position;
+      if(_lastDrawClick&&now-_lastDrawClick.t<450&&Math.abs(p.x-_lastDrawClick.x)<8&&Math.abs(p.y-_lastDrawClick.y)<8){_lastDrawClick=null;return}
+      _lastDrawClick={t:now,x:p.x,y:p.y};
+    }
     if(battleTool==='arrow'||battleTool==='mark_move')return; // handled by DOWN/UP
     const ll=screenToLatLon(click.position);
     if(!ll)return;
@@ -9158,6 +9564,9 @@ function _initBattleClickHandlers(){if(!V)return;
   // DOUBLE-CLICK — finish multi-point shapes
   bHandler.setInputAction(function(){
     if(!battleMode)return;
+    _lastDrawClick=null;
+    if(battleTool==='outline')outlinePoints=_dedupePts(outlinePoints);
+    battleDrawPoints=_dedupePts(battleDrawPoints);
     if(battleTool==='polygon'&&battleDrawPoints.length>=6)finishPolygon();
     if(battleTool==='line'&&battleDrawPoints.length>=4)finishLine();
     if(battleTool==='outline'&&outlinePoints.length>=6)finishOutline();
@@ -9450,27 +9859,40 @@ async function geocodeAddress(addr){
   const coordMatch=addr.match(/^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/);
   if(coordMatch)return{lat:parseFloat(coordMatch[1]),lon:parseFloat(coordMatch[2]),name:addr};
 
-  // 1️⃣ Nominatim (OSM) — fast, global, poor US residential coverage
-  try{
-    const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=0&q='+encodeURIComponent(addr),
-      {headers:{'User-Agent':'KGS-BDOC/8.0'},signal:AbortSignal.timeout(6000)});
-    if(r.ok){const d=await r.json();if(d.length)return{lat:parseFloat(d[0].lat),lon:parseFloat(d[0].lon),name:d[0].display_name};}
-  }catch(_){}
-
-  // 2️⃣ Photon (Komoot, OSM-based) — global fallback with better address resolution than Nominatim
-  try{
-    const r=await fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(addr)+'&limit=1&lang=en',
-      {signal:AbortSignal.timeout(6000)});
-    if(r.ok){
-      const d=await r.json();
-      const f=(d?.features||[])[0];
-      if(f){const[lon,lat]=f.geometry.coordinates;return{lat,lon,name:f.properties?.name||f.properties?.city||addr};}
-    }
-  }catch(_){}
+  // P154 (Travon bug #20): providers RACE instead of running one after another with
+  // 6 s timeouts each (worst case was ~12 s per address, ~24 s per route).
+  const nominatim=fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=0&q='+encodeURIComponent(addr),{signal:AbortSignal.timeout(6000)})
+    .then(r=>r.ok?r.json():Promise.reject(new Error('nominatim '+r.status)))
+    .then(d=>d&&d.length?{lat:parseFloat(d[0].lat),lon:parseFloat(d[0].lon),name:d[0].display_name}:Promise.reject(new Error('nominatim empty')));
+  const photon=fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(addr)+'&limit=1&lang=en',{signal:AbortSignal.timeout(6000)})
+    .then(r=>r.ok?r.json():Promise.reject(new Error('photon '+r.status)))
+    .then(d=>{const f=(d&&d.features||[])[0];if(!f)return Promise.reject(new Error('photon empty'));const[lon,lat]=f.geometry.coordinates;return{lat,lon,name:[f.properties?.name,f.properties?.city,f.properties?.state].filter(Boolean).join(', ')||addr}});
+  try{return await Promise.any([nominatim,photon]);}catch(_){}
 
   throw new Error('Address not found: '+addr+'. Try adding city and state, or use coordinates (lat, lon).');
 }
 
+// Iterative Douglas–Peucker on [lon,lat] pairs (tolerance in degrees)
+function _simplifyLine(pts,tol){
+  if(!pts||pts.length<3)return pts||[];
+  const keep=new Uint8Array(pts.length);keep[0]=keep[pts.length-1]=1;
+  const stack=[[0,pts.length-1]];
+  while(stack.length){
+    const [a,b]=stack.pop();
+    const ax=pts[a][0],ay=pts[a][1],bx=pts[b][0],by=pts[b][1];
+    const dx=bx-ax,dy=by-ay,len2=dx*dx+dy*dy;
+    let maxD=0,idx=-1;
+    for(let i=a+1;i<b;i++){
+      const px=pts[i][0],py=pts[i][1];
+      let t=len2?((px-ax)*dx+(py-ay)*dy)/len2:0;t=Math.max(0,Math.min(1,t));
+      const ex=ax+t*dx-px,ey=ay+t*dy-py,d=ex*ex+ey*ey;
+      if(d>maxD){maxD=d;idx=i}
+    }
+    if(idx>0&&maxD>tol*tol){keep[idx]=1;stack.push([a,idx],[idx,b]);}
+  }
+  const out=[];for(let i=0;i<pts.length;i++)if(keep[i])out.push(pts[i]);
+  return out;
+}
 // ── START NAVIGATION — Geocode both addresses, get route via Netlify proxy → OSRM ──
 // Phase 16d (2026-05-14): proxy-first (avoids CORS/rate-limit on public OSRM demo)
 async function startNavigation(){
@@ -9482,8 +9904,7 @@ async function startNavigation(){
   af('var(--bl)','Geocoding addresses…');
   try{
     // Geocode both
-    const from=await geocodeAddress(fromAddr);
-    const to=await geocodeAddress(toAddr);
+    const [from,to]=await Promise.all([geocodeAddress(fromAddr),geocodeAddress(toAddr)]);
     af('var(--bl)',`Routing: ${esc(from.name?.substring(0,25)||fromAddr)} → ${esc(to.name?.substring(0,25)||toAddr)}…`);
     // Route via Netlify proxy first (avoids CORS + rate-limit on public OSRM demo)
     const coordStr=`${from.lon},${from.lat};${to.lon},${to.lat}`;
@@ -9512,30 +9933,25 @@ async function startNavigation(){
     clearNavRoute();
     // Draw route polyline on globe — Phase 16c (2026-05-13): much more visible
     // Two-layer approach (like Google Maps): white halo underneath + bright blue line on top
+    // P154: OSRM 'overview=full' returns thousands of vertices (1,639 for Atlanta→Athens)
+    // and they were drawn TWICE as ground-clamped polylines — the slow part of routing.
+    // Douglas–Peucker at 3–9 m tolerance (≈5x fewer vertices) keeps the line on the
+    // streets visually at a fraction of the geometry.
+    const _span=Math.max(Math.abs(from.lon-to.lon),Math.abs(from.lat-to.lat));
+    const simp=_simplifyLine(coords,Math.min(0.00008,Math.max(0.00003,_span/20000)));
     const positions=[];
-    coords.forEach(c=>positions.push(c[0],c[1]));
+    simp.forEach(c=>positions.push(c[0],c[1]));
     const positionsCart=Cesium.Cartesian3.fromDegreesArray(positions);
-    // White halo (wider, low-glow, sits underneath)
-    _navRouteEnts.push(V.entities.add({
-      polyline:{
-        positions:positionsCart,
-        width:14,
-        material:new Cesium.PolylineOutlineMaterialProperty({
-          color:Cesium.Color.WHITE.withAlpha(0.55),
-          outlineColor:Cesium.Color.BLACK.withAlpha(0.6),
-          outlineWidth:2
-        }),
-        clampToGround:true
-      }
-    }));
-    // Bright blue route line on top (Google Maps blue)
+    console.log('[Nav] route vertices',coords.length,'→',simp.length);
+    // One line: Google-blue core with a white casing (was two full-detail ground lines)
     const routeLine=V.entities.add({
       polyline:{
         positions:positionsCart,
-        width:9,
-        material:new Cesium.PolylineGlowMaterialProperty({
-          glowPower:0.12, // P111a: was 0.35 — too bright zoomed in
-          color:Cesium.Color.fromCssColorString('#1A73E8') // Google Maps blue
+        width:10,
+        material:new Cesium.PolylineOutlineMaterialProperty({
+          color:Cesium.Color.fromCssColorString('#1A73E8'),
+          outlineColor:Cesium.Color.WHITE.withAlpha(0.85),
+          outlineWidth:2.5
         }),
         clampToGround:true
       }
@@ -10389,11 +10805,38 @@ function togglePopDensity(on){
       enablePickFeatures:false
     }));
     _popDensityLayer.alpha=0.65;
-    af('#33cc33','Population density overlay enabled (NASA SEDAC GPW v4 2020)');
+    af('#33cc33','Population density overlay enabled (NASA SEDAC GPW v4 2020) — opacity slider under the layer');
     us(1);
   }else if(!on&&_popDensityLayer){
     V.imageryLayers.remove(_popDensityLayer);_popDensityLayer=null;
   }
+  overlayOpacityUI('popdensity',()=>_popDensityLayer,65);
+}
+// P154 (Travon bug #19): per-overlay see-through control. A slider appears directly
+// under the layer's row while the overlay is on; value persists per browser.
+function overlayOpacityUI(key,getLayer,def){
+  try{
+    const row=document.querySelector('.ly[data-layer="'+key+'"]');
+    if(!row)return;
+    let el=document.getElementById('opac-'+key);
+    if(!el){
+      el=document.createElement('div');el.id='opac-'+key;el.className='ly-opac';
+      el.innerHTML='<span>OPACITY</span><input type="range" min="5" max="100" step="5" aria-label="Overlay opacity"><b></b>';
+      row.insertAdjacentElement('afterend',el);
+      const inp=el.querySelector('input'),out=el.querySelector('b');
+      ['click','mousedown','pointerdown'].forEach(ev=>el.addEventListener(ev,e=>e.stopPropagation()));
+      inp.addEventListener('input',()=>{
+        const v=+inp.value;out.textContent=v+'%';
+        const L=getLayer();if(L){L.alpha=v/100;try{V.scene.requestRender()}catch(_){}}
+        try{localStorage.setItem('bdoc_opac_'+key,String(v))}catch(_){}
+      });
+    }
+    let v=def;try{const sv=localStorage.getItem('bdoc_opac_'+key);if(sv!==null)v=+sv}catch(_){}
+    el.querySelector('input').value=v;el.querySelector('b').textContent=v+'%';
+    const L=getLayer();
+    if(L){L.alpha=v/100;try{V.scene.requestRender()}catch(_){}}
+    el.style.display=L?'flex':'none';
+  }catch(e){console.warn('[opacityUI]',e)}
 }
 
 // ═══ NUCLEAR STRIKE RANGES (Static — Known Nuclear States) ═══
@@ -10433,7 +10876,7 @@ function loadNuclearRanges(){
         nucRangeEnts.push(V.entities.add({
           position:Cesium.Cartesian3.fromDegrees(silo.lon,silo.lat),
           point:{pixelSize:7,color:Cesium.Color.fromCssColorString(s.color),outlineColor:Cesium.Color.BLACK,outlineWidth:1.5,disableDepthTestDistance:5e6},
-          label:{text:esc(silo.n),font:'8px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(s.color).withAlpha(0.8),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,12),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1,5e6,0),show:true},
+          label:{text:String(silo.n),font:'8px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(s.color).withAlpha(0.8),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,12),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1,5e6,0),show:true},
           description:'<div style="font-family:\'JetBrains Mono\',monospace;padding:8px;color:#c8ccd6;background:#0d1117;border:1px solid '+esc(s.color)+'">'+
             '<div style="font-size:10px;font-weight:600;color:'+esc(s.color)+'">'+esc(silo.n)+'</div>'+
             '<div style="font-size:9px;color:#8b949e">Nuclear facility — '+esc(s.name)+'</div></div>',
@@ -10571,7 +11014,7 @@ async function loadSanctions(){
       sanctionEnts.push(V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(e.lon,e.lat),
         point:{pixelSize:8,color:clr,outlineColor:Cesium.Color.WHITE,outlineWidth:2,disableDepthTestDistance:5e6},
-        label:{text:esc(e.n),font:'bold 8px JetBrains Mono',fillColor:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,14),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1,4e6,0)},
+        label:{text:String(e.n),font:'bold 8px JetBrains Mono',fillColor:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,14),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1,4e6,0)},
         description:'<div style="font-family:monospace;padding:12px;background:#0d1117;color:#c8ccd6;border:1px solid '+prog.color+'44;max-width:340px"><b style="color:'+prog.color+'">'+icon+' SANCTIONED ENTITY</b><br><br><b>'+esc(e.n)+'</b><br><span style="font-size:9px;color:#DA3633">Program: '+esc(prog.name)+'</span><br><span style="font-size:9px;color:#888">Type: '+esc(e.type)+'</span><br><br><span style="font-size:9px;color:#b0b8c4">'+esc(e.note)+'</span></div>',
         show:layers.sanctions
       }));
@@ -10616,7 +11059,7 @@ function loadEmbassies(){
     embassyEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(m.lon,m.lat),
       point:{pixelSize:7,color:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:1.5,disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1,8e6,0.3)},
-      label:{text:esc(m.n),font:'8px JetBrains Mono',fillColor:clr.withAlpha(0.9),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,12),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(3e5,1,4e6,0)},
+      label:{text:String(m.n),font:'8px JetBrains Mono',fillColor:clr.withAlpha(0.9),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,12),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(3e5,1,4e6,0)},
       description:'<div style="font-family:\'JetBrains Mono\',monospace;padding:10px;color:#c8ccd6;background:#0d1117;border:1px solid '+(isUS?'#4A90D9':'#E8B339')+';max-width:320px">'+
         '<div style="font-size:12px;font-weight:700;color:'+(isUS?'#4A90D9':'#E8B339')+';margin-bottom:6px">'+(isUS?'\u{1F1FA}\u{1F1F8}':'\u{1F3F4}')+' DIPLOMATIC MISSION</div>'+
         '<div style="font-size:11px;font-weight:600">'+esc(m.n)+'</div>'+
@@ -12627,7 +13070,7 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
-<script src="js/cesium-init.js?v=p153"></script>
+<script src="js/cesium-init.js?v=p154"></script>
 <script src="js/deeplink.js?v=p115"></script>
 <!-- P119: Section 508 / WCAG 2.1 AA remediation pass. Runtime-labels the 40+ layer
      switches, panels, buttons and the live intel feed; adds h1, skip link, focus
@@ -12759,7 +13202,7 @@ WiresharkBridge.connect = async function() {
       <span id="camPanelName" style="color:#7a8194;font-size:10px;letter-spacing:.5px"></span>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
-      <button id="camPanelPopout" onclick="window.open(window._camPanelUrl,'_blank','noopener')" style="background:#0a0e14;color:#00ccaa;border:1px solid #00ccaa44;padding:3px 10px;border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;letter-spacing:.5px">⬡ POPOUT</button>
+      <button id="camPanelPopout" onclick="openCamPopup()" style="background:#0a0e14;color:#00ccaa;border:1px solid #00ccaa44;padding:3px 10px;border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;letter-spacing:.5px">⬡ POPOUT</button>
       <button onclick="closeCamPanel()" style="background:#0a0e14;color:#DA3633;border:1px solid #DA363344;width:26px;height:26px;border-radius:2px;cursor:pointer;font-size:14px;line-height:1">✕</button>
     </div>
   </div>
@@ -12768,8 +13211,8 @@ WiresharkBridge.connect = async function() {
     <div id="camPanelFallback" style="display:none;position:absolute;inset:0;background:#0a0e14;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center">
       <div style="font-size:36px;margin-bottom:12px">📷</div>
       <div id="camFallbackName" style="color:#00ccaa;font-size:13px;font-weight:700;margin-bottom:8px"></div>
-      <div style="color:#7a8194;font-size:10px;line-height:1.6;margin-bottom:16px">This feed can't be embedded directly (the camera provider blocks iframes). Click OPEN FEED to view it in a new tab — or use POPOUT above.</div>
-      <button id="camFallbackOpen" onclick="window.open(window._camPanelUrl,'_blank','noopener')" style="background:#0a2a2a;color:#00ccaa;border:1px solid #00ccaa44;padding:8px 20px;border-radius:2px;cursor:pointer;font-family:monospace;font-size:10px;letter-spacing:1px;font-weight:600">▸ OPEN LIVE FEED</button>
+      <div class="cam-fb-msg" style="color:#AEB4BE;font-size:10px;line-height:1.6;margin-bottom:16px">This feed can't be embedded directly (the camera provider blocks iframes). Click OPEN FEED to view it in a pop-up viewer.</div>
+      <button id="camFallbackOpen" onclick="openCamPopup()" style="background:#0a2a2a;color:#00ccaa;border:1px solid #00ccaa44;padding:8px 20px;border-radius:2px;cursor:pointer;font-family:monospace;font-size:10px;letter-spacing:1px;font-weight:600">▸ OPEN LIVE FEED</button>
     </div>
   </div>
   <div id="camPanelInfo" style="padding:10px 14px;border-top:1px solid #1e2436;font-size:9px;color:#4a5068;letter-spacing:.5px"></div>
@@ -12777,7 +13220,20 @@ WiresharkBridge.connect = async function() {
 
 <script>
 window._camPanelUrl='';
-function showCamPanel(url,name,lat,lon){
+// P154 (Travon bug #18): the panel used to drop every feed straight into an iframe.
+// The camera sites answer X-Frame-Options: SAMEORIGIN (or a Cloudflare challenge that
+// can't run in a frame), Chrome shows "refused to connect", and still fires `load`, so
+// the fallback never appeared. Now: ask /embed-check (reads the framing headers
+// server-side) first. Embeddable → in-app player. Not embeddable → open the feed in
+// a sized pop-up viewer window next to BDOC, with the card as a one-click fallback.
+function openCamPopup(url){
+  const w=Math.min(1100,Math.round(screen.availWidth*0.55)),h=Math.round(w*0.62);
+  const left=Math.max(0,screen.availWidth-w-24),top=80;
+  const win=window.open(url||window._camPanelUrl,'bdocCamViewer',`popup=yes,width=${w},height=${h},left=${left},top=${top}`);
+  if(!win){window.open(url||window._camPanelUrl,'_blank','noopener');}
+  return !!win;
+}
+async function showCamPanel(url,name,lat,lon){
   window._camPanelUrl=url;
   const panel=document.getElementById('camPanel');
   const frame=document.getElementById('camPanelFrame');
@@ -12785,42 +13241,35 @@ function showCamPanel(url,name,lat,lon){
   const nameEl=document.getElementById('camPanelName');
   const fallbackName=document.getElementById('camFallbackName');
   const info=document.getElementById('camPanelInfo');
-  // Show panel
   panel.style.display='flex';
   nameEl.textContent=name||'';
   fallbackName.textContent=name||'';
   if(lat!=null&&lon!=null) info.textContent='LAT '+lat.toFixed(4)+'° · LON '+lon.toFixed(4)+'°';
-  // Reset fallback state
-  fallback.style.display='none';
-  frame.style.display='block';
-  // Try to load the iframe
   frame.src='about:blank';
-  setTimeout(()=>{
-    frame.src=url;
-    // After 4 seconds check if it loaded — if still blank it was blocked
-    const checkTimer=setTimeout(()=>{
-      try{
-        // If contentDocument is null or about:blank, the iframe was blocked
-        const doc=frame.contentDocument||frame.contentWindow?.document;
-        if(!doc||doc.URL==='about:blank'){
-          frame.style.display='none';
-          fallback.style.display='flex';
-        }
-      }catch(e){
-        // Cross-origin security error = page DID load (just can't read it) = success
-      }
-    },4000);
-    frame.onload=()=>clearTimeout(checkTimer);
-    // X-Frame-Options blocks show as error event
-    frame.onerror=()=>{
-      clearTimeout(checkTimer);
-      frame.style.display='none';
-      fallback.style.display='flex';
-    };
-  },50);
-  // Shrink Cesium to make room
+  frame.style.display='none';
+  fallback.style.display='flex';
+  const msg=fallback.querySelector('.cam-fb-msg');
+  if(msg)msg.textContent='Checking whether this camera allows in-app viewing…';
   const ces=document.getElementById('cesiumContainer');
   if(ces)ces.style.right='480px';
+  let ok=false,reason='';
+  const isYT=/^https:\/\/(www\.)?youtube(-nocookie)?\.com\/embed\//.test(url);
+  if(isYT){ok=true;}
+  else{
+    try{
+      const r=await fetch('/.netlify/functions/embed-check?url='+encodeURIComponent(url),{signal:AbortSignal.timeout(8000)});
+      const j=await r.json();ok=!!j.embeddable;reason=j.reason||'';
+    }catch(e){ok=false;reason='check failed';}
+  }
+  if(window._camPanelUrl!==url)return; // user already opened another cam
+  if(ok){
+    fallback.style.display='none';
+    frame.style.display='block';
+    frame.src=url;
+  }else{
+    if(msg)msg.textContent='This camera provider blocks in-app viewing ('+(reason||'framing blocked')+'). It opens in a pop-up viewer beside the map instead.';
+    openCamPopup(url);
+  }
 }
 function closeCamPanel(){
   const panel=document.getElementById('camPanel');

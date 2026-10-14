@@ -1,0 +1,102 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   BDOC p154 — fixes from Travon's 25-item field list (2026-10-13)
+   Loaded AFTER bdoc.css and bdoc-glass.css, so it wins where needed.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── #8 / #12  RIGHT-CLICK MENU: readable on any basemap ─────────────────
+   The glass pass made it 55% see-through with #8B919A text; over Streets/Topo
+   the lettering vanished. Near-opaque panel, high-contrast text, scrolls when
+   taller than the window instead of running off the bottom. */
+#battle-ctx{
+  /* still glass (Travon's chosen look) — just dense enough that text survives a
+     white Streets/Topo map behind it */
+  background:rgba(9,12,19,0.88)!important;
+  backdrop-filter:blur(18px) saturate(120%)!important;-webkit-backdrop-filter:blur(18px) saturate(120%)!important;
+  min-width:232px;max-width:280px;
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;
+}
+#battle-ctx .ctx-item{color:#E6E9EE;font-size:11px;padding:7px 14px}
+#battle-ctx .ctx-item:hover{background:rgba(255,255,255,0.10);color:#fff}
+#battle-ctx .ctx-item.danger{color:#FF6B66;font-weight:600}
+#battle-ctx .ctx-header{color:#AEB4BE;font-size:9px;padding:7px 14px 5px}
+#battle-ctx .ctx-sep{background:rgba(255,255,255,0.10)}
+#battle-ctx .ctx-sub-h{padding:6px 14px 2px;font-size:8px;letter-spacing:1.5px;color:#8B919A}
+#battle-ctx .ctx-entity-name{padding:6px 14px 4px;font-size:11px;font-weight:700;color:#fff;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:2px solid #E8B349;margin:2px 0 2px 8px}
+#battle-ctx .ctx-k{margin-left:auto;font-size:9px;color:#8B919A}
+#battle-tooltip{background:rgba(9,12,19,0.88)!important}
+#battle-tooltip .btt-label{color:#9CC4FF}
+#battle-tooltip .btt-comment{color:#E6E9EE;font-size:10px}
+
+/* Watchlist panel readable over light maps too */
+#watchlistPanel{background:rgba(9,12,19,0.86)!important}
+#watchlistPanel #wl-list > div div:first-child{color:#E6E9EE!important}
+#watchlistPanel #wl-list > div div:nth-child(2){color:#AEB4BE!important}
+
+/* ── #14  UNDO BUTTON ───────────────────────────────────────────────────── */
+#bdocUndoBtn{
+  position:fixed;left:calc(var(--lw,248px) + 18px);bottom:72px;z-index:96;
+  display:none;align-items:center;gap:8px;
+  padding:7px 12px;border-radius:6px;cursor:pointer;
+  background:rgba(9,12,19,0.92);border:1px solid rgba(255,255,255,0.22);
+  color:#E6E9EE;font-family:var(--m);font-size:11px;font-weight:700;letter-spacing:1px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.45)
+}
+#bdocUndoBtn.show{display:flex}
+#bdocUndoBtn span{font-size:9px;font-weight:500;color:#8B919A;letter-spacing:.5px}
+#bdocUndoBtn:hover{border-color:#E8B349;color:#fff}
+body:has(.lp.shut) #bdocUndoBtn,body:not(:has(.lp)) #bdocUndoBtn{left:18px}
+
+/* ── #9–#11  DRAWING HINT ───────────────────────────────────────────────── */
+#bdocDrawHint{
+  position:fixed;left:50%;top:60px;transform:translateX(-50%);z-index:9000;
+  display:none;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+  max-width:calc(100vw - 40px);
+  padding:7px 14px;border-radius:999px;
+  background:rgba(9,12,19,0.94);border:1px solid rgba(232,179,73,0.55);
+  color:#E6E9EE;font-family:var(--m);font-size:10px;letter-spacing:.5px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.5);pointer-events:none
+}
+#bdocDrawHint b{color:#E8B349;letter-spacing:1.5px;margin-right:4px}
+#bdocDrawHint span{padding:2px 6px;border-radius:3px;background:rgba(255,255,255,0.12);color:#fff;font-weight:700;margin-left:6px}
+
+/* ── #16  NAV WIDGET parks in the top-right corner when the AI panel is
+   collapsed or closed, at ~62% size, and grows back on hover. ─────────── */
+#nav-widget{transition:opacity .25s}
+#nav-widget.nw-parked{
+  top:56px!important;bottom:auto!important;right:12px!important;
+  transform:scale(0.62);transform-origin:top right;opacity:0.7
+}
+#nav-widget.nw-parked.rp-mini{right:54px!important}
+#nav-widget.nw-parked:hover{transform:scale(0.9);opacity:1}
+
+/* ── #6  AIRCRAFT COLOUR LEGEND (under the All Aircraft layer row) ─────── */
+#acLegend{display:none;margin:2px 8px 8px 22px;padding:7px 9px;border-radius:5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);font-family:var(--m);cursor:default}
+#acLegend .acl-h{display:flex;justify-content:space-between;align-items:center;font-size:8px;letter-spacing:1.4px;color:#AEB4BE;margin-bottom:6px}
+#acLegend .acl-m b{cursor:pointer;padding:2px 6px;border:1px solid rgba(255,255,255,0.15);border-radius:3px;margin-left:4px;font-weight:600;color:#AEB4BE}
+#acLegend .acl-m b.on{color:#0a0e14;background:#E8B349;border-color:#E8B349}
+#acLegend .acl-g{display:grid;grid-template-columns:1fr 1fr;gap:3px 8px}
+#acLegend .acl-i{display:flex;align-items:center;gap:6px;font-size:9px;color:#E6E9EE}
+#acLegend .acl-i i{width:10px;height:10px;border-radius:2px;flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,0.6)}
+#acLegend .acl-n{margin-top:6px;font-size:8px;color:#8B919A;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+#acLegend .acl-o{display:inline-block;width:9px;height:9px;border:2px solid;border-radius:2px}
+
+/* ── #19  PER-OVERLAY OPACITY SLIDER ───────────────────────────────────── */
+.ly-opac{display:none;align-items:center;gap:8px;margin:0 8px 6px 22px;padding:5px 8px;border-radius:4px;background:rgba(255,255,255,0.04);font-family:var(--m);font-size:8px;letter-spacing:1px;color:#AEB4BE}
+.ly-opac input{flex:1;accent-color:#33cc33;height:3px;cursor:pointer}
+.ly-opac b{min-width:30px;text-align:right;color:#E6E9EE;font-weight:600}
+
+/* ── #21  DENSITY TIERS ─────────────────────────────────────────────────── */
+body.bdoc-compact{--lw:224px;--rw:318px}
+body.bdoc-compact .tb{gap:6px}
+body.bdoc-compact #acReadout{width:272px}
+body.bdoc-compact #econWidget{width:250px}
+body.bdoc-tight{--lw:208px;--rw:292px}
+body.bdoc-tight #outageBanner{max-width:520px!important;font-size:10px!important}
+body.bdoc-tight #nav-widget:not(.nw-parked){transform:scale(0.8);transform-origin:bottom right}
+
+/* ── #9/#10  BATTLE PANEL collapses to a strip once a tool is picked ─────── */
+.battle-panel.bp-compact{min-width:0!important;width:auto;max-width:min(620px,calc(100vw - 24px));padding:8px 12px!important;gap:4px!important}
+.battle-panel.bp-compact > .bp-section,.battle-panel.bp-compact > div:not(.bp-header):not(#bp-status){display:none!important}
+.battle-panel.bp-compact #bp-status{border-top:none!important;padding-top:2px!important;color:#E6E9EE!important;font-size:9px!important}
+#bpCompactBtn{color:#E8B349;border-color:rgba(232,179,73,0.5)}

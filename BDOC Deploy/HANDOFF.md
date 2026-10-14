@@ -3,6 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
+**Last updated by Claude Code:** 2026-10-14 · build **p154** (patches, not pushed) · `SW_VERSION bdoc-v154`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -77,6 +78,52 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
+
+### Claude Code — p153 + p154 (2026-10-14) — built and tested, NOT yet on `main`
+
+Delivered to Travon as two `git am` patches on top of `c1f5f06` (p152). Nothing
+was pushed. Ship with the normal `git push origin HEAD:main` once applied.
+
+- **p153** — Cesium 1.104 → 1.146 (`createOsmBuildingsAsync`), SW `bdoc-v153`.
+- **p154** — Travon's 25-item field list (logged 2026-10-13). SW `bdoc-v154`,
+  `?v=p154` on `bdoc.css`, new `bdoc-p154.css`, `filters.js`, `cesium-init.js`,
+  LazyLoader `_version` and all `/js/modules/*` precache keys. New function:
+  `netlify/functions/embed-check.js`. New CI workflow:
+  `.github/workflows/desktop-release.yml` (fires ONLY on a `desktop-v*` tag).
+
+| # | Bug | Root cause found | Fix | Verified how |
+|---|-----|------------------|-----|--------------|
+| 1 | Watchlist doesn't add | Menu taller than screen (Watchlist cut off); entity adds stored cursor ground point; ids not stringified | Entity actions at top of menu, menu measured + scrolls, entity's own position stored, panel opens on add | Headless: add → panel open with item |
+| 2 | NVG too dim / unrealistic | Page-wide CSS multiply + black overlays, sun light cut to 5%; Black Marble painted over the DAY side (dayAlpha ignored when terrain has vertex normals) | GPU intensifier stage: auto-gain by sun angle, halo, grain, vignette, P43/P45 (Shift+2); night = lighting off + keyed city lights | Before/after renders day + night |
+| 3 | Helis shown as planes | ADS-B `category` (A7 rotorcraft) ignored; "SIKORSKY …/…HELICOPTERS" descs fell to jet; OpenSky country used as type | `resolveAircraftClass()` → A7/B6 first, then `t`, then desc; +60 rotor codes | 394 live tracks: 2/2 A7 = heli; 17 desc strings unit-tested |
+| 4 | Markers through earth | 175 markers `disableDepthTestDistance` 5e6, 24 Infinity | One shared dynamic value = camera horizon distance (patched in `merge()` of Billboard/Point/LabelGraphics) | Through-earth pixels 110 → 17 (remaining are in front of horizon) |
+| 5 | FLIR bugs + crosshair | CSS invert: white sky, flipped marker colours, reticle `::after`, fake random temp | GPU thermal stage (heat estimate, cold sky, AGC stretch), WHOT/BHOT/IRONBOW chip, no reticle | Renders |
+| 6 | No colour per aircraft type | Civil coloured by altitude only | Per-family palette + red/blue outline for mil/VIP; legend with TYPE/ALTITUDE toggle | Legend + recolour live |
+| 7 | Random shutdown / not loading | Cesium can't survive WebGL context loss; render governor froze half-drawn frames; single CDN | Auto-reload with view+layers restore (loop-guarded); tile-load render hold; jsDelivr fallback for Cesium | Forced `loseContext()` → overlay → reload → camera restored |
+| 8 | Notes lettering too dark | Glass pass made ctx menu 55% see-through, #8B919A text; labels used raw marker blue; labels HTML-escaped (`&amp;`) | Denser glass (0.88 + blur kept), bright text, `_readable()` label colours, no esc() on Cesium labels | Screens over Streets |
+| 9/10 | FSCL / phase line buggy, "letting go" | LEFT_CLICK fires twice per double-click (dup vertex); Cesium stock double-click tracked the vertex; inertia slid the globe; rubber band clamped + never re-rendered; panel covered the map | Second click ignored + dedupe; stock dblclick replaced; inertia 0 in battle mode; unclamped live band; panel auto-collapses | 3 clicks + dblclick → 4 vertices, not tracked |
+| 11 | Explain double-click | — | Instruction pill while a multi-point tool is armed | Screenshot |
+| 12 | Right-click needs validation | Tools/Add menu items called ctxAction with no position → did nothing (Measure, Draw Arrow, Annotation, Intel) | Arm a one-shot map pick; left-click completes measure/arrow | Measure via menu → 2 lines |
+| 13 | Can't delete one marker | Delete only removed the clicked piece, hidden at menu bottom | "Delete This Marker" removes the whole item; Delete key on selection | Note deleted, count 0 |
+| 14 | Undo button | None outside battle panel | `BDOCUndo`: Ctrl+Z / floating ↶ UNDO; last vertex while drawing | Undo measure, vertex, bullseye |
+| 15 | Bullseye won't detach | Outlines silently disabled on clamped ellipses → rings invisible but transparent fill caught double-clicks → camera re-tracked | Rings are clamped polylines, no fill disk; dblclick empty map / ESC releases | Dblclick inside rings → not tracked |
+| 16 | Rotating nav widget in the way | — (also: MutationObserver on whole document) | Parks top-right at 62% when AI panel collapses/closes; observer scoped to `#rp` class | Rect 1546/56, scale 0.62 |
+| 17 | PD live audio broken | Embedded Broadcastify web-player PAGE in iframe | Native `<audio>` on `broadcastify.cdnstream1.com/<id>` with LIVE status → webPlayer fallback → link | **Fallback chain only** — sandbox can't reach Broadcastify |
+| 18 | Live video broken | webcamtaxi/tw.live send X-Frame-Options SAMEORIGIN / CF challenge; Chrome fires `load` on blocked frames | `embed-check` function reads framing headers; blocked → sized pop-up viewer | Headless: blocked → popup opened |
+| 19 | Pop density opacity | — | Slider under the layer row, persisted | alpha 0.65 → 0.30 |
+| 20 | Navigation slow | Sequential geocoding with 6 s fallbacks; 2 full-detail clamped polylines (1,639 pts ATL→Athens) | Parallel + raced geocoders; 1 line, Douglas-Peucker ≤5 m (1,639 → 250) | Route renders; timing noisy in sandbox |
+| 21 | Screen crowding by device | Fixed 248/360 px panels at any size; outage banner sat on map | `bdoc-compact`/`bdoc-tight` tiers, AI panel auto-rail on tight screens (first visit), banner hides after 12 s | 1366/1536 screenshots |
+| 22 | Desktop app update | Hard-coded v8.0.0 asset names; app served frozen bundled copy | Download resolves latest GitHub release asset; Electron loads live site when online (falls back offline); release workflow | Syntax only — needs a real build |
+| 23/24 | Streets / Topo blown out | Bloom on light basemaps; render stall left blank navy at city zoom | Bloom off on light maps, maps toned ~10% down, tile-load render hold | Before/after: white sheet → full detail |
+| 25 | 3D terrain partial / slow | Same render stall; 100-tile cache evicting terrain | Hold render through tile load; cache 400/250/120 by GPU tier, sibling preload | Renders converge; real-GPU timing not measured |
+
+**Believed, not verified here (needs Travon's laptop / a real GPU):**
+Broadcastify direct streams per feed ID (#17), feed IDs still current,
+GitHub `releases/latest` API reachable for the repo (#22), an actual
+electron-builder run of the new workflow, frame-rate impact of the NVG/FLIR
+stages on the GTX 1660 Ti, and `embed-check` once deployed (the sandbox
+browser treated it as "check failed" because it isn't on Netlify yet).
+
 
 ### Just shipped — p146 + p147
 
@@ -278,6 +325,23 @@ Useful: `/tmp/coverage.py`-style audit lives in the p75 commit history; it
 caught 6 panels the first pass missed (`replay-bar`, `tz-bar`, `vfx-flir-bar`,
 `vm-sidebar`, `vm-statusbar`, `wxPlaybar`). `#vegNDVIbar` is deliberately
 **excluded** — it is a progress-fill, not a panel, and glass breaks it.
+
+### H. p154 items that need a real machine  ← after applying p153/p154
+1. Click a police scanner marker → ▶ PLAY LIVE AUDIO. Expect "● LIVE" within a
+   few seconds. If it falls back to the iframe on every feed, the direct stream
+   host changed — check `broadcastify.cdnstream1.com/<feedId>` in a tab.
+2. Open any webcam → it should open a pop-up viewer (providers block framing).
+3. Toggle NVG at night and FLIR over a city; watch FPS on the 1660 Ti.
+4. Tag `desktop-v8.1.0` to run `.github/workflows/desktop-release.yml`, then
+   Help/File → Download Desktop App should pick the new asset.
+
+### I. Next competitive gap — camera network (ARGOS ATLAS has 205k cams)
+ARGOS ATLAS (argosatlas.com) shows public DOT/agency cameras as snapshot cards
+(latest image + capture time, ~2 min refresh), which sidesteps framing blocks
+entirely. Same approach for BDOC: 511GA/GDOT + other state DOT JPEG endpoints
+rendered as `<img>` cards with refresh — this is the durable fix behind bug #18.
+Also on their list: airport tower audio, 3D aircraft/ship models + onboard view,
+dark-ship flags, 7/90-day track history, geofence alerts.
 
 ### F. Reconcile (or retire) the stale laptop copy  ← DO THIS EARLY
 Travon flagged 2026-10-02 that an older BDOC folder still exists at:

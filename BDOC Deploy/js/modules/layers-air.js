@@ -195,6 +195,27 @@ const AC_TYPE_TABLE = {
   Y20:'wide',Y8:'wide',Y9:'wide',YK40:'jet',YK42:'jet'
 };
 
+// P154: rotorcraft designators the p152 table missed (live ADS-B audit, Travon bug #3)
+['AH1','UH1Y','BK17','H53S','G2CA','EN48','KMAX','H269','MD60','MD52','ALO2','ALO3','A169','A189','AW09','B47G','B47J','EC30','EC45','EC35','EC55','H500','H269','S300','S330','HU30','CABR','R22','R44','R66','MH6','AH6','OH58','H58','TH57','H57','H72','UH72','LAMA','SA34','SA41','SA42','SA65','AS3B','AS65','MI14','MI28','MI34','MI35','KA27','KA29','KA60','KA62','Z9','Z10','Z19','Z20','HAL4','ALH','LCH','LUH','T129','A129','NH90','V22','MV22','CV22','V280','AW60','AW69','B609'].forEach(c=>{AC_TYPE_TABLE[c]='heli';});
+// Resolve the silhouette family from the WHOLE ADS-B record, not just the text.
+// Priority: emitter category (A7 = rotorcraft, B6 = UAV — set by the transponder
+// itself), then the exact ICAO type code `t`, then the free-text description.
+// The old path classified a.desc||a.t, so "SIKORSKY UH-60" / "AIRBUS HELICOPTERS
+// H145" (first word not a code, regex \bHELICOPTER\b misses HELICOPTERS) fell
+// through to 'jet', and records with no type at all were jets even when the
+// transponder said rotorcraft.
+function resolveAircraftClass(a){
+  if(!a)return 'jet';
+  if(a._cls)return a._cls;
+  let c=null;
+  const cat=(a.category||'').toUpperCase();
+  if(cat==='A7')c='heli';
+  else if(cat==='B6')c='drone';
+  if(!c&&a.t){const T=AC_TYPE_TABLE[String(a.t).toUpperCase().trim()];if(T)c=T;}
+  if(!c)c=classifyAircraftType(a.desc||a.t);
+  try{Object.defineProperty(a,'_cls',{value:c,enumerable:false,writable:true})}catch(_){a._cls=c}
+  return c;
+}
 function classifyAircraftType(desc){
   if(!desc)return 'jet';
   const d=String(desc).toUpperCase().trim();
@@ -215,7 +236,7 @@ function classifyAircraftType(desc){
   if(/\bKC-?\d+\b|\bMRTT\b|\bVOYAGER\b|\bSTRATOTANKER\b|\bPEGASUS\b|\bEXTENDER\b|\bIL-?78\b|\bTANKER\b/.test(d))return 'tanker';
   if(/\bMIG-?\d+\b|\bFULCRUM\b|\bFLANKER\b|\bFOXBAT\b|\bFOXHOUND\b|\bFROGFOOT\b|\bSU-?\d+\b/.test(d))return 'mig';
   if(/\bF-?\d{1,3}[A-Z]?\b|\bF\/A-?\d+[A-Z]?\b|\bRAFALE\b|\bTYPHOON\b|\bGRIPEN\b|\bHORNET\b|\bTOMCAT\b|\bEAGLE\b|\bRAPTOR\b|\bLIGHTNING\b|\bA-?10\b|\bAV-?8\b|\bHARRIER\b/.test(d))return 'fighter';
-  if(/\bHELICOPTER\b|\bHELI\b|\bROTOR\b/.test(d))return 'heli';
+  if(/\bHELICOPTERS?\b|\bHELI\b|\bROTOR(CRAFT)?\b|\bSIKORSKY\b|\bEUROCOPTER\b|\bAGUSTA|\bLEONARDO AW\b|\bROBINSON R-?\d|\bBELL (\d{3}|UH|AH|OH|TH)|\bMIL MI-?\d|\bKAMOV\b|\bKA-?\d{2}\b|\bSCHWEIZER\b|\bENSTROM\b|\bHUGHES (269|369|500)|\bMD (500|520|530|600|900|902)\b|\bUH-?\d|\bAH-?\d{1,2}\b|\bCH-?\d{2}\b|\bMH-?\d{1,2}\b|\bHH-?\d{2}\b|\bOH-?58\b|\bBLACK ?HAWK\b|\bCHINOOK\b|\bAPACHE\b|\bOSPREY\b|\bV-?22\b/.test(d))return 'heli';
   if(/\bTURBOPROP\b|\bPROP\b|\bPISTON\b|\bCESSNA\b|\bPIPER\b|\bBEECH\b/.test(d))return 'prop';
   if(/\bGULFSTREAM\b|\bLEARJET\b|\bCITATION\b|\bCHALLENGER\b|\bGLOBAL EXPRESS\b|\bDASSAULT FALCON\b|\bPHENOM\b|\bHAWKER\b/.test(d))return 'bizjet';
   if(/\bA3[4-8]\d\b|\bB7[4-8]\d\b|\bWIDE-?BODY\b|\bMD-?11\b|\bDC-?10\b/.test(d))return 'wide';
@@ -251,7 +272,8 @@ const AC_GLYPHS = {
   prop: {t:'rotate(45 16 16) translate(1.000 1.000) scale(0.46875)', d:`<g><path d="m63.61 41.42-.32-.31c-.54-.54-1.56-.76-2.28-.5l-9.97 3.68c-.4-.53-.82-1-1.22-1.4l-12.12-12.85c.33-.14.63-.33.9-.57l21.06-18.24c1.43-1.25 1.51-3.36.17-4.71l-.4-.39c-1.34-1.35-3.89-1.87-5.65-1.17l-17.05 6.79-4.15-4.15c-1.61-1.61-4.23-1.61-5.84 0-1.61 1.6-1.61 4.22 0 5.84l1.63 1.63-3.26 1.3c-.08.03-.15.07-.23.11l-8.11-8.6c-2.34-2.35-13.87-9.94-16.3-7.51s5.16 13.96 7.51 16.31l8.55 8.2c-.02.05-.05.09-.06.14l-1.3 3.26-1.63-1.63c-1.61-1.61-4.23-1.61-5.84 0-1.61 1.62-1.61 4.23 0 5.84l4.15 4.15-6.78 17.04c-.7 1.77-.19 4.31 1.17 5.66l.38.39c1.35 1.35 3.47 1.27 4.72-.17l18.23-21.06c.19-.21.34-.45.47-.7l12.7 12.17c.4.4.88.81 1.43 1.21l-3.66 9.94c-.26.71-.03 1.74.5 2.28l.32.31c.54.54 1.39.52 1.9-.05l9.61-10.74 10.74-9.61c.54-.49.57-1.35.03-1.89z"/></g>`}
 };
 
-function makeAircraftSVG(color,size,heading,type){
+function makeAircraftSVG(color,size,heading,type,stroke){
+  const _stk=stroke||'#000',_sw=stroke&&stroke!=='#000'?1.7:0.8;
   // p150: prefer Travon's real artwork when a family has it. The fallback
   // below is the hand-drawn set, kept for families with no supplied art
   // (heli, bomber) so nothing renders blank.
@@ -260,7 +282,7 @@ function makeAircraftSVG(color,size,heading,type){
     return svgToDataUri(
       `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="${size}" height="${size}">`+
       `<g transform="rotate(${heading||0} 16 16)">`+
-        `<g transform="${art.t}" fill="${color}" stroke="#000" stroke-width="0.8"`+
+        `<g transform="${art.t}" fill="${color}" stroke="${_stk}" stroke-width="${_sw}"`+
         ` stroke-linejoin="round" vector-effect="non-scaling-stroke">${art.d}</g>`+
       `</g></svg>`
     );
@@ -333,6 +355,7 @@ function makeAircraftSVG(color,size,heading,type){
       path=`<path d="M16,2 L17.5,10 L28,14 L17.5,15.5 L17.5,23 L22,27 L16,25.5 L10,27 L14.5,23 L14.5,15.5 L4,14 L14.5,10 Z"
               fill="${color}" stroke="#000" stroke-width="1.2"/>`;
   }
+  if(_stk!=='#000')path=path.replace(/stroke="#000" stroke-width="[\d.]+"/g,`stroke="${_stk}" stroke-width="1.8"`);
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 32 32">
     <g transform="rotate(${h},16,16)">${path}</g></svg>`;
   return svgToDataUri(svg);
@@ -388,16 +411,62 @@ function altColor(alt,staleSec){
   _altColorCache.set(key,c);
   return c;
 }
+// ─── P154: DESIGNATED COLOUR PER AIRCRAFT TYPE (Travon bug #6) ─────────────
+// Default colour mode is TYPE: every silhouette family has its own colour, and
+// military / VIP tracks keep their affiliation as a red / blue OUTLINE so force
+// posture still pops. ALT mode restores the old scheme (civil by altitude, mil
+// solid red, VIP solid blue). Choice persists per browser.
+const AC_TYPE_COLORS={jet:'#4FC3F7',wide:'#8C9EFF',bizjet:'#CE93D8',prop:'#69F0AE',heli:'#FFD740',drone:'#FF80AB',fighter:'#FF5252',mig:'#FF7043',bomber:'#FFA726',tanker:'#18FFFF'};
+const AC_TYPE_LABELS={jet:'Airliner',wide:'Wide-body',bizjet:'Bizjet',prop:'Prop / GA',heli:'Helicopter',drone:'UAV',fighter:'Fighter',mig:'MiG / Su',bomber:'Bomber',tanker:'Tanker / Lift'};
+function acColorMode(){try{return localStorage.getItem('bdoc_ac_color')==='alt'?'alt':'type'}catch(_){return 'type'}}
+function acFillFor(a){
+  if(acColorMode()==='alt')return a.isVIP?'#4A9EFF':(a.isMil?'#DA3633':altColor(a.alt));
+  return AC_TYPE_COLORS[resolveAircraftClass(a)]||AC_TYPE_COLORS.jet;
+}
+function acStrokeFor(a){
+  if(acColorMode()==='alt')return '#000';
+  return a.isVIP?'#4A9EFF':(a.isMil?'#FF2D2D':'#000');
+}
+function _acRecolorAll(){
+  try{
+    const upd=(map,size)=>{for(const[,ent]of map){const a=ent._ac;if(!a||!ent.billboard)continue;ent.billboard.image=getACIcon(acFillFor(a),a.hdg,size,a.desc,resolveAircraftClass(a),acStrokeFor(a));}};
+    upd(_milEntMap,32);upd(_airEntMap,28);
+    if(window.BDOCRender)BDOCRender.kick();
+  }catch(e){console.warn('[AC recolor]',e)}
+}
+function setAircraftColorMode(m){
+  try{localStorage.setItem('bdoc_ac_color',m==='alt'?'alt':'type')}catch(_){}
+  _acRecolorAll();_acRenderLegend();
+}
+function _acRenderLegend(){
+  try{
+    let el=document.getElementById('acLegend');
+    const row=document.querySelector('.ly[data-layer="air"]');
+    if(!el&&row){
+      el=document.createElement('div');el.id='acLegend';
+      row.insertAdjacentElement('afterend',el);
+    }
+    if(!el)return;
+    const on=(typeof layers!=='undefined')&&(layers.air||layers.forcetrack);
+    el.style.display=on?'block':'none';
+    const m=acColorMode();
+    const sw=Object.keys(AC_TYPE_COLORS).map(k=>`<span class="acl-i"><i style="background:${AC_TYPE_COLORS[k]}"></i>${AC_TYPE_LABELS[k]}</span>`).join('');
+    el.innerHTML=`<div class="acl-h"><span>AIRCRAFT COLOUR</span><span class="acl-m"><b class="${m==='type'?'on':''}" onclick="event.stopPropagation();setAircraftColorMode('type')">TYPE</b><b class="${m==='alt'?'on':''}" onclick="event.stopPropagation();setAircraftColorMode('alt')">ALTITUDE</b></span></div>`+
+      (m==='type'?`<div class="acl-g">${sw}</div><div class="acl-n"><i class="acl-o" style="border-color:#FF2D2D"></i>red outline = military <i class="acl-o" style="border-color:#4A9EFF;margin-left:8px"></i>blue = VIP/gov</div>`:`<div class="acl-n">Civil = altitude band · solid red = military · solid blue = VIP</div>`);
+  }catch(_){}
+}
+window.setAircraftColorMode=setAircraftColorMode;
+window._acRenderLegend=_acRenderLegend;
 // makeConflictSVG lives in layers-conflict.js — removed duplicate here (was dead code, never called from this module)
 const _acIconCache={};
 let _acIconCacheSize=0;
-function getACIcon(color,heading,size,desc){
-  const type=classifyAircraftType(desc);
-  const key=color+'_'+Math.round(heading/5)*5+'_'+(size||24)+'_'+type;
+function getACIcon(color,heading,size,desc,cls,stroke){
+  const type=cls||classifyAircraftType(desc);
+  const key=color+'_'+Math.round(heading/5)*5+'_'+(size||24)+'_'+type+'_'+(stroke||'');
   if(!_acIconCache[key]){
     // Evict oldest entries if cache exceeds 2200 (9 types × 72 headings × ~6 colors × 2 sizes = ~7776 worst-case)
     if(_acIconCacheSize>2200){const keys=Object.keys(_acIconCache);for(let i=0;i<300;i++){delete _acIconCache[keys[i]];_acIconCacheSize--}}
-    _acIconCache[key]=makeAircraftSVG(color,size||24,Math.round(heading/5)*5,type);
+    _acIconCache[key]=makeAircraftSVG(color,size||24,Math.round(heading/5)*5,type,stroke);
     _acIconCacheSize++;
   }
   return _acIconCache[key];
@@ -418,7 +487,8 @@ function parseOpenSkyState(s,regName){
   const squawk=(s[14]||'').toString();
   const isMil=isMilCallsign(cs);
   const isVIP=cs&&CFG.vipPrefixes.some(p=>cs.toUpperCase().startsWith(p));
-  return{hex,lat:s[6],lon:s[5],alt,hdg,spd,cs,desc:s[2]||'Unknown',isMil,isVIP,reg:regName,squawk,src:'opensky'};
+  // P154: s[2] is ORIGIN COUNTRY, not an aircraft type — it was classified as one. s[17] = emitter category (8 = rotorcraft) when extended=1.
+  return{hex,lat:s[6],lon:s[5],alt,hdg,spd,cs,desc:'Unknown',country:s[2]||'',category:s[17]===8?'A7':(s[17]===14?'B6':''),isMil,isVIP,reg:regName,squawk,src:'opensky'};
 }
 // ═══ FR24 ENRICHMENT — origin/destination/airline/aircraft-type ═══
 // One call per loadAircraft() cycle (camera view bounds) — credit-safe.
@@ -486,7 +556,7 @@ function parseAdsbLolAC(a,regName){
   const hdg=a.track||0;const spd=a.gs||0;
   const desc=a.desc||a.t||'Unknown';
   const squawk=a.squawk||'';
-  return{hex:a.hex,lat:a.lat,lon:a.lon,alt,hdg,spd,cs,desc,isMil,isVIP,reg:regName,squawk,dbFlags:a.dbFlags,src:'adsb_lol'};
+  return{hex:a.hex,lat:a.lat,lon:a.lon,alt,hdg,spd,cs,desc,t:a.t||'',category:a.category||'',isMil,isVIP,reg:regName,squawk,dbFlags:a.dbFlags,src:'adsb_lol'};
 }
 // Fetch aircraft from OpenSky Network (primary source)
 async function fetchOpenSky(reg){
@@ -718,7 +788,7 @@ async function loadAircraft(){
       allAC.push(a);
       if(a.isMil||a.isVIP){
         milAC.push(a);
-        const milColor=a.isVIP?'#4A9EFF':'#DA3633';
+        const milColor=acFillFor(a),milStroke=acStrokeFor(a);
         // Phase 9A (2026-05-05): MIL-STD-2525C symbology for military aircraft when milsymbol lib loaded
         // SIDC: SFAPMF-----*** = Friendly Air Mobility Fighter | SFAPMR----- = Recon | SFAPMU----- = Utility
         // VIP gets SFAPMTL-- (transport leadership) — magenta SAM/Air Force One styling
@@ -727,7 +797,7 @@ async function loadAircraft(){
         const existing=_milEntMap.get(a.hex);
         if(existing){
           existing.position=aircraftPositionProperty(a.hex,a);
-          existing.billboard.image=getACIcon(milColor,a.hdg,32,a.desc);
+          existing.billboard.image=getACIcon(milColor,a.hdg,32,a.desc,resolveAircraftClass(a),milStroke);
           existing.billboard.heightReference=a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE;
           existing.label.text=(a.cs||a.hex).substring(0,8);
           existing.description=buildAircraftCard(a);
@@ -735,24 +805,24 @@ async function loadAircraft(){
           existing.show=layers.air||layers.forcetrack;
           existing._ac=a;
         }else{
-          const ent=V.entities.add({position:aircraftPositionProperty(a.hex,a),billboard:{image:getACIcon(milColor,a.hdg,32,a.desc),width:38,height:38,scaleByDistance:new Cesium.NearFarScalar(5e4,1.3,1e7,0.5),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE,disableDepthTestDistance:5e6},label:{text:(a.cs||a.hex).substring(0,8),font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(milColor),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,22),scaleByDistance:new Cesium.NearFarScalar(1e5,1,6e6,0.35),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},description:buildAircraftCard(a),show:layers.air||layers.forcetrack});
+          const ent=V.entities.add({position:aircraftPositionProperty(a.hex,a),billboard:{image:getACIcon(milColor,a.hdg,32,a.desc,resolveAircraftClass(a),milStroke),width:38,height:38,scaleByDistance:new Cesium.NearFarScalar(5e4,1.3,1e7,0.5),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE,disableDepthTestDistance:5e6},label:{text:(a.cs||a.hex).substring(0,8),font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(a.isVIP?'#7FB6FF':'#FF6B6B'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,22),scaleByDistance:new Cesium.NearFarScalar(1e5,1,6e6,0.35),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},description:buildAircraftCard(a),show:layers.air||layers.forcetrack});
           ent._ac=a;
           _milEntMap.set(a.hex,ent);
         }
         totalMil++;
       }else{
-        const civColor=altColor(a.alt);
+        const civColor=acFillFor(a),civStroke=acStrokeFor(a);
         const existing=_airEntMap.get(a.hex);
         if(existing){
           existing.position=aircraftPositionProperty(a.hex,a);
-          existing.billboard.image=getACIcon(civColor,a.hdg,28,a.desc);
+          existing.billboard.image=getACIcon(civColor,a.hdg,28,a.desc,resolveAircraftClass(a),civStroke);
           existing.billboard.heightReference=a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE;
           existing.description=buildAircraftCard(a);
           // Phase 14: civilian planes show whenever AIR is on (was: AIR && !forcetrack)
           existing.show=layers.air;
           existing._ac=a; // attach data for FR24 side panel
         }else{
-          const ent=V.entities.add({position:aircraftPositionProperty(a.hex,a),billboard:{image:getACIcon(civColor,a.hdg,28,a.desc),width:26,height:26,scaleByDistance:new Cesium.NearFarScalar(5e4,1.1,1e7,0.35),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE,disableDepthTestDistance:5e6},description:buildAircraftCard(a),show:layers.air});
+          const ent=V.entities.add({position:aircraftPositionProperty(a.hex,a),billboard:{image:getACIcon(civColor,a.hdg,28,a.desc,resolveAircraftClass(a),civStroke),width:26,height:26,scaleByDistance:new Cesium.NearFarScalar(5e4,1.1,1e7,0.35),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:a.alt===0?Cesium.HeightReference.CLAMP_TO_GROUND:Cesium.HeightReference.NONE,disableDepthTestDistance:5e6},description:buildAircraftCard(a),show:layers.air});
           ent._ac=a;
           _airEntMap.set(a.hex,ent);
         }
@@ -1104,8 +1174,8 @@ function buildAcReadout(a,photo){
   const flStr=a.alt>0?'FL'+Math.round(a.alt/100):'GND';
   const cardinals=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
   const cardinal=cardinals[Math.round((a.hdg||0)/22.5)%16]||'';
-  const type=classifyAircraftType(a.desc);
-  const typeMap={heli:'HELICOPTER',fighter:'FIGHTER',wide:'WIDE-BODY',prop:'TURBOPROP',bizjet:'BIZJET',jet:'NARROW-BODY JET'};
+  const type=resolveAircraftClass(a);
+  const typeMap={heli:'HELICOPTER',fighter:'FIGHTER',wide:'WIDE-BODY',prop:'TURBOPROP',bizjet:'BIZJET',jet:'NARROW-BODY JET',mig:'FIGHTER (MIG/SU)',bomber:'BOMBER',tanker:'TANKER / AIRLIFT',drone:'UAV / DRONE'};
   const mach=a.spd>0?(a.spd*0.00149).toFixed(2):'';
   const photoBlock=photo&&photo.thumb?
     `<div class="acr-photo"><img src="${photo.thumb}" alt="aircraft"><div class="acr-photo-cred">© ${esc(photo.photographer||'planespotters.net')}</div></div>`:
@@ -1176,3 +1246,5 @@ function initAcReadoutBinding(){
   if(typeof V!=='undefined'&&V&&V.selectedEntityChanged){initAcReadoutBinding()}
   else{requestAnimationFrame(bindWhenReady)}
 })();
+// P154: draw the colour legend as soon as the module is live (layer row already exists)
+try{_acRenderLegend()}catch(_){}

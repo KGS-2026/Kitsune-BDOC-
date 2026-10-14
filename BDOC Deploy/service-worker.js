@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v153';  // p153: Cesium 1.104 -> 1.146 + createOsmBuildingsAsync
+const SW_VERSION = 'bdoc-v154';  // p154: Travon's 25-item field list (NVG/FLIR GPU, depth, drawing, undo, aircraft ID…)
+// (prev) const SW_VERSION = 'bdoc-v153';  // p153: Cesium 1.104 -> 1.146 + createOsmBuildingsAsync
 // (prev) const SW_VERSION = 'bdoc-v152';  // p145 push: index blob roster — list() lags ~60s, get() does not
 const STATIC_CACHE  = SW_VERSION + '-static';
 const CDN_CACHE     = SW_VERSION + '-cdn';
@@ -22,23 +23,24 @@ const STATIC_PRECACHE = [
   '/js/bdoc-offline-store.js?v=p75',
   '/js/bdoc-link-manager.js?v=p75',
   '/js/bdoc-offline-hud.js?v=p75',
-  '/css/bdoc.css?v=p77',
+  '/css/bdoc.css?v=p154',
+  '/css/bdoc-p154.css?v=p154',
   '/js/telemetry.js?v=p59',
   '/js/converters.js?v=p59',
   '/js/data.js?v=p119',
   '/js/auth.js?v=p136',
-  '/js/filters.js?v=p66',
+  '/js/filters.js?v=p154',
   '/js/kitsune-ai.js?v=p93',
   '/js/bdoc-atak.js?v=p59',
-  '/js/cesium-init.js?v=p153',
+  '/js/cesium-init.js?v=p154',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p152',
-  '/js/modules/layers-conflict.js?v=p152',
-  '/js/modules/layers-infra.js?v=p152',
-  '/js/modules/layers-air.js?v=p152',
-  '/js/modules/layers-nuke.js?v=p152',
-  '/js/modules/nuke-sim.js?v=p152',
-  '/js/modules/layers-airfields.js?v=p152',
+  '/js/modules/layers-military.js?v=p154',
+  '/js/modules/layers-conflict.js?v=p154',
+  '/js/modules/layers-infra.js?v=p154',
+  '/js/modules/layers-air.js?v=p154',
+  '/js/modules/layers-nuke.js?v=p154',
+  '/js/modules/nuke-sim.js?v=p154',
+  '/js/modules/layers-airfields.js?v=p154',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',

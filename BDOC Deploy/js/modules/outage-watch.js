@@ -83,6 +83,9 @@
     if (m) m.innerHTML = html;
     b.style.borderColor = color || '#DA3633'; b.style.borderLeftColor = color || '#DA3633';
     b.style.display = 'block';
+    // P154 (bug #21): the banner sat over the top-centre of the map until clicked.
+    // It now steps aside after 12 s — the alert stays in the event log / ticker.
+    try { clearTimeout(b._bdocHide); b._bdocHide = setTimeout(function () { b.style.display = 'none'; }, 12000); } catch (_) {}
   }
 
   function notify(title, body) {

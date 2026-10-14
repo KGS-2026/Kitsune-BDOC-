@@ -20,6 +20,26 @@ if (fs.existsSync(envPath)) {
 }
 
 const LOCAL_PORT = 9080;
+// P154 (Travon bug #22 "update for the downloadable app"): the desktop build served a
+// frozen copy of index.html from inside the installer, so it never saw a single fix
+// after the day it was built. Now: if the live site answers within 4 s, load IT
+// (always current, real Netlify functions, service worker caches it for later
+// grid-down use). Otherwise fall back to the bundled copy + local API server.
+const LIVE_URL = 'https://kgsbdoc.netlify.app/';
+const RELEASES_URL = 'https://github.com/KGS-2026/Kitsune-BDOC-/releases/latest';
+let runMode = 'offline';
+function liveReachable(timeoutMs = 4000) {
+  return new Promise(resolve => {
+    let done = false;
+    const finish = v => { if (!done) { done = true; resolve(v); } };
+    try {
+      const req = https.request(LIVE_URL, { method: 'HEAD', timeout: timeoutMs }, res => { finish(res.statusCode > 0 && res.statusCode < 500); res.resume(); });
+      req.on('timeout', () => { req.destroy(); finish(false); });
+      req.on('error', () => finish(false));
+      req.end();
+    } catch (_) { finish(false); }
+  });
+}
 let mainWindow = null;
 let tray = null;
 let localServer = null;
@@ -39,7 +59,8 @@ function startLocalServer() {
 }
 
 // ── Create main window ────────────────────────────────────────────────────────
-function createWindow() {
+async function createWindow() {
+  if (process.env.BDOC_FORCE_OFFLINE !== '1' && await liveReachable()) runMode = 'live';
   const { width, height } = require('electron').screen.getPrimaryDisplay().workAreaSize;
   mainWindow = new BrowserWindow({
     width: Math.min(1920, width),
@@ -61,18 +82,30 @@ function createWindow() {
 
   // Override Netlify Function paths to use local server
   // The app's /.netlify/functions/* calls get redirected to localhost:9080
-  mainWindow.webContents.session.webRequest.onBeforeRequest(
-    { urls: ['*://*/*/.netlify/functions/*', '*://*/api/*'] },
-    (details, callback) => {
-      const url = new URL(details.url);
-      const localUrl = `http://localhost:${LOCAL_PORT}${url.pathname}${url.search}`;
-      callback({ redirectURL: localUrl });
-    }
-  );
+  // (offline mode only — live mode uses the real Netlify functions)
+  if (runMode === 'offline') {
+    mainWindow.webContents.session.webRequest.onBeforeRequest(
+      { urls: ['*://*/*/.netlify/functions/*', '*://*/api/*'] },
+      (details, callback) => {
+        const url = new URL(details.url);
+        if (url.hostname === 'localhost') return callback({});
+        const localUrl = `http://localhost:${LOCAL_PORT}${url.pathname}${url.search}`;
+        callback({ redirectURL: localUrl });
+      }
+    );
+  }
 
-  // Load the app — use local server for all content
-  const appUrl = `http://localhost:${LOCAL_PORT}`;
+  const appUrl = runMode === 'live' ? LIVE_URL : `http://localhost:${LOCAL_PORT}`;
+  mainWindow.setTitle(runMode === 'live' ? 'KGS BDOC — LIVE (auto-updating)' : 'KGS BDOC — OFFLINE (bundled build)');
   mainWindow.loadURL(appUrl);
+  // Live site unreachable mid-load (Wi-Fi drop, grid-down) → fall back to the bundled copy
+  mainWindow.webContents.on('did-fail-load', (_e, code, _desc, url, isMainFrame) => {
+    if (isMainFrame && runMode === 'live' && code !== -3) {
+      runMode = 'offline';
+      mainWindow.setTitle('KGS BDOC — OFFLINE (bundled build)');
+      mainWindow.loadURL(`http://localhost:${LOCAL_PORT}`);
+    }
+  });
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
@@ -93,6 +126,8 @@ function buildMenu() {
     {
       label: 'BDOC',
       submenu: [
+        { label: 'Check for Desktop Update…', click: () => shell.openExternal(RELEASES_URL) },
+        { label: 'Running Mode', click: () => dialog.showMessageBox({ title: 'BDOC mode', message: runMode === 'live' ? 'LIVE — loading kgsbdoc.netlify.app. Web fixes arrive automatically.' : 'OFFLINE — bundled build ' + app.getVersion() + '. Reconnect and restart to load the live version.', type: 'info' }) },
         { label: 'About KGS BDOC', click: () => dialog.showMessageBox({ title: 'KGS BDOC', message: 'KGS BDOC v8.0\nKitsune Global Solutions LLC\nOffline tactical intelligence platform', type: 'info' }) },
         { type: 'separator' },
         { label: 'Clear Cache & Reload', accelerator: 'CmdOrCtrl+Shift+R', click: () => {
@@ -199,7 +234,7 @@ app.on('before-quit', () => {
 // Security: prevent navigation to external URLs
 app.on('web-contents-created', (_, contents) => {
   contents.on('will-navigate', (event, url) => {
-    if (!url.startsWith(`http://localhost:${LOCAL_PORT}`)) {
+    if (!url.startsWith(`http://localhost:${LOCAL_PORT}`) && !url.startsWith(LIVE_URL)) {
       event.preventDefault();
     }
   });

@@ -139,51 +139,26 @@ body.filter-crt #cesiumContainer{animation:none}
 body.filter-crt .ly-n,body.filter-crt .tz-time,body.filter-crt .fd-txt{transition:filter 200ms ease}
 /* Phase 12 Strike R2 (2026-05-05): #nvgBloomWarn — uses --warn token (amber) since this is a warning state, not critical */
 #nvgBloomWarn{display:none;position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(0,0,0,0.85);border:1px solid var(--warn);border-radius:var(--r);padding:8px 20px;font-family:var(--m);font-size:11px;font-weight:600;letter-spacing:0.12em;color:var(--warn);text-transform:uppercase}
-/* Green phosphor overlay — the NVG signature look */
-body.filter-nvg::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:2;
-background:rgba(0,38,0,0.35);mix-blend-mode:multiply}
-body.filter-nvg::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:2;
-background:rgba(0,255,50,0.06);
-mix-blend-mode:screen}
-/* NVG binocular tube vignette */
-body.filter-nvg .grid-ov{background:
-rgba(0,0,0,0.4);
-opacity:0.7}
-body.filter-nvg .vfx-crt{display:block}
-body.filter-nvg .vfx-crt::before{
-background:repeating-linear-gradient(0deg,rgba(0,32,0,0.15) 0px,rgba(0,32,0,0.15) 1px,transparent 1px,transparent 3px);
-mix-blend-mode:multiply}
-body.filter-nvg .vfx-crt::after{
-background:rgba(0,255,68,0.02);
-mix-blend-mode:screen}
-/* NVG green tint on UI panels */
+/* P154: NVG + FLIR are GPU post-process stages on the globe (js/filters.js).
+   The old page-wide multiply/black overlays, scanlines and the FLIR crosshair
+   reticle are gone — they dimmed everything and sat on top of the map. */
+/* NVG: light green cast on chrome only, no dimming */
 body.filter-nvg .lp,body.filter-nvg .rp,body.filter-nvg #intel-ticker,body.filter-nvg .fd,body.filter-nvg .tz{
-filter:hue-rotate(70deg) saturate(2) brightness(0.8)}
-body.filter-nvg #nav-widget{filter:hue-rotate(70deg) saturate(2)}
-/* NVG grain: static SVG noise overlay on grid-ov instead of canvas transform */
-
+filter:hue-rotate(70deg) saturate(1.4)}
+body.filter-nvg #nav-widget{filter:hue-rotate(70deg) saturate(1.6)}
 /* --- FLIR (Forward Looking Infrared / Thermal) --- */
-body.filter-flir #cesiumContainer{filter:saturate(0) brightness(1.2) contrast(2.0) invert(1) hue-rotate(180deg)}
-/* FLIR hot-white crosshair overlay */
-body.filter-flir::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:2;
-background:rgba(0,0,0,0.5)}
-body.filter-flir::after{content:'';position:fixed;z-index:4;pointer-events:none;
-top:50%;left:50%;width:60px;height:60px;transform:translate(-50%,-50%);
-border:1px solid rgba(255,255,255,0.22);border-radius:50%;
-background:
-linear-gradient(rgba(255,255,255,0.22),rgba(255,255,255,0.22)) 50% 0/1px 100% no-repeat,
-linear-gradient(rgba(255,255,255,0.22),rgba(255,255,255,0.22)) 0 50%/100% 1px no-repeat}
 body.filter-flir .grid-ov{background:none}
-/* FLIR HUD text style */
-body.filter-flir .lp,body.filter-flir .rp,body.filter-flir #intel-ticker,body.filter-flir .fd,body.filter-flir .tz{
-filter:invert(1) hue-rotate(180deg) brightness(0.9)}
-body.filter-flir #nav-widget{filter:invert(1) hue-rotate(180deg)}
-/* FLIR status bar */
+/* FLIR / NVG status bars */
 body.filter-flir #vfx-flir-bar{display:flex}
-#vfx-flir-bar{display:none;position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:999;
-font-family:var(--m);font-size:8px;letter-spacing:2px;color:rgba(255,255,255,0.6);
-gap:20px;align-items:center;pointer-events:none}
-#vfx-flir-bar span{padding:2px 8px;border:1px solid rgba(255,255,255,0.1);border-radius:2px;background:rgba(0,0,0,0.3)}
+body.filter-nvg #vfx-nvg-bar{display:flex}
+#vfx-flir-bar,#vfx-nvg-bar{display:none;position:fixed;top:54px;left:50%;transform:translateX(-50%);z-index:999;
+font-family:var(--m);font-size:9px;letter-spacing:2px;color:rgba(255,255,255,0.78);
+gap:14px;align-items:center;pointer-events:none}
+#vfx-nvg-bar{color:#7dff9a}
+#vfx-flir-bar span,#vfx-nvg-bar span{padding:3px 9px;border:1px solid rgba(255,255,255,0.16);border-radius:3px;background:rgba(0,0,0,0.55)}
+#vfx-flir-bar .vfx-chip,#vfx-nvg-bar .vfx-chip{pointer-events:auto;cursor:pointer;border-color:rgba(255,255,255,0.35)}
+#vfx-flir-bar .vfx-chip:hover,#vfx-nvg-bar .vfx-chip:hover{background:rgba(255,255,255,0.12)}
+#nvgBloomWarn{top:86px!important;font-size:9px!important;padding:5px 14px!important;opacity:0.85}
 /* ═══ FILTER TOOLBAR ═══ */
 /* Hazard-bio sub-category chips (Phase 2, 2026-07-02) */
 .hazchip{background:none;border:1px solid rgba(232,179,73,0.3);border-radius:3px;padding:2px 7px;font-family:var(--m);font-size:7px;letter-spacing:1px;color:#8a7440;cursor:pointer;transition:all .12s;font-weight:600}
