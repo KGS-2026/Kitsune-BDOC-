@@ -28,8 +28,24 @@ const pluginRenderer = {
     return (typeof V !== 'undefined' && V) ? V : (typeof window !== 'undefined' ? window.V : null);
   },
 
+  // P155: Chrome 141+ shows a "Local network access" permission prompt the first time a
+  // website fetches 127.0.0.1. Polling at page load put that prompt in front of EVERY visitor.
+  // Now the poll starts only after the user turns on something local (Wireshark Live, the local
+  // Meshtastic layer, Network Builder LIVE) — remembered per browser — or inside the desktop app.
+  _optedIn() {
+    try { return /Electron/i.test(navigator.userAgent) || localStorage.getItem('bdoc_local_ipc') === '1'; } catch (e) { return false; }
+  },
+  enable() {
+    try { localStorage.setItem('bdoc_local_ipc', '1'); } catch (e) {}
+    if (!this.pollHandle && !this._starting) { this.failures = 0; this._starting = true; this._start().finally(() => { this._starting = false; }); }
+  },
   async init() {
     if (!this.viewer) { setTimeout(() => this.init(), 2000); return; }
+    if (!this._optedIn()) { console.log('[Plugin Renderer] local IPC idle until a local layer is turned on'); return; }
+    if (!this._starting) { this._starting = true; this._start().finally(() => { this._starting = false; }); }
+  },
+  async _start() {
+    if (this.pollHandle) return;
     try {
       const s = await this._json('status');
       this.online = !!s;

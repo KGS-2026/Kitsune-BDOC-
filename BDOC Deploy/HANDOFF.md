@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
-**Last updated by Claude Code:** 2026-10-14 · build **p154** (patches, not pushed) · `SW_VERSION bdoc-v154`
+**Last updated by Claude Code:** 2026-10-14 · build **p155** (patches, not pushed) · `SW_VERSION bdoc-v155`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,48 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
+
+### Claude Code — p155 (2026-10-14) — Network Builder + Meshtastic World, NOT yet on `main`
+
+Patch `0003` on top of p154. Nothing pushed. SW `bdoc-v155`; LazyLoader `_version`
+and every `/js/modules/*` precache key → `p155`; `auth.js?v=p155`,
+`bdoc-plugin-renderer.js?v=p155`.
+
+- **Network Builder** — `js/modules/net-builder.js` (lazy). Tools menu → 🖧 Network
+  Builder, or CYBER / DIGITAL → Network Builder. 15 device types, 8 cable types,
+  place by click or drag-from-palette, drag to move, property card (name, IPs/CIDR,
+  MAC, notes, capture machine), PING tool with hop path / UNREACHABLE, SIM traffic,
+  DEMO NETWORK, export/import JSON, saved in `localStorage.bdoc_netbuilder_v1`.
+  LIVE mode polls `GET 127.0.0.1:9876/api/v1/wireshark/events?since=` (new ring
+  buffer in `tools/bdoc-ipc-receiver.js`) and animates each packet along the cabled
+  path with protocol + TCP-flag labels. Gate: `netbuilder` (operator tier).
+- **Wireshark adapter** — per-packet TCP flags, ICMP type, MACs, DNS/SNI/ARP info,
+  LAN packets without geo, `--demo-lan` (loops a realistic LAN conversation on the
+  DEMO NETWORK IPs), `-D` lists interfaces, finds tshark under Program Files on
+  Windows, auto-picks Wi-Fi/Ethernet when `-i` is omitted off Linux.
+- **Meshtastic World** — `js/modules/mesh-world.js` (lazy) + new function
+  `netlify/functions/proxy-meshworld.js` (merges meshtastic.liamcottle.net +
+  meshmap.net: ~20k positioned nodes, ~4k measured RF links, ~11k gateway-heard
+  links; 1.9 MB / 0.84 MB gzip; edge-cached 10 min). Layer row
+  `data-layer="meshworld"` under COMMS. Route finder: hop-limited Bellman-Ford over
+  measured RF (SNR-weighted) + gateway + predicted-range links, region/preset aware;
+  no path → closest gap + relay pins (≤150 km) or "internet/satellite only".
+  Gate: `meshworld` (operator tier). RF "neighbours" > 250 km are dropped (MQTT
+  downlink makes NeighborInfo list nodes up to 12,000 km away).
+- **Adjacent fix** — `js/bdoc-plugin-renderer.js` polled `127.0.0.1:9876` for every
+  visitor at page load. Chrome 141+ turns that into a "Local network access" prompt
+  for everyone. It now starts only after a local layer is switched on (remembered in
+  `localStorage.bdoc_local_ipc`); always on inside Electron.
+
+Verified headless (Chromium 141 / SwiftShader): demo network 13 devices / 12 cables,
+click-place, drag-from-palette, cable by two clicks, drag-move, property edit, CIDR
+match, ping 4 hops + unreachable, LIVE from the real receiver + `--demo-lan`
+(SYN / SYN-ACK / ACK labels), real tshark capture on this box through the receiver
+(272 packets incl. SYN/SYN-ACK), 20,060 mesh nodes rendered, SF→San Jose route
+(3 relays, 2 measured RF links), node card, search, Atlanta→Macon gap with pins,
+Atlanta→London = internet-only, ci-validate green. Not verifiable here: the deployed
+function (served its local output in the test), the Chrome LNA prompt on a real
+desktop, Windows tshark/Npcap capture.
 
 ### Claude Code — p153 + p154 (2026-10-14) — built and tested, NOT yet on `main`
 
@@ -334,6 +376,16 @@ caught 6 panels the first pass missed (`replay-bar`, `tz-bar`, `vfx-flir-bar`,
 3. Toggle NVG at night and FLIR over a city; watch FPS on the 1660 Ti.
 4. Tag `desktop-v8.1.0` to run `.github/workflows/desktop-release.yml`, then
    Help/File → Download Desktop App should pick the new asset.
+
+### J. p155 checks on a real machine  ← after applying 0003
+1. `node tools/bdoc-ipc-receiver.js`, then `python tools/adapters/wireshark_adapter.py -D`
+   (lists interfaces), then `python tools/adapters/wireshark_adapter.py` (auto-picks
+   Wi-Fi/Ethernet on Windows). Network Builder → LIVE WIRESHARK. Chrome will ask to
+   access apps on this device → Allow. Badge should read LIVE.
+2. Put a device on the map with your PC's LAN IP (ipconfig), tick "capture machine",
+   cable it to a router with your gateway IP. Real packets ride that cable.
+3. After deploy: `https://kgsbdoc.netlify.app/.netlify/functions/proxy-meshworld`
+   should return `count` ≈ 20,000. First call takes ~5 s, cached after.
 
 ### I. Next competitive gap — camera network (ARGOS ATLAS has 205k cams)
 ARGOS ATLAS (argosatlas.com) shows public DOT/agency cameras as snapshot cards

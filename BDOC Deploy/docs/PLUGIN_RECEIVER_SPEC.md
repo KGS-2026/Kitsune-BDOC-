@@ -347,6 +347,44 @@ All render simultaneously, **no performance hit** (uses Cesium instancing + spat
 Every ingest path also serves `GET`, returning `{status, count, nodes:[...]}`.
 The browser renderer polls these every 2s. `GET /api/v1/status` returns per-store counts.
 
+### Packet event stream — Network Builder (p155)
+
+The per-route stores above keep the *latest* record per id, which is right for map
+layers but loses every packet in a TCP handshake. The receiver now also keeps a ring
+buffer of the last 5,000 `wireshark/packet` posts, each stamped with a sequence number:
+
+```
+GET /api/v1/wireshark/events?since=<seq>&limit=<n>
+→ { "status":"ok", "seq":<latest>, "count":N, "events":[ {...packet, "seq":1234}, ... ] }
+```
+
+- `since=0` returns only the last 50 (a reconnect does not replay 5,000 packets).
+- If more than `limit` (default 800, max 2000) are waiting, the newest `limit` are returned
+  and `seq` jumps to the latest — the globe keeps up instead of lagging.
+- Rate limit raised to 6,000 posts/min per source.
+
+Extra packet fields the adapter now sends (all optional):
+
+| field | example | used for |
+|---|---|---|
+| `tcp_flags` | `"SYN"`, `"SYN-ACK"`, `"ACK"`, `"PSH-ACK"`, `"FIN-ACK"`, `"RST"` | handshake labels on the moving packets |
+| `icmp_type` | `8` / `0` | echo request / reply |
+| `src_mac`, `dst_mac` | `"00:1a:2b:3c:4d:01"` | device matching |
+| `info` | `"DNS example.com"`, `"TLS Client Hello SNI example.com"`, `"Who has 192.168.10.1?"` | event list |
+| `ts_ms` | `1791950946123` | ordering |
+| `geo_src` / `geo_dst` | `{lat,lon,...}` | now optional — LAN packets are sent without geo |
+
+The Network Builder (`js/modules/net-builder.js`) polls this every 500 ms, matches
+`src_ip`/`dst_ip` to the devices the user placed (exact IP or CIDR), and animates each
+packet along the cabled path.
+
+**Chrome 141+ (Local Network Access):** the first fetch from `https://kgsbdoc.netlify.app`
+to `127.0.0.1` makes Chrome ask "access other apps and services on this device". Click
+Allow (or site settings → Local network access → Allow). The desktop app is not affected.
+Since p155 `bdoc-plugin-renderer.js` only polls after the user turns on a local layer
+(Wireshark Live, local Meshtastic, Network Builder LIVE) — before, every visitor got the
+prompt at page load. Opt-in is remembered in `localStorage.bdoc_local_ipc`.
+
 ### Quick start
 
 ```bash
@@ -357,7 +395,11 @@ node tools/bdoc-ipc-receiver.js
 python3 tools/adapters/wireshark_adapter.py --test
 BDOC_HOME_LAT=33.749 BDOC_HOME_LON=-84.388 python3 tools/adapters/inssider_adapter.py --test --once
 
-# 3. real capture
+# 2b. Network Builder demo traffic (matches the DEMO NETWORK button's IPs)
+python3 tools/adapters/wireshark_adapter.py --demo-lan --count 0
+
+# 3. real capture  (Windows: run without -i to auto-pick Wi-Fi/Ethernet; -D lists interfaces;
+#    tshark is found in C:\Program Files\Wireshark even when it is not on PATH)
 sudo python3 tools/adapters/wireshark_adapter.py -i eth0 --rate 25
 BDOC_HOME_LAT=33.749 BDOC_HOME_LON=-84.388 python3 tools/adapters/inssider_adapter.py
 ```

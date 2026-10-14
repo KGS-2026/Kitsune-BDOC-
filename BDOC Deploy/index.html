@@ -438,7 +438,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p154</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p155</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -478,6 +478,8 @@ if('serviceWorker' in navigator){
 <div class="menu-drop-item" onclick="ctxAction('measure');closeMenus()"><span>Measure Distance</span><span class="mdi-key">M</span></div>
 <div class="menu-drop-item" onclick="ctxAction('quickarrow');closeMenus()"><span>Draw Arrow</span></div>
 <div class="menu-drop-item" onclick="enterBattleMode();closeMenus()"><span>Battle Tracker</span></div>
+<div class="menu-drop-item" onclick="openNetBuilder();closeMenus()"><span>🖧 Network Builder</span><span class="mdi-key">Packet Tracer</span></div>
+<div class="menu-drop-item" onclick="toggleMeshWorld();closeMenus()"><span>📡 Meshtastic World + Relay Route</span></div>
 <div class="menu-drop-sep"></div>
 <div class="menu-drop-item" onclick="if(Replay.active)Replay.exit();else Replay.open();closeMenus()"><span>Historical Replay</span><span class="mdi-key">R</span></div>
 <div class="menu-drop-item" onclick="SituationManager.togglePanel();closeMenus()"><span>⚠ Situations</span><span class="mdi-key">Ctrl+Shift+S</span></div>
@@ -686,6 +688,7 @@ if('serviceWorker' in navigator){
 <div class="ly" data-layer="outages" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#E8B339"></div><span class="ly-n">Power Grid Stress (US)</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="downdetect" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#DA3633"></div><span class="ly-n">Service Outages</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="wireshark" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#00ffcc"></div><span class="ly-n">&#x1F50C; Wireshark Live</span><span class="ly-tg" style="color:#00ffcc;background:rgba(0,255,204,0.08)">LOCAL</span></div>
+<div class="ly" onclick="openNetBuilder()" style="cursor:pointer" title="Place routers, servers, IoT on the globe, cable them, watch live Wireshark packets move between them"><div class="ly-d" style="background:#4FC3F7;margin-left:4px"></div><span class="ly-n" style="margin-left:6px">&#x1F5A7; Network Builder</span><span class="ly-tg" style="color:#4FC3F7;background:rgba(79,195,247,0.1);font-size:7px">OPEN</span></div>
 </div>
 <div class="lg-title lg-collapse collapsed" onclick="togCat(this)">OSINT <span class="lg-arrow">&#9660;</span></div>
 <div class="lg-group closed">
@@ -705,6 +708,7 @@ if('serviceWorker' in navigator){
 <div class="lg-group closed">
 <div class="ly" onclick="openPACE()" style="cursor:pointer"><div class="ly-d" style="background:#00ccff;margin-left:4px"></div><span class="ly-n" style="margin-left:6px">Comms / Community Network</span><span class="ly-tg" style="color:#00ccff;background:rgba(0,204,255,0.1);font-size:7px">OPEN</span></div>
 <div class="ly" data-layer="mesh" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#3FB950"></div><span class="ly-n">Meshtastic Mesh Network</span><span class="ly-tg tg-l">LIVE</span></div>
+<div class="ly" data-layer="meshworld" onclick="togLy(this)" title="Every public Meshtastic node worldwide + relay route finder"><div class="sw"></div><div class="ly-d" style="background:#76FF03"></div><span class="ly-n">Meshtastic World (~20k nodes)</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="community" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#2D72D2"></div><span class="ly-n">Community Intel Reports</span><span class="ly-tg tg-l">LIVE</span></div>
 </div>
 <div class="lg-title lg-collapse collapsed" onclick="togCat(this)">AUXILIARY <span class="lg-arrow">&#9660;</span></div>
@@ -1479,7 +1483,7 @@ if(!window.Cesium){
 <script src="js/modules/icon-factory.js?v=p116"></script>
 <script src="js/converters.js?v=p59"></script>
 <script src="js/data.js?v=p119"></script>
-<script src="js/auth.js?v=p136"></script>
+<script src="js/auth.js?v=p155"></script>
 <script src="js/filters.js?v=p154"></script>
 <!-- layers-military.js is lazy-loaded on first toggle of milbases (Phase 3 Turn 7) -->
 <!-- layers-airfields.js is lazy-loaded on first toggle of milairfields (Phase 3 Turn 6) -->
@@ -1594,7 +1598,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p154',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p155',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
@@ -3019,6 +3023,16 @@ function bdocPlayScanner(feedUrl,name,color){
 }
 // Phase 5C (2026-05-04): Changelog popup wired to top-bar BUILD pill — deploy verification at a glance.
 const _BDOC_CHANGELOG=[
+  {ver:'p155 (2026-10-14) — NETWORK BUILDER + MESHTASTIC WORLD',items:[
+    'Network Builder (Tools menu, or CYBER / DIGITAL → Network Builder): drag routers, switches, firewalls, servers, PCs, phones, cameras, IoT, PLCs, Meshtastic, towers and sat terminals onto the globe in any city',
+    'Cable them with Cat6, crossover, fiber, serial/WAN, coax, Wi-Fi, LoRa or satellite links — short runs lie on the ground, long-haul links arc between cities',
+    'LIVE WIRESHARK: packets captured on your machine ride the cables you drew, device to device — each one an envelope labelled with protocol and TCP flags (SYN → SYN-ACK → ACK visible), plus an event list',
+    'Your devices are matched by IP or CIDR; unknown LAN hosts appear around your capture machine (one click to adopt), internet hosts at their GeoIP location',
+    'PING tool (Packet Tracer simple PDU): echo request/reply over the cabled path, or UNREACHABLE when there is no path. SIM TRAFFIC and a DEMO NETWORK for a quick start; export/import networks as JSON',
+    'Meshtastic World layer: every node on the public Meshtastic maps (~20,000 worldwide) with role, hardware, battery, preset, last heard and measured RF neighbours (SNR)',
+    'ROUTE A MESSAGE: from a node, your GPS or a map point to any node or place — finds the relay chain within your hop limit and says why each hop is trusted (measured RF, gateway heard, or distance guess). No path → shows the gap and where to put a relay',
+    'Local apps (packet receiver, Meshtastic gateway) are only contacted after you switch on a local layer — no browser permission prompt on page load'
+  ]},
   {ver:'p154 (2026-10-14) — FIELD LIST: 25 FIXES',items:[
     'Markers no longer show through the earth: depth test follows the live horizon distance',
     'Streets / Topo / Terrain basemaps: no bloom wash-out, toned for the dark UI, and the globe finishes drawing every tile (render stall fixed)',
@@ -3286,7 +3300,7 @@ const milAC=[],allAC=[],feed=[];
 // Phase 8C (2026-05-05): every layer defaults to OFF — clean canvas on first load
 // Phase 22: added internet/landings/chokepoints here so markLockedLayers() can zero them on logout
 // (they were previously set lazily; 'key in layers' was false so markLockedLayers skipped them)
-const layers={forcetrack:false,air:false,eq:false,fire:false,conf:false,warlive:false,cable:false,sat:false,territory:false,imint:false,weather:false,clouds:false,temp:false,hurricanes:false,alerts:false,wind:false,forecastradar:false,lightning:false,airquality:false,vessels:false,cyber:false,outages:false,downdetect:false,webcams:false,radio:false,deforest:false,sentinel:false,news:false,headlines:false,spaceweather:false,mesh:false,community:false,floods:false,tsunamis:false,volcanoes:false,nucranges:false,borders:false,hillshade:false,popdensity:false,alliances:false,powerplants:false,gridinfra:false,substations:false,pipelines:false,metar:false,dartbuoys:false,fireperims:false,oilgas:false,sanctions:false,embassies:false,wireshark:false,vegetation:false,econintel:false,milbases:false,milairfields:false,nukes:false,darkships:false,ioc:false,internet:false,landings:false,chokepoints:false,deflock:false,celltowers:false,fallout:false};
+const layers={forcetrack:false,air:false,eq:false,fire:false,conf:false,warlive:false,cable:false,sat:false,territory:false,imint:false,weather:false,clouds:false,temp:false,hurricanes:false,alerts:false,wind:false,forecastradar:false,lightning:false,airquality:false,vessels:false,cyber:false,outages:false,downdetect:false,webcams:false,radio:false,deforest:false,sentinel:false,news:false,headlines:false,spaceweather:false,mesh:false,community:false,floods:false,tsunamis:false,volcanoes:false,nucranges:false,borders:false,hillshade:false,popdensity:false,alliances:false,powerplants:false,gridinfra:false,substations:false,pipelines:false,metar:false,dartbuoys:false,fireperims:false,oilgas:false,sanctions:false,embassies:false,wireshark:false,vegetation:false,econintel:false,milbases:false,milairfields:false,nukes:false,darkships:false,ioc:false,internet:false,landings:false,chokepoints:false,deflock:false,celltowers:false,fallout:false,meshworld:false};
 let eqEnts=[],fireEnts=[],confEnts=[],warliveEnts=[],airEnts=[],milEnts=[],cableEnts=[],satEnts=[],territoryEnts=[],imintEnts=[],newsEnts=[],headlineEnts=[],spwxEnts=[],meshEnts=new Set(),communityEnts=[],floodEnts=[],tsunamiEnts=[],volcanoEnts=[],nucRangeEnts=[],allianceEnts=[],powerplantEnts=[],gridinfraEnts=[],substationEnts=[],pipelineEnts=[],metarEnts=[],dartEnts=[],fireperimEnts=[],oilgasEnts=[],sanctionEnts=[],embassyEnts=[],wiresharkEnts=[],vegEnts=[],darkshipEnts=[],iocEnts=[],falloutEnts=[];
 // XSS sanitizer — escapes HTML in any API-sourced string before injection into innerHTML/description
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -3324,6 +3338,12 @@ setInterval(()=>{const _c=document.getElementById('clk');if(_c)_c.textContent=ne
 // SECTION 9: PANEL TOGGLES + NAV
 // ═══════════════════════════════════════════
 function togL(){if(window.SituationManager){SituationManager.showLayers();return;}lpOpen=!lpOpen;document.getElementById('lp').classList.toggle('shut');document.getElementById('sc').className=lpOpen?'sc sh'+(document.getElementById('sc').classList.contains('sc-hidden')?' sc-hidden':''):'sc fl'+(document.getElementById('sc').classList.contains('sc-hidden')?' sc-hidden':'');document.getElementById('ftPanel').className=document.getElementById('ftPanel').className.replace(/\bsh\b|\bfl\b/,lpOpen?'sh':'fl');document.getElementById('lpReopen').style.display=lpOpen?'none':'flex';const sct=document.getElementById('scToggle');if(sct)sct.style.left=lpOpen?'calc(var(--lw) + 8px)':'8px'}
+// P155: Network Builder (Packet Tracer on the globe) + Meshtastic World — lazy modules
+function openNetBuilder(){
+  if(!BDOC_Auth.canAccess('netbuilder')){showMo('netbuilder');return}
+  BDOC.LazyLoader.load('net-builder').then(()=>window.NetBuilder.open()).catch(e=>{console.warn('[lazy net-builder]',e);af('var(--rd)','Network Builder failed to load')});
+}
+function toggleMeshWorld(){const r=document.querySelector('.ly[data-layer="meshworld"]');if(r)togLy(r);}
 function togLy(el){
   const ly=el.dataset.layer;
   if(!BDOC_Auth.canAccess(ly)){el.classList.remove('on');layers[ly]=false;showMo(ly);return}
@@ -3374,7 +3394,8 @@ function togLy(el){
   if(ly==='news'){if(layers.news){BDOC.layerLoadFx.start('news');loadGDELTNews();}else{newsEnts.forEach(e=>V.entities.remove(e));newsEnts=[];document.getElementById('newsV').textContent='--';if(loadGDELTNews._interval){clearInterval(loadGDELTNews._interval);loadGDELTNews._interval=null}}}
   if(ly==='headlines'){if(layers.headlines)loadNewsAPI();else{headlineEnts.forEach(e=>V.entities.remove(e));headlineEnts=[];document.getElementById('headlineV').textContent='--'}}
   if(ly==='spaceweather'){if(layers.spaceweather)loadSpaceWeather();else{spwxEnts.forEach(e=>V.entities.remove(e));spwxEnts=[];document.getElementById('spwxV').textContent='--'}}
-  if(ly==='mesh'){if(layers.mesh){_meshRetries=0;connectMeshtastic()}else{disconnectMeshtastic();meshEnts.forEach(e=>V.entities.remove(e));meshEnts.clear();_meshNodes.clear();document.getElementById('meshV').textContent='--'}}
+  if(ly==='meshworld'){if(layers.meshworld){BDOC.layerLoadFx.start('meshworld');BDOC.LazyLoader.load('mesh-world').then(()=>window.MeshWorld.enable()).then(()=>BDOC.layerLoadFx.done('meshworld',!!(window.MeshWorld&&MeshWorld.data))).catch(e=>{console.warn('[lazy mesh-world]',e);BDOC.layerLoadFx.done('meshworld',false);af('var(--rd)','Meshtastic World failed to load')})}else if(window.MeshWorld)MeshWorld.disable()}
+  if(ly==='mesh'){if(layers.mesh){try{window.pluginRenderer&&pluginRenderer.enable()}catch(_){}_meshRetries=0;connectMeshtastic()}else{disconnectMeshtastic();meshEnts.forEach(e=>V.entities.remove(e));meshEnts.clear();_meshNodes.clear();document.getElementById('meshV').textContent='--'}}
   if(ly==='community'){if(layers.community){loadCommunityReports();showCommunityHint()}else{communityEnts.forEach(e=>V.entities.remove(e));communityEnts=[];_communityListenerOff=true}}
   if(ly==='floods'){if(layers.floods)loadFloods();else{floodEnts.forEach(e=>V.entities.remove(e));floodEnts=[]}}
   if(ly==='tsunamis'){if(layers.tsunamis)loadTsunamis();else{tsunamiEnts.forEach(e=>V.entities.remove(e));tsunamiEnts=[]}}
@@ -11336,7 +11357,7 @@ togLy = function(el) {
   if (ly==='nukes'){el.classList.toggle('on');layers.nukes=el.classList.contains('on');if(layers.nukes){if(typeof nukeEnts==='undefined'||nukeEnts.length===0){BDOC.layerLoadFx.start('nukes');BDOC.LazyLoader.load('layers-nuke').then(()=>{if(window.loadNukeSites)window.loadNukeSites();BDOC.layerLoadFx.done('nukes',true)}).catch(e=>{console.warn('[lazy layers-nuke]',e);BDOC.layerLoadFx.done('nukes',false)})}else{nukeEnts.forEach(e=>e.show=true)}}else{_bSafe(()=>nukeEnts.forEach(e=>e.show=false))}return}
   if (ly==='deflock'){el.classList.toggle('on');layers.deflock=el.classList.contains('on');if(layers.deflock)loadDeflock();else{if(V)deflockEnts.forEach(e=>{try{V.entities.remove(e)}catch(x){}});deflockEnts=[]}return}
   if (ly==='celltowers'){el.classList.toggle('on');layers.celltowers=el.classList.contains('on');if(layers.celltowers)loadCellTowers();else{if(V)cellTowerEnts.forEach(e=>{try{V.entities.remove(e)}catch(x){}});cellTowerEnts=[]}return}
-  if (ly==='wireshark'){el.classList.toggle('on');layers.wireshark=el.classList.contains('on');if(layers.wireshark){WiresharkBridge._wsRetries=0;WiresharkBridge.connect()}else WiresharkBridge.disconnect();return}
+  if (ly==='wireshark'){el.classList.toggle('on');layers.wireshark=el.classList.contains('on');if(layers.wireshark){try{window.pluginRenderer&&pluginRenderer.enable()}catch(_){}WiresharkBridge._wsRetries=0;WiresharkBridge.connect()}else WiresharkBridge.disconnect();return}
   if (ly==='ioc'){el.classList.toggle('on');layers.ioc=el.classList.contains('on');if(layers.ioc){BDOC.layerLoadFx.start('ioc');loadIOCLayer();}else{iocEnts.forEach(e=>{try{V.entities.remove(e)}catch(x){}});iocEnts=[];}return}
   if (ly==='fallout'){el.classList.toggle('on');layers.fallout=el.classList.contains('on');if(layers.fallout){if(!_falloutDS){BDOC.layerLoadFx.start('fallout');loadFalloutShelters();}else{_falloutDS.show=true;}}else{if(_falloutDS)_falloutDS.show=false;}return}
   if (ly==='hazardbio'){el.classList.toggle('on');layers.hazardbio=el.classList.contains('on');
@@ -13600,7 +13621,7 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 <script src="js/mesh-globe-layer.js?v=p75"></script>
 <script src="js/bdoc-offline-store.js?v=p75"></script>
 <script src="js/bdoc-link-manager.js?v=p75"></script>
-<script src="js/bdoc-plugin-renderer.js?v=p75"></script>
+<script src="js/bdoc-plugin-renderer.js?v=p155"></script>
 <script src="js/bdoc-offline-hud.js?v=p75"></script>
 </body>
 </html>

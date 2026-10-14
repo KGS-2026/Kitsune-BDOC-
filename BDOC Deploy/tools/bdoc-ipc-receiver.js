@@ -15,7 +15,7 @@ const { URL } = require('url');
 const PORT = Number(process.env.BDOC_IPC_PORT || 9876);
 const MAX_AGE_MS = 72 * 60 * 60 * 1000;
 const MAX_BODY = 1 << 20;            // 1 MB
-const RATE_LIMIT_PER_MIN = 2000;
+const RATE_LIMIT_PER_MIN = 6000;   // p155: 100 pkt/s bursts for live capture
 
 const ROUTES = {
   'wireshark/packet':     { key: d => `pkt-${d.src_ip}-${d.dst_ip}-${d.dst_port || 0}`, validate: v => { req(v, 'src_ip', 'dst_ip', 'protocol'); geo(v.geo_src); geo(v.geo_dst); } },
@@ -32,6 +32,20 @@ function geo(g) { if (g && (typeof g.lat !== 'number' || typeof g.lon !== 'numbe
 
 const stores = {};
 for (const r of Object.keys(ROUTES)) stores[r] = new Map();
+
+// P155: per-PACKET event stream for the Network Builder. The flow store above keeps
+// only the latest record per src/dst/port, which is right for arcs but useless for
+// animating individual packets (a SYN, its SYN-ACK and the ACK collapse into one).
+// Every wireshark/packet POST is also appended here with a monotonically increasing
+// seq; the browser asks for "everything after seq N" twice a second.
+const EVENT_CAP = 5000;
+let eventSeq = 0;
+const events = [];
+function pushEvent(d) {
+  const e = Object.assign({}, d, { seq: ++eventSeq });
+  events.push(e);
+  if (events.length > EVENT_CAP) events.splice(0, events.length - EVENT_CAP);
+}
 
 let windowStart = Date.now(), windowCount = 0;
 function rateOk() {
@@ -58,6 +72,9 @@ function send(res, code, obj) {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
+    // Chrome Private/Local Network Access: an https page (kgsbdoc.netlify.app)
+    // talking to this loopback server needs the preflight to opt in.
+    'Access-Control-Allow-Private-Network': 'true',
     'Cache-Control': 'no-store'
   });
   res.end(body);
@@ -73,6 +90,15 @@ const server = http.createServer((req_, res) => {
     const counts = {};
     for (const [k, m] of Object.entries(stores)) counts[k] = m.size;
     return send(res, 200, { status: 'running', uptime_s: Math.round(process.uptime()), port: PORT, stores: counts });
+  }
+
+  if (path === '/api/v1/wireshark/events' && req_.method === 'GET') {
+    const since = Number(u.searchParams.get('since') || 0);
+    const limit = Math.min(2000, Number(u.searchParams.get('limit') || 800));
+    // first call (since=0) only gets the tail so a reconnect doesn't replay 5,000 packets
+    let out = since > 0 ? events.filter(e => e.seq > since) : events.slice(-50);
+    if (out.length > limit) out = out.slice(-limit);
+    return send(res, 200, { status: 'ok', seq: eventSeq, count: out.length, events: out });
   }
 
   const m = path.match(/^\/api\/v1\/(\w+)\/(\w+)$/);
@@ -105,6 +131,7 @@ const server = http.createServer((req_, res) => {
     data._received_ms = Date.now();
     if (!data.timestamp) data.timestamp = new Date(data._received_ms).toISOString();
     stores[route].set(id, data);
+    if (route === 'wireshark/packet') pushEvent(data);
     send(res, 200, { status: 'received', id, stored_at: data.timestamp });
   });
 });
