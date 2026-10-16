@@ -413,6 +413,28 @@ caught 6 panels the first pass missed (`replay-bar`, `tz-bar`, `vfx-flir-bar`,
 2. Radio B on the BDOC laptop: `node tools/bdoc-ipc-receiver.js` + `python tools/grid_down_gateway.py --serial COMy`.
    Turn on COMMS → Skybridge. Clouds, 3 warnings and a bulletin should appear with Wi-Fi off.
 
+### L. NEXT BUILD QUEUE — p157 → p159 (Travon's direction, 2026-10-14)
+Full reasoning: `docs/WIN_PLAN_2026-10.md`. Position: BDOC is the command post that
+runs with no internet and no server, and can prove nothing leaves the machine.
+1. **p157 Sovereign Mode + review hygiene** — one switch cuts every outbound call
+   (Plausible, Esri, Cesium ion, Google, Supabase, Netlify proxies); local-only
+   profile; live readout of outside hosts contacted; remove or label the 40
+   hardcoded webcams and 19 fixed dark-fleet ships; restore map credits
+   (`creditContainer` is a detached div today); server-side tier checks in the
+   proxies (`BDOC_Auth.tier='enterprise'` in the console unlocks everything now).
+2. **Google 3D path** — "3D Photo" streams Google tiles via Cesium ion asset
+   2275207 on the ion token, not Travon's paid `GOOGLE_MAPS_API_KEY` (which
+   `config` hands out and nothing uses). Google content terms: no use near a
+   non-Google map, no "emergency response services", no caching/offline,
+   attribution required. Fix: use the paid key directly, standalone view
+   (Esri off, Google logo on), excluded from Sovereign/offline modes.
+3. **p158 Offline AO packs** — USGS 3DEP + NAIP + OSM/Protomaps, draw a box,
+   download, airplane mode; MGRS map print.
+4. **p159 Team over mesh** — decode Meshtastic POSITION + ATAK_PLUGIN (portnum 72)
+   into team icons; terrain line-of-sight relay planner.
+5. **BDOC Node v1** — solar GOES/Meteor + ADS-B + AIS + Meshtastic router box;
+   feeder program (host a node → Pro free).
+
 ### J. p155 checks on a real machine  ← after applying 0003
 1. `node tools/bdoc-ipc-receiver.js`, then `python tools/adapters/wireshark_adapter.py -D`
    (lists interfaces), then `python tools/adapters/wireshark_adapter.py` (auto-picks
