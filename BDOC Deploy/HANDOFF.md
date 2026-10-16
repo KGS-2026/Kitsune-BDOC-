@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
-**Last updated by Claude Code:** 2026-10-16 · build **p156b** live on `main` @ `1d4b82b` · `SW_VERSION bdoc-v156b`
+**Last updated by Claude Code:** 2026-10-16 · build **p156c** live on `main` @ `160c111` · `SW_VERSION bdoc-v156c`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,20 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
+
+### Claude Code — p156c service-worker fix, on `main` @ `160c111` (2026-10-16)
+
+Fixed §2 S (now marked ✅). `service-worker.js` `cacheFirst()` now does exact
+match → network → any-version copy only when offline. Also: SW `bdoc-v156c`,
+`BUILD p156c`, and a changelog entry.
+- **Verified:** a deploy simulation in Chrome; old vs new code, online and
+  offline. Details are in §2 S.
+- **Verified:** `ci-validate.sh` passes.
+- **Verified live:** `BUILD p156c` and `bdoc-v156c` are served with the new
+  `cacheFirst`. A returning browser on v156b moved to v156c with only v156c
+  caches left, the p156b settings in effect and no console errors.
+
+Also logged the three outside audits from today in §2 U.
 
 ### Claude Code — p156b sharper globe, on `main` @ `1d4b82b` (2026-10-16)
 
@@ -436,7 +450,52 @@ curl -s https://kgsbdoc.netlify.app/service-worker.js \
 
 ## 2. OPEN ITEMS — PICK UP HERE
 
-### S. Service worker serves OLD JS on the first load after every deploy
+### U. Three outside audits, 2026-10-16 (files in Travon's Downloads)
+`bdoc-soc-tier-audit-2026-10-16.md`, `bdoc-geoint-analyst-audit-2026-10-16.md`,
+and `BDOC Phantom — EOC Deployment Evaluation.pdf`. All three ran against live p156.
+Checked by Claude Code the same day:
+- **Push alerts can't be delivered.** `GET push-subscribe` returns
+  `count:1, sendReady:false`: one device is subscribed, and the VAPID signing
+  key isn't configured, so nothing can send. The EOC eval says the UI tells
+  subscribers "Armed" (not re-checked here). This is the life-safety #1 item.
+  Fix: set the key in Netlify (Travon), or stop saying "Armed" until
+  `sendReady` is true.
+- **`?dev=` paywall key: closed in production.** `checkDevKey()` wipes the
+  key and returns false unless the host is localhost or 127.0.0.1
+  (`auth.js:22-26`). The SOC audit's "still present" means the identifiers
+  exist, not that the bypass works. The console tier override is a separate
+  issue and stays open (§2 L.1).
+- **Not yet tracked here** (the EOC eval's punch list, in its order):
+  - Drawn markers (`battleEntities`) are lost on refresh with no warning.
+    `BDOCOfflineStore` already exists; autosave to it and warn on
+    `beforeunload`.
+  - `mesh-globe-layer.js` uses a bare `fetch` (no `BDOCLinkManager`
+    fallback), polls the 503 `mesh-nodes` every 30 s with no backoff, and
+    shows no failure in the UI.
+  - `createGeofence` / `checkGeofences` (`bdoc-atak.js`) have no callers.
+  - No shared incident object. PACE plan, community reports and markers are
+    single-browser only (Supabase + Realtime is the proposed fix).
+  - The narrow-screen interstitial blocks phones before onboarding.
+  - An EM-vocabulary preset for the military tool names.
+- **From the GEOINT audit:**
+  - The glass-guard cold-load FPS sample can disable glass for the whole session.
+  - Layer toggles have no `aria-label` (`a11y.js` reports 0 labeled).
+  - Layer/map-style click overlap below full width.
+  - No WGS84 tag on the coordinate readout.
+  - CSV import is missing.
+
+### S. ✅ FIXED in p156c (`160c111`) — service worker served OLD JS on the first load after every deploy
+`cacheFirst()` now goes exact match → network → any-version copy only in the
+offline `catch`. Tested in Chrome with a local deploy simulation, new SW held
+back 8 s:
+- Old code: requested `?v=D2`, ran D1.
+- New code: ran D2.
+- Offline: both boot from cache, the any-version fallback returns 200, and a
+  never-cached file returns 408.
+
+Live: a returning browser moved from v156b to v156c cleanly. (The p156c deploy
+itself changed no versioned JS, so it couldn't skew.) Original write-up:
+
 `cacheFirst()` in `service-worker.js` (~l.161) tries
 `caches.match(request, {ignoreSearch: true})` **before** the network. Here is
 what happens on a returning visitor's first load after a deploy:
