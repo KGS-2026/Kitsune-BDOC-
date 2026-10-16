@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v156b';  // p156b: sharper globe — MSAA not FXAA, natural sat grade, lighter bloom
+const SW_VERSION = 'bdoc-v156c';  // p156c: cacheFirst tries the network before any-version cache (no old JS after a deploy)
+// (prev) const SW_VERSION = 'bdoc-v156b';  // p156b: sharper globe — MSAA not FXAA, natural sat grade, lighter bloom
 // (prev) const SW_VERSION = 'bdoc-v156';  // p156: Skybridge (satellite data over mesh) + mesh traffic in Network Builder
 // (prev) const SW_VERSION = 'bdoc-v155';  // p155: Network Builder (Packet Tracer + live Wireshark) + Meshtastic World relay router
 // (prev) const SW_VERSION = 'bdoc-v154';  // p154: Travon's 25-item field list (NVG/FLIR GPU, depth, drawing, undo, aircraft ID…)
@@ -161,14 +162,14 @@ self.addEventListener('fetch', event => {
 async function cacheFirst(request, cacheName) {
   // GRID-DOWN FIX: cache keys include the ?v= cache-buster. Precaching
   // '/js/auth.js?v=p136' never matched a live request for '?v=p136', so the app
-  // failed offline even though the bytes were on disk. Fall back to a
-  // search-insensitive match for same-origin assets before giving up.
-  let cached = await caches.match(request, { ignoreSearch: false });
+  // failed offline even though the bytes were on disk — hence the
+  // search-insensitive fallback below.
+  // P156c: that fallback ran BEFORE the network, so on the first load after a
+  // deploy the old SW answered 'cesium-init.js?v=p156b' with its cached ?v=p154
+  // copy (new HTML + old JS until a second reload). Exact match → network →
+  // any-version copy only when the network is actually unreachable.
+  const cached = await caches.match(request, { ignoreSearch: false });
   if (cached) return cached;
-  if (new URL(request.url).origin === self.location.origin) {
-    cached = await caches.match(request, { ignoreSearch: true });
-    if (cached) return cached;
-  }
   try {
     const response = await fetch(request, { signal: AbortSignal.timeout(10000) });
     if (response.ok) {
@@ -177,6 +178,10 @@ async function cacheFirst(request, cacheName) {
     }
     return response;
   } catch (e) {
+    if (new URL(request.url).origin === self.location.origin) {
+      const anyVersion = await caches.match(request, { ignoreSearch: true });
+      if (anyVersion) return anyVersion;
+    }
     // Truly offline and not cached
     return offlineFallback(request);
   }
