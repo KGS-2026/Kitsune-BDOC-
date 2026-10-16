@@ -460,7 +460,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p156f</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p156g</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -551,7 +551,7 @@ if('serviceWorker' in navigator){
 </optgroup>
 </select>
 <div style="position:relative;flex:1;max-width:300px">
-<input id="searchBar" type="text" placeholder="Search location, callsign, vessel..." autocomplete="off"
+<input id="searchBar" type="text" placeholder="Search place, callsign, vessel or MGRS grid..." autocomplete="off" onkeydown="if(event.key==='Enter'){const _r=window._srCache&&window._srCache[0];if(_r){event.preventDefault();flyToSearch(_r.lat,_r.lon,_r.name,_r)}}"
   style="width:100%;padding:5px 28px 5px 10px;background:#0d1117;border:1px solid var(--bdr2);color:#c8ccd6;font-family:var(--m);font-size:10px;border-radius:3px;outline:none;transition:border-color .2s"
   onfocus="this.style.borderColor='rgba(45,114,210,0.4)'" onblur="setTimeout(()=>{this.style.borderColor='';document.getElementById('searchResults').style.display='none'},200)"
   oninput="handleSearch(this.value)">
@@ -826,12 +826,13 @@ if('serviceWorker' in navigator){
 <div class="set-title">BDOC OPTIONS</div>
 <div class="set-section">
 <div class="set-section-title">Coordinates</div>
-<div class="set-row"><label>Format</label><select id="setCoordFmt" onchange="BDOC_Settings.coordFormat=this.value">
+<div class="set-row"><label>Format</label><select id="setCoordFmt" onchange="setCoordSetting('coordFormat',this.value)">
 <option value="dms">Degrees, Minutes, Seconds</option>
 <option value="dd">Decimal Degrees</option>
 <option value="dm">Degrees, Decimal Minutes</option>
 <option value="mgrs">Military Grid (MGRS)</option>
 </select></div>
+<div class="set-row"><label>MGRS precision</label><select id="setMgrsDigits" onchange="setCoordSetting('mgrsDigits',+this.value)"><option value="6">6-digit (100 m)</option><option value="8" selected>8-digit (10 m)</option><option value="10">10-digit (1 m)</option></select></div>
 <label class="set-chk"><input type="checkbox" id="setGrid" onchange="toggleCoordGrid(this.checked)"> Show coordinate grid overlay</label>
 </div>
 <div class="set-section">
@@ -1216,6 +1217,8 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <div class="ctx-sep"></div>
 </div>
 <!-- Universal actions (always visible) -->
+<div class="ctx-item" onclick="ctxAction('copygrid')" style="color:#3DFFB0">⌗ Copy Grid (MGRS)</div>
+<div class="ctx-item" onclick="ctxAction('share')" style="color:#3DFFB0">↗ Share This Spot</div>
 <div class="ctx-item" onclick="ctxAction('coords')">📋 Copy Coordinates</div>
 <div class="ctx-item" onclick="ctxAction('flyhere')">🎯 Fly To This Location</div>
 <div class="ctx-item" onclick="ctxAction('whatshere')">🔍 What's Nearby</div>
@@ -1509,7 +1512,7 @@ if(!window.Cesium){
      upstream is down — the grid-down property. Loaded early so layers can use it. -->
 <script src="js/snapshot-client.js?v=p122"></script>
 <script src="js/modules/icon-factory.js?v=p116"></script>
-<script src="js/converters.js?v=p59"></script>
+<script src="js/converters.js?v=p156g"></script>
 <script src="js/data.js?v=p156d"></script>
 <script src="js/auth.js?v=p156"></script>
 <script src="js/filters.js?v=p154"></script>
@@ -1626,7 +1629,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p156f',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p156g',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
@@ -1753,7 +1756,7 @@ const Anomaly={
     this.alerts.push({sev,message,ts,_ts:now});if(this.alerts.length>200)this.alerts.shift();
     const banner=document.getElementById('anomBanner');if(banner){banner.textContent='\u26A0 ANOMALY: '+message;banner.classList.add('show');setTimeout(()=>banner.classList.remove('show'),15000)}
     if('Notification' in window&&Notification.permission==='granted'){new Notification('BDOC ANOMALY',{body:message,tag:'bdoc-anomaly'})}
-    else if('Notification' in window&&Notification.permission!=='denied'){Notification.requestPermission()}
+    // P156g: never auto-prompt from a data event; banner + feed still show the anomaly
     EventLog.add(sev==='CRIT'?'crit':'warn',message);
     msg('al',`<b>ANOMALY DETECTED</b><br><br>${esc(message)}<br><span style="font-size:9px;color:var(--t3)">${ts}</span>`);
     af('var(--rd)','ANOMALY: '+esc(message));
@@ -3051,6 +3054,14 @@ function bdocPlayScanner(feedUrl,name,color){
 }
 // Phase 5C (2026-05-04): Changelog popup wired to top-bar BUILD pill — deploy verification at a glance.
 const _BDOC_CHANGELOG=[
+  {ver:'p156g (2026-10-16) — GRIDS, TOUCH AND SHARING',items:[
+    'Touch screens: press and hold the map (about half a second) to open the same action menu as a right-click',
+    'New in that menu: ⌗ Copy Grid (MGRS) and ↗ Share This Spot (opens the phone share sheet for Signal, Telegram, SMS…)',
+    'Settings → Coordinates: MGRS now works, with 6, 8 or 10-digit precision, spaced the way it is read on a radio (16S GC 4195 3739); your choice is remembered',
+    'Type or paste an MGRS grid (or "lat, lon") into search: it flies there and drops a pin. Grids are decoded on the device and never sent to a geocoder',
+    'No more notification permission request when the page loads; BDOC only asks when you turn on alerts or arm a watch zone',
+    'Shared links now show a preview image'
+  ]},
   {ver:'p156f (2026-10-16) — LIVE CURRENT ON THE GRID',items:[
     'Grid Infrastructure: pulses of current now run along every 500 kV and 345 kV transmission line, with a slight electrical shimmer',
     'Pipelines: product flows slowly along each line instead of a static dash',
@@ -7294,6 +7305,10 @@ function handleSearch(q){
   clearTimeout(_searchTimeout);
   const box=document.getElementById('searchResults');
   if(!q||q.length<2){box.style.display='none';return}
+  // P156g: an MGRS grid or "lat, lon" resolves locally — instantly, offline, and without
+  // sending the grid to a third-party geocoder.
+  const cq=(typeof parseCoordQuery==='function')?parseCoordQuery(q):null;
+  if(cq){renderSearchResults([{name:cq.label,type:'grid',lat:cq.lat,lon:cq.lon,precision:cq.precision}]);return}
   _searchTimeout=setTimeout(()=>{
     const results=[];
     // Search local entities first (callsigns, vessel names, labels)
@@ -7334,24 +7349,38 @@ function handleSearch(q){
 function renderSearchResults(results){
   const box=document.getElementById('searchResults');
   if(!results.length){box.style.display='none';return}
-  const icons={entity:'\u2708',battle:'\u2694',location:'\uD83D\uDCCD'};
-  const colors={entity:'var(--bl)',battle:'var(--rd)',location:'var(--gn)'};
+  const icons={entity:'\u2708',battle:'\u2694',location:'\uD83D\uDCCD',grid:'\u2317'};
+  const colors={entity:'var(--bl)',battle:'var(--rd)',location:'var(--gn)',grid:'#3DFFB0'};
   // Phase 24 (2026-05-23): cache results by index so data-sri onclick lookup is safe
   window._srCache=results;
-  box.innerHTML=results.map((r,i)=>`<div data-sri="${i}" onclick="const _r=window._srCache&&window._srCache[this.dataset.sri];if(_r)flyToSearch(_r.lat,_r.lon,_r.name)" style="padding:6px 10px;cursor:pointer;border-bottom:1px solid var(--bdr);font-family:var(--m);font-size:9px;color:var(--t2);display:flex;align-items:center;gap:6px;transition:background .1s" onmouseenter="this.style.background='rgba(45,114,210,0.08)'" onmouseleave="this.style.background='none'"><span style="color:${colors[r.type]||'var(--t3)'};font-size:12px">${icons[r.type]||'\u2022'}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.name)}</span><span style="color:var(--t3);font-size:7px;letter-spacing:1px;text-transform:uppercase">${r.type}</span></div>`).join('');
+  box.innerHTML=results.map((r,i)=>`<div data-sri="${i}" onclick="const _r=window._srCache&&window._srCache[this.dataset.sri];if(_r)flyToSearch(_r.lat,_r.lon,_r.name,_r)" style="padding:6px 10px;cursor:pointer;border-bottom:1px solid var(--bdr);font-family:var(--m);font-size:9px;color:var(--t2);display:flex;align-items:center;gap:6px;transition:background .1s" onmouseenter="this.style.background='rgba(45,114,210,0.08)'" onmouseleave="this.style.background='none'"><span style="color:${colors[r.type]||'var(--t3)'};font-size:12px">${icons[r.type]||'\u2022'}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.name)}</span><span style="color:var(--t3);font-size:7px;letter-spacing:1px;text-transform:uppercase">${r.type}</span></div>`).join('');
   box.style.display='block';
 }
-function flyToSearch(lat,lon,name){
+function flyToSearch(lat,lon,name,r){
   document.getElementById('searchResults').style.display='none';
   document.getElementById('searchBar').value=name;
-  if(V)V.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(lon,lat,50000),duration:1.5,orientation:{heading:0,pitch:Cesium.Math.toRadians(-45),roll:0}});
+  const isGrid=r&&r.type==='grid';
+  // P156g: a grid flies in close (scaled to its precision) and drops a pin you can read back
+  const alt=isGrid?Math.max(1500,Math.min(60000,(r.precision||10)*40)):50000;
+  if(V)V.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(lon,lat,alt),duration:1.5,orientation:isGrid?undefined:{heading:0,pitch:Cesium.Math.toRadians(-45),roll:0}});
+  if(isGrid&&V){
+    try{if(window._bdocGridPin)V.entities.remove(window._bdocGridPin)}catch(_){}
+    window._bdocGridPin=V.entities.add({position:Cesium.Cartesian3.fromDegrees(lon,lat),name:name,
+      point:{pixelSize:10,color:Cesium.Color.fromCssColorString('#3DFFB0'),outlineColor:Cesium.Color.BLACK,outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
+      label:{text:name,font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#3DFFB0'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-12),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.75),disableDepthTestDistance:5e6}});
+    const pin=window._bdocGridPin;setTimeout(()=>{try{if(window._bdocGridPin===pin){V.entities.remove(pin);window._bdocGridPin=null}}catch(_){}},180000);
+  }
   // Phase 24 (2026-05-23): esc() name from Nominatim API before passing to af() (rf() renders as innerHTML)
   af('var(--gn)','Search: flew to '+esc(name)+' ('+lat.toFixed(2)+', '+lon.toFixed(2)+')');
 }
 // ═══════════════════════════════════════════
 // SECTION 11.9: CURSOR COORDINATE DISPLAY + SETTINGS
 // ═══════════════════════════════════════════
-const BDOC_Settings={coordFormat:'dms',units:'metric'};
+const BDOC_Settings={coordFormat:'dms',units:'metric',mgrsDigits:8};
+// P156g: remember coordinate format + MGRS precision (both reset on every load before)
+try{const _cs=JSON.parse(localStorage.getItem('bdoc_coord_settings')||'null');if(_cs){if(['dms','dm','dd','mgrs'].includes(_cs.coordFormat))BDOC_Settings.coordFormat=_cs.coordFormat;if([6,8,10].includes(_cs.mgrsDigits))BDOC_Settings.mgrsDigits=_cs.mgrsDigits}}catch(_){}
+function setCoordSetting(k,v){BDOC_Settings[k]=v;try{localStorage.setItem('bdoc_coord_settings',JSON.stringify({coordFormat:BDOC_Settings.coordFormat,mgrsDigits:BDOC_Settings.mgrsDigits}))}catch(_){}}
+try{const _f=document.getElementById('setCoordFmt');if(_f)_f.value=BDOC_Settings.coordFormat;const _p=document.getElementById('setMgrsDigits');if(_p)_p.value=String(BDOC_Settings.mgrsDigits)}catch(_){}
 // BDOC PHASE 2 TURN 4: toDMS / toDM / formatCoord / formatElev extracted to js/converters.js (2026-04-22)
 // Cursor tracking — update coordinate display on mouse move
 // NOTE: was an IIFE; converted to named function 2026-05-03 because cesium-init.js
@@ -7374,7 +7403,7 @@ function initCursorCoords(){
     const camAlt=V.camera.positionCartographic.height;
     document.getElementById('ccLat').textContent=formatCoord(lat,true);
     document.getElementById('ccLon').textContent=formatCoord(lon,false);
-    try{document.getElementById('ccMGRS').textContent=latLonToMGRS(lat,lon,4);}catch(_){}
+    try{document.getElementById('ccMGRS').textContent=formatMGRS(lat,lon);}catch(_){} // P156g: precision setting, spaced
     document.getElementById('ccElev').textContent=formatElev(elev);
     document.getElementById('ccAlt').textContent=camAlt>1000?(camAlt/1000).toFixed(1)+' km':camAlt.toFixed(0)+' m';
   },Cesium.ScreenSpaceEventType.MOUSE_MOVE);
@@ -8690,12 +8719,21 @@ function _ctxEntityTitle(e){
     return (''+(n||'Selected marker')).split('\n')[0].slice(0,46);
   }catch(_){return 'Selected marker'}
 }
+// P156g: clipboard write that also works where the async Clipboard API is blocked
+function _bdocCopy(text,okMsg){
+  const done=()=>af('var(--bl)',esc(okMsg||('Copied: '+text)));
+  const legacy=()=>{try{const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();if(ok){done();return}}catch(_){}af('var(--yl)',esc(text))};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(done).catch(legacy);else legacy();
+}
 function showCtxMenu(x,y,lat,lon,entity){
   ctxPos={lat,lon,screenX:x,screenY:y};
   ctxEntity=entity||null;
   // Update header based on mode
   const hdr=document.getElementById('ctx-header-text');
-  if(hdr)hdr.textContent=(battleMode?'BATTLE TRACKER':'ACTIONS')+(lat!==undefined?' — '+lat.toFixed(4)+'°, '+lon.toFixed(4)+'°':'');
+  if(hdr)hdr.textContent=(battleMode?'BATTLE TRACKER':'ACTIONS')+(lat!==undefined?' — '+(typeof formatMGRS==='function'?formatMGRS(lat,lon):lat.toFixed(4)+'°, '+lon.toFixed(4)+'°'):'');
+  // P156g: opening the menu also reads the point into the coordinate bar — the only way to
+  // see a grid on a touch screen, which has no hover readout.
+  try{if(lat!==undefined){document.getElementById('ccLat').textContent=formatCoord(lat,true);document.getElementById('ccLon').textContent=formatCoord(lon,false);document.getElementById('ccMGRS').textContent=formatMGRS(lat,lon)}}catch(_){}
   // P154: entity block (delete / edit / colour / watchlist) sits at the TOP of the menu
   const eb=document.getElementById('ctx-entity-block');
   if(eb)eb.style.display=entity?'block':'none';
@@ -8766,6 +8804,19 @@ function ctxAction(action){
   const{lat,lon}=_savedPos;
   switch(action){
     // ═══ UNIVERSAL ACTIONS (always available) ═══
+    case 'copygrid':{   // P156g: the target loop — grid on the clipboard in one action
+      const g=formatMGRS(lat,lon);
+      _bdocCopy(g,'Grid copied: '+g);
+      break;
+    }
+    case 'share':{      // P156g: one action to Signal / Telegram / SMS via the OS share sheet
+      const g=formatMGRS(lat,lon),t=new Date().toISOString().slice(11,16).replace(':','')+'Z';
+      const text='GRID '+g+' | '+lat.toFixed(5)+', '+lon.toFixed(5)+' | '+t;
+      const url=location.origin+'/?fly='+lat.toFixed(5)+','+lon.toFixed(5)+',3000';
+      if(navigator.share){navigator.share({title:'BDOC position',text,url}).then(()=>af('var(--bl)','Shared: '+g)).catch(e=>{if(e&&e.name!=='AbortError')_bdocCopy(text+' '+url,'Share failed — copied instead')})}
+      else _bdocCopy(text+' '+url,'Copied (no share sheet in this browser): '+g);
+      break;
+    }
     case 'coords':{
       const coordStr=`${lat.toFixed(6)}, ${lon.toFixed(6)}`;
       navigator.clipboard.writeText(coordStr).then(()=>af('var(--bl)',`Copied: ${coordStr}`)).catch(()=>af('var(--yl)',`Coordinates: ${coordStr}`));
@@ -9652,7 +9703,8 @@ function _initBattleClickHandlers(){if(!V)return;
     if((battleTool==='engagement_area'||battleTool==='minefield_area')&&battleDrawPoints.length>=6)finishTacticalZone(battleTool);
   },Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
   // RIGHT-CLICK — UNIVERSAL context menu (works ALWAYS, not just battle mode)
-  bHandler.setInputAction(function(click){
+  // P156g: named so a touch long-press opens the very same menu (field audit B1)
+  window._bdocMapContext=function(click){
     const ll=screenToLatLon(click.position);
     if(!ll)return;
     // If in measure mode, complete the measurement instead of showing menu
@@ -9679,7 +9731,42 @@ function _initBattleClickHandlers(){if(!V)return;
       return;
     }
     showCtxMenu(click.position.x,click.position.y,ll.lat,ll.lon,entity);
-  },Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+  };
+  bHandler.setInputAction(window._bdocMapContext,Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+  // ═══ P156g: TOUCH LONG-PRESS → the same context menu (field audit B1) ═══
+  // Touch has no right-click, so on a tablet copy-grid, share, watch-area and delete/edit
+  // marker were unreachable. Hold ~0.55 s without moving. The release must not also act
+  // as a tap: cesium-init.js guards every LEFT_CLICK handler on window._bdocLongPress,
+  // and the capture listener below eats the DOM click that would close the menu.
+  (function(){
+    const cv=V.scene.canvas;let timer=null,start=null,pid=null;const down=new Set();
+    const cancel=()=>{if(timer){clearTimeout(timer);timer=null}};
+    const lp=window._bdocLongPress={active:false,until:0};
+    cv.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='mouse')return;
+      down.add(e.pointerId);
+      if(down.size>1){cancel();return}      // pinch / two-finger tilt
+      const r=cv.getBoundingClientRect();
+      start={x:e.clientX,y:e.clientY,cx:e.clientX-r.left,cy:e.clientY-r.top};pid=e.pointerId;
+      cancel();
+      timer=setTimeout(()=>{
+        timer=null;lp.active=true;
+        try{navigator.vibrate&&navigator.vibrate(15)}catch(_){}
+        try{window._bdocMapContext({position:new Cesium.Cartesian2(start.cx,start.cy)})}catch(err){console.warn('[long-press]',err)}
+      },550);
+    },{passive:true});
+    cv.addEventListener('pointermove',e=>{if(timer&&start&&e.pointerId===pid&&Math.hypot(e.clientX-start.x,e.clientY-start.y)>10)cancel()},{passive:true});
+    const up=e=>{
+      if(e.pointerType==='mouse')return;
+      down.delete(e.pointerId);cancel();
+      if(lp.active){lp.active=false;lp.until=Date.now()+450}
+    };
+    cv.addEventListener('pointerup',up,true);
+    cv.addEventListener('pointercancel',up,true);
+    // Android Chrome also raises a native contextmenu on a long touch; keep it off the globe
+    cv.addEventListener('contextmenu',e=>{if(timer||lp.active||Date.now()<lp.until)e.preventDefault()});
+    document.addEventListener('click',e=>{if((lp.active||Date.now()<lp.until)&&!ctxEl.contains(e.target)){e.stopPropagation();e.preventDefault()}},true);
+  })();
   // ESC to cancel current drawing or universal tool modes
   document.addEventListener('keydown',function(e){
     if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
@@ -10411,7 +10498,8 @@ function loadVegetationGrid(){
 // ═══════════════════════════════════════════
 Health.init();
 initMobile();
-if('Notification' in window&&Notification.permission==='default')Notification.requestPermission();
+// P156g: no notification prompt at load (consumer audit: a cold prompt gets a permanent "Block").
+// Permission is asked in context — arming a watch zone or the alerts toggle (bdoc-push.js).
 msg('sy','<b>KGS BDOC v7.0 \u2014 ONLINE</b><br><br>Multi-domain intelligence platform initializing across '+CFG.regions.length+' surveillance regions (7 geographic COCOM AORs).<br>Type <b>help</b> for available commands. Press <b>?</b> for keyboard shortcuts.');
 af('var(--kf)','KGS BDOC v7.0 initialized \u2014 defense intelligence platform online');
 af('var(--bl)','LIVE INTEL \u2014 Monitoring '+CFG.regions.length+' surveillance regions across 7 geographic COCOM AORs');
@@ -13148,7 +13236,7 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
-<script src="js/cesium-init.js?v=p156f"></script>
+<script src="js/cesium-init.js?v=p156g"></script>
 <script src="js/deeplink.js?v=p115"></script>
 <!-- P119: Section 508 / WCAG 2.1 AA remediation pass. Runtime-labels the 40+ layer
      switches, panels, buttons and the live intel feed; adds h1, skip link, focus

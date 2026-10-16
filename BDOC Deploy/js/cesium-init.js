@@ -18,6 +18,22 @@
 // p68's grade (sat 1.25 / contrast 1.12–1.16 / gamma 0.92) read as over-processed next to
 // Google Earth; this is a light lift that keeps the photo looking like a photo.
 window.BDOC_SAT_GRADE={brightness:1.0,contrast:1.05,saturation:1.08,gamma:1.0};
+// P156g: a touch long-press opens the context menu (index.html); its release must not ALSO
+// act as a tap (select an entity, place a marker, finish a map pick). Every LEFT_CLICK handler
+// — the Viewer's own selection, battle tools, Mesh World, Network Builder — goes through
+// setInputAction, so one guard here covers them all. Installed before the Viewer is built.
+(function(){
+  try{
+    const P=Cesium.ScreenSpaceEventHandler.prototype,orig=P.setInputAction;
+    P.setInputAction=function(action,type,modifier){
+      if(type===Cesium.ScreenSpaceEventType.LEFT_CLICK&&typeof action==='function'){
+        const a=action;
+        action=function(){const lp=window._bdocLongPress;if(lp&&(lp.active||Date.now()<lp.until))return;return a.apply(this,arguments)};
+      }
+      return orig.call(this,action,type,modifier);
+    };
+  }catch(e){console.warn('[P156g click guard]',e)}
+})();
 // ── P154: HORIZON-AWARE DEPTH TEST (bug: "markers visible through the earth") ──
 // ~180 markers set disableDepthTestDistance to 5e6 m or Infinity so clamped icons
 // are never swallowed by terrain. Side effect: anything within that distance draws

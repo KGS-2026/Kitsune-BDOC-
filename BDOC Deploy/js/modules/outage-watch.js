@@ -413,7 +413,8 @@
   window.OutageWatch.fuse = fuseCause; // expose for diagnostics
   window.OutageWatch.start = function () {
     if (window.OutageWatch._started) return; window.OutageWatch._started = true;
-    try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch (_) {}
+    // P156g: no permission prompt at boot (this runs on every load). Outage alerts still show as
+    // notifications once the user has allowed them (alerts toggle / arming a watch zone).
     setTimeout(pollNews, 4000);                       // first news poll 4s after boot
     setTimeout(pollStatus, 9000);                     // first status sweep 9s after boot
     setInterval(function () { if (!document.hidden) pollNews(); }, 180e3);   // every 3 min

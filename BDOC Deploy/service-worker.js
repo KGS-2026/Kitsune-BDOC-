@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v156f';  // p156f: current flowing along grid lines + pipeline flow (cesium-init + layers-arcgis)
+const SW_VERSION = 'bdoc-v156g';  // p156g: long-press menu, copy grid / share, MGRS setting + search, no boot prompt, og-image
+// (prev) const SW_VERSION = 'bdoc-v156f';  // p156f: current flowing along grid lines + pipeline flow (cesium-init + layers-arcgis)
 // (prev) const SW_VERSION = 'bdoc-v156e';  // p156e: battle plan autosave/restore, real-shape GeoJSON/CoT export, .bdoc.json save/open
 // (prev) const SW_VERSION = 'bdoc-v156d';  // p156d: field-safety pass (CoT escaping, MGRS, honest link badge + 503 offline, no reload over a plan, honest saves)
 // (prev) const SW_VERSION = 'bdoc-v156c';  // p156c: cacheFirst tries the network before any-version cache (no old JS after a deploy)
@@ -34,24 +35,24 @@ const STATIC_PRECACHE = [
   '/css/bdoc.css?v=p154',
   '/css/bdoc-p154.css?v=p154',
   '/js/telemetry.js?v=p59',
-  '/js/converters.js?v=p59',
+  '/js/converters.js?v=p156g',
   '/js/data.js?v=p156d',
   '/js/auth.js?v=p156',
   '/js/filters.js?v=p154',
   '/js/kitsune-ai.js?v=p93',
   '/js/bdoc-atak.js?v=p156d',
-  '/js/cesium-init.js?v=p156f',
+  '/js/cesium-init.js?v=p156g',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p156f',
-  '/js/modules/layers-conflict.js?v=p156f',
-  '/js/modules/layers-infra.js?v=p156f',
-  '/js/modules/layers-air.js?v=p156f',
-  '/js/modules/layers-nuke.js?v=p156f',
-  '/js/modules/nuke-sim.js?v=p156f',
-  '/js/modules/layers-airfields.js?v=p156f',
-  '/js/modules/net-builder.js?v=p156f',
-  '/js/modules/mesh-world.js?v=p156f',
-  '/js/modules/skybridge.js?v=p156f',
+  '/js/modules/layers-military.js?v=p156g',
+  '/js/modules/layers-conflict.js?v=p156g',
+  '/js/modules/layers-infra.js?v=p156g',
+  '/js/modules/layers-air.js?v=p156g',
+  '/js/modules/layers-nuke.js?v=p156g',
+  '/js/modules/nuke-sim.js?v=p156g',
+  '/js/modules/layers-airfields.js?v=p156g',
+  '/js/modules/net-builder.js?v=p156g',
+  '/js/modules/mesh-world.js?v=p156g',
+  '/js/modules/skybridge.js?v=p156g',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',
