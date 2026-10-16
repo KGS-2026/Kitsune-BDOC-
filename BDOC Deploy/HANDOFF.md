@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
-**Last updated by Claude Code:** 2026-10-16 · build **p156d** live on `main` @ `f6c2aee` · `SW_VERSION bdoc-v156d`
+**Last updated by Claude Code:** 2026-10-16 · build **p156e** live on `main` @ `a5a677c` · `SW_VERSION bdoc-v156e`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,72 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
+
+### Claude Code — p156e battle plan persistence + real-shape exports, on `main` @ `a5a677c` (2026-10-16)
+
+Fixes field audit S3 + S5 (§2 V) and the EOC eval's "markers vanish on refresh".
+
+**New `js/bdoc-plan.js`** (loaded after `bdoc-offline-store.js`):
+- **Serializer:** handles every `battleEntities` item generically, single
+  entities or groups. It reads all billboard, label, point, polyline, polygon,
+  ellipse and rectangle properties, plus Dash/Glow/Arrow/Outline/Image
+  materials, `battleMeta`, and a CASEVAC card's CoT from `window._cotStore`.
+  No drawing tool was touched, so new tools are covered automatically as long
+  as they push into `battleEntities`.
+- **Autosave:** to IndexedDB `bdoc-offline` → store `meta` → key
+  `battle_plan_v1`, about 0.8 s after any change.
+  - Triggers: push/splice (the tracked array is wrapped again, keeping the
+    BDOCUndo hook), `clearBattleEntities()`, any entity's `definitionChanged`
+    (note edit, recolor), and a 4 s length check.
+  - The plan is restored on boot.
+  - `beforeunload` warns only while a change isn't confirmed saved.
+  - A red toast appears if IndexedDB fails.
+- **Exports:**
+  - `exportBattlePlan()` → `BDOCPlan.exportGeoJSON()`: Point / LineString /
+    Polygon, circles as a 64-pt Polygon + `radius_m`, groups included,
+    simplestyle colours.
+  - `exportBattlePlanCoT()` → `BDOCPlan.cotEvents(pickCoT)`: `u-d-f` shapes
+    with `<link>` vertices, `u-d-c-c` circles, and the CASEVAC's full 9-line.
+    Ring/degree labels inside groups are skipped.
+- **💾 SAVE FILE / 📂 OPEN FILE** (battle panel): a full-fidelity
+  `.bdoc.json` (`format: "bdoc-plan"`, `version: 1`). Opening appends to the
+  plan with new ids, then flies to it.
+  - **Imports are sanitized:** DOMPurify on the description and
+    `meta.popupExtras` (the info box has `allow-scripts`, §2 N #18); hex-only
+    `meta.color`; `data:image` billboards only.
+  - Inline `onclick` buttons in imported cards are therefore inert. The
+    right-click menu still works.
+- **Update banner:** says the plan is saved on the device when it is.
+- **Version:** SW `bdoc-v156e` (precaches `bdoc-plan.js?v=p156e`),
+  `BUILD p156e`, changelog entry.
+
+**Verified by running:**
+- **Headless Chrome, old (p156d) vs new**, against a local server with the
+  real SW. A 12-item / 52-entity plan was drawn with the app's own tool
+  functions.
+  - Reload: old lost all of it; new restored it identically.
+  - Note edit and undo persist across a reload.
+  - `beforeunload` fires only when unsaved.
+  - GeoJSON: old was 8 Points only; new is 22 LineString + 3 Polygon +
+    27 Point, with PL ALPHA as a 3-vertex LineString and the circle carrying
+    `radius_m`.
+  - CoT: old was 8 events; new is 30 well-formed (24 `u-d-f`, 1 `u-d-c-c`,
+    the full CASEVAC).
+  - `.bdoc.json` (86 KB) opened on a fresh profile: identical.
+  - A hostile `.bdoc.json` ran no script, and its colour and remote image
+    were dropped.
+- `ci-validate.sh` passes.
+- **Live:** `BUILD p156e`, `bdoc-v156e` and `bdoc-plan.js` are served. A real
+  round trip on the live origin worked (marker → IndexedDB → reload →
+  restored with its note → cleaned up).
+
+**Not verified:**
+- CoT shapes in a real ATAK, WinTAK or iTAK (well-formed only; no TAK device
+  here).
+- `beforeunload` on mobile browsers.
+
+**Nit:** the 4 s length check doesn't reset after a save, so one redundant
+save follows each add or remove. Harmless; set `lastLen` in `saveNow()`.
 
 ### Claude Code — p156d field-safety pass, on `main` @ `f6c2aee` (2026-10-16)
 
@@ -512,18 +578,15 @@ S1, S2, S3, S5, S6 and S7 in source before fixing.
 - S7/S8 MGRS
 - S11 offline 503
 
+**Fixed in p156e:**
+- S3 persistence: autosave/restore + `beforeunload`
+- S5 real LineString/Polygon and CoT shapes, plus `.bdoc.json` import
+
 **Still open, silently wrong (highest first):**
-- **S3 persistence.** `battleEntities` is memory only, so a refresh, crash or
-  tab discard loses the plan. Fix: autosave serializable specs to IndexedDB
-  (`BDOCOfflineStore` exists), restore on boot, and warn on `beforeunload`.
 - **S2 paid tools lock offline.** `loadProfile` fails, so `tier` stays
   `recon`, and Battle Tracker needs analyst/enterprise (`enterBattleMode`).
   Fix: cache `{tier, exp ≤30 d}` after each successful load, or make Battle
   Tracker free (it holds no licensed data).
-- **S5 export drops line geometry.** `exportBattlePlan` /
-  `exportBattlePlanCoT` emit `e.position` only, so phase lines and areas
-  become one point. Emit LineString/Polygon (and CoT routes or shapes), and add
-  an import.
 - **S9 "Community" trust is this-device-only.** Label it "unverified — this
   device" and drop the 50 % starting trust.
 - **S10 GPS honesty.** The accuracy circle is clamped to ≥50 m, and there's
@@ -569,8 +632,10 @@ Checked by Claude Code the same day:
   issue and stays open (§2 L.1).
 - **Not yet tracked here** (the EOC eval's punch list, in its order):
   - Drawn markers (`battleEntities`) are lost on refresh with no warning.
-    (p156d stops *update-triggered* reloads while markers exist; manual
-    refresh and crashes still lose them; see §2 V S3.)
+    (p156d stops *update-triggered* reloads while markers exist. **p156e
+    fixes this:** the plan autosaves to IndexedDB and is restored on boot.
+    The PACE plan and community reports were already in localStorage. None
+    of it is shared between users yet.)
     `BDOCOfflineStore` already exists; autosave to it and warn on
     `beforeunload`.
   - `mesh-globe-layer.js` uses a bare `fetch` (no `BDOCLinkManager`
