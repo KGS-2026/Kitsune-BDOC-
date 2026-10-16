@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
-**Last updated by Claude Code:** 2026-10-14 · build **p156** (patches, not pushed) · `SW_VERSION bdoc-v156`
+**Last updated by Claude Code:** 2026-10-16 · build **p156** live on `main` @ `e086a19` · `SW_VERSION bdoc-v156`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -79,7 +79,58 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
-### Claude Code — p156 (2026-10-14) — Skybridge: satellite data over the mesh, NOT yet on `main`
+### Claude Code — p153–p157 deployed + mem0 key file pulled (2026-10-16)
+
+Applied patches `0001`–`0005` on `c1f5f06` and pushed to `main` (Travon's go,
+2026-10-16). `main` was still `c1f5f06`, so no rebase was needed. Backup branch:
+`claude/p153-p157-sec`.
+
+| Commit | What |
+|---|---|
+| `64e104a` | p153 Cesium 1.146 |
+| `9e8d4b8` | p154 field list |
+| `d842d56` | p155 Network Builder + Mesh World |
+| `da378d5` | p156 Skybridge |
+| `32c68c3` | p157 queue doc |
+| `e086a19` | security: `mem0_importer.py` reads the key from env; `netlify.toml` 404s it |
+
+`e086a19` is the code half of `0a3d5b4` from the laptop clone
+`C:\Users\ARNAUTICA\source\repos\Kitsune-BDOC-` (committed 2026-10-13, never
+pushed). Its HANDOFF note, and that clone's other unpushed commit `d92c8b6`
+(the "two-way baton" header + 2026-10-13 catch-up log), conflict with this
+file's p153–p157 entries and are **not** merged. They exist only in that clone.
+Reconcile by hand, then reset that clone to `origin/main`.
+
+**Verified by running:**
+- `scripts/ci-validate.sh` → `ALL CHECKS PASSED`, but only after three Windows
+  quirks were worked around without repo changes (§2 Q).
+- `SW_VERSION = 'bdoc-v156'`; `BUILD p156` in `index.html`.
+- Skybridge smoke test: `skybridge.py demo` exit 0; `mesh/events` returned 29
+  events; `decode` wrote `raster-1.png` + `decoded.json`.
+- Live, about 30 s after the push:
+  - `BUILD p156` and `bdoc-v156` are served.
+  - `/mem0_importer.py` returns **404** (it was 200 before).
+  - `HANDOFF.md`, `CLAUDE.md`, `docs/GRID_DOWN_OPERATIONS.md`,
+    `docs/WIN_PLAN_2026-10.md` and `tools/skybridge.py` all return 404.
+- `proxy-meshworld` is only partly working: `status=ok` with 9,688 nodes and
+  10,306 links at 14:00Z, and 9,671 nodes on the 14:10Z rebuild. Both are
+  below the 10,000 bar. Source A (liamcottle) timed out both times, so the
+  response is meshmap.net data alone (§2 P).
+- In the browser: `BUILD p156`, `Cesium.VERSION` 1.146.0, viewer up.
+  - Console errors on load are **all pre-existing**: CORS blocks on direct
+    fetches to fire.ca.gov, OpenSky, FIRMS and adsb.lol (the same code is in
+    p152), plus `mesh-nodes` 503 (§2 B).
+  - The Skybridge and Mesh World rows and both Tools entries exist and are
+    locked for guests.
+  - `skybridge.js`, `net-builder.js` and `mesh-world.js` (`?v=p156`) are
+    served with 200.
+
+**Not verified:** clicking through COMMS → Skybridge, Network Builder →
+SKYBRIDGE DEMO, and Mesh World. All three are operator-tier, and this session
+had no operator login (it did not use a console tier override). Travon: check
+them signed in.
+
+### Claude Code — p156 (2026-10-14) — Skybridge: satellite data over the mesh, on `main` @ `da378d5` (2026-10-16)
 
 Patch `0004` on top of p155. SW `bdoc-v156`; LazyLoader `_version` + module keys
 `p156`; `auth.js?v=p156`.
@@ -108,7 +159,7 @@ and drawn over the Southeast in the browser; browser parity rebuild of a dropped
 chunk; Network Builder animation of the simulated mesh. Not verified: a physical
 Meshtastic radio, a physical dish.
 
-### Claude Code — p155 (2026-10-14) — Network Builder + Meshtastic World, NOT yet on `main`
+### Claude Code — p155 (2026-10-14) — Network Builder + Meshtastic World, on `main` @ `d842d56` (2026-10-16)
 
 Patch `0003` on top of p154. Nothing pushed. SW `bdoc-v155`; LazyLoader `_version`
 and every `/js/modules/*` precache key → `p155`; `auth.js?v=p155`,
@@ -150,7 +201,7 @@ Atlanta→London = internet-only, ci-validate green. Not verifiable here: the de
 function (served its local output in the test), the Chrome LNA prompt on a real
 desktop, Windows tshark/Npcap capture.
 
-### Claude Code — p153 + p154 (2026-10-14) — built and tested, NOT yet on `main`
+### Claude Code — p153 + p154 (2026-10-14) — built and tested, on `main` @ `64e104a` + `9e8d4b8` (2026-10-16)
 
 Delivered to Travon as two `git am` patches on top of `c1f5f06` (p152). Nothing
 was pushed. Ship with the normal `git push origin HEAD:main` once applied.
@@ -341,6 +392,86 @@ curl -s https://kgsbdoc.netlify.app/service-worker.js \
 
 ## 2. OPEN ITEMS — PICK UP HERE
 
+### M. Confirm the leaked mem0 key is revoked  ← Travon, mem0 dashboard
+`mem0_importer.py` shipped a hardcoded mem0 API key, and Netlify served it at
+`/mem0_importer.py` with 200 from at least 2026-10-13 until the `e086a19`
+deploy on 2026-10-16 (now 404). The key is still in git history, and the repo
+is public. The 2026-10-13 note says it is **not** Hermes's `MEM0_API_KEY` and
+that nothing running uses it. Nobody has confirmed it was revoked. Per §0 rule
+6, agents don't rotate: Travon revokes it in mem0 and records that here.
+
+### N. Oct 8 hardening pack — port it, don't copy it
+`BDOC_hardening_pack.zip` (with `HARDENING.md`, in Travon's Downloads) was built
+on p152 and has **not** been applied.
+- **Do not** follow its "copy everything in `patched/` over the repo root" step.
+  `index.html`, `js/auth.js`, `js/cesium-init.js` and `js/modules/outage-watch.js`
+  were all changed by p153–p156, so copying would silently revert them.
+- `PATCH.diff` test-applied to `e086a19`:
+  - `auth.js` and `outage-watch.js` apply.
+  - `index.html` (Cesium tag lines) and `cesium-init.js` fail.
+  - Its SRI hashes are for Cesium 1.104 and must be recomputed for 1.146.
+- Not needed: its `proxy-status.js`. Ours already restricts to 15 known hosts.
+- New files to add as-is: `netlify/functions/_lib/guard.js`, `csp-report.js`,
+  `js/infobox-bridge.js`, `js/bdoc-auth-fetch.js`, `local-bridge/bridge_guard.*`.
+- Needs Travon: the Supabase SQL (`hardening.sql`) and the Netlify env vars
+  (`BDOC_INTERNAL_SECRET` etc.).
+
+Oct 8 review (`BDOC_code_review_2026-10-08.md`), status on `e086a19`:
+
+| # | Finding | Status |
+|---|---|---|
+| 2 | `proxy-gdelt` 503 | **Fixed**: returns 200 |
+| 11 | Cesium 1.104 | **Fixed** by p153 |
+| 20 | `proxy-status` open proxy | **Fixed**: allowlist already in place |
+| 1 | `mesh-nodes` 503 | Still open (§2 B) |
+| 3 | Auth deadlock | Still open: `await this.loadProfile()` inside `onAuthStateChange` (`auth.js:59`) |
+| 4 | Local bridge readable by any site | Still open: receiver sends `Access-Control-Allow-Origin: *` |
+| 6/7 | Floating CDN versions, no SRI | Still open: `supabase-js@2` and `mqtt@5` float; 0 `integrity=` |
+| 14 | Paywall unlocks from the console | Still open (also §2 L.1) |
+| 18 | InfoBox iframe `allow-scripts` | Still open (`cesium-init.js:124`) |
+
+### O. Heli + bomber icons — art supplied 2026-10-16
+p150 left `heli` and `bomber` on hand-drawn glyphs ("no suitable top-down
+art"). Travon has since supplied SVGs. They are on the laptop only (Downloads),
+not in the repo; send them zipped (p150 lesson).
+- **Top-down helicopter:** `military-helicopter-bottom-view.svg`,
+  `military-helicopter.svg`.
+- **Top-down four-engine transport:** `transport.svg`.
+- **Bomber candidate:** `army-airplane-bottom-view.svg`, a top-down swept-wing
+  military jet.
+- **Not usable:** `bomber.svg` and `heliciopter.svg` are side or angled views.
+
+Wire them into `assets/aircraft-svg/` and `js/modules/layers-air.js`
+(`case 'heli'` ~l.294, `case 'bomber'` ~l.335), then bump `?v=` and `SW_VERSION`.
+
+### P. `proxy-meshworld` source A times out
+The function gives each source `8500` ms. liamcottle is about 3.4 MB gzipped
+(28 MB raw) and took 3.9–7.1 s from the laptop before JSON parse. Source A
+timed out on **both** fresh builds after the deploy, so the function served
+meshmap.net alone with `sources.a: 'unavailable'`:
+- 14:00Z: 9,688 nodes
+- 14:10Z: 9,671 nodes
+
+This is persistent, not a cold start. Mesh World shows about half the nodes
+and loses liamcottle's measured RF links, which the route finder depends on.
+Fix:
+- Raise the timeout toward the function limit, **or**
+- keep the last good merge in Netlify Blobs and serve it when a source fails.
+
+### Q. `scripts/ci-validate.sh` fails on Windows Git Bash
+It fails for three reasons, none of them a code problem:
+1. There is no `python3` command on Windows.
+2. Python writes temp files as cp1252 and dies on `→` in `index.html`.
+3. `C:\Users\ARNAUTICA\AppData\Local\Temp\package.json` is actually a GIF, so
+   `node --check` refuses every temp file under `%TEMP%`.
+
+Workaround used on 2026-10-16: a `python3` shim on PATH, `PYTHONUTF8=1`, and
+`TMP`/`TEMP`/`TMPDIR` pointed at a directory containing a `{}` `package.json`.
+
+Script fix: fall back to `python`, set `PYTHONUTF8=1`, and give the inline
+check its own temp dir with a `{}` `package.json`. Also, check 2/4 skipped
+silently when `python3` was missing; make that a failure.
+
 ### A. Stripe yearly prices are broken — blocks revenue
 **Status:** not a code bug. Needs Travon in the Stripe dashboard.
 ```bash
@@ -444,6 +575,7 @@ runs with no internet and no server, and can prove nothing leaves the machine.
    cable it to a router with your gateway IP. Real packets ride that cable.
 3. After deploy: `https://kgsbdoc.netlify.app/.netlify/functions/proxy-meshworld`
    should return `count` ≈ 20,000. First call takes ~5 s, cached after.
+   (2026-10-16: both fresh builds got ~9,700 nodes from meshmap.net only; see §2 P.)
 
 ### I. Next competitive gap — camera network (ARGOS ATLAS has 205k cams)
 ARGOS ATLAS (argosatlas.com) shows public DOT/agency cameras as snapshot cards
