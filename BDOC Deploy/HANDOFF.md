@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
-**Last updated by Claude Code:** 2026-10-16 · build **p156c** live on `main` @ `160c111` · `SW_VERSION bdoc-v156c`
+**Last updated by Claude Code:** 2026-10-16 · build **p156d** live on `main` @ `f6c2aee` · `SW_VERSION bdoc-v156d`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,55 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
+
+### Claude Code — p156d field-safety pass, on `main` @ `f6c2aee` (2026-10-16)
+
+These are the quick, silent-failure items from the field-resilience audit (§2 V).
+- **S6** `js/bdoc-atak.js`: `xmlEsc()` covers every CoT attribute and text
+  node (`buildCoT`, `_casevac`, `_zmist`).
+- **S7/S8** `latLonToMGRS` (`index.html`): the Svalbard zone exceptions now
+  apply only at 0–42°E. The zone is padded to two digits, and lon 180 maps to
+  zone 60.
+- **S1/S11:**
+  - New `netlify/functions/ping.js` (no-store). The SW lets it through
+    untouched, and `bdoc-link-manager.js` probes it instead of the cached
+    `config`.
+  - The SW's offline answer for API calls is now **503** + `X-BDOC-Offline`,
+    with the same JSON body. `data.js` treats that header as a transient
+    network error, so its retry and stale behaviour are unchanged.
+- **S3** (`index.html` SW block): on `controllerchange`, there's no reload
+  while `battleEntities.length > 0`. Instead the banner offers EXPORT PLAN /
+  UPDATE NOW / LATER.
+- **S4:** `savePACE` and community report/vote saves only say "saved" when the
+  localStorage write worked; otherwise they show a red warning.
+- **Version:** `bdoc-atak.js`, `bdoc-link-manager.js` and `data.js` are
+  `?v=p156d`; SW `bdoc-v156d`; `BUILD p156d`; changelog entry.
+
+**Verified by running:**
+- **Browser test:** old (p156c) vs new in visible Chrome, against a local
+  server with the real SW; offline = server killed + browser offline.
+  - S6: the CASEVAC form with `& < " '` gave not-well-formed XML before; now
+    it's well-formed and all fields round-trip.
+  - S4: storage full showed false "saved" toasts before; now it shows "NOT
+    saved".
+  - S3: with 1 marker it reloaded and lost the marker before; now there's no
+    reload, the marker is kept and the banner shows. With 0 markers it still
+    reloads.
+  - S1: offline, the link state stayed `cloud`; now it's `cache`, and back to
+    `cloud` when online.
+  - S11: an uncached fn offline returned 200; now 503 + header.
+- **MGRS** vs the `mgrs` library: 3,366/3,366 strict matches (old: 259 wrong,
+  all >72°N west of 0°).
+- `ci-validate.sh` passes.
+- **Live:**
+  - `BUILD p156d` and `bdoc-v156d` are served.
+  - `ping` returns 200 `no-store`.
+  - A returning browser moved from v156c to v156d, link `cloud`, and its probe
+    requests `/ping`.
+  - Greenland MGRS is correct in the page; no console errors.
+
+**Not done:** S3's persistence (a manual refresh or crash still loses
+markers), plus S2, S5, S9, S10, S12, S13 (§2 V).
 
 ### Claude Code — p156c service-worker fix, on `main` @ `160c111` (2026-10-16)
 
@@ -450,6 +499,59 @@ curl -s https://kgsbdoc.netlify.app/service-worker.js \
 
 ## 2. OPEN ITEMS — PICK UP HERE
 
+### V. Field-resilience audit, 2026-10-16 (`BDOC-field-resilience-audit-2026-10-16.md`, Travon's Downloads)
+An "institution absent" audit: grid down, no admin, junk phones, milsim
+weekend. It audited live p156c from the deployed files. Claude Code confirmed
+S1, S2, S3, S5, S6 and S7 in source before fixing.
+
+**Fixed in p156d:**
+- S1 link badge
+- S3 auto-reload (banner only)
+- S4 save toasts
+- S6 CoT escaping
+- S7/S8 MGRS
+- S11 offline 503
+
+**Still open, silently wrong (highest first):**
+- **S3 persistence.** `battleEntities` is memory only, so a refresh, crash or
+  tab discard loses the plan. Fix: autosave serializable specs to IndexedDB
+  (`BDOCOfflineStore` exists), restore on boot, and warn on `beforeunload`.
+- **S2 paid tools lock offline.** `loadProfile` fails, so `tier` stays
+  `recon`, and Battle Tracker needs analyst/enterprise (`enterBattleMode`).
+  Fix: cache `{tier, exp ≤30 d}` after each successful load, or make Battle
+  Tracker free (it holds no licensed data).
+- **S5 export drops line geometry.** `exportBattlePlan` /
+  `exportBattlePlanCoT` emit `e.position` only, so phase lines and areas
+  become one point. Emit LineString/Polygon (and CoT routes or shapes), and add
+  an import.
+- **S9 "Community" trust is this-device-only.** Label it "unverified — this
+  device" and drop the 50 % starting trust.
+- **S10 GPS honesty.** The accuracy circle is clamped to ≥50 m, and there's
+  no fix age, no jump check and no manual position.
+- **S12** `BDOCLinkManager.fetchSource()` has zero callers (the HUD "CACHED"
+  is only a label).
+- **S13** the device clock is authoritative. `ping` now returns server `t`,
+  so a skew warning is cheap.
+
+**Fails when the institution is absent:**
+- No offline AOI tile download (`putTile` has no callers).
+- `unpkg` (mqtt.js) isn't in `CDN_HOSTS`, so it isn't cached offline.
+- The local receiver is hard-wired to 127.0.0.1, so phones can't reach a
+  laptop gateway on the LAN.
+- No self-hosting path.
+- Stripe-only billing.
+
+**Milsim gaps:** no sharing between players, no coordinate *input*
+(MGRS/UTM/lat-long), no AAR export or GPS breadcrumb, the CASEVAC modal is
+fixed 580 px (doesn't fit a phone), and no i18n/RTL.
+
+Audit's top 5 for the widest benefit:
+1. Honest link state (done).
+2. Plan persistence + `.bdoc.json` export/import.
+3. Coordinate input + an honest GPS panel.
+4. QR/file peer sharing.
+5. Externalized strings + responsive tactical UI.
+
 ### U. Three outside audits, 2026-10-16 (files in Travon's Downloads)
 `bdoc-soc-tier-audit-2026-10-16.md`, `bdoc-geoint-analyst-audit-2026-10-16.md`,
 and `BDOC Phantom — EOC Deployment Evaluation.pdf`. All three ran against live p156.
@@ -467,6 +569,8 @@ Checked by Claude Code the same day:
   issue and stays open (§2 L.1).
 - **Not yet tracked here** (the EOC eval's punch list, in its order):
   - Drawn markers (`battleEntities`) are lost on refresh with no warning.
+    (p156d stops *update-triggered* reloads while markers exist; manual
+    refresh and crashes still lose them; see §2 V S3.)
     `BDOCOfflineStore` already exists; autosave to it and warn on
     `beforeunload`.
   - `mesh-globe-layer.js` uses a bare `fetch` (no `BDOCLinkManager`
