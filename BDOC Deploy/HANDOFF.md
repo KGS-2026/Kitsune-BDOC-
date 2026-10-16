@@ -565,6 +565,66 @@ curl -s https://kgsbdoc.netlify.app/service-worker.js \
 
 ## 2. OPEN ITEMS — PICK UP HERE
 
+### W. Three more outside audits, 2026-10-16 (live p156e; files in Travon's Downloads)
+- `bdoc-operator-eval-2026-10-16.md` (tier-1 SMU)
+- `BDOC_consumer_teardown_2026-10-16.md` (impatient consumer)
+- `BDOC-field-eval-2026-10-16.md` (drone/TD unit)
+
+**Confirmed in source by Claude Code, same day:**
+- **Notification prompt on load.** `index.html:10414` calls
+  `Notification.requestPermission()` at top level. This contradicts
+  `bdoc-push.js` ("NEVER auto-prompts"); users who hit "Block" are lost for
+  good. Fix: delete it. The watch-zone path (`:3288`) already asks in context.
+- **Keys in client JS.** The FIRMS MAP_KEY is in `initMobile`
+  (`index.html:2624`) and the AISStream `APIKey` is at `index.html:5327`
+  (open since Aug 14). §0 rule 6 applies: Travon rotates. Then route FIRMS
+  through `proxy-firms` and AIS through a server relay.
+- **`og:image` → `/og-image.png` returns 404,** so every shared link has no
+  preview.
+- **MGRS:**
+  - Settings → Coordinates → "Military Grid (MGRS)" is a no-op
+    (`converters.js` `formatCoord` has no mgrs branch).
+  - There's no MGRS **parser** anywhere, and no 6/10-digit option.
+  - The right-click "copy coordinates" copies decimal degrees.
+- **Offline imagery is accidental.**
+  - Esri tile URLs match neither `TILE_HOSTS` nor the tile regex (no file
+    extension), so they fall into `networkFirst` → `STATIC_CACHE`.
+  - That cache is unbounded and wiped on every `SW_VERSION` bump.
+  - `putTile()` has no callers, and there's no AOI pre-stage or coverage view.
+
+**Reported, not yet re-checked here:**
+- The context menu is right-click only (no long-press), so the touch target
+  loop can't be completed on a tablet.
+- No GPS fix age, spoof gate or manual position (S10).
+- No EMCON / field mode; ~100 third-party hosts plus analytics.
+- Live entities carry no per-entity staleness.
+- Text and targets are tiny (median 24 px targets, most text <11 px).
+- On mobile, the "built for desktop" card and the persona wizard stack, and the
+  wizard blocks the button.
+- The page restarts ~15 s into a cold mobile boot (unreproduced).
+- The pricing modal says Recon has 3 layers and the AI copilot is paid; the
+  code gives 10 layers and a free copilot.
+- The privacy policy omits Simple Analytics and location.
+- Manifest: `orientation: landscape` + `fullscreen`, empty `screenshots`.
+- `.bdoc.json` import twice doubles items: no UID merge.
+
+**Each audit's top pick:**
+- **Operator:** AOI pre-stage with a coverage-verified "AOI READY" badge (it
+  gates every offline feature).
+- **Field:**
+  1. Touch target loop: long-press menu, COPY GRID, `navigator.share`, a
+     working MGRS setting.
+  2. MGRS decoder + manual position + GNSS-suspect gate.
+  3. Sector pre-cache + self-hosted Cesium.
+- **Consumer:**
+  - A mobile "near you now" home card.
+  - No notification prompt at boot.
+  - Panels collapsed on phones, 12 px / 44 px floors.
+
+Cheap, high-value next build: delete the boot notification prompt, a
+long-press context menu + COPY GRID / SHARE, a working MGRS display setting
+(6/8/10-digit, spaced), an MGRS parser in search, and add `og-image.png`.
+
 ### V. Field-resilience audit, 2026-10-16 (`BDOC-field-resilience-audit-2026-10-16.md`, Travon's Downloads)
 An "institution absent" audit: grid down, no admin, junk phones, milsim
 weekend. It audited live p156c from the deployed files. Claude Code confirmed
