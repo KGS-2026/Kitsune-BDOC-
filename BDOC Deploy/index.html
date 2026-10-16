@@ -160,7 +160,11 @@ if('serviceWorker' in navigator){
       const b=document.createElement('div');
       b.id='bdocUpdateBanner';b.setAttribute('role','alert');
       b.style.cssText='position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:100000;max-width:calc(100vw - 24px);background:#0a0e14;border:1px solid #E8B349;border-radius:3px;padding:10px 14px;font:12px/1.5 "JetBrains Mono",monospace;color:#c8ccd6;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 6px 24px rgba(0,0,0,.6)';
-      b.innerHTML='<span><b style="color:#E8B349">NEW BDOC VERSION READY.</b> Your '+unsaved+' battle marker'+(unsaved===1?' exists':'s exist')+' only in this tab — export before updating.</span>'
+      // P156e: the plan autosaves to this device (js/bdoc-plan.js) and comes back after the reload.
+      const kept=!!(window.BDOCPlan&&BDOCPlan.status.ready&&!BDOCPlan.hasUnsaved());
+      b.innerHTML='<span><b style="color:#E8B349">NEW BDOC VERSION READY.</b> '
+        +(kept?'Your '+unsaved+' battle item'+(unsaved===1?' is':'s are')+' saved on this device and will be back after the update.'
+              :'Your '+unsaved+' battle marker'+(unsaved===1?' exists':'s exist')+' only in this tab — export before updating.')+'</span>'
         +'<button type="button" data-a="export" style="padding:6px 10px;min-height:32px;background:#0a0e14;border:1px solid #FFD700;color:#FFD700;font:inherit;cursor:pointer">EXPORT PLAN</button>'
         +'<button type="button" data-a="update" style="padding:6px 10px;min-height:32px;background:#E8B349;border:0;color:#0a0e14;font:inherit;font-weight:700;cursor:pointer">UPDATE NOW</button>'
         +'<button type="button" data-a="later" style="padding:6px 10px;min-height:32px;background:transparent;border:1px solid #4a5068;color:#c8ccd6;font:inherit;cursor:pointer">LATER</button>';
@@ -456,7 +460,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p156d</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p156e</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -1141,6 +1145,8 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <button class="bp-tool" onclick="battleMeasureTool()" title="Measure distance between two points" style="border-color:#00bbff;color:#00bbff">MEASURE</button>
 <button class="bp-tool" onclick="exportBattlePlan()" title="Export all battle markers as GeoJSON" style="border-color:#FFD700;color:#FFD700">EXPORT</button>
 <button class="bp-tool" onclick="exportBattlePlanCoT()" title="Export all battle markers as CoT XML — imports into ATAK / WinTAK / iTAK" style="border-color:#52b788;color:#52b788">⬇ TAK</button>
+<button class="bp-tool" onclick="window.BDOCPlan&&BDOCPlan.saveFile()" title="Save the whole plan to a .bdoc.json file (everything, full detail). The plan also autosaves on this device." style="border-color:#E8B349;color:#E8B349">💾 SAVE FILE</button>
+<button class="bp-tool" onclick="window.BDOCPlan&&BDOCPlan.openFile()" title="Open a .bdoc.json plan file and add it to the map" style="border-color:#E8B349;color:#E8B349">📂 OPEN FILE</button>
 </div>
 </div>
 <!-- COLOR PICKER -->
@@ -3044,6 +3050,13 @@ function bdocPlayScanner(feedUrl,name,color){
 }
 // Phase 5C (2026-05-04): Changelog popup wired to top-bar BUILD pill — deploy verification at a glance.
 const _BDOC_CHANGELOG=[
+  {ver:'p156e (2026-10-16) — YOUR BATTLE PLAN SURVIVES A RELOAD',items:[
+    'Everything you draw (units, notes, zones, lines, range rings, bullseyes, measurements, CASEVAC) autosaves on this device and is put back when BDOC reopens — after a refresh, a crash, a closed tab or an update',
+    'If a change has not been saved yet, the browser asks before you leave the page',
+    'EXPORT (GeoJSON) now writes phase lines, routes and areas as real lines and polygons (circles with their radius), plus range rings and other grouped items — not one point per shape',
+    '⬇ TAK now sends lines and areas as ATAK drawing shapes, circles as circles, and a CASEVAC as its full 9-line',
+    'New 💾 SAVE FILE / 📂 OPEN FILE: the whole plan as one .bdoc.json file to hand to another BDOC user (USB, email, chat); opening adds it to your map'
+  ]},
   {ver:'p156d (2026-10-16) — FIELD-SAFETY PASS',items:[
     'CoT exports (CASEVAC 9-line, ZMIST, battle plan) now escape every field, so an "&" or "<" in an HLZ, frequency or callsign no longer produces a file ATAK/WinTAK silently rejects',
     'MGRS grids are correct above 72°N west of Greenwich (Greenland, Arctic Canada, northern Alaska were given impossible zone-31 grids), and the zone is always two digits (04Q…, not 4Q…)',
@@ -8340,6 +8353,7 @@ function clearBattleEntities(){
   });
   battleEntities.length=0; // P154: keep the tracked array instance (undo hook)
   try{BDOCUndo.refresh()}catch(_){}
+  try{window.BDOCPlan&&BDOCPlan.markDirty()}catch(_){}  // P156e: autosave the now-empty plan
   af('var(--bl)','All battle markers cleared');
 }
 
@@ -8594,24 +8608,13 @@ function handleMeasureClick(lat,lon){
 }
 
 // ═══ EXPORT BATTLE PLAN AS GEOJSON ═══
+// P156e (field audit S5): lines/areas export as real LineString/Polygon (circles as a
+// 64-point Polygon + radius), grouped items (range rings, bullseye, measure) included.
+// It used to write every entity's first vertex as a Point and skip groups entirely.
 function exportBattlePlan(){
   if(battleEntities.length===0){af('var(--t3)','No battle markers to export');return}
-  const features=[];
-  battleEntities.forEach((e,i)=>{
-    if(Array.isArray(e))return; // skip grouped entities (range rings, measures)
-    const meta=battleMeta.get(e)||{};
-    if(e.position){
-      const cart=Cesium.Cartographic.fromCartesian(e.position.getValue?e.position.getValue(Cesium.JulianDate.now()):e.position);
-      features.push({type:'Feature',properties:{name:meta.label||'Marker',comment:meta.comment||'',type:meta.type||'unknown',color:meta.color||'#fff',created:new Date().toISOString()},geometry:{type:'Point',coordinates:[Cesium.Math.toDegrees(cart.longitude),Cesium.Math.toDegrees(cart.latitude)]}});
-    }
-  });
-  const gj={type:'FeatureCollection',features};
-  const blob=new Blob([JSON.stringify(gj,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='BDOC-BattlePlan-'+new Date().toISOString().slice(0,10)+'.geojson';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-  af('var(--bl)','Battle plan exported: '+features.length+' features');
-  EventLog.add('info','Battle plan exported as GeoJSON');
+  if(!window.BDOCPlan){af('var(--rd)','Plan module not loaded — refresh page');return}
+  if(BDOCPlan.exportGeoJSON())EventLog.add('info','Battle plan exported as GeoJSON');
 }
 
 // ═══ CoT XML EXPORT (TAK / ATAK interop) — Task 5b ═══
@@ -8638,29 +8641,12 @@ function exportBattlePlanCoT(){
     // DEFEND / friendly / observe / move default to friendly ground
     return 'friendly_ground';
   };
-  const events=[];
-  let n=0;
-  battleEntities.forEach((e)=>{
-    if(Array.isArray(e))return;
-    const meta=(battleMeta&&battleMeta.get)?(battleMeta.get(e)||{}):{};
-    if(!e.position)return;
-    let cart;
-    try{cart=Cesium.Cartographic.fromCartesian(e.position.getValue?e.position.getValue(Cesium.JulianDate.now()):e.position);}catch(x){return}
-    if(!cart)return;
-    const xml=buildCoT({
-      cotType:pickCoT(meta),
-      uid:'BDOC-BP-'+(++n)+'-'+Math.random().toString(36).slice(2,7).toUpperCase(),
-      lat:Cesium.Math.toDegrees(cart.latitude),
-      lon:Cesium.Math.toDegrees(cart.longitude),
-      hae:cart.height||0,
-      callsign:(meta.label||'Marker').slice(0,40),
-      remarks:meta.comment||'',
-      staleMs:3600000
-    });
-    // strip the per-event XML prolog so we can concatenate into one document
-    events.push(xml.replace(/<\?xml[^>]*\?>\s*/,''));
-  });
-  if(events.length===0){af('var(--t3)','No exportable point markers');return}
+  // P156e (field audit S5): lines/areas go out as ATAK drawing shapes (u-d-f with <link>
+  // vertices, u-d-c-c circles) instead of one point at the first vertex; grouped items are
+  // included; a CASEVAC marker exports its full 9-line CoT.
+  if(!window.BDOCPlan){af('var(--rd)','Plan module not loaded — refresh page');return}
+  const events=BDOCPlan.cotEvents(pickCoT);
+  if(events.length===0){af('var(--t3)','No exportable battle markers');return}
   // Wrap multiple <event> elements per CoT message-pack convention.
   const doc='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<events>\n'+events.join('\n')+'\n</events>';
   if(typeof downloadCoT==='function'){
@@ -13685,6 +13671,8 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 <script src="js/bdoc-push.js?v=p140"></script>
 <script src="js/mesh-globe-layer.js?v=p75"></script>
 <script src="js/bdoc-offline-store.js?v=p75"></script>
+<!-- P156e: battle plan autosave/restore + real-shape exports + .bdoc.json (needs V, battleEntities, BDOCOfflineStore) -->
+<script src="js/bdoc-plan.js?v=p156e"></script>
 <script src="js/bdoc-link-manager.js?v=p156d"></script>
 <script src="js/bdoc-plugin-renderer.js?v=p155"></script>
 <script src="js/bdoc-offline-hud.js?v=p75"></script>

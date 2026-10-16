@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v156d';  // p156d: field-safety pass (CoT escaping, MGRS, honest link badge + 503 offline, no reload over a plan, honest saves)
+const SW_VERSION = 'bdoc-v156e';  // p156e: battle plan autosave/restore, real-shape GeoJSON/CoT export, .bdoc.json save/open
+// (prev) const SW_VERSION = 'bdoc-v156d';  // p156d: field-safety pass (CoT escaping, MGRS, honest link badge + 503 offline, no reload over a plan, honest saves)
 // (prev) const SW_VERSION = 'bdoc-v156c';  // p156c: cacheFirst tries the network before any-version cache (no old JS after a deploy)
 // (prev) const SW_VERSION = 'bdoc-v156b';  // p156b: sharper globe — MSAA not FXAA, natural sat grade, lighter bloom
 // (prev) const SW_VERSION = 'bdoc-v156';  // p156: Skybridge (satellite data over mesh) + mesh traffic in Network Builder
@@ -26,6 +27,7 @@ const STATIC_PRECACHE = [
   '/js/bdoc-glass-guard.js?v=p75',
   '/js/bdoc-push.js?v=p140',
   '/js/bdoc-offline-store.js?v=p75',
+  '/js/bdoc-plan.js?v=p156e',
   '/js/bdoc-link-manager.js?v=p156d',
   '/js/bdoc-offline-hud.js?v=p75',
   '/css/bdoc.css?v=p154',
