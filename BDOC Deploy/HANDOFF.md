@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
-**Last updated by Claude Code:** 2026-10-16 · build **p156e** live on `main` @ `a5a677c` · `SW_VERSION bdoc-v156e`
+**Last updated by Claude Code:** 2026-10-16 · build **p156f** live on `main` @ `54f84cc` · `SW_VERSION bdoc-v156f`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,53 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
+
+### Claude Code — p156f current flowing along grid lines + pipeline flow, on `main` @ `54f84cc` (2026-10-16)
+
+Travon: "animations for the infrastructure line like electrical current".
+- **`js/cesium-init.js` (end of file):** a `BdocFlow` Fabric material added
+  via `Cesium.Material._materialCache` (private API; re-check on Cesium
+  upgrades), plus `window.BDOCFlow`.
+  - Screen-space pattern via `v_polylineAngle` (the same trick as Cesium's
+    dash material), so pulse spacing is constant in pixels on any segment
+    length: bright leading edge, fading tail, electrical shimmer.
+  - `time` is a wall-clock uniform (`performance.now()`, not the Cesium
+    clock).
+- **One shared `FlowProp` per line class** (`power500`, `power345`,
+  `pipeHGL`, `pipePetro`). Cesium's per-material ground-polyline batch then
+  refreshes the uniforms every frame, and thousands of segments stay batched.
+  - **Gotcha:** for a non-constant material that batch reads
+    `material.color` as a **Property** (per-instance colour attribute). A
+    raw `Cesium.Color` there throws `getValue is not a function`. Keep
+    `color` a `ConstantProperty`.
+- **Render cost:** `requestRenderMode` stays. A ~24 fps `requestRender`
+  ticker (42 ms) runs only while `layers.gridinfra` / `layers.pipelines`
+  have entities and the tab is visible, and stops by itself.
+  - Off for `prefers-reduced-motion`, GPU tier 1, and Settings → Labels &
+    Overlays → "Animate infrastructure lines" (`localStorage bdoc_flowfx`).
+- **`js/modules/layers-arcgis.js`:** 500/345 kV lines and HGL/petroleum
+  pipelines use `BDOCFlow.material(...)`, falling back to the old colour /
+  dash, and call `BDOCFlow.kick()` after load.
+- **Version:** `LazyLoader._version` `p156f` + all 10 `/js/modules/*`
+  precache keys, `cesium-init.js?v=p156f`, SW `bdoc-v156f`, `BUILD p156f`,
+  changelog.
+
+**Verified by running:**
+- **Headless Chrome on the local build with live HIFLD data:**
+  - 3,472 grid + 467 pipeline segments loaded, no errors.
+  - GIF frames show pulses moving along the lines.
+  - 24 render requests/s while on, stopping once both layers are off.
+  - Render 5.6 vs 5.1 ms/frame, on vs off (SwiftShader, relative only).
+- `ci-validate.sh` passes.
+- **Live:**
+  - `BUILD p156f`, `bdoc-v156f`, the module keys, `BDOCFlow` and
+    `layers-arcgis.js` using it are all served.
+  - A returning browser moved from v156e to v156f with only v156f caches,
+    `BDOCFlow` loaded, plan autosave ready.
+  - A test flow polyline rendered on the live origin with no errors.
+
+**Not verified:** battery cost on a real tablet or phone, and how it looks on
+the 2070 at full speed (only headless frames were captured).
 
 ### Claude Code — p156e battle plan persistence + real-shape exports, on `main` @ `a5a677c` (2026-10-16)
 
