@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
-**Last updated by Claude Code:** 2026-10-16 · build **p156f** live on `main` @ `54f84cc` · `SW_VERSION bdoc-v156f`
+**Last updated by Claude Code:** 2026-10-16 · build **p156g** live on `main` @ `0c1b0f3` · `SW_VERSION bdoc-v156g`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,63 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
+
+### Claude Code — p156g touch menu, grids, sharing, no boot prompt, on `main` @ `0c1b0f3` (2026-10-16)
+
+The quick-win batch from §2 W. Also logged the pasted critique as §2 X.
+- **Touch long-press** (~0.55 s, <10 px movement, one finger) calls the same
+  handler as right-click, now named `window._bdocMapContext`
+  (`index.html`).
+  - A Cesium-wide `LEFT_CLICK` guard (`cesium-init.js`, patched onto
+    `ScreenSpaceEventHandler.prototype.setInputAction` before the Viewer is
+    built) skips the release, via `window._bdocLongPress`.
+  - A capture listener eats the DOM click that would close the menu.
+  - Android's native long-press `contextmenu` is suppressed on the canvas.
+- **Context menu:** ⌗ Copy Grid (MGRS) and ↗ Share This Spot
+  (`navigator.share` with a `GRID … | lat, lon | HHMMZ` line + a `?fly=` link;
+  clipboard fallback via `_bdocCopy`). The menu header and the coordinate bar
+  show the grid, since touch has no hover readout.
+- **`js/converters.js`:**
+  - `formatMGRS(lat,lon,digits)`: 6/8/10-digit, spaced.
+  - `parseMGRS(str)`: the inverse; any case/spacing, 0–10 digits, returns the
+    square centre, wraps at the antimeridian.
+  - `parseCoordQuery`: a grid or "lat, lon".
+  - `formatCoord` handles `mgrs`.
+  - The `toDMS`/`toDM` carry fix (no more `60.0"`).
+- **Settings:** Coordinates → MGRS was a no-op and now works, with a new MGRS
+  precision select. Both persist in `localStorage bdoc_coord_settings`.
+- **Search:** a grid or lat/lon resolves on the device (never sent to
+  Nominatim; works offline), flies in by precision, drops a 3-minute pin;
+  Enter picks the top result.
+- **Notification prompts removed:** at boot, from anomaly events, and from
+  `OutageWatch.start` (lazy module). Watch zones, AOIWatch and the alerts
+  toggle still ask in context.
+- **`og-image.png`** added (1200×630, a real globe frame); the meta tags
+  already pointed to it.
+- **Version:** `converters.js` / `cesium-init.js` `?v=p156g`, LazyLoader
+  `_version` + 10 module keys p156g, SW `bdoc-v156g`, `BUILD p156g`,
+  changelog.
+
+**Verified by running:**
+- **Headless Chrome with real touch events, old (p156f) vs new:**
+  - Boot permission requests: 2 → 0.
+  - A tap does nothing; a hold opens the menu, and the release selects
+    nothing.
+  - Copy grid gives `16S GC 4176 3749`; share gives a GRID line + link.
+  - A 10-digit MGRS readout persists across a reload.
+  - A grid search makes 0 geocoder requests (old: 1) and lands on the Georgia
+    Capitol with a pin.
+  - og-image is 200 at 1200×630.
+- **`parseMGRS` vs the `mgrs` library on 3,200 points:** identical at 6–10
+  digits, 1 m round trip worst 0.7 m, 10/10 malformed grids rejected.
+- **`toDMS`** on 200k values: no out-of-range seconds.
+- `ci-validate.sh` passes.
+- **Live:** p156g and every change are served. A returning browser moved to
+  v156g, and `parseMGRS` / `formatMGRS` / long-press / Copy Grid are present
+  with no errors.
+
+**Not verified:** a real phone or tablet (long-press and haptics on hardware,
+the real iOS/Android share sheets).
 
 ### Claude Code — p156f current flowing along grid lines + pipeline flow, on `main` @ `54f84cc` (2026-10-16)
 
@@ -668,9 +725,69 @@ curl -s https://kgsbdoc.netlify.app/service-worker.js \
   - No notification prompt at boot.
   - Panels collapsed on phones, 12 px / 44 px floors.
 
-Cheap, high-value next build: delete the boot notification prompt, a
-long-press context menu + COPY GRID / SHARE, a working MGRS display setting
-(6/8/10-digit, spaced), an MGRS parser in search, and add `og-image.png`.
+**✅ Done in p156g (`0c1b0f3`):**
+- The boot notification prompt, the anomaly auto-prompt and the OutageWatch
+  boot prompt are all removed.
+- Long-press context menu with COPY GRID / SHARE.
+- Working MGRS setting (6/8/10-digit, spaced, persisted).
+- MGRS / lat-lon parsing in search (on device, never sent to the geocoder).
+- `og-image.png` is in place.
+
+**Still open from W:**
+- Rotate the AIS + FIRMS keys (Travon), then proxy them.
+- AOI pre-stage / offline imagery.
+- GPS fix age + spoof gate + manual position (S10). The parser now exists to
+  build on.
+- EMCON / field mode.
+- Per-entity staleness.
+- Text and target sizes.
+- Mobile overlay stacking.
+- Pricing-modal copy.
+- Privacy policy (Simple Analytics, location).
+- Manifest orientation / screenshots.
+- `.bdoc.json` UID merge.
+
+### X. Pasted "Mr. Robot" critique + build spec (another AI chat, 2026-10-16)
+Travon pasted a persona-style transcript: a hacker critique of the live site,
+an "OSINT gold tool" roadmap, and a 5-module "paste-ready" spec. Checked
+against the code:
+- **Valid, still open:**
+  - **The copilot doesn't brief on load.** It shows a static "ALL MODULES
+    LOADED" list and "Type help" (`index.html:11540`, `:10415`). Have it
+    narrate the delta on boot.
+  - **Panels show `--` / "Loading…" until their feeds resolve.** Render the
+    last-known-good values marked STALE (`snapshot-client.js` already does
+    this for some feeds).
+  - **The threat pill reads `NORMAL · GTA --` before a score exists**
+    (`index.html:463`).
+  - **Move off `netlify.app`** to `kitsuneglobalsolutions.com` (DNS, Travon).
+- **Already logged:** the AISStream key (the paste prints it in full, so it
+  has now been pasted into another AI service, which makes rotation more
+  urgent), the Cesium ion Allowed URLs, and server-side proxies (§2 N, W).
+- **Wrong:**
+  - **"Free tier = 24h delayed feeds."** Nothing delays feeds for Recon;
+    only the pricing modal says so (`index.html:883`). The fix is the copy,
+    not the tiers.
+  - **"Layers ship default-on despite the comment."** Already fixed
+    (`index.html:11455`).
+- **The spec code is not drop-in.** It calls APIs BDOC doesn't have:
+  - `BDOC.OfflineStore` (the real one is `BDOCOfflineStore`), `EventLog.push`
+    (the real one is `EventLog.add`).
+  - `BDOC.Push.send` (client push is impossible: `push-send` is
+    server-key-gated and `sendReady:false`).
+  - `BDOC.RuleStore`, `BDOC.FusionHistory`, and `FusionEngine.on(...)`
+    (FusionEngine has no events).
+  - It also says `layer-provenance.js` does SHA-256, which it doesn't, and
+    its P157–P161 numbering clashes with §2 L.
+- **Direction worth keeping:** standing watches → rules → intelligence
+  requirements → a hash-chained evidence log. `watch-zones.js` (P118)
+  already covers the standing watch (pin+radius, five sweep classes, in-page
+  alerts). The gaps:
+  - It only runs while the tab is open.
+  - Zones are circles only.
+  - There are no user-written rules and no tamper-evident log.
+
+  Build it on the real APIs if it's taken up.
 
 ### V. Field-resilience audit, 2026-10-16 (`BDOC-field-resilience-audit-2026-10-16.md`, Travon's Downloads)
 An "institution absent" audit: grid down, no admin, junk phones, milsim
