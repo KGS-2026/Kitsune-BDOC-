@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v156';  // p156: Skybridge (satellite data over mesh) + mesh traffic in Network Builder
+const SW_VERSION = 'bdoc-v156b';  // p156b: sharper globe — MSAA not FXAA, natural sat grade, lighter bloom
+// (prev) const SW_VERSION = 'bdoc-v156';  // p156: Skybridge (satellite data over mesh) + mesh traffic in Network Builder
 // (prev) const SW_VERSION = 'bdoc-v155';  // p155: Network Builder (Packet Tracer + live Wireshark) + Meshtastic World relay router
 // (prev) const SW_VERSION = 'bdoc-v154';  // p154: Travon's 25-item field list (NVG/FLIR GPU, depth, drawing, undo, aircraft ID…)
 // (prev) const SW_VERSION = 'bdoc-v153';  // p153: Cesium 1.104 -> 1.146 + createOsmBuildingsAsync
@@ -34,7 +35,7 @@ const STATIC_PRECACHE = [
   '/js/filters.js?v=p154',
   '/js/kitsune-ai.js?v=p93',
   '/js/bdoc-atak.js?v=p59',
-  '/js/cesium-init.js?v=p154',
+  '/js/cesium-init.js?v=p156b',
   '/js/deeplink.js?v=p115',
   '/js/modules/layers-military.js?v=p156',
   '/js/modules/layers-conflict.js?v=p156',

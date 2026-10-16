@@ -438,7 +438,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p156</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p156b</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -820,8 +820,9 @@ if('serviceWorker' in navigator){
 <option value="high">High (sharper)</option>
 </select></div>
 <div class="set-row"><label>Antialiasing</label><select id="setAA" onchange="setAntialiasing(this.value)">
+<option value="msaa" selected>MSAA 4x (sharp)</option>
+<option value="fxaa">FXAA (softer)</option>
 <option value="off">Off</option>
-<option value="fxaa" selected>FXAA</option>
 </select></div>
 <div class="set-row"><label>Max Screen Space Error</label><input type="range" id="setSSE" min="1" max="16" value="4" oninput="setScreenSpaceError(this.value)"><span id="sseVal" style="font-family:var(--m);font-size:9px;color:var(--t3);width:20px;text-align:right">4</span></div>
 <div class="set-row"><label>Terrain Exaggeration</label><input type="range" id="setTerrainExag" min="1" max="5" step="0.5" value="1" oninput="setTerrainExag(this.value)"><span id="teVal" style="font-family:var(--m);font-size:9px;color:var(--t3);width:20px;text-align:right">1</span></div>
@@ -3025,6 +3026,11 @@ function bdocPlayScanner(feedUrl,name,color){
 }
 // Phase 5C (2026-05-04): Changelog popup wired to top-bar BUILD pill — deploy verification at a glance.
 const _BDOC_CHANGELOG=[
+  {ver:'p156b (2026-10-16) — SHARPER GLOBE',items:[
+    'Anti-aliasing is now 4x MSAA instead of FXAA on top of it, so satellite imagery, roads and labels render crisp instead of slightly blurred (Settings → Antialiasing still offers FXAA)',
+    'Satellite imagery uses a light, natural colour grade in place of the heavy saturation/contrast boost, so it reads like a real photo',
+    'Glow at globe view is tighter and only on genuinely bright points (markers, city lights); the sunlit side no longer looks hazy'
+  ]},
   {ver:'p156 (2026-10-14) — SKYBRIDGE: SATELLITE DATA OVER THE MESH',items:[
     'Skybridge layer (COMMS, or Tools menu): weather satellite data received by a BDOC ground station is sent as binary over the Meshtastic mesh and rebuilt on your map — cloud tops, warning polygons and bulletins, with no internet',
     'Lost radio packets are rebuilt on arrival (one parity packet per message), and every message is CRC-checked before it is drawn',
@@ -7398,7 +7404,13 @@ function setTileQuality(val){
 }
 function setAntialiasing(val){
   if(!V)return;
-  V.scene.postProcessStages.fxaa.enabled=(val==='fxaa');
+  // P156b: MSAA needs WebGL2; on WebGL1 the MSAA choice falls back to FXAA.
+  const s=V.scene,gl2=!!s.context.webgl2;
+  if(val==='msaa'&&!gl2)val='fxaa';
+  if(gl2)s.msaaSamples=(val==='msaa')?4:1;
+  s.postProcessStages.fxaa.enabled=(val==='fxaa');
+  try{document.getElementById('setAA').value=val}catch(_){}
+  s.requestRender();
   af('var(--kf)','Antialiasing: '+val.toUpperCase());
 }
 function setScreenSpaceError(val){
@@ -13102,7 +13114,7 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
-<script src="js/cesium-init.js?v=p154"></script>
+<script src="js/cesium-init.js?v=p156b"></script>
 <script src="js/deeplink.js?v=p115"></script>
 <!-- P119: Section 508 / WCAG 2.1 AA remediation pass. Runtime-labels the 40+ layer
      switches, panels, buttons and the live intel feed; adds h1, skip link, focus

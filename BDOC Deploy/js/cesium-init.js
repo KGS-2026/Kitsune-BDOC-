@@ -14,6 +14,10 @@
 // ═══════════════════════════════════════════
 // SECTION 7: CESIUM INIT
 // ═══════════════════════════════════════════
+// P156b: one colour grade for the satellite base layer, used at init and by setBasemap().
+// p68's grade (sat 1.25 / contrast 1.12–1.16 / gamma 0.92) read as over-processed next to
+// Google Earth; this is a light lift that keeps the photo looking like a photo.
+window.BDOC_SAT_GRADE={brightness:1.0,contrast:1.05,saturation:1.08,gamma:1.0};
 // ── P154: HORIZON-AWARE DEPTH TEST (bug: "markers visible through the earth") ──
 // ~180 markers set disableDepthTestDistance to 5e6 m or Infinity so clamped icons
 // are never swallowed by terrain. Side effect: anything within that distance draws
@@ -270,7 +274,14 @@ try{
   s.globe.preloadAncestors=true;
 }catch(e){console.warn('[P154 tile cache]',e)}
 // Anti-aliasing
-s.postProcessStages.fxaa.enabled=true;
+// P156b: 4x MSAA on WebGL2 (Cesium's default there), FXAA only as the WebGL1 fallback.
+// FXAA on top of MSAA re-blurred every imagery texel and label edge — the main reason the
+// globe looked soft next to Google Earth. Settings → Antialiasing can still pick FXAA.
+try{
+  if(s.context.webgl2){s.msaaSamples=4;s.postProcessStages.fxaa.enabled=false;}
+  else{s.postProcessStages.fxaa.enabled=true;}
+  const _aa=document.getElementById('setAA');if(_aa)_aa.value=s.context.webgl2?'msaa':'fxaa';
+}catch(e){console.warn('[P156b AA]',e);s.postProcessStages.fxaa.enabled=true;}
 // ═══ BLOOM — glow on bright markers/city-lights (spike 2026-06-25, the "alive" aesthetic) ═══
 // Only pixels brighter than threshold bloom, so terrain/ocean stay crisp; bright billboards/lights glow.
 try{
@@ -299,10 +310,12 @@ try{
       if(h<120000||window._bdocBloomOff||window._bdocFilterBloomOff){ _bloom.enabled=false; return; }
       _bloom.enabled=true;
       // 120km → 600km fade band back to the original "alive" look.
+      // P156b: lighter — higher threshold and tighter radius, so markers and city lights
+      // still glow but the sunlit hemisphere no longer picks up a soft haze.
       const t=_clamp((h-120000)/(600000-120000),0,1);
-      _bloom.uniforms.brightness=-0.6+0.30*t;   // -0.60 near band → -0.30 far (original)
+      _bloom.uniforms.brightness=-0.7+0.25*t;   // -0.70 near band → -0.45 far (was -0.60 → -0.30)
       _bloom.uniforms.contrast=130-11*t;         // 130 near → 119 far (original)
-      _bloom.uniforms.sigma=1.4+1.6*t;           // 1.4 near → 3.0 far (original)
+      _bloom.uniforms.sigma=1.2+1.0*t;           // 1.2 near → 2.2 far (was 1.4 → 3.0)
     };
     _tuneBloom();
     window._bdocRetuneBloom=function(){_tuneBloom();try{V.scene.requestRender()}catch(_){}};
@@ -311,12 +324,12 @@ try{
   }catch(e){console.warn('[BDOC bloom adaptive]',e)}
 }catch(e){console.warn('[BDOC bloom]',e)}
 // ═══ P68: PROFESSIONAL IMAGERY COLOR GRADE ═══
-// Stock ESRI World Imagery renders flat/desaturated in Cesium (the "default skin" every hobby
-// Cesium app ships with). Grade the base layer like Google Earth: richer saturation, gentle
-// contrast lift, slight gamma crush for depth. Base layer only — data overlays unaffected.
+// Stock ESRI World Imagery renders a little flat in Cesium. P156b toned p68's heavy grade
+// down to a light lift (window.BDOC_SAT_GRADE, top of file) so it still reads as a photo.
+// Base layer only — data overlays unaffected.
 try{
   const _base=V.imageryLayers.get(0);
-  if(_base){_base.saturation=1.25;_base.contrast=1.12;_base.gamma=0.92;_base.brightness=1.02;}
+  if(_base)Object.assign(_base,window.BDOC_SAT_GRADE); // P156b: was sat 1.25 / contrast 1.12 / gamma 0.92 / brightness 1.02
 }catch(e){console.warn('[BDOC color grade]',e)}
 // ═══ CAMERA CONTROLLER — Google-Earth-style joystick feel ═══
 // Phase 14 fix (2026-05-12): Cesium defaults park tilt on middle-click — most users have no middle button.
@@ -508,8 +521,8 @@ var _buildingsTileset=null;
 const s=V.scene;
 const il=s.globe.imageryLayers.get(0);
 il._isBaseLayer=true; // Tag base layer for setBasemap() removal
-// Match Google Earth color grade — slightly warm, vivid greens, deep oceans (p68 verified tune)
-il.brightness=1.03;il.contrast=1.16;il.saturation=1.25;il.gamma=0.92;
+// P156b: shared satellite grade (was p68's 1.03 / 1.16 / 1.25 / 0.92 — over-processed)
+Object.assign(il,window.BDOC_SAT_GRADE);
 // ═══ PERSISTENT BORDERS + LABELS OVERLAY ═══
 // Single high-res label layer — no stacking, no blur
 // var (not let): setBasemap() lives in a sibling try{} block and needs access — let would block-scope these
@@ -1027,8 +1040,8 @@ let _currentBasemap='satellite';
 // visual role, and verified to return distinct real tiles per coordinate.
 const BASEMAPS={
   dark:{url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',credit:'ESRI Dark Gray Canvas',brightness:1.15,contrast:1.2,saturation:0.5},
-  satellite:{type:'arcgis',credit:'ESRI World Imagery',brightness:1.02,contrast:1.12,saturation:1.25,gamma:0.92},
-  hybrid:{type:'arcgis_labels',credit:'ESRI + OSM Labels',brightness:1.02,contrast:1.12,saturation:1.25,gamma:0.92},
+  satellite:Object.assign({type:'arcgis',credit:'ESRI World Imagery'},window.BDOC_SAT_GRADE),
+  hybrid:Object.assign({type:'arcgis_labels',credit:'ESRI + OSM Labels'},window.BDOC_SAT_GRADE),
   // P154: light basemaps flagged isLight (bloom off) and toned ~10% down so labels and
   // roads keep contrast instead of clipping to white under the sun lighting.
   terrain:{url:'https://tile.opentopomap.org/{z}/{x}/{y}.png',credit:'OpenTopoMap',brightness:0.92,contrast:1.08,saturation:0.85,gamma:1.05,isLight:true,maximumLevel:17},
