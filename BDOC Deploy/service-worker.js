@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v156e';  // p156e: battle plan autosave/restore, real-shape GeoJSON/CoT export, .bdoc.json save/open
+const SW_VERSION = 'bdoc-v156f';  // p156f: current flowing along grid lines + pipeline flow (cesium-init + layers-arcgis)
+// (prev) const SW_VERSION = 'bdoc-v156e';  // p156e: battle plan autosave/restore, real-shape GeoJSON/CoT export, .bdoc.json save/open
 // (prev) const SW_VERSION = 'bdoc-v156d';  // p156d: field-safety pass (CoT escaping, MGRS, honest link badge + 503 offline, no reload over a plan, honest saves)
 // (prev) const SW_VERSION = 'bdoc-v156c';  // p156c: cacheFirst tries the network before any-version cache (no old JS after a deploy)
 // (prev) const SW_VERSION = 'bdoc-v156b';  // p156b: sharper globe — MSAA not FXAA, natural sat grade, lighter bloom
@@ -39,18 +40,18 @@ const STATIC_PRECACHE = [
   '/js/filters.js?v=p154',
   '/js/kitsune-ai.js?v=p93',
   '/js/bdoc-atak.js?v=p156d',
-  '/js/cesium-init.js?v=p156b',
+  '/js/cesium-init.js?v=p156f',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p156',
-  '/js/modules/layers-conflict.js?v=p156',
-  '/js/modules/layers-infra.js?v=p156',
-  '/js/modules/layers-air.js?v=p156',
-  '/js/modules/layers-nuke.js?v=p156',
-  '/js/modules/nuke-sim.js?v=p156',
-  '/js/modules/layers-airfields.js?v=p156',
-  '/js/modules/net-builder.js?v=p156',
-  '/js/modules/mesh-world.js?v=p156',
-  '/js/modules/skybridge.js?v=p156',
+  '/js/modules/layers-military.js?v=p156f',
+  '/js/modules/layers-conflict.js?v=p156f',
+  '/js/modules/layers-infra.js?v=p156f',
+  '/js/modules/layers-air.js?v=p156f',
+  '/js/modules/layers-nuke.js?v=p156f',
+  '/js/modules/nuke-sim.js?v=p156f',
+  '/js/modules/layers-airfields.js?v=p156f',
+  '/js/modules/net-builder.js?v=p156f',
+  '/js/modules/mesh-world.js?v=p156f',
+  '/js/modules/skybridge.js?v=p156f',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',

@@ -155,7 +155,8 @@ window.loadGridInfra = async function () {
           gridinfraEnts.push(V.entities.add({
             polyline: {
               positions: Cesium.Cartesian3.fromDegreesArray(flat),
-              width: width, material: clr.withAlpha(0.75), clampToGround: true
+              // P156f: current flowing along the line (one shared material per voltage class)
+              width: width, material: (window.BDOCFlow && BDOCFlow.material(color === '#DA3633' ? 'power500' : 'power345')) || clr.withAlpha(0.75), clampToGround: true
             },
             description: '<div style="font-family:\'JetBrains Mono\',monospace;padding:10px;color:#c8ccd6;background:#0d1117;border:1px solid ' + color + '">' +
               '<div style="font-size:12px;font-weight:700;color:' + color + ';margin-bottom:6px">⚡ ' + tier + ' TRANSMISSION LINE</div>' +
@@ -172,6 +173,7 @@ window.loadGridInfra = async function () {
     addLines(tl500, '#DA3633', 2.2, 'EHV 500kV+'); // extra-high voltage = red, the strategic backbone
     addLines(tl345, '#E8B339', 1.3, '345kV');       // amber = high-voltage regional
     af('#E8B339', 'GRID: ' + n + ' HV transmission segments loaded (HIFLD live, 345kV+)'); us(1);
+    try { window.BDOCFlow && BDOCFlow.kick(); } catch (_) {}
     try { EventLog.add('info', 'Grid infra: ' + n + ' segments (HIFLD)'); } catch (_) {}
   } catch (e) {
     console.warn('[GridInfra]', e);
@@ -213,7 +215,8 @@ window.loadPipelines = async function () {
           pipelineEnts.push(V.entities.add({
             polyline: {
               positions: Cesium.Cartesian3.fromDegreesArray(flat),
-              width: 1.6, material: new Cesium.PolylineDashMaterialProperty({ color: clr.withAlpha(0.8), dashLength: 12 }),
+              // P156f: slow product flow along the pipe (falls back to the old dash)
+              width: 1.6, material: (window.BDOCFlow && BDOCFlow.material(color === '#FF8C00' ? 'pipeHGL' : 'pipePetro')) || new Cesium.PolylineDashMaterialProperty({ color: clr.withAlpha(0.8), dashLength: 12 }),
               clampToGround: true
             },
             description: '<div style="font-family:\'JetBrains Mono\',monospace;padding:10px;color:#c8ccd6;background:#0d1117;border:1px solid ' + color + '">' +
@@ -230,6 +233,7 @@ window.loadPipelines = async function () {
     addPipes(hgl, '#FF8C00', '⛽ HGL PIPELINE (NGL/propane)');
     addPipes(petro, '#c084fc', '🛢 PETROLEUM PRODUCTS PIPELINE');
     af('#FF8C00', 'PIPELINES: ' + n + ' segments loaded (EIA live — HGL + petroleum products)'); us(1);
+    try { window.BDOCFlow && BDOCFlow.kick(); } catch (_) {}
     try { EventLog.add('info', 'Pipelines: ' + n + ' segments (EIA)'); } catch (_) {}
   } catch (e) {
     console.warn('[Pipelines]', e);

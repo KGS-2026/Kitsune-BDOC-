@@ -460,7 +460,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p156e</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p156f</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -855,6 +855,7 @@ if('serviceWorker' in navigator){
 <label class="set-chk"><input type="checkbox" checked onchange="document.querySelector('.grid-ov').style.display=this.checked?'':'none'"> Show scan-line grid effect</label>
 <label class="set-chk"><input type="checkbox" checked onchange="V.scene.skyAtmosphere.show=this.checked"> Atmosphere</label>
 <label class="set-chk"><input type="checkbox" checked onchange="V.scene.globe.enableLighting=this.checked"> Day/Night cycle</label>
+<label class="set-chk"><input type="checkbox" id="setFlowFx" checked onchange="window.BDOCFlow&&BDOCFlow.setEnabled(this.checked)"> Animate infrastructure lines (power current, pipeline flow; uses more battery)</label>
 </div>
 <div class="set-section">
 <div class="set-section-title">Alerts</div>
@@ -1625,7 +1626,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p156',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p156f',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
@@ -3050,6 +3051,11 @@ function bdocPlayScanner(feedUrl,name,color){
 }
 // Phase 5C (2026-05-04): Changelog popup wired to top-bar BUILD pill — deploy verification at a glance.
 const _BDOC_CHANGELOG=[
+  {ver:'p156f (2026-10-16) — LIVE CURRENT ON THE GRID',items:[
+    'Grid Infrastructure: pulses of current now run along every 500 kV and 345 kV transmission line, with a slight electrical shimmer',
+    'Pipelines: product flows slowly along each line instead of a static dash',
+    'Only animates while those layers are on and the tab is visible; off for reduced-motion and low-end GPUs, and switchable in Settings → Labels & Overlays'
+  ]},
   {ver:'p156e (2026-10-16) — YOUR BATTLE PLAN SURVIVES A RELOAD',items:[
     'Everything you draw (units, notes, zones, lines, range rings, bullseyes, measurements, CASEVAC) autosaves on this device and is put back when BDOC reopens — after a refresh, a crash, a closed tab or an update',
     'If a change has not been saved yet, the browser asks before you leave the page',
@@ -13142,7 +13148,7 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
-<script src="js/cesium-init.js?v=p156b"></script>
+<script src="js/cesium-init.js?v=p156f"></script>
 <script src="js/deeplink.js?v=p115"></script>
 <!-- P119: Section 508 / WCAG 2.1 AA remediation pass. Runtime-labels the 40+ layer
      switches, panels, buttons and the live intel feed; adds h1, skip link, focus

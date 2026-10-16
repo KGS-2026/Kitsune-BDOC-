@@ -1639,3 +1639,98 @@ window.startCinematicTour=()=>BDOC.CinematicTour.start();
 window.toggleRouteArcs=()=>BDOC.RouteLines.toggle();
 window.toggleCountryLabels=()=>BDOC.MajorLabels.toggle();
 
+// ═══ P156f: CURRENT FLOWING ALONG INFRASTRUCTURE LINES ═══
+// Travon 2026-10-16: "animations for the infrastructure line like electrical current".
+// One shared material per line class, so Cesium still draws thousands of HIFLD segments as
+// a single batched ground primitive (per-material batches refresh uniforms every frame).
+// The pattern is laid out in screen space like Cesium's dash material, so pulses keep the
+// same pixel spacing on a 2 km segment and a 200 km one; `time` is a wall-clock uniform.
+// Cost control: the scene runs in requestRenderMode, so a ~24 fps ticker asks for frames ONLY
+// while an animated layer is on, the tab is visible and motion is allowed. Off for
+// prefers-reduced-motion and GPU tier 1; Settings → "Animate infrastructure lines".
+(function(){
+  try{
+    const TYPE='BdocFlow';
+    Cesium.Material._materialCache.addMaterial(TYPE,{
+      fabric:{type:TYPE,
+        uniforms:{color:new Cesium.Color(1,1,1,0.6),flowColor:new Cesium.Color(1,1,1,1),speed:60.0,spacing:90.0,pulse:0.3,flicker:0.0,time:0.0,on:1.0},
+        source:`uniform vec4 color;
+uniform vec4 flowColor;
+uniform float speed;
+uniform float spacing;
+uniform float pulse;
+uniform float flicker;
+uniform float time;
+uniform float on;
+in float v_polylineAngle;
+mat2 rotate(float rad){ float c = cos(rad); float s = sin(rad); return mat2(c, s, -s, c); }
+czm_material czm_getMaterial(czm_materialInput materialInput)
+{
+    czm_material material = czm_getDefaultMaterial(materialInput);
+    vec2 pos = rotate(v_polylineAngle) * gl_FragCoord.xy;
+    float sp = spacing * czm_pixelRatio;
+    float x = fract((pos.x - time * speed * czm_pixelRatio) / sp);
+    // bright leading edge at x = pulse, fading tail behind it, dark gap ahead
+    float tail = smoothstep(0.0, pulse, x) * (1.0 - step(pulse, x));
+    float head = 1.0 - smoothstep(pulse, pulse + 0.035, x);
+    float p = clamp(max(tail * tail, head * step(pulse - 0.06, x)), 0.0, 1.0) * on;
+    // electrical shimmer: a fast flicker that varies along the line
+    p *= 1.0 - flicker * 0.5 * (0.5 + 0.5 * sin(time * 41.0 + pos.x * 0.21));
+    vec4 c = mix(color, flowColor, p);
+    c = czm_gammaCorrect(c);
+    material.emission = c.rgb;
+    material.alpha = c.a;
+    return material;
+}`},
+      translucent:function(){return true}
+    });
+    const STYLES={
+      power500:{base:'#DA3633',a:0.55,flow:'#FFF1C9',speed:85,spacing:120,pulse:0.28,flicker:0.45},
+      power345:{base:'#E8B339',a:0.55,flow:'#FFFBE6',speed:70,spacing:100,pulse:0.28,flicker:0.45},
+      pipeHGL:{base:'#FF8C00',a:0.6,flow:'#FFE0B3',speed:16,spacing:70,pulse:0.55,flicker:0},
+      pipePetro:{base:'#c084fc',a:0.6,flow:'#F1E4FF',speed:16,spacing:70,pulse:0.55,flicker:0}
+    };
+    function FlowProp(s){
+      this._dc=new Cesium.Event();
+      this._base=Cesium.Color.fromCssColorString(s.base).withAlpha(s.a);
+      // Cesium's ground-polyline batch reads `material.color` as a Property for non-constant
+      // materials (per-instance colour attribute), so it must be one.
+      this.color=new Cesium.ConstantProperty(this._base);
+      this._flow=Cesium.Color.fromCssColorString(s.flow);
+      this._s=s;
+    }
+    Object.defineProperties(FlowProp.prototype,{
+      isConstant:{get(){return false}},
+      definitionChanged:{get(){return this._dc}}
+    });
+    FlowProp.prototype.getType=function(){return TYPE};
+    FlowProp.prototype.getValue=function(time,r){
+      r=r||{};const on=window.BDOCFlow.enabled,s=this._s;
+      r.color=this._base;r.flowColor=this._flow;r.spacing=s.spacing;r.pulse=s.pulse;r.flicker=s.flicker;
+      r.speed=s.speed;r.on=on?1.0:0.0;r.time=on?(performance.now()/1000)%3600:0.0;
+      return r;
+    };
+    FlowProp.prototype.equals=function(o){return this===o};
+    const props={};
+    const reduced=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(_){return false}})();
+    let saved=null;try{saved=localStorage.getItem('bdoc_flowfx')}catch(_){}
+    let ticker=null;
+    const animatedOn=()=>{
+      try{return (layers.gridinfra&&gridinfraEnts.length>0)||(layers.pipelines&&pipelineEnts.length>0)}catch(_){return false}
+    };
+    function tick(){
+      if(!window.BDOCFlow.enabled||!animatedOn()){clearInterval(ticker);ticker=null;try{V.scene.requestRender()}catch(_){}return}
+      if(!document.hidden){try{V.scene.requestRender()}catch(_){}}
+    }
+    window.BDOCFlow={
+      enabled:saved?saved==='on':!(reduced||window._bdocGPUTier===1),
+      material(kind){const s=STYLES[kind];if(!s)return undefined;return props[kind]||(props[kind]=new FlowProp(s))},
+      kick(){if(this.enabled&&!ticker&&animatedOn())ticker=setInterval(tick,42)},
+      setEnabled(on){
+        this.enabled=!!on;try{localStorage.setItem('bdoc_flowfx',on?'on':'off')}catch(_){}
+        if(on)this.kick();else{try{V.scene.requestRender()}catch(_){}}
+      }
+    };
+    try{const cb=document.getElementById('setFlowFx');if(cb)cb.checked=window.BDOCFlow.enabled}catch(_){}
+  }catch(e){console.warn('[P156f flow fx]',e)}
+})();
