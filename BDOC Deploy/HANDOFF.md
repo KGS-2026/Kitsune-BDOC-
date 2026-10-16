@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
-**Last updated by Claude Code:** 2026-10-16 · build **p156** live on `main` @ `e086a19` · `SW_VERSION bdoc-v156`
+**Last updated by Claude Code:** 2026-10-16 · build **p156b** live on `main` @ `1d4b82b` · `SW_VERSION bdoc-v156b`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,50 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
+
+### Claude Code — p156b sharper globe, on `main` @ `1d4b82b` (2026-10-16)
+
+Travon asked for "sharper graphics, like Google Earth". The measured live
+settings on his RTX 2070 (tier 3) were:
+- Already good: native resolution, SSE 1.5, 4× MSAA, 400-tile cache.
+- Softening the image:
+  - FXAA running on top of MSAA.
+  - p68's heavy grade (saturation 1.25, contrast 1.16, gamma 0.92).
+  - Bloom at globe view.
+  - Raster labels capped at z18.
+  - Esri imagery capped at z19.
+
+p156b fixes the first three. All changes are in `js/cesium-init.js` unless noted.
+- **Anti-aliasing:** 4× MSAA alone on WebGL2; FXAA only as the WebGL1 fallback.
+  Settings → Antialiasing (`index.html`) offers MSAA 4x / FXAA / Off.
+- **Satellite grade:** one shared `window.BDOC_SAT_GRADE` (contrast 1.05,
+  saturation 1.08, gamma 1.0) at the top of the file. It is used at init and
+  by the `satellite`/`hybrid` basemaps, so tune it there.
+- **Bloom (far end):** brightness −0.30 → −0.45, sigma 3.0 → 2.2.
+- **Version:** SW `bdoc-v156b`, `cesium-init.js?v=p156b`, `BUILD p156b`,
+  changelog entry.
+
+**Verified by running:**
+- `ci-validate.sh` passes.
+- **Visible Chrome comparison** (Intel UHD 630; the same GPU for both runs).
+  Live p156 against live + local p156b files, with the same camera and clock.
+  Frames were read from the WebGL canvas. Laplacian sharpness:
+
+  | View | Before | After |
+  |---|---|---|
+  | Globe | 17.6 | 20.5 (Sahara bloom glare gone) |
+  | Region crop | 37.7 | 41.2 |
+  | City crop | 36.0 | 37.3 |
+  | 350 m close-up | 9.67 | 9.59 (limited by Esri's z19 imagery) |
+
+  No new console errors.
+- **Live:**
+  - `BUILD p156b`, `bdoc-v156b` and `cesium-init.js?v=p156b` (with the new
+    code) are served, and internal docs still return 404.
+  - In a returning browser: msaa 4, fxaa off, grade 1/1.05/1.08/1.
+
+  That check passed only on the **second** load. The first load after the
+  deploy ran new HTML with the **old** `cesium-init.js` (§2 S).
 
 ### Claude Code — p153–p157 deployed + mem0 key file pulled (2026-10-16)
 
@@ -391,6 +435,55 @@ curl -s https://kgsbdoc.netlify.app/service-worker.js \
 ---
 
 ## 2. OPEN ITEMS — PICK UP HERE
+
+### S. Service worker serves OLD JS on the first load after every deploy
+`cacheFirst()` in `service-worker.js` (~l.161) tries
+`caches.match(request, {ignoreSearch: true})` **before** the network. Here is
+what happens on a returning visitor's first load after a deploy:
+1. The new SW hasn't finished precaching yet.
+2. The old SW gets `cesium-init.js?v=p156b`, misses the exact match, and
+   returns its cached `?v=p154` copy.
+3. The page runs new `index.html` with old JS.
+
+The next load is correct (the new SW activates and deletes the old caches).
+Seen live 2026-10-16:
+- First load: `BUILD p156b`, but `BDOC_SAT_GRADE` undefined and FXAA on.
+- Second load: correct.
+
+This has applied to **every** deploy: a mixed-version page for one load, and
+a real breakage risk when new HTML calls functions the old JS lacks. The
+ignoreSearch fallback exists for grid-down (offline) use. Fix: try exact match,
+then the network, and use the ignoreSearch match only in the `catch` (offline)
+path. Bump `SW_VERSION`. Test both online and offline.
+
+### R. Far-side country labels drawn over the map at city/region zoom
+At Atlanta 350 m, 27 labels 9,000–12,000 km away (JAPAN, CHINA, INDONESIA,
+TURKEY …) are drawn on top of the imagery. All are behind the globe
+(`EllipsoidalOccluder` confirms it). They also show at 350 km (INDONESIA over
+Georgia). Present on p156 and p156b alike.
+- **Source:** "major country labels", `cesium-init.js` ~l.1422–1484
+  (`NATIONS`, 32 entries), plus crisis-zone labels such as "⚡ YEMEN / RED SEA"
+  (`index.html` hot zones, ~l.11045).
+- **Why they show:** `distanceDisplayCondition(1.5e6, 2.5e7)` is measured from
+  the camera to the label, so from Atlanta Japan (9,700 km) qualifies. They set
+  no `disableDepthTestDistance` and still aren't occluded at close zoom. That
+  root cause is not confirmed.
+- **Fix:** gate on camera **altitude** instead (show only above ~1,500 km), and
+  hide any label that `EllipsoidalOccluder.isPointVisible()` says is behind the
+  globe, checked in `camera.changed` (32 entities, cheap). Apply the same gate
+  to the crisis-zone labels.
+
+### T. Remaining "Google Earth sharpness" levers (after p156b)
+1. **z20 imagery where Esri has it.** Downtown Atlanta has real z20; rural GA
+   stops at z19. Past that, Esri returns a 2,521-byte "Map data not yet
+   available" tile, so add a missing-tile discard policy. Do this together with
+   the licensed Esri setup (§2 L.1).
+2. **Vector place labels** to replace the raster `World_Boundaries_and_Places`
+   (max z18; blurs when zoomed or tilted). This fits the p158 offline packs.
+3. **Optional "Ultra" quality** for strong GPUs: `resolutionScale` slightly
+   above native, SSE 1.0.
+4. **3D Photo (Google photoreal tiles)** as a standalone showcase, under the
+   licensing limits in §2 L.2.
 
 ### M. Confirm the leaked mem0 key is revoked  ← Travon, mem0 dashboard
 `mem0_importer.py` shipped a hardcoded mem0 API key, and Netlify served it at
