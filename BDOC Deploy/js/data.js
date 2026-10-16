@@ -50,6 +50,9 @@ const Cache={
         if(stale&&opts.staleOk!==false)return{data:stale.data,fromCache:true,stale:true,rateLimited:true};
         throw err;
       }
+      // P156d: the SW's offline answer is now 503 + X-BDOC-Offline. Keep treating it as a
+      // transient network error (retry path below), not as a real 5xx from the server.
+      if(!r.ok&&r.headers.get('X-BDOC-Offline'))throw new Error('SW offline sentinel (upstream fetch failed)');
       if(!r.ok){const err=new Error(`HTTP ${r.status}`);err.status=r.status;throw err;}
       const data=opts.text?await r.text():await r.json();
       // p98d: the service worker's offline fallback returns {"error":"OFFLINE...","offline":true}

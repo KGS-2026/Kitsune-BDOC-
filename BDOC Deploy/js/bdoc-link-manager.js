@@ -18,7 +18,10 @@ const BDOCLinkManager = {
   listeners: [],
 
   ENDPOINTS: {
-    cloud: '/.netlify/functions/config',
+    // P156d (field audit S1): was /.netlify/functions/config, which the service worker
+    // answers from cache — so the badge read ONLINE forever with no uplink. `ping` is
+    // no-store and the SW passes it straight to the network.
+    cloud: '/.netlify/functions/ping',
     local: 'http://127.0.0.1:9876/api/v1/status'
   },
 
@@ -45,7 +48,7 @@ const BDOCLinkManager = {
     const t = setTimeout(() => ctl.abort(), timeoutMs);
     try {
       const res = await fetch(url, { signal: ctl.signal, cache: 'no-store' });
-      return res.ok;
+      return res.ok && !res.headers.get('X-BDOC-Offline');   // SW offline answer ≠ reachable
     } catch (e) { return false; }
     finally { clearTimeout(t); }
   },

@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v156c';  // p156c: cacheFirst tries the network before any-version cache (no old JS after a deploy)
+const SW_VERSION = 'bdoc-v156d';  // p156d: field-safety pass (CoT escaping, MGRS, honest link badge + 503 offline, no reload over a plan, honest saves)
+// (prev) const SW_VERSION = 'bdoc-v156c';  // p156c: cacheFirst tries the network before any-version cache (no old JS after a deploy)
 // (prev) const SW_VERSION = 'bdoc-v156b';  // p156b: sharper globe — MSAA not FXAA, natural sat grade, lighter bloom
 // (prev) const SW_VERSION = 'bdoc-v156';  // p156: Skybridge (satellite data over mesh) + mesh traffic in Network Builder
 // (prev) const SW_VERSION = 'bdoc-v155';  // p155: Network Builder (Packet Tracer + live Wireshark) + Meshtastic World relay router
@@ -25,17 +26,17 @@ const STATIC_PRECACHE = [
   '/js/bdoc-glass-guard.js?v=p75',
   '/js/bdoc-push.js?v=p140',
   '/js/bdoc-offline-store.js?v=p75',
-  '/js/bdoc-link-manager.js?v=p75',
+  '/js/bdoc-link-manager.js?v=p156d',
   '/js/bdoc-offline-hud.js?v=p75',
   '/css/bdoc.css?v=p154',
   '/css/bdoc-p154.css?v=p154',
   '/js/telemetry.js?v=p59',
   '/js/converters.js?v=p59',
-  '/js/data.js?v=p119',
+  '/js/data.js?v=p156d',
   '/js/auth.js?v=p156',
   '/js/filters.js?v=p154',
   '/js/kitsune-ai.js?v=p93',
-  '/js/bdoc-atak.js?v=p59',
+  '/js/bdoc-atak.js?v=p156d',
   '/js/cesium-init.js?v=p156b',
   '/js/deeplink.js?v=p115',
   '/js/modules/layers-military.js?v=p156',
@@ -116,6 +117,9 @@ self.addEventListener('fetch', event => {
   // Skip non-GET, chrome-extension, and websocket requests
   if (event.request.method !== 'GET') return;
   if (!url.protocol.startsWith('http')) return;
+  // P156d (field audit S1): the link probe must reach the real network. No respondWith,
+  // so the browser fetches it directly and a dead uplink fails instead of hitting a cache.
+  if (url.origin === self.location.origin && url.pathname === '/.netlify/functions/ping') return;
 
   // HTML / navigation — NETWORK-FIRST so a new deploy is seen immediately
   // (cache-first on index.html was why fresh deploys required 2 reloads / never showed).
@@ -224,15 +228,17 @@ function offlineFallback(request) {
   if (request.mode === 'navigate') {
     return caches.match('/index.html');
   }
-  // Return empty JSON for API requests
+  // API requests: same JSON body as before, but P156d (field audit S11) answers 503 +
+  // X-BDOC-Offline instead of 200, so a caller that only checks res.ok no longer takes
+  // "no data, we're offline" for a valid empty answer.
   if (url.pathname.includes('/.netlify/') || url.pathname.includes('/api/')) {
     return new Response(JSON.stringify({
       error: 'OFFLINE — No cached data available. Last data shown is from your previous session.',
       offline: true,
       timestamp: Date.now()
     }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      status: 503,
+      headers: { 'Content-Type': 'application/json', 'X-BDOC-Offline': '1' }
     });
   }
   return new Response('', { status: 408 });

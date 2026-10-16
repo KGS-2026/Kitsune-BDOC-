@@ -39,6 +39,15 @@ const COT_TYPES = {
 };
 
 /**
+ * P156d (field audit S6): one XML escaper for every attribute and text node in CoT.
+ * Raw `&` or `<` in an HLZ, frequency, callsign or ZMIST field made the whole file
+ * not-well-formed, and ATAK/WinTAK dropped it without telling the operator.
+ */
+function xmlEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+}
+
+/**
  * Build a CoT 2.0 XML event string.
  * @param {Object} opts - { cotType, uid, lat, lon, hae, callsign, team, remarks, staleMs, extra }
  * @returns {string} CoT XML
@@ -50,16 +59,16 @@ function buildCoT(opts) {
   const uid = opts.uid || ('BDOC-' + Math.random().toString(36).slice(2,10).toUpperCase());
   const cotType = COT_TYPES[opts.cotType] || opts.cotType || 'a-u-G';
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<event version="2.0" uid="${uid}" type="${cotType}"
+<event version="2.0" uid="${xmlEsc(uid)}" type="${xmlEsc(cotType)}"
   time="${fmt(now)}" start="${fmt(now)}" stale="${fmt(staleDate)}"
   how="h-g-i-g-o" access="Unclassified">
   <point lat="${(opts.lat||0).toFixed(7)}" lon="${(opts.lon||0).toFixed(7)}"
     hae="${(opts.hae||0).toFixed(1)}" ce="9999999.0" le="9999999.0"/>
   <detail>
-    <contact callsign="${(opts.callsign||'BDOC').replace(/[<>&"']/g,'')}"/>
-    ${opts.team ? `<__group name="${opts.team.replace(/[<>&"']/g,'')}" role="Team Member"/>` : ''}
-    <uid Droid="${uid}"/>
-    <remarks>${(opts.remarks||'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}
+    <contact callsign="${xmlEsc(opts.callsign||'BDOC')}"/>
+    ${opts.team ? `<__group name="${xmlEsc(opts.team)}" role="Team Member"/>` : ''}
+    <uid Droid="${xmlEsc(uid)}"/>
+    <remarks>${xmlEsc(opts.remarks||'')}
     </remarks>
     ${opts.extra || ''}
     <_flow-tags_ KGS_BDOC="${new Date().toISOString()}"/>
@@ -323,18 +332,18 @@ window._submitCASEVAC = function(lat, lon) {
     <rect x="5" y="13" width="22" height="6" rx="1" fill="${col}"/>
   </svg>`;
 
-  // CoT XML extra fields
+  // CoT XML extra fields — every value through xmlEsc() (P156d, field audit S6)
   const zmistXml = zmistCards.filter(z=>z.z||z.i).map(z=>`
-    <_zmist zap="${z.z.replace(/"/g,'')}" mechanism="${z.m.replace(/"/g,'')}" injuries="${z.i.replace(/"/g,'')}" signs="${z.s.replace(/"/g,'')}" treatment="${z.t.replace(/"/g,'')}"/>`).join('');
+    <_zmist zap="${xmlEsc(z.z)}" mechanism="${xmlEsc(z.m)}" injuries="${xmlEsc(z.i)}" signs="${xmlEsc(z.s)}" treatment="${xmlEsc(z.t)}"/>`).join('');
 
   const cotXml = buildCoT({
     cotType:'casevac', uid, lat, lon,
     callsign:`CASEVAC-${prec}`, staleMs:3600000, // stale 1hr
     remarks: nineLine,
-    extra:`<_casevac line1="${l1}" freq="${gv('cv2freq')}" callsign="${gv('cv2call')}"
+    extra:`<_casevac line1="${xmlEsc(l1)}" freq="${xmlEsc(gv('cv2freq'))}" callsign="${xmlEsc(gv('cv2call'))}"
       precedence="${prec}" pax="${totalPax}" litter="${litter}" ambulatory="${ambul}"
-      equipment="${l4}" security="${l6}" marking="${l7}" nationality="${l8}" nbc="${l9}"
-      hlz="${hlz}" uid="${uid}"/>${zmistXml}`
+      equipment="${xmlEsc(l4)}" security="${xmlEsc(l6)}" marking="${xmlEsc(l7)}" nationality="${xmlEsc(l8)}" nbc="${xmlEsc(l9)}"
+      hlz="${xmlEsc(hlz)}" uid="${xmlEsc(uid)}"/>${zmistXml}`
   });
   window._cotStore.set(uid, cotXml);
 
