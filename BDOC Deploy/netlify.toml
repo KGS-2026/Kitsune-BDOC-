@@ -140,6 +140,21 @@
   status = 404
   force = true
 
+# SECURITY.md is the ONE markdown file that must stay public — CISA Secure by
+# Design goal 5 (vulnerability disclosure policy). Served at a clean URL too,
+# because /.well-known/security.txt points at it and a dead Policy: line is
+# worse than no security.txt at all. Listed BEFORE the /*.md catch-all, since
+# Netlify applies the first matching rule.
+[[redirects]]
+  from = "/security-policy"
+  to = "/SECURITY.md"
+  status = 200
+
+[[redirects]]
+  from = "/SECURITY.md"
+  to = "/SECURITY.md"
+  status = 200
+
 [[redirects]]
   from = "/*.md"
   to = "/404.html"
