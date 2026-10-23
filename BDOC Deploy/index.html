@@ -460,7 +460,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p156g</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p157</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -1488,22 +1488,22 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
   </div>
   <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04);font-size:8px;color:#4a5068;letter-spacing:1px;text-align:center">© Kitsune Global Solutions LLC · SDVOSB · CAGE 174S8</div>
 </div>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.3/jspdf.umd.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.3/jspdf.umd.min.js" integrity="sha384-GwHhSt8QjC7J+v0zZ0Flfho/T76YHEcCL9w4rvjTIUHauh6gWJeBSIi3vWXxNhtA" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js" integrity="sha384-e6V1JVpc+kVNTxT0gEOla7yL4c92Romsw7itPoipfzHbEjzUwPhTv6oeVDMHHzqT" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <!-- REMOVED: P135 — milsymbol lazy-loaded on military layer enable (763KB early-load → 0B for recon-only users) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Cesium.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Cesium.js" integrity="sha384-1lWK5deN/B+lLaUw4lk6xKp/L19ii/98SZLk6K8YthDskgvc+GbdixLzbCnSS2Wn" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 // P154 ("randomly not loading"): a single CDN hiccup on Cesium.js left a dead page —
 // every script after it threw on `Cesium` and the globe never appeared. Fall back to
 // jsDelivr (same 1.146.0 build) synchronously so boot order is unchanged.
 if(!window.Cesium){
   console.warn('[BDOC] cdnjs Cesium failed — loading jsDelivr fallback');
-  document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Widgets/widgets.css"><script src="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Cesium.js" crossorigin="anonymous"><\/script>');
+  document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Widgets/widgets.css"><script src="https://cdn.jsdelivr.net/npm/cesium@1.146.0/Build/Cesium/Cesium.js" integrity="sha384-1lWK5deN/B+lLaUw4lk6xKp/L19ii/98SZLk6K8YthDskgvc+GbdixLzbCnSS2Wn" crossorigin="anonymous" referrerpolicy="no-referrer"><\/script>');
 }
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" crossorigin="anonymous"></script>
-<script defer src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" integrity="sha384-+VfUPEb0PdtChMwmBcBmykRMDd+v6D/oFmB3rZM/puCMDYcIvF968OimRh4KQY9a" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://unpkg.com/mqtt@5.16.1/dist/mqtt.min.js" integrity="sha384-ilRYg/zm2XqUafLvBoGVk40UfNRnvUkYMy+e/JPo4YgsFR6X9Q3jYEkqFQXquX4r" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <!-- ═══ BDOC PHASE 2 MODULES ═══ Must execute BEFORE inline script — defines EventLog, togFilter, formatters that the inline script calls during init -->
 <script src="js/telemetry.js?v=p59"></script>
 <!-- P122: pointer-first layer client (Google Earth root.json pattern). Polls an
@@ -1514,7 +1514,11 @@ if(!window.Cesium){
 <script src="js/modules/icon-factory.js?v=p116"></script>
 <script src="js/converters.js?v=p156g"></script>
 <script src="js/data.js?v=p156d"></script>
-<script src="js/auth.js?v=p156"></script>
+<script src="js/auth.js?v=p157"></script>
+<!-- p157: must load AFTER auth.js (needs window.Auth.client) and BEFORE any
+     layer module that fetches. Attaches the Supabase JWT to our own function
+     calls so the server can enforce tier; see netlify/functions/_lib/guard.js. -->
+<script src="js/bdoc-auth-fetch.js?v=p157"></script>
 <script src="js/filters.js?v=p154"></script>
 <!-- layers-military.js is lazy-loaded on first toggle of milbases (Phase 3 Turn 7) -->
 <!-- layers-airfields.js is lazy-loaded on first toggle of milairfields (Phase 3 Turn 6) -->
@@ -1629,7 +1633,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p156g',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p157',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>

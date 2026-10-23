@@ -47,7 +47,7 @@ const BDOC_Auth={
       if(returningFromStripe){window.history.replaceState({},'',window.location.pathname)}
       // Keep client state in sync with auth changes across tabs / after session refresh.
       try{
-        this.client.auth.onAuthStateChange(async(evt,sess)=>{
+        this.client.auth.onAuthStateChange((evt,sess)=>{
           // Password recovery: user arrived via reset-email link → prompt for new password
           if(evt==='PASSWORD_RECOVERY'){
             this.user=sess?.user||null;
@@ -55,10 +55,30 @@ const BDOC_Auth={
             const bg=document.getElementById('authBg');if(bg)bg.style.display='flex';
             return;
           }
+          // p157 — TWO bugs fixed here:
+          //
+          // 1. DEADLOCK. Awaiting a Supabase call *inside* the onAuthStateChange
+          //    callback is the documented supabase-js v2 deadlock: the client holds
+          //    an internal lock while the callback runs, and loadProfile() wants the
+          //    same lock. It can hang auth outright on TOKEN_REFRESHED. The callback
+          //    is now synchronous and the async work is deferred with setTimeout(0),
+          //    which runs it after the lock is released.
+          //
+          // 2. TRIPLE LOAD. INITIAL_SESSION, SIGNED_IN and TOKEN_REFRESHED each fired
+          //    loadProfile(), and getSession() below fired it a fourth time — 3
+          //    identical profiles?id=eq.… requests on every single page load.
+          //    Now: skip when the user id hasn't actually changed.
+          const uid=sess?.user?.id||null;
+          const prev=this.user?.id||null;
+          if(uid===prev&&evt!=='USER_UPDATED'&&this._profileLoaded)return;
           this.user=sess?.user||null;
-          if(this.user){await this.loadProfile()}
-          else{this.profile=null;this.tier='recon'}
-          this.updateUI();this.markLockedLayers();
+          setTimeout(async()=>{
+            try{
+              if(this.user){await this.loadProfile();this._profileLoaded=true}
+              else{this.profile=null;this.tier='recon';this._profileLoaded=false}
+              this.updateUI();this.markLockedLayers();
+            }catch(e){console.warn('[Auth] deferred profile load failed:',e.message)}
+          },0);
         });
       }catch(e){console.warn('[Auth] onAuthStateChange wire failed:',e.message)}
       // Check existing session
@@ -66,7 +86,11 @@ const BDOC_Auth={
         const{data}=await this.client.auth.getSession();
         if(data&&data.session){
           this.user=data.session.user;
+          // p157: mark the profile as loaded so the INITIAL_SESSION event that
+          // fires right after this does NOT repeat the same request. This path
+          // and the callback used to BOTH load it (3x profiles?id=eq.… per load).
           await this.loadProfile();
+          this._profileLoaded=true;
           if(returningFromStripe){setTimeout(()=>this.loadProfile(),4000)} // webhook may land a beat after redirect
           this._initialized=true;
           this._resumePendingSub();
