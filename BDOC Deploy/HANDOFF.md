@@ -79,6 +79,108 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Hermes — p157 + p157b, on `main` @ `6f99a3f` (2026-10-23)
+
+Hermes was 21 commits behind (still on p152) and re-synced to p156g before
+starting. Verified Claude's p154 heli fix independently against 1,142 live
+aircraft: 42 helicopters correctly classed (EC35, B429, V22, H60, R22), and
+the p152 exact-ICAO regression cases still pass 9/9. That fix is real.
+
+**p157 — four fixes + the first tests in this repo**
+
+1. **Hurricane layer returned ZERO features during an actual Cat-3 landfall.**
+   `proxy-weather?type=hurricanes` asked NWS for `event=Hurricane,Tropical
+   Storm,Typhoon`. NWS `event=` is an EXACT match and no alert is named
+   "Hurricane" — the real names are "Hurricane Warning", "Storm Surge Warning",
+   "Tropical Storm Warning". The query matched nothing, always.
+   Caught 2026-10-09 with Isaias at 28.7N 87.1W / 105 kt / 959 mb: NWS had 250
+   active alerts across AL/FL/MS/GA (25 Hurricane Warnings, 18 Storm Surge
+   Warnings) and BDOC drew none.
+     old query -> 0 features · 13 exact names -> 183 features
+   Re-proved on a calm day so it isn't a fluke:
+     `event=High Wind Warning,Wind Advisory` -> 13 · `event=Wind` -> 0
+   Added `type=storms` (NHC `CurrentStorms.json`) for storm POSITION/intensity/
+   pressure/movement. **`nhc.noaa.gov` had to be added to the User-Agent guard**
+   — it is a different host from `api.weather.gov` and the old check missed it.
+
+2. **`_bdoc` provenance envelope on proxy-weather.** Today the hurricane layer
+   legitimately returns 0 (Isaias dissipated; only Vance remains in the EPAC).
+   Yesterday it returned 0 because it was broken. Byte-identical, opposite
+   meanings. Responses now carry
+   `_bdoc:{source,type,fetched_at,upstream_status,count,degraded}` additively —
+   callers still read `.features` / `.activeStorms`. Errors carry it too.
+   **This is the contract any provenance badge work should read.**
+
+3. **Auth deadlock + triple profile load** (review #3). `await loadProfile()`
+   inside `onAuthStateChange` is the documented supabase-js v2 deadlock and can
+   hang auth on TOKEN_REFRESHED. Callback is now sync, work deferred via
+   `setTimeout(0)`. Same change kills 3 duplicate `profiles?id=eq.…` per load
+   (guarded by uid comparison + `_profileLoaded`, set on both paths).
+
+4. **CDN pinned + SRI on all 7 third-party scripts** (review #6/#7).
+   `supabase-js@2` and `mqtt@5` were floating — supabase-js went 2.116.0 ->
+   2.117.3 -> 2.118.0 in days, so prod ran a version nobody chose. Pinned to
+   2.118.0 / 5.16.1. **The Oct-8 pack's SRI hashes were for Cesium 1.104 and
+   would have broken the page after p153's 1.146 upgrade** — these are
+   recomputed from the real downloaded bytes. cdnjs and jsDelivr Cesium 1.146
+   are byte-identical (6,080,574 B), so the CDN-fallback tag shares the hash.
+
+**p157b — the local bridge was readable by ANY website** (review #4).
+`tools/bdoc-ipc-receiver.js` sent `Access-Control-Allow-Origin: *`, so any tab
+could read `/wireshark/packet`, `/wifi/scan`, `/shodan/device`,
+`/sensor/reading`. Binding to 127.0.0.1 does not help — the browser is already
+inside the trust boundary; CORS decides who may READ.
+Now: origin allowlist (no wildcard) + 32-byte pairing token in
+`~/.bdoc/bridge_token` (0600), required in `X-BDOC-Bridge`, timing-safe
+compared. `/api/v1/status` stays open so the UI can say "running, not paired".
+Token printed in a startup banner — without it the lockdown just looks broken.
+**Gotcha:** `send()` needed the origin across 13 call sites. Rebinding `send`
+per request is a RACE (POST routes read the body async, overlapping requests
+clobber each other). Origin is stored per-response in a `WeakMap`.
+
+**Server-side paywall groundwork — SHIPPED BUT NOT ENFORCED** (review #14).
+- `netlify/functions/_lib/guard.js` — `wrap()` adds JWT verify, server-side
+  tier, origin lock, Sec-Fetch-Site, per-IP rate limit, sanitized errors to an
+  existing handler without rewriting it. Reads tier with the **caller's own
+  token**, not the service key, so RLS `profiles_select_own` means a bug still
+  cannot read another account. Built on this repo's `_supabase.js` because the
+  Netlify var is named `supabase` and there is **no `SUPABASE_URL`** — the
+  pack's hardcoded env names would 500 in production. Fails CLOSED on gated
+  layers, OPEN on recon layers.
+- `js/bdoc-auth-fetch.js` — wraps `window.fetch`, attaches the JWT to
+  same-origin `/.netlify/functions/*` and `/api/*` ONLY. Covers ~40 call sites
+  and every future layer.
+- **Not wired to any proxy yet.** Flipping 43 endpoints before the layer→tier
+  map is signed off risks locking out paying users, which is worse than the
+  hole. Next step is one proxy at a time with the map reviewed first.
+
+**First tests in the repo — `npm test`, 35 passing.** `node --test`, no deps.
+Use the glob (`"tests/*.test.js"`); **Node 18 rejects a bare directory**.
+  - `tests/guard.test.js` (18) — 401/402/403/405/429, recon open to guests,
+    unknown tier fails closed, inner throw -> 502 without leaking the stack.
+  - `tests/auth-fetch.test.js` (8) — the token-leak invariant, with explicit
+    negative tests for USGS, NOAA, Cesium, OpenSky and a look-alike path on a
+    foreign origin.
+  - `tests/bridge-security.test.js` (9) — starts the REAL receiver on :9879 and
+    attacks it; asserts no response anywhere carries `ACAO: *`.
+Writing these caught a real bug pre-deploy: `guard.js` is in `_lib/`, so
+`require('./_supabase')` resolved nowhere and would have 500'd every wrapped
+function on first request.
+
+**Checked, no action needed:**
+- `mesh-nodes` 503 is **honest** — `{"status":"not_provisioned"}`, the
+  `mesh_nodes` table genuinely does not exist. Needs Travon to run
+  `docs/mesh-setup.sql`. Not a code bug.
+- `proxy-meshworld` source A (§2 P): not a tunable timeout.
+  `meshtastic.liamcottle.net` hung for the full 45 s on 3/3 attempts from the
+  droplet and returned 16 KB once, nothing twice. The function's failover is
+  working correctly and `sources.a:'unavailable'` is accurate reporting.
+  Source B alone is serving **9,647 nodes**. Leave it.
+
+Live verified at p157/bdoc-v157: BUILD pill, SW version, 7 `integrity=` tags,
+0 floating versions, `bdoc-auth-fetch.js` 200, `type=storms` returning
+Hurricane Vance (75 kt).
+
 ### Claude Code — p156g touch menu, grids, sharing, no boot prompt, on `main` @ `0c1b0f3` (2026-10-16)
 
 The quick-win batch from §2 W. Also logged the pasted critique as §2 X.
