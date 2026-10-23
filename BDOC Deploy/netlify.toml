@@ -82,6 +82,70 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
+# ─────────────────────────────────────────────────────────────────────────────
+# p158 SOURCE DISCLOSURE — Netlify publishes the whole base directory, so every
+# server-side file was readable over HTTPS. Confirmed live before this change:
+#   /package.json                                200
+#   /package-lock.json                           200  (full dependency graph)
+#   /supabase/migrations/001_initial_schema.sql  200  (RLS POLICIES)
+#   /supabase/migrations/002_*.sql               200
+#   /netlify/functions/_supabase.js              200
+#   /netlify/functions/_lib/guard.js             200  (the auth logic itself)
+#   /netlify/functions/stripe-webhook.js         200  (payment handling)
+#   /electron/main.js, /electron/preload.js      200
+#   /tests/guard.test.js                         200
+# No hardcoded secrets were in them (env vars only) — but handing an attacker
+# the RLS policies and the exact auth checks is free reconnaissance. The
+# functions still RUN normally; only their source text stops being served.
+# Pattern copied from the p148 /mem0_importer.py block.
+[[redirects]]
+  from = "/supabase/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/netlify/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/electron/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/tests/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/scripts/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package.json"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package-lock.json"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/*.md"
+  to = "/404.html"
+  status = 404
+  force = true
+
 # Security headers
 [[headers]]
   for = "/*"
@@ -94,7 +158,34 @@
     Permissions-Policy = "geolocation=(self), microphone=(), camera=()"
     # Phase 24 (2026-05-23): enforce HTTPS-only for all connections.
     # max-age=1 year; includeSubDomains so any future subdomains inherit the policy.
-    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+    # p158: cross-origin isolation. COOP severs the window.opener link, so a
+    # page we open (or that opens us) cannot reach back into this window —
+    # closes the reverse-tabnabbing path to the Supabase session in localStorage.
+    Cross-Origin-Opener-Policy = "same-origin"
+    # Our own documents/JSON must not be embeddable by other sites.
+    # NOT applied to /assets or tiles, which are meant to be cross-origin.
+    Cross-Origin-Resource-Policy = "same-site"
+
+    # p158: CSP in REPORT-ONLY first — deliberately not enforcing yet.
+    # index.html carries a ~767 KB inline <script> plus 1,663 inline style=
+    # attributes, so enforcing a strict policy today would blank the app. This
+    # collects real violations at /.netlify/functions/csp-report for a week;
+    # then the allowlist gets tightened and the header is renamed to
+    # Content-Security-Policy.
+    # 'unsafe-eval' is required by Cesium's bundled Knockout and cannot be
+    # removed until Cesium drops it upstream.
+    # The value of report-only TODAY is connect-src visibility: we will see
+    # every host the page actually talks to, which is how an injected
+    # exfiltration endpoint would announce itself.
+    Content-Security-Policy-Report-Only = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://plausible.io; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss: http://127.0.0.1:9876 http://localhost:9876 ws://127.0.0.1:9090; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'self' https://www.broadcastify.com https://www.youtube.com https://player.twitch.tv; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; report-uri /.netlify/functions/csp-report"
+
+# Server-side source must never be cached by a CDN edge as a 200 either.
+[[headers]]
+  for = "/netlify/*"
+  [headers.values]
+    Cache-Control = "no-store"
 
 # Phase 4A.1 (2026-05-04): aggressive caching for immutable static assets
 # Lazy-loaded modules use ?v= cache-bust query strings, so 1-year cache is safe
