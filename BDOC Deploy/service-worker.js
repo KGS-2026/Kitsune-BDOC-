@@ -3,17 +3,17 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v157c';  // p156g: long-press menu, copy grid / share, MGRS setting + search, no boot prompt, og-image
-// (prev) const SW_VERSION = 'bdoc-v157c';  // p156f: current flowing along grid lines + pipeline flow (cesium-init + layers-arcgis)
-// (prev) const SW_VERSION = 'bdoc-v157c';  // p156e: battle plan autosave/restore, real-shape GeoJSON/CoT export, .bdoc.json save/open
-// (prev) const SW_VERSION = 'bdoc-v157c';  // p156d: field-safety pass (CoT escaping, MGRS, honest link badge + 503 offline, no reload over a plan, honest saves)
-// (prev) const SW_VERSION = 'bdoc-v157c';  // p156c: cacheFirst tries the network before any-version cache (no old JS after a deploy)
-// (prev) const SW_VERSION = 'bdoc-v157c';  // p156b: sharper globe — MSAA not FXAA, natural sat grade, lighter bloom
-// (prev) const SW_VERSION = 'bdoc-v157c';  // p156: Skybridge (satellite data over mesh) + mesh traffic in Network Builder
-// (prev) const SW_VERSION = 'bdoc-v157c';  // p155: Network Builder (Packet Tracer + live Wireshark) + Meshtastic World relay router
-// (prev) const SW_VERSION = 'bdoc-v157c';  // p154: Travon's 25-item field list (NVG/FLIR GPU, depth, drawing, undo, aircraft ID…)
-// (prev) const SW_VERSION = 'bdoc-v157c';  // p153: Cesium 1.104 -> 1.146 + createOsmBuildingsAsync
-// (prev) const SW_VERSION = 'bdoc-v157c';  // p145 push: index blob roster — list() lags ~60s, get() does not
+const SW_VERSION = 'bdoc-v158';  // p156g: long-press menu, copy grid / share, MGRS setting + search, no boot prompt, og-image
+// (prev) const SW_VERSION = 'bdoc-v158';  // p156f: current flowing along grid lines + pipeline flow (cesium-init + layers-arcgis)
+// (prev) const SW_VERSION = 'bdoc-v158';  // p156e: battle plan autosave/restore, real-shape GeoJSON/CoT export, .bdoc.json save/open
+// (prev) const SW_VERSION = 'bdoc-v158';  // p156d: field-safety pass (CoT escaping, MGRS, honest link badge + 503 offline, no reload over a plan, honest saves)
+// (prev) const SW_VERSION = 'bdoc-v158';  // p156c: cacheFirst tries the network before any-version cache (no old JS after a deploy)
+// (prev) const SW_VERSION = 'bdoc-v158';  // p156b: sharper globe — MSAA not FXAA, natural sat grade, lighter bloom
+// (prev) const SW_VERSION = 'bdoc-v158';  // p156: Skybridge (satellite data over mesh) + mesh traffic in Network Builder
+// (prev) const SW_VERSION = 'bdoc-v158';  // p155: Network Builder (Packet Tracer + live Wireshark) + Meshtastic World relay router
+// (prev) const SW_VERSION = 'bdoc-v158';  // p154: Travon's 25-item field list (NVG/FLIR GPU, depth, drawing, undo, aircraft ID…)
+// (prev) const SW_VERSION = 'bdoc-v158';  // p153: Cesium 1.104 -> 1.146 + createOsmBuildingsAsync
+// (prev) const SW_VERSION = 'bdoc-v158';  // p145 push: index blob roster — list() lags ~60s, get() does not
 const STATIC_CACHE  = SW_VERSION + '-static';
 const CDN_CACHE     = SW_VERSION + '-cdn';
 const API_CACHE     = SW_VERSION + '-api';
@@ -37,8 +37,8 @@ const STATIC_PRECACHE = [
   '/js/telemetry.js?v=p59',
   '/js/converters.js?v=p156g',
   '/js/data.js?v=p156d',
-  '/js/auth.js?v=p157',
-  '/js/bdoc-auth-fetch.js?v=p157',
+  '/js/auth.js?v=p158',
+  '/js/bdoc-auth-fetch.js?v=p158',
   '/js/filters.js?v=p154',
   '/js/kitsune-ai.js?v=p93',
   '/js/bdoc-atak.js?v=p156d',
@@ -170,7 +170,7 @@ self.addEventListener('fetch', event => {
 
 async function cacheFirst(request, cacheName) {
   // GRID-DOWN FIX: cache keys include the ?v= cache-buster. Precaching
-  // '/js/auth.js?v=p157' never matched a live request for '?v=p136', so the app
+  // '/js/auth.js?v=p158' never matched a live request for '?v=p136', so the app
   // failed offline even though the bytes were on disk — hence the
   // search-insensitive fallback below.
   // P156c: that fallback ran BEFORE the network, so on the first load after a

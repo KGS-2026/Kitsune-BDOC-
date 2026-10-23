@@ -1,19 +1,72 @@
 // Creates a Stripe Checkout Session for subscription purchases
+//
+// ══ p158 SECURITY FIX — client-supplied identity ════════════════════════════
+// Before: `userId` and `email` came straight from the request body and were
+// written into the Stripe session metadata. The webhook then upgrades whatever
+// userId it finds there. So an unauthenticated caller could start a checkout
+// naming SOMEONE ELSE's Supabase id — paying to upgrade another account, or
+// more usefully, pairing a victim's id with a promo/test flow. Identity must
+// never arrive from the client.
+//
+// After: a valid Supabase JWT is REQUIRED, and the userId + email written into
+// metadata come from the verified token. Anything the body claims is ignored.
+// priceId was already allowlisted against VALID_PRICES — that part was right.
+'use strict';
+
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || process.env.Stripe_s_key);
+const { supabaseUrl, anonKey } = require('./_supabase');
+
+const ALLOWED_ORIGINS = (process.env.BDOC_ALLOWED_ORIGINS || 'https://kgsbdoc.netlify.app')
+  .split(',').map(s => s.trim()).filter(Boolean);
+
+// Verify the Supabase JWT. Returns {id,email} or null. Never trusts the body.
+async function callerFromToken(token) {
+  if (!token) return null;
+  const base = supabaseUrl(), key = anonKey();
+  if (!base || !key) return null;
+  try {
+    const r = await fetch(`${base}/auth/v1/user`, {
+      headers: { apikey: key, Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!r.ok) return null;
+    const u = await r.json();
+    return u && u.id ? u : null;
+  } catch (_) { return null; }
+}
 
 exports.handler = async (event) => {
+  const hdr = {};
+  for (const [k, v] of Object.entries(event.headers || {})) hdr[k.toLowerCase()] = v;
+  const origin = hdr['origin'] || '';
+
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type' } };
+    return { statusCode: 204, headers: { 'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0], 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' } };
   }
 
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    return { statusCode: 403, body: JSON.stringify({ error: 'origin not allowed' }) };
+  }
+
   try {
     const body = JSON.parse(event.body);
-    const { userId, email, tier, annual, promoCode } = body;
+    const { tier, annual, promoCode } = body;
     let { priceId } = body;
+
+    // p158: identity comes from the verified token ONLY. Any userId/email in
+    // the body is deliberately discarded.
+    const m = /^Bearer\s+(.+)$/i.exec(hdr['authorization'] || '');
+    const caller = m ? await callerFromToken(m[1]) : null;
+    if (!caller) {
+      return { statusCode: 401, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'sign in required' }) };
+    }
+    const userId = caller.id;
+    const email = caller.email;
+
 
     // hermes/overnight-2026-06-09: frontend now sends a tier name (operator|analyst|enterprise)
     // + annual flag instead of a raw priceId, so the user's Supabase id always rides along as
@@ -85,7 +138,7 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0], 'Cache-Control': 'no-store', 'Vary': 'Origin' },
       body: JSON.stringify({ url: session.url, sessionId: session.id })
     };
   } catch (e) {

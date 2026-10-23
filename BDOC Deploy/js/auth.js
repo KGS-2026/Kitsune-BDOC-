@@ -403,7 +403,11 @@ const BDOC_Auth={
     try{
       const res=await fetch('/.netlify/functions/stripe-checkout',{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({tier:tierName,annual:!!annual,userId:this.user.id,email,promoCode})
+        // p158: userId/email removed. The function now takes identity from the
+        // verified JWT that js/bdoc-auth-fetch.js attaches to same-origin
+        // function calls — sending them here was the vulnerability (a caller
+        // could name someone else's Supabase id).
+        body:JSON.stringify({tier:tierName,annual:!!annual,promoCode})
       });
       const data=await res.json();
       if(data&&data.url){window.location.href=data.url;return}
@@ -421,7 +425,10 @@ const BDOC_Auth={
     try{
       const res=await fetch('/.netlify/functions/stripe-portal',{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({customerId:this.profile.stripe_customer_id}),
+        // p158: customerId removed — it was an IDOR (any cus_ id opened that
+        // customer's billing portal). The function now looks the customer up
+        // from the caller's own profile row using the verified JWT.
+        body:JSON.stringify({}),
         signal:AbortSignal.timeout(10000)
       });
       const data=await res.json();
