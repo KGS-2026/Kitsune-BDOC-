@@ -72,19 +72,81 @@ function prune() {
 }
 setInterval(prune, 60000).unref();
 
+// ── p157 SECURITY: origin lock + pairing token ────────────────────────────
+// Found by the 2026-10-08 external review (#4). This server replied with
+// `Access-Control-Allow-Origin: *`, so ANY website open in the same browser
+// could read /wireshark/packet, /wifi/scan, /shodan/device and /sensor/reading
+// — the operator's own packet captures and Wi-Fi survey, handed to any tab.
+// Binding to 127.0.0.1 does NOT help: the browser is already inside the trust
+// boundary and CORS is what decides who may read the response.
+//
+// Two gates now:
+//   1. Origin allowlist — only https://kgsbdoc.netlify.app (plus localhost for
+//      development). No wildcard, ever.
+//   2. Pairing token — a random secret written to ~/.bdoc/bridge_token on first
+//      run and required in the X-BDOC-Bridge header. Pair once:
+//        localStorage.setItem('bdoc_bridge_token','<token printed at startup>')
+//      js/bdoc-auth-fetch.js attaches it automatically after that.
+const fsx = require('fs');
+const osx = require('os');
+const pathx = require('path');
+const cryptox = require('crypto');
+
+const ALLOWED_ORIGINS = new Set([
+  'https://kgsbdoc.netlify.app',
+  'http://localhost:9080',       // electron/server.js local serve
+  'http://127.0.0.1:9080'
+]);
+(process.env.BDOC_EXTRA_ORIGINS || '')
+  .split(',').map(s => s.trim()).filter(Boolean)
+  .forEach(o => ALLOWED_ORIGINS.add(o));
+
+const TOKEN_FILE = pathx.join(osx.homedir(), '.bdoc', 'bridge_token');
+function loadBridgeToken() {
+  try {
+    fsx.mkdirSync(pathx.dirname(TOKEN_FILE), { recursive: true, mode: 0o700 });
+    if (!fsx.existsSync(TOKEN_FILE)) {
+      fsx.writeFileSync(TOKEN_FILE, cryptox.randomBytes(32).toString('base64url'), { mode: 0o600 });
+    }
+    return fsx.readFileSync(TOKEN_FILE, 'utf8').trim();
+  } catch (e) {
+    console.error('[BDOC Receiver] could not create token file:', e.message);
+    return cryptox.randomBytes(32).toString('base64url'); // session-only fallback
+  }
+}
+const BRIDGE_TOKEN = loadBridgeToken();
+
+function tokenMatches(given) {
+  const A = Buffer.from(String(given || ''));
+  const B = Buffer.from(BRIDGE_TOKEN);
+  return A.length > 0 && A.length === B.length && cryptox.timingSafeEqual(A, B);
+}
+
+// Per-response origin, set by the request handler. WeakMap so responses are
+// garbage-collected normally and concurrent requests never share state.
+const ORIGIN_FOR_RES = new WeakMap();
+
 function send(res, code, obj) {
+  const origin = ORIGIN_FOR_RES.get(res) || '';
   const body = JSON.stringify(obj);
-  res.writeHead(code, {
+  const headers = {
     'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(body),
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    // Chrome Private/Local Network Access: an https page (kgsbdoc.netlify.app)
-    // talking to this loopback server needs the preflight to opt in.
-    'Access-Control-Allow-Private-Network': 'true',
-    'Cache-Control': 'no-store'
-  });
+    'Cache-Control': 'no-store',
+    'Vary': 'Origin'
+  };
+  // Echo the origin ONLY when it is allowlisted. Never '*' — see note above.
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+    headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
+    headers['Access-Control-Allow-Headers'] = 'Content-Type, X-BDOC-Bridge';
+    // Chrome Private/Local Network Access: an https page talking to this
+    // loopback server needs the preflight to opt in, or the whole bridge
+    // breaks in a future Chrome release.
+    headers['Access-Control-Allow-Private-Network'] = 'true';
+    headers['Access-Control-Max-Age'] = '600';
+  }
+  res.writeHead(code, headers);
   res.end(body);
 }
 
@@ -92,7 +154,33 @@ const server = http.createServer((req_, res) => {
   const u = new URL(req_.url, `http://localhost:${PORT}`);
   const path = u.pathname;
 
+  // p157: remember this request's origin against its own response object, so
+  // send() can echo it only when allowlisted. A WeakMap (not a rebound
+  // function) because POST routes read the body asynchronously — two
+  // overlapping requests would otherwise clobber each other's origin.
+  const origin = req_.headers.origin || '';
+  ORIGIN_FOR_RES.set(res, origin);
+
+  // Gate 1 — origin. A browser request from any other site is refused outright.
+  // (Requests with no Origin are non-browser clients: local scripts, curl,
+  //  the Python gateway. Those still face the token gate below.)
+  if (origin && !ALLOWED_ORIGINS.has(origin)) {
+    return send(res, 403, { status: 'error', error: 'origin not allowed' });
+  }
+
+  // Preflight must answer before the token check, or the browser never gets
+  // the chance to send the token header.
   if (req_.method === 'OPTIONS') return send(res, 204, {});
+
+  // Gate 2 — pairing token on every data route. /api/v1/status stays open so
+  // the UI can show "bridge running, not paired" instead of a dead box.
+  if (path !== '/api/v1/status' && !tokenMatches(req_.headers['x-bdoc-bridge'])) {
+    return send(res, 401, {
+      status: 'error',
+      error: 'bridge not paired',
+      hint: "run: localStorage.setItem('bdoc_bridge_token','<token printed by the receiver>')"
+    });
+  }
 
   if (path === '/api/v1/status' && req_.method === 'GET') {
     const counts = {};
@@ -147,6 +235,17 @@ const server = http.createServer((req_, res) => {
   });
 });
 
-server.listen(PORT, '127.0.0.1', () => console.log(`[BDOC Receiver] listening on http://127.0.0.1:${PORT}`));
+server.listen(PORT, '127.0.0.1', () => {
+  console.log(`[BDOC Receiver] listening on http://127.0.0.1:${PORT}`);
+  // p157: print the pairing token so the operator can pair once. Without this
+  // the lockdown just looks like "the bridge stopped working".
+  console.log('');
+  console.log('  ┌─ PAIRING REQUIRED ────────────────────────────────────────');
+  console.log('  │ In the BDOC tab, open DevTools console and run ONCE:');
+  console.log(`  │   localStorage.setItem('bdoc_bridge_token','${BRIDGE_TOKEN}')`);
+  console.log(`  │ Token is stored at ${TOKEN_FILE} and survives restarts.`);
+  console.log('  └───────────────────────────────────────────────────────────');
+  console.log('');
+});
 process.on('SIGINT', () => server.close(() => process.exit(0)));
 module.exports = server;
