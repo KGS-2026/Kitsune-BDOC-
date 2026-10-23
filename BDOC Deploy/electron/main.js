@@ -207,6 +207,25 @@ async function showCacheStatus() {
   }
 }
 
+// ── IPC handlers ──────────────────────────────────────────────────────────
+// p157c: preload.js called both of these and NEITHER existed.
+//   - 'bdoc-app-version' is sendSync; with no handler the renderer BLOCKS
+//     forever, so the preload bridge never finishes and window.BDOC_Electron
+//     is undefined — the app silently loses its desktop features.
+//   - 'open-external' was invoked for every external link and the promise
+//     just rejected, so links did nothing.
+ipcMain.on('bdoc-app-version', (e) => { e.returnValue = app.getVersion(); });
+ipcMain.handle('open-external', async (_e, url) => {
+  try {
+    const u = new URL(String(url));
+    // Only ever hand http(s) to the OS browser. Never file:, never custom
+    // schemes — shell.openExternal on an arbitrary scheme is a known RCE path.
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+    await shell.openExternal(u.href);
+    return true;
+  } catch (_) { return false; }
+});
+
 // ── Electron lifecycle ────────────────────────────────────────────────────────
 app.whenReady().then(() => {
   startLocalServer();

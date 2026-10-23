@@ -460,7 +460,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p157</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p157c</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -1633,7 +1633,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p157',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p157c',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
@@ -2463,24 +2463,80 @@ function captureScreen(){
 }
 // ═══ DESKTOP APP DOWNLOAD ═══
 // Detects OS, links to the matching installer on GitHub Releases. Hidden inside Electron.
-const BDOC_DESKTOP_VERSION='8.0.0';
 const BDOC_RELEASE_BASE='https://github.com/KGS-2026/Kitsune-BDOC-/releases/latest/download';
 // P154 (Travon bug #22): the link was hard-coded to v8.0.0 file names, so every new
 // desktop build needed a web deploy to become downloadable (and a rename broke it).
 // Now it asks GitHub for the LATEST release and picks the right asset for this OS.
 // The installed app itself now loads the live site whenever it's online (see
 // electron/main.js), so web fixes reach desktop users without a re-download.
+//
+// p157c: `BDOC_DESKTOP_VERSION` was a hard-coded '8.0.0' used as the fallback
+// filename AND as the version shown to the user. package.json is already at
+// 8.1.0, so the two had drifted. The constant is gone — the only version that
+// means anything is the tag GitHub reports, and for the installed app it's
+// app.getVersion(). Never retype a version in a second place.
+
+// Ask GitHub what the newest desktop release is. Shared by the download button
+// and the staleness check below. Cached for the session; GitHub rate-limits
+// unauthenticated calls to 60/hour per IP.
+let _bdocLatestRelease=null;
+async function bdocLatestRelease(){
+  if(_bdocLatestRelease!==null)return _bdocLatestRelease;
+  try{
+    const r=await fetch('https://api.github.com/repos/KGS-2026/Kitsune-BDOC-/releases/latest',
+      {headers:{Accept:'application/vnd.github+json'},signal:AbortSignal.timeout(6000)});
+    _bdocLatestRelease=r.ok?await r.json():false;
+  }catch(_){_bdocLatestRelease=false}
+  return _bdocLatestRelease;
+}
+
+// Compare dotted versions. Returns true when `latest` is newer than `have`.
+function bdocVersionNewer(latest,have){
+  const norm=s=>String(s||'').replace(/^desktop-v|^v/,'').split('.').map(n=>parseInt(n,10)||0);
+  const a=norm(latest),b=norm(have);
+  for(let i=0;i<Math.max(a.length,b.length);i++){
+    const x=a[i]||0,y=b[i]||0;
+    if(x>y)return true;
+    if(x<y)return false;
+  }
+  return false;
+}
+
+// p157c: tell desktop users when their installed build is behind.
+// Why this matters: the only release on GitHub is v8.0.0 from 2026-08-10 with
+// 54 downloads. Those users are running a two-month-old binary and the app
+// never told them. When the grid goes down is the WRONG time to discover you
+// are on a stale build — the whole point of the desktop app is that it still
+// works then, with whatever it last cached.
+async function bdocCheckDesktopUpdate(){
+  const E=window.BDOC_Electron;
+  if(!E||!E.isElectron)return;             // web users always have the latest
+  const rel=await bdocLatestRelease();
+  if(!rel||!rel.tag_name)return;           // offline or rate-limited: say nothing
+  const have=E.version||'0';
+  if(!bdocVersionNewer(rel.tag_name,have))return;
+  const tag=String(rel.tag_name).replace(/^desktop-v|^v/,'');
+  try{msg('wn',`<b>DESKTOP UPDATE AVAILABLE — v${esc(tag)}</b><br>`+
+    `You are running v${esc(have)}. The app loads the live site while you are online, `+
+    `so you already have current data — but the OFFLINE bundle only refreshes when you `+
+    `reinstall. Update before you need it.<br>`+
+    `<a href="https://github.com/KGS-2026/Kitsune-BDOC-/releases/latest" target="_blank" `+
+    `style="color:var(--kf)">Download v${esc(tag)}</a>`);}catch(_){}
+}
+// Run once a little after boot so it never competes with the globe for bandwidth.
+setTimeout(()=>{try{bdocCheckDesktopUpdate()}catch(_){}} ,15000);
+
 async function downloadDesktop(){
   const p=(navigator.userAgentData&&navigator.userAgentData.platform||navigator.platform||'').toLowerCase();
   const ua=navigator.userAgent.toLowerCase();
   const os=(p.includes('win')||ua.includes('windows'))?'win':(p.includes('mac')||ua.includes('mac os'))?'mac':ua.includes('linux')?'linux':'win';
   const releases='https://github.com/KGS-2026/Kitsune-BDOC-/releases/latest';
   const win=window.open('about:blank','_blank'); // opened inside the click so it isn't popup-blocked
-  let url=`${BDOC_RELEASE_BASE}/BDOC-Windows-Portable-${BDOC_DESKTOP_VERSION}.zip`,label='Windows app (portable ZIP)',ver=BDOC_DESKTOP_VERSION;
+  let url=releases,label='Opening the release page',ver='latest';
   try{
-    const r=await fetch('https://api.github.com/repos/KGS-2026/Kitsune-BDOC-/releases/latest',{headers:{Accept:'application/vnd.github+json'},signal:AbortSignal.timeout(6000)});
-    if(r.ok){
-      const j=await r.json();const as=j.assets||[];const pick=re=>as.find(a=>re.test(a.name));
+    const j=await bdocLatestRelease();
+    if(j){
+      const as=j.assets||[];const pick=re=>as.find(a=>re.test(a.name));
       let a=null;
       if(os==='win')a=pick(/setup.*\.exe$/i)||pick(/windows.*portable.*\.(zip|exe)$/i)||pick(/\.exe$/i)||pick(/win.*\.zip$/i);
       else if(os==='mac')a=pick(/arm64.*\.dmg$/i)||pick(/\.dmg$/i);

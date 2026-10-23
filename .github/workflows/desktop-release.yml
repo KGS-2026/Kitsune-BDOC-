@@ -1,18 +1,35 @@
 name: BDOC Desktop Release
 
-# P154 — builds the downloadable desktop app and attaches it to a GitHub Release.
-# Runs ONLY when a tag like `desktop-v8.1.0` is pushed (or by hand from the
-# Actions tab). Normal pushes to main never trigger it.
+# Builds the downloadable desktop app and attaches it to a GitHub Release.
+# Runs ONLY when a tag like `desktop-v8.1.0` is pushed, or by hand from the
+# Actions tab. Normal pushes to main never trigger it.
 #
 #   git tag desktop-v8.1.0 && git push origin desktop-v8.1.0
 #
-# The web app's "Download Desktop App" menu asks GitHub for the latest release
-# and picks the right file per OS, so nothing else needs to change.
+# The web app's "Download Desktop App" menu asks GitHub for the LATEST release
+# and picks the right asset per OS, so nothing on the website needs changing.
+#
+# p157c fixes (the old version would have shipped a release with missing files):
+#   - `files:` globs missed *.zip, which is exactly what the Windows `portable`
+#     target emits (BDOC-Windows-Portable-${version}.zip). Windows users — the
+#     majority — would have got a release with no portable build in it.
+#   - No `tag_name`/`name`, so a manual workflow_dispatch run had nothing to
+#     attach to and failed.
+#   - Added a verification step that FAILS the build when a platform produced
+#     no artifact, instead of silently publishing a half-empty release
+#     (fail_on_unmatched_files: false hides exactly that).
+#   - Pinned Node 20 to match electron-builder's requirement; the app itself
+#     runs Node 18 on Netlify but the BUILD needs 20.
 
 on:
   push:
     tags: ['desktop-v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to create/attach (e.g. desktop-v8.1.0)'
+        required: true
+        default: 'desktop-v8.1.0'
 
 permissions:
   contents: write
@@ -25,30 +42,73 @@ jobs:
         include:
           - os: windows-latest
             args: --win nsis portable
+            expect: 'exe,zip'
           - os: ubuntu-latest
             args: --linux AppImage deb
+            expect: 'AppImage,deb'
           - os: macos-latest
             args: --mac dmg
+            expect: 'dmg'
     runs-on: ${{ matrix.os }}
     defaults:
       run:
         working-directory: BDOC Deploy
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'BDOC Deploy/package-lock.json'
+
       - name: Install
         run: npm ci
+
+      - name: Smoke test before building a 115 MB installer
+        run: npm test
+        continue-on-error: false
+
       - name: Build
         run: npx electron-builder ${{ matrix.args }} --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: List what was produced
+        shell: bash
+        run: ls -la dist-electron/ || true
+
+      - name: Fail if this platform produced nothing
+        shell: bash
+        run: |
+          shopt -s nullglob
+          found=(dist-electron/*.exe dist-electron/*.zip dist-electron/*.AppImage dist-electron/*.deb dist-electron/*.dmg)
+          if [ ${#found[@]} -eq 0 ]; then
+            echo "::error::electron-builder produced no installable artifact on ${{ matrix.os }}"
+            exit 1
+          fi
+          echo "artifacts: ${found[@]}"
+
       - name: Attach to release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: BDOC Desktop ${{ github.event.inputs.tag || github.ref_name }}
+          body: |
+            BDOC desktop build.
+
+            **Live-first:** when online the app loads kgsbdoc.netlify.app, so web
+            fixes reach you without re-downloading. When the network drops it
+            falls back to the bundled copy automatically — grid-down capable.
+
+            Pick the file for your OS:
+            - Windows installer — `BDOC-Setup-*.exe`
+            - Windows portable (no install) — `BDOC-Windows-Portable-*.zip`
+            - Linux — `*.AppImage` or `*.deb`
+            - macOS — `*.dmg` (unsigned: right-click → Open the first time)
           files: |
             BDOC Deploy/dist-electron/*.exe
+            BDOC Deploy/dist-electron/*.zip
             BDOC Deploy/dist-electron/*.AppImage
             BDOC Deploy/dist-electron/*.deb
             BDOC Deploy/dist-electron/*.dmg

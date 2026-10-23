@@ -6,7 +6,11 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('BDOC_Electron', {
   isElectron: true,
-  version: '8.0',
+  // p157c: was hardcoded '8.0' and drifted from package.json (8.1.0), so the
+  // app could not tell the user which build they were actually running — and
+  // an update check comparing against it would always be wrong. Read the real
+  // version from Electron instead of retyping it.
+  version: ipcRenderer.sendSync('bdoc-app-version'),
   platform: process.platform,
   online: () => require('net').isIP('8.8.8.8') !== 0,
   // Tell main process to open external URLs in default browser
