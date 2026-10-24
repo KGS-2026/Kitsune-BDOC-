@@ -79,6 +79,14 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Hermes — p158e, on `main` @ `81bcd26` (2026-10-24)
+- **Situation panel XSS closed** (list cards + detail view). `sit.title/author/region/details/intel/activity` now go through `esc()`. Static demo data today; would have been stored XSS once a `situations` table feeds it. Opus-4.8 had left the detail half uncommitted — finished, list half added.
+- **Field audit S2 fixed — paid tools no longer lock offline.** `loadProfile()` caches `{uid,tier,exp:+30d}` in `localStorage.bdoc_tier_cache` on each successful load; read ONLY when the profile fetch fails/returns null. Rejects expired, other-uid, and non-paid/unknown tiers; cleared on logout. Client-side only — grants nothing the server checks.
+- Tests: `npm test` = **66** (+`tests/tier-cache.test.js` 7, `tests/xss-situations.test.js` 8).
+- Live verified: BUILD p158e, SW `bdoc-v158e`, `auth.js?v=p158e` serves the cache code.
+- Weekly cron `c92a63f73955` last run (10-21) died on Anthropic credit balance, not code.
+- **Next from §2:** S9 community-trust label, S13 clock-skew warning, pricing-modal copy (Recon layers / copilot / "24h delayed"), per-entity staleness, copilot boot briefing.
+
 ### Hermes — p157 + p157b, on `main` @ `6f99a3f` (2026-10-23)
 
 Hermes was 21 commits behind (still on p152) and re-synced to p156g before
