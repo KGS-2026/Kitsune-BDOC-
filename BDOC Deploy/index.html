@@ -460,7 +460,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p158</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p158e</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -1514,7 +1514,7 @@ if(!window.Cesium){
 <script src="js/modules/icon-factory.js?v=p116"></script>
 <script src="js/converters.js?v=p156g"></script>
 <script src="js/data.js?v=p156d"></script>
-<script src="js/auth.js?v=p158"></script>
+<script src="js/auth.js?v=p158e"></script>
 <!-- p157: must load AFTER auth.js (needs window.Auth.client) and BEFORE any
      layer module that fetches. Attaches the Supabase JWT to our own function
      calls so the server can enforce tier; see netlify/functions/_lib/guard.js. -->
@@ -2209,7 +2209,7 @@ const SituationManager=(()=>{
     const el=document.getElementById('spBody');if(!el)return;
     if(_tab!==0){el.innerHTML=`<div style="padding:24px 12px;font-family:var(--m);font-size:9px;color:var(--t3);text-align:center;letter-spacing:0.08em">NO ${_tab===1?'OPERATIONS':'CONTENT'} CONFIGURED</div>`;return;}
     el.innerHTML=`<div style="padding:6px 10px 3px;font-family:var(--m);font-size:7px;color:var(--t3);letter-spacing:0.12em">── ANALYST BRIEFS ──</div>`+
-      _sits.map(s=>`<div class="sit-card sev-${s.severity.toLowerCase()}" onclick="SituationManager.openSit('${s.id}')"><div class="sit-title">${s.title}</div><div class="sit-meta">Updated ${_ago(s.created)} · ${s.region}</div><div class="sit-badges">${_sev(s.severity)}${_coaBadge()}</div></div>`).join('')+
+      _sits.map(s=>`<div class="sit-card sev-${s.severity.toLowerCase()}" onclick="SituationManager.openSit('${s.id}')"><div class="sit-title">${esc(s.title)}</div><div class="sit-meta">Updated ${_ago(s.created)} · ${esc(s.region)}</div><div class="sit-badges">${_sev(s.severity)}${_coaBadge()}</div></div>`).join('')+
       `<div style="padding:6px 10px 3px;font-family:var(--m);font-size:7px;color:var(--t3);letter-spacing:0.12em;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px">── LIVE OSINT FEED · GDELT 24H ──</div>`+
       `<div id="sp-gdelt-list"><div style="padding:10px;font-family:var(--m);font-size:8px;color:var(--t3);text-align:center">⟳ Loading live intel...</div></div>`;
     fetch('/.netlify/functions/proxy-gdelt?query=war+OR+attack+OR+airstrike+OR+battle+OR+military+OR+conflict&timespan=24h&maxpoints=60')
@@ -2238,7 +2238,7 @@ const SituationManager=(()=>{
     const el=document.getElementById('spBody');if(!el)return;
     const plans=(COAManager._plans||[]);
     const rpHtml=plans.length?plans.map(p=>`<div class="rp-card" onclick="COAManager.togglePanel()"><span class="rp-status-badge ${p.status}">${p.status}</span><div class="rp-card-title">${esc(p.name)}</div><div class="rp-card-sub">Created ${new Date(p.created||Date.now()).toLocaleDateString()}</div></div>`).join(''):'<div style="font-family:var(--m);font-size:8px;color:var(--t3);padding:4px 0">No plans linked. Open COA Manager (Ctrl+Shift+C).</div>';
-    el.innerHTML=`<div class="sd-back" onclick="SituationManager.back()">◀&nbsp; BACK TO SITUATIONS</div><div class="sd-header"><div style="margin-bottom:5px">${_sev(sit.severity)}</div><div class="sd-name">${sit.title}</div><div class="sd-meta">Created ${_ago(sit.created)} by ${sit.author} · ${sit.region}</div></div><div class="sd-body">${_section('Details',`<p style="margin:0">${sit.details}</p>`,true)}${_section('Intelligence',`<p style="margin:0">${sit.intel}</p>`,false)}${_section('Possible Activity',`<p style="margin:0">${sit.activity}</p>`,false)}${_section('Response Plans',rpHtml,false)}</div>`;
+    el.innerHTML=`<div class="sd-back" onclick="SituationManager.back()">◀&nbsp; BACK TO SITUATIONS</div><div class="sd-header"><div style="margin-bottom:5px">${_sev(sit.severity)}</div><div class="sd-name">${esc(sit.title)}</div><div class="sd-meta">Created ${_ago(sit.created)} by ${esc(sit.author)} · ${esc(sit.region)}</div></div><div class="sd-body">${_section('Details',`<p style="margin:0">${esc(sit.details)}</p>`,true)}${_section('Intelligence',`<p style="margin:0">${esc(sit.intel)}</p>`,false)}${_section('Possible Activity',`<p style="margin:0">${esc(sit.activity)}</p>`,false)}${_section('Response Plans',rpHtml,false)}</div>`;
     _drawArcs(sit);
     if(window.V&&sit.lat&&sit.lng){try{V.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(sit.lng,sit.lat,900000),duration:1.8});}catch(_){}}
   }

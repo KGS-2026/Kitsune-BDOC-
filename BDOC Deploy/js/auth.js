@@ -114,9 +114,26 @@ const BDOC_Auth={
     if(!this.client||!this.user)return;
     try{
       const{data}=await this.client.from('profiles').select('*').eq('id',this.user.id).single();
-      if(data){this.profile=data;this.tier=data.tier||'recon'}
-    }catch(e){console.warn('[Auth] Profile load failed:',e.message)}
+      if(data){
+        this.profile=data;this.tier=data.tier||'recon';
+        // p158e (field audit S2): remember the server-confirmed tier for 30 days so a
+        // paying user who loses signal mid-op is not silently dropped to recon and
+        // locked out of Battle Tracker. Keyed to the user id; read ONLY when the
+        // profile fetch fails. Grants nothing server-side — server-gated data is
+        // still checked by the server on every call.
+        try{localStorage.setItem('bdoc_tier_cache',JSON.stringify({uid:this.user.id,tier:this.tier,exp:Date.now()+30*864e5}))}catch(_){}
+      }else{this._useCachedTier()}
+    }catch(e){console.warn('[Auth] Profile load failed:',e.message);this._useCachedTier()}
     this.updateUI();
+  },
+  _useCachedTier(){
+    try{
+      const c=JSON.parse(localStorage.getItem('bdoc_tier_cache')||'null');
+      if(c&&this.user&&c.uid===this.user.id&&c.exp>Date.now()&&['operator','analyst','enterprise'].includes(c.tier)){
+        this.tier=c.tier;this._tierFromCache=true;
+        console.info('[Auth] profile unreachable — using cached tier',c.tier,'(expires',new Date(c.exp).toISOString().slice(0,10)+')');
+      }
+    }catch(_){}
   },
   async doAuth(){
     const email=document.getElementById('authEmail').value.trim();
@@ -443,7 +460,7 @@ const BDOC_Auth={
   async logout(){
     if(this.client)await this.client.auth.signOut();
     this.user=null;this.profile=null;this.tier='recon';
-    localStorage.removeItem('bdoc_user_tier');
+    localStorage.removeItem('bdoc_user_tier');localStorage.removeItem('bdoc_tier_cache');
     this.updateUI();this.markLockedLayers();
     const lb=document.getElementById('authLogout');if(lb)lb.style.display='none';
   },
