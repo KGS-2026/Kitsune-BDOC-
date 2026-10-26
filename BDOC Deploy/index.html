@@ -461,7 +461,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p159b</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p159c</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -3493,6 +3493,9 @@ function togLy(el){
   const ly=el.dataset.layer;
   if(!BDOC_Auth.canAccess(ly)){el.classList.remove('on');layers[ly]=false;showMo(ly);return}
   el.classList.toggle('on');layers[ly]=el.classList.contains('on');
+  // p159c: remember the workspace. Before this, every reload started with an
+  // empty globe — only the first-visit wizard ever switched layers on.
+  try{clearTimeout(window._lyPersistT);window._lyPersistT=setTimeout(()=>{try{localStorage.setItem('bdoc_layers_on',JSON.stringify(Object.keys(layers).filter(k=>layers[k])))}catch(_){}},400)}catch(_){}
   // P119 RENDER GOVERNOR: sat/air/forcetrack interpolate against the Cesium clock,
   // so they need continuous render. Everything else is static and can run on-demand.
   // Refcounted so turning off satellites while aircraft are still up keeps the lock.
@@ -10630,6 +10633,18 @@ async function bootFeeds(){
   setTimeout(()=>{if(bpEl)bpEl.classList.add('done')},1200);
   // Timers start only when layers are active — checked inside each interval
   window._eqTimer=setInterval(()=>{if(!document.hidden&&layers.eq)loadEQ()},CFG.refresh.earthquakes);
+  // p159c: restore last session's layers (staggered 900 ms like presets — see p98
+  // note above bdocApplyPreset: concurrent arming starves fetches). Skipped on a
+  // first visit (wizard owns that) and when ?fresh=1 is in the URL.
+  setTimeout(()=>{try{
+    if(localStorage.getItem('bdoc_onboard_done')!=='1')return;
+    if(/[?&]fresh=1/.test(location.search))return;
+    const want=JSON.parse(localStorage.getItem('bdoc_layers_on')||'[]');
+    const q=[];want.forEach(ly=>{const el=document.querySelector('.ly[data-layer="'+ly+'"]');if(el&&!el.classList.contains('on')&&!el.classList.contains('locked')&&!layers[ly])q.push(el)});
+    if(!q.length)return;
+    q.forEach((el,i)=>setTimeout(()=>{try{togLy(el)}catch(_){}},i*900));
+    if(typeof af==='function')af('var(--t3)','Workspace restored \u2014 '+q.length+' layer'+(q.length===1?'':'s')+' from your last session');
+  }catch(_){}},2500);
   // Aircraft timer — adaptive polling from ADSBx recon (2026-08-09).
   // Base 60s. Idle tab (hidden): 4× slower. Background + hidden: 8× slower.
   // Result: active window = 60s, background tab = 240s, hidden idle = 480s.
