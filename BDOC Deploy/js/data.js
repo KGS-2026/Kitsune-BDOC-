@@ -159,6 +159,47 @@ const Health={
     document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&e.key==='H')this.togDash()});
     // PERF FIX: Health dashboard timer now only runs when dashboard is open (see togDash)
     setInterval(()=>this.heartbeat(),300000);
+    // p159b — CLOCK SKEW check (HANDOFF S13). Every "age" we print assumes the
+    // device clock is right. Compare once against the CDN's Date header; if off
+    // by >2 min, say so in the ticker and tag Health so the dash shows it.
+    setTimeout(()=>{try{
+      const t0=Date.now();
+      fetch('/manifest.json',{method:'HEAD',cache:'no-store'}).then(r=>{
+        const hdr=r.headers.get('date');if(!hdr)return;
+        const srv=new Date(hdr).getTime();if(isNaN(srv))return;
+        const rtt=Date.now()-t0;const skew=Math.round((t0+rtt/2)-srv)/1000;
+        this.clockSkewS=skew;
+        if(Math.abs(skew)>120){
+          const m=Math.round(Math.abs(skew)/60);
+          const msg=`DEVICE CLOCK ${skew>0?'AHEAD':'BEHIND'} BY ~${m} MIN — data ages and "AS OF" times on this device are off by that much`;
+          console.warn('[Health] '+msg);
+          if(typeof af==='function')af('var(--yl)',msg);
+        }
+      }).catch(()=>{});
+    }catch(_){}},8000);
+    // p159b — "WHAT CHANGED" boot brief (HANDOFF open item #3). After the feeds
+    // have had 25 s to arm, compare live counts with the snapshot saved on the
+    // previous visit and post one message in the copilot log. Replaces the
+    // generic hello an analyst otherwise has to scroll past. Snapshot refreshes
+    // every 5 min so the next visit's delta is against the last thing seen.
+    const LABEL={usgs:'earthquakes',nasa_firms:'fire detections',adsb_lol:'military aircraft',opensky:'aircraft',conflicts:'conflict events',celestrak:'satellites',power_outages:'power outages',svc_status:'service incidents',weather:'weather alerts',maritime:'vessels',gdelt:'news events',space_weather:'space-weather alerts'};
+    const snap=()=>{try{const o={};for(const[k,f]of Object.entries(this.feeds))if(f.status==='healthy')o[k]=f.dataCount;localStorage.setItem('bdoc_feed_snap',JSON.stringify({t:Date.now(),c:o}));}catch(_){}};
+    setTimeout(()=>{try{
+      let prev=null;try{prev=JSON.parse(localStorage.getItem('bdoc_feed_snap')||'null');}catch(_){}
+      const live=Object.entries(this.feeds).filter(([k,f])=>f.status==='healthy'&&LABEL[k]);
+      if(typeof msg==='function'&&live.length){
+        const away=prev?this.tAgo(prev.t):null;
+        const rows=live.map(([k,f])=>{
+          const was=prev&&prev.c?prev.c[k]:undefined;
+          const d=(was==null)?'':(f.dataCount-was===0?' <span style="color:#8B919A">(no change)</span>':` <span style="color:${f.dataCount>was?'#E8B349':'#8B919A'}">(${f.dataCount>was?'+':''}${f.dataCount-was})</span>`);
+          return `\u2022 <b>${f.dataCount.toLocaleString()}</b> ${LABEL[k]}${d}`;
+        }).join('<br>');
+        const c=this.counts();
+        const head=away?`<b>WHAT CHANGED</b> \u2014 since your last session ${away} ago`:`<b>CURRENT PICTURE</b> \u2014 first session on this device`;
+        msg('in',`${head}<br><br>${rows}<br><br><span style="font-size:9px;color:#8B919A">${c.ok} feeds live \u00B7 ${c.idle} idle \u00B7 ${c.down} down \u00B7 ask <b>sitrep &lt;theater&gt;</b> for a live brief</span>`);
+      }
+      snap();setInterval(snap,300000);
+    }catch(_){}},25000);
     console.log('[Health] Monitor online — Ctrl+Shift+H for dashboard');
   }
 };

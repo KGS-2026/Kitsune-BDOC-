@@ -230,6 +230,37 @@ try{
           +'<div style="margin-top:8px;font-size:7px;color:#1e2436;letter-spacing:1px;text-align:right">KITSUNE BDOC</div></div>';
       }
     }catch(_){}
+    // 3) p159b — DATA AGE on every selected live entity (HANDOFF open item #2).
+    // An analyst must know whether a track is 40 s or 40 min old. Every entity
+    // collection gets a `_bdocLoadedAt` stamp the first time it is seen with
+    // entities (refreshed when the count changes), and the popup gets an
+    // "AS OF" row. Entities carrying their own timestamp property use that.
+    try{
+      const col=ent.entityCollection;
+      if(col){
+        const n=col.values.length;
+        if(!col._bdocLoadedAt||col._bdocCount!==n){col._bdocLoadedAt=Date.now();col._bdocCount=n;}
+        let at=null;
+        if(ent.properties){
+          for(const k of ['ts','time','seen','timestamp','last_seen','lastSeen','acq_time','acq_date','updated','date']){
+            try{const v=ent.properties[k]&&ent.properties[k].getValue(V.clock.currentTime);
+              if(v){const d=(typeof v==='number')?new Date(v<2e10?v*1000:v):new Date(v);if(!isNaN(d))at=d.getTime();if(at)break;}
+            }catch(_){}
+          }
+        }
+        if(!at)at=col._bdocLoadedAt;
+        const ageS=Math.max(0,Math.round((Date.now()-at)/1000));
+        const age=ageS<90?ageS+' s':ageS<5400?Math.round(ageS/60)+' min':ageS<172800?(ageS/3600).toFixed(1)+' h':Math.round(ageS/86400)+' d';
+        const tone=ageS<300?'#3FB950':ageS<3600?'#E8B349':'#DA3633';
+        const iso=new Date(at).toISOString().replace('T',' ').slice(0,19)+'Z';
+        const row='<div data-bdoc-age="1" style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);font-family:\'JetBrains Mono\',monospace;font-size:10px;color:#8B919A;display:flex;justify-content:space-between;gap:12px"><span>AS OF '+iso+'</span><span style="color:'+tone+'">\u25CF '+age+' old</span></div>';
+        let d='';try{d=ent.description?(ent.description.getValue(V.clock.currentTime)||''):'';}catch(_){d='';}
+        if(d&&d.indexOf('data-bdoc-age')<0){
+          const i=d.lastIndexOf('</div>');
+          ent.description=(i>0)?d.slice(0,i)+row+d.slice(i):d+row;
+        }
+      }
+    }catch(_){}
   });
 }catch(e){console.warn('[selection safety net]',e)}
 // ── GOOGLE EARTH-GRADE RENDERING ──
