@@ -13,7 +13,7 @@ const ALLOWED_HOSTS = new Set([
   'metastatus.com', 'status.datadoghq.com', 'status.twilio.com',
   'www.redditstatus.com', 'status.dropbox.com', 'status.digitalocean.com',
   'www.vercel-status.com', 'www.netlifystatus.com', 'status.openai.com',
-  'status.slack.com', 'status.zoom.us', 'status.cloud.google.com',
+  'status.slack.com', 'status.zoom.us', 'slack-status.com', 'www.zoomstatus.com', 'status.cloud.google.com',
 ]);
 
 exports.handler = async (event) => {

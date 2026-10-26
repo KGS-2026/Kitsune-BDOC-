@@ -1,0 +1,26 @@
+/* BUILD p158f — legibility floor (2026-10-24)
+   Live audit before this: 231 of 414 visible text nodes rendered under 10px
+   (101 at 7px). Competitor audit (ARGOS Atlas, World Monitor, ADS-B Exchange):
+   0-7% of text under 10px, nothing under 12px. This keeps BDOC's density but
+   sets a hard 10px floor on every high-volume class and lifts the main data
+   readouts. Loaded LAST so it wins over the stacked !important layers in
+   bdoc.css (lines ~545, 767, 839, 1157, 1268). */
+.ly-tg,.ly-tg#landingCount{font-size:10px!important;padding:1px 5px!important;letter-spacing:.06em!important}
+.fd-i{font-size:10px!important}
+.lg-title{font-size:10.5px!important;letter-spacing:.14em!important}
+.lg-arrow{font-size:10px!important}
+.fb,.eb{font-size:10px!important;padding:4px 8px!important}
+.bm-btn{font-size:10px!important}
+.menu-btn{font-size:10.5px!important}
+.sp-tab{font-size:10.5px!important}
+.mg-t{font-size:10px!important}
+#cursorCoords .cc-lbl{font-size:9.5px!important}
+#cursorCoords .cc-val{font-size:11.5px!important}
+.ai-a,.ai-s2,.ai-ol{font-size:10px!important}
+#bdocTicker,#bdocTicker *{font-size:10.5px!important}
+/* the offline badge is now docked inside the top bar (bdoc-offline-hud.js p158f) */
+#bdoc-link-badge #bdoc-link-detail{font-size:10px!important}
+@media (max-width:767px){
+  .ly-tg{font-size:10px!important}
+  .lg-title{font-size:10px!important}
+}

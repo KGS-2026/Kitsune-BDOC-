@@ -101,7 +101,6 @@
 <link rel="dns-prefetch" href="https://api.weather.gov">
 <link rel="dns-prefetch" href="https://earthquake.usgs.gov">
 <link rel="dns-prefetch" href="https://opensky-network.org">
-<link rel="dns-prefetch" href="https://api.adsb.lol">
 <link rel="dns-prefetch" href="https://celestrak.org">
 <link rel="dns-prefetch" href="https://radar.cloudflare.com">
 <link rel="dns-prefetch" href="https://services.swpc.noaa.gov">
@@ -200,6 +199,7 @@ if('serviceWorker' in navigator){
 <link rel="stylesheet" href="css/bdoc.css?v=p154">
 <link rel="stylesheet" href="css/bdoc-glass.css?v=p75">
 <link rel="stylesheet" href="css/bdoc-p154.css?v=p154">
+<link rel="stylesheet" href="css/bdoc-p158f.css?v=p158f">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -460,7 +460,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p158e</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p158f</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -1633,7 +1633,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p158',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p158f',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
@@ -2684,10 +2684,13 @@ function initMobile(){
   if(window.innerWidth>=768)return;
   document.getElementById('mob-ov').classList.add('show');
   fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson').then(r=>r.json()).then(d=>{const el=document.getElementById('mob-eq');if(el)el.textContent=d.features?.length||'\u2014'}).catch(()=>{});
-  fetch('https://www.fire.ca.gov/umbraco/api/IncidentApi/List',{signal:AbortSignal.timeout(10000)}).then(r=>r.json()).then(d=>{const el=document.getElementById('mob-fire');if(el)el.textContent=d.length||'\u2014'}).catch(()=>{fetch('https://firms.modaps.eosdis.nasa.gov/api/area/csv/86aborbe454e95c32e2fb085f1e91ba68/VIIRS_SNPP_NRT/world/1',{signal:AbortSignal.timeout(10000)}).then(r=>r.text()).then(t=>{const el=document.getElementById('mob-fire');if(el){const lines=t.trim().split('\n');el.textContent=lines.length>1?(lines.length-1):'\u2014'}}).catch(()=>{})});
-  fetch('https://opensky-network.org/api/states/all?lamin=24&lomin=-125&lamax=50&lomax=-66',{signal:AbortSignal.timeout(15000)}).then(r=>r.json()).then(d=>{const el=document.getElementById('mob-mil');if(el){const states=d.states||[];const milCount=states.filter(s=>{const cs=(s[1]||'').trim();return isMilCallsign(cs)}).length;el.textContent=milCount||'\u2014'}}).catch(()=>{fetch('https://api.adsb.lol/v2/lat/39/lon/-98/dist/2500',{signal:AbortSignal.timeout(15000)}).then(r=>r.json()).then(d=>{const el=document.getElementById('mob-mil');if(el)el.textContent=d.ac?.filter(a=>a.mil)?.length||d.ac?.length||'\u2014'}).catch(()=>{})});
+  // p158f: these were browser-direct calls to fire.ca.gov / NASA (with the FIRMS key
+  // in the URL) / OpenSky / adsb.lol. All four are CORS-blocked in a browser, so
+  // the phone card always read "—". Routed through our own proxies.
+  fetch('/.netlify/functions/proxy-firms?mode=area&area=-180,-90,180,90&source=VIIRS_SNPP_NRT&days=1',{signal:AbortSignal.timeout(15000)}).then(r=>r.ok?r.text():Promise.reject()).then(t=>{const el=document.getElementById('mob-fire');if(el){const n=t.trim().split('\n').length-1;el.textContent=n>0?n.toLocaleString():'\u2014'}}).catch(()=>{});
+  fetch('/.netlify/functions/proxy-adsb?mil=1',{signal:AbortSignal.timeout(15000)}).then(r=>r.ok?r.json():Promise.reject()).then(d=>{const el=document.getElementById('mob-mil');if(el){const n=(d.ac||[]).length;el.textContent=n||'\u2014'}}).catch(()=>{});
 }
-function closeMobOv(){const o=document.getElementById('mob-ov');o.style.transition='opacity .3s';o.style.opacity='0';setTimeout(()=>o.remove(),300)}
+function closeMobOv(){const o=document.getElementById('mob-ov');o.style.transition='opacity .3s';o.style.opacity='0';setTimeout(()=>{o.remove();if(window._bdocOnboardAfterGate){window._bdocOnboardAfterGate=false;try{bdocStartOnboarding()}catch(_){}}},300)}
 function shareBdoc(){if(navigator.share){navigator.share({title:'KITSUNE BDOC',text:'Open on desktop:',url:location.href}).catch(()=>{})}else{navigator.clipboard.writeText(location.href).then(()=>{const b=document.querySelector('.mo-bs');if(b){b.textContent='\u2713 LINK COPIED';b.style.color='var(--gn)'}}).catch(()=>{prompt('Copy this link:',location.href)})}}
 // Phase 5A (2026-05-04): first-load welcome card. Dismissed value remembered in localStorage.
 function dismissBdocWelcome(remember){
@@ -2713,6 +2716,10 @@ function maybeShowBdocWelcome(){
 setTimeout(()=>{
   try{
     if(localStorage.getItem('bdoc_onboard_done')==='1'){maybeShowBdocWelcome();return}
+    // p158f: on phones the persona wizard rendered ON TOP of the "built for desktop"
+    // gate (two modals at once, gate text bleeding through). Defer until it closes.
+    const mo=document.getElementById('mob-ov');
+    if(mo&&mo.classList.contains('show')){window._bdocOnboardAfterGate=true;return}
     bdocStartOnboarding();
   }catch(_){maybeShowBdocWelcome()}
 }, 800);
@@ -13829,6 +13836,6 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 <script src="js/bdoc-plan.js?v=p156e"></script>
 <script src="js/bdoc-link-manager.js?v=p156d"></script>
 <script src="js/bdoc-plugin-renderer.js?v=p155"></script>
-<script src="js/bdoc-offline-hud.js?v=p75"></script>
+<script src="js/bdoc-offline-hud.js?v=p158f"></script>
 </body>
 </html>

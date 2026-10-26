@@ -56,7 +56,33 @@ const BDOCOfflineHUD = {
     wrap.title = 'Click for offline storage detail';
     wrap.addEventListener('click', () => this.showDetail());
 
-    document.body.appendChild(wrap);
+    // p158f: the badge floated at top:8px/center with z-index 10002 — on desktop it
+    // covered the File/View/Tools/Add menu and the BATTLE TRACKER button, and on
+    // phones it sat on top of the "built for desktop" gate. Dock it INLINE in the
+    // top bar next to the threat pill, styled like the other pills; the long
+    // description becomes a tooltip and only shows as text when NOT plain online
+    // (stale/mesh/local is exactly when the operator must read it).
+    const pill = document.getElementById('bdocThreatPill');
+    const docked = pill && pill.offsetParent !== null && window.innerWidth >= 768;
+    if (docked) {
+      wrap.style.cssText = [
+        'position:static', 'margin-left:6px', 'align-self:center', 'display:flex',
+        'flex-direction:row', 'align-items:center', 'gap:8px', 'padding:4px 9px',
+        'border-radius:2px', 'background:transparent', 'border:1px solid var(--bdr2,rgba(255,255,255,.14))',
+        'font-family:var(--m,IBM Plex Mono,ui-monospace,monospace)', 'cursor:pointer',
+        'user-select:none', 'white-space:nowrap', 'transition:all 150ms ease'
+      ].join(';');
+      txt.style.fontSize = '10px';
+      detail.style.fontSize = '10px';
+      pill.insertAdjacentElement('afterend', wrap);
+    } else {
+      // phones / no top bar: small chip bottom-left, BELOW every modal (gate z=500, wizard 9500)
+      wrap.style.top = 'auto'; wrap.style.bottom = 'calc(10px + env(safe-area-inset-bottom,0px))';
+      wrap.style.left = '10px'; wrap.style.transform = 'none'; wrap.style.zIndex = '400';
+      wrap.style.flexDirection = 'row'; wrap.style.padding = '4px 10px'; wrap.style.gap = '8px';
+      document.body.appendChild(wrap);
+    }
+    this._docked = docked;
     this.el = wrap; this.detailEl = detail;
 
     if (window.BDOCLinkManager) {
@@ -76,7 +102,11 @@ const BDOCOfflineHUD = {
     dot.style.boxShadow = `0 0 8px ${s.color}`;
     txt.textContent = s.label;
     txt.style.color = s.color;
-    if (this.detailEl) this.detailEl.textContent = s.desc;
+    if (this.detailEl) {
+      this.detailEl.textContent = s.desc;
+      this.detailEl.style.display = state === 'cloud' ? 'none' : '';
+    }
+    if (this.el) this.el.title = s.desc + ' — click for offline storage detail';
 
     // Degraded links pulse so they cannot be ignored in peripheral vision.
     dot.style.animation = (state === 'cache' || state === 'mesh')

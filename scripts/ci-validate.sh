@@ -80,7 +80,9 @@ echo; echo "══════════════════════�
 # a --test target, hence the glob.
 echo; echo "── [5/5] Security + unit tests (node --test) ──"
 if [ -d "$ROOT/tests" ]; then
-  if (cd "$ROOT" && node --test "tests/*.test.js" > /tmp/bdoc-tests.log 2>&1); then
+  # Shell-expanded glob: Node 20 (GitHub runner) treats a quoted glob as a literal
+  # path ("Could not find tests/*.test.js") — that is why CI was red p158c..p158e.
+  if (cd "$ROOT" && node --test tests/*.test.js > /tmp/bdoc-tests.log 2>&1); then
     echo "  ✓ $(grep -c '^ok ' /tmp/bdoc-tests.log 2>/dev/null || echo '?') tests passed"
   else
     echo "  ✗ FAIL: test suite"

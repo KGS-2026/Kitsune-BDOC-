@@ -155,6 +155,73 @@
   to = "/SECURITY.md"
   status = 200
 
+
+# p158f: the /*.md rule below NEVER matched — Netlify splats only work as a whole
+# trailing path segment, not as a filename glob. Verified 200 on live before this:
+# BDOC_CLAUDE.md, BDOC_HISTORY.md, IMPLEMENTATION_PLAN.md, ADDING_A_NEW_API_KEY.md,
+# meshtastic_receptor.py, deno.lock, plus two .bak copies of index.html/bdoc.css
+# (now deleted from the repo). Each internal file is listed explicitly. Adding a
+# new root-level doc? Add it here too — tests/public-surface.test.js enforces it.
+[[redirects]]
+  from = "/BDOC_CLAUDE.md"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/BDOC_HISTORY.md"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/IMPLEMENTATION_PLAN.md"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/ADDING_A_NEW_API_KEY.md"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/meshtastic_receptor.py"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/deno.lock"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/dist-electron/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/assets/make_icons.py"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/plugins/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/node_modules/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
 [[redirects]]
   from = "/*.md"
   to = "/404.html"

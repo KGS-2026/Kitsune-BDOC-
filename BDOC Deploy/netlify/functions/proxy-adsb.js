@@ -14,12 +14,15 @@
 exports.handler = async (event) => {
   const params = event.queryStringParameters || {};
   const { lat, lon, dist } = params;
+  // p158f: ?mil=1 -> global military list (adsb.lol /v2/mil, adsb.fi fallback).
+  // Lets the mobile card count military aircraft without a CORS-blocked direct call.
+  const MIL = params.mil === '1';
 
-  if (!lat || !lon || !dist) {
+  if (!MIL && (!lat || !lon || !dist)) {
     return { statusCode: 400, body: JSON.stringify({ error: 'Missing params: lat, lon, dist' }) };
   }
   // Validate numeric before interpolating into the URL path — prevents path traversal (e.g. ../../admin)
-  if (!/^-?\d+(\.\d+)?$/.test(lat) || !/^-?\d+(\.\d+)?$/.test(lon) || !/^\d+(\.\d+)?$/.test(dist)) {
+  if (!MIL && (!/^-?\d+(\.\d+)?$/.test(lat) || !/^-?\d+(\.\d+)?$/.test(lon) || !/^\d+(\.\d+)?$/.test(dist))) {
     return { statusCode: 400, body: JSON.stringify({ error: 'Invalid params: lat/lon/dist must be numeric' }) };
   }
 
@@ -31,7 +34,10 @@ exports.handler = async (event) => {
 
   // Both expose the same v2 response shape. adsb.lol uses {ac:[...]},
   // adsb.fi uses {aircraft:[...]} — normalised below so the client sees one shape.
-  const UPSTREAMS = [
+  const UPSTREAMS = MIL ? [
+    { name: 'adsb.lol', url: 'https://api.adsb.lol/v2/mil' },
+    { name: 'adsb.fi',  url: 'https://opendata.adsb.fi/api/v2/mil' }
+  ] : [
     { name: 'adsb.lol', url: `https://api.adsb.lol/v2/lat/${lat}/lon/${lon}/dist/${dist}` },
     { name: 'adsb.fi',  url: `https://opendata.adsb.fi/api/v2/lat/${lat}/lon/${lon}/dist/${dist}` }
   ];

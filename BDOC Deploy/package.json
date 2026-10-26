@@ -10,7 +10,7 @@
   "license": "UNLICENSED",
   "main": "electron/main.js",
   "scripts": {
-    "test": "node --test \"tests/*.test.js\"",
+    "test": "node --test tests/*.test.js",
     "start": "node -e \"require('./electron/server').createServer().listen(9080, () => console.log('BDOC local server: http://localhost:9080'))\"",
     "electron": "electron .",
     "electron:dev": "NODE_ENV=development electron .",

@@ -53,8 +53,8 @@
     { name: 'DigitalOcean', url: 'https://status.digitalocean.com/api/v2/status.json' },
     { name: 'Netlify', url: 'https://www.netlifystatus.com/api/v2/status.json' },
     { name: 'OpenAI', url: 'https://status.openai.com/api/v2/status.json' },
-    { name: 'Slack', url: 'https://status.slack.com/api/v2/status.json' },
-    { name: 'Zoom', url: 'https://status.zoom.us/api/v2/status.json' }
+    { name: 'Slack', url: 'https://slack-status.com/api/v2.0.0/current', kind: 'slack' },
+    { name: 'Zoom', url: 'https://www.zoomstatus.com/api/v2/status.json' }
   ];
 
   var state = window.OutageWatch = {
@@ -375,7 +375,15 @@
       return fetch(s.url, { signal: AbortSignal.timeout(8000) })
         .catch(function () { return fetch('/.netlify/functions/proxy-status?url=' + encodeURIComponent(s.url), { signal: AbortSignal.timeout(8000) }); })
         .then(function (r) { return r.json(); })
-        .then(function (d) { return { name: s.name, ind: (d.status && d.status.indicator) || 'none', desc: (d.status && d.status.description) || '' }; });
+        .then(function (d) {
+          // p158f: Slack left Atlassian Statuspage (status.slack.com 301s; slack-status.com
+          // has its own {status:'ok'|'active', active_incidents:[...]} shape).
+          if (s.kind === 'slack') {
+            var inc = (d.active_incidents || [])[0];
+            return { name: s.name, ind: d.status === 'ok' ? 'none' : (inc && /outage/i.test(inc.type || '') ? 'major' : 'minor'), desc: inc ? (inc.title || 'Incident') : 'All systems operational' };
+          }
+          return { name: s.name, ind: (d.status && d.status.indicator) || 'none', desc: (d.status && d.status.description) || '' };
+        });
     }));
     results.forEach(function (r) {
       if (r.status !== 'fulfilled') return;
