@@ -462,7 +462,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p159f</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p159g</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -3534,7 +3534,7 @@ function togLy(el){
   if(ly==='cyber'){const ch=document.getElementById('cyberHud');if(layers.cyber){loadCyberAttacks();if(ch)ch.style.display='block'}else{cyberEnts.forEach(e=>V.entities.remove(e));cyberEnts=[];if(window._cyberRefreshTimer){clearTimeout(window._cyberRefreshTimer);window._cyberRefreshTimer=null}if(ch)ch.style.display='none'}}
   if(ly==='outages'){if(layers.outages)loadPowerOutages();else{outageEnts.forEach(e=>V.entities.remove(e));outageEnts=[]}}
   if(ly==='downdetect'){if(layers.downdetect)loadDowndetector();else{downEnts.forEach(e=>V.entities.remove(e));downEnts=[]}}
-  if(ly==='webcams'){if(layers.webcams)loadWebcams();else{webcamEnts.forEach(e=>V.entities.remove(e));webcamEnts=[]}}
+  if(ly==='webcams'){if(layers.webcams)loadWebcams();else{V.entities.suspendEvents();webcamEnts.forEach(e=>V.entities.remove(e));webcamEnts=[];V.entities.resumeEvents();}}
   if(ly==='radio'){if(layers.radio)loadRadioStations();else{radioEnts.forEach(e=>V.entities.remove(e));radioEnts=[]}}
   if(ly==='deforest'){if(layers.deforest)loadDeforestAlerts();else removeWeatherLayer('_deforestLayer')}
   if(ly==='sentinel'){if(layers.sentinel)loadSentinelLayer();else removeWeatherLayer('_sentinelLayer')}
@@ -6600,45 +6600,45 @@ async function loadDowndetector(){
   Health.ok('svc_status');
   EventLog.add('info',`Service status: ${operational} OK, ${degraded} degraded, ${major} major out of ${totalChecked} checked`);
 }
-// ═══ LIVE WEBCAMS ═══
+// ═══ LIVE WEBCAMS (p159g: real video — Caltrans HLS + NYC DOT JPEG, ~4,400 cams) ═══
 let webcamEnts=[];
+window._camIndex=null;
 async function loadWebcams(){
   if(!V)return;
   webcamEnts.forEach(e=>V.entities.remove(e));webcamEnts=[];
-  // Curated webcams from webcamtaxi.com and tw.live
-  const cams=[
-    {name:'Times Square, NYC',lat:40.758,lon:-73.985,url:'https://www.webcamtaxi.com/en/usa/new-york/times-square.html'},
-    {name:'Shibuya Crossing, Tokyo',lat:35.659,lon:139.700,url:'https://www.webcamtaxi.com/en/japan/tokyo/shibuya-crossing.html'},
-    {name:'Abbey Road, London',lat:51.532,lon:-0.178,url:'https://www.webcamtaxi.com/en/england/london/abbey-road-crossing.html'},
-    {name:'Jackson Hole, Wyoming',lat:43.480,lon:-110.762,url:'https://www.webcamtaxi.com/en/usa/wyoming/jackson-hole-town-square.html'},
-    {name:'ISS Live (NASA)',lat:0,lon:0,url:'https://www.webcamtaxi.com/en/channel/nasa-iss-earth-hd.html'},
-    {name:'Waikiki Beach, Hawaii',lat:21.276,lon:-157.827,url:'https://www.webcamtaxi.com/en/usa/hawaii/waikiki-beach-honolulu.html'},
-    {name:'Venice, Italy',lat:45.434,lon:12.338,url:'https://www.webcamtaxi.com/en/italy/veneto/venice-piazza-san-marco.html'},
-    {name:'Eiffel Tower, Paris',lat:48.858,lon:2.294,url:'https://www.webcamtaxi.com/en/france/ile-de-france/eiffel-tower-paris.html'},
-    {name:'Dubai Skyline',lat:25.197,lon:55.274,url:'https://www.webcamtaxi.com/en/uae/dubai/burj-khalifa-skyline.html'},
-    {name:'Sydney Harbour',lat:-33.856,lon:151.210,url:'https://www.webcamtaxi.com/en/australia/new-south-wales/sydney-harbour-bridge.html'},
-    {name:'Mount Fuji',lat:35.361,lon:138.731,url:'https://www.webcamtaxi.com/en/japan/shizuoka/mount-fuji.html'},
-    {name:'Red Square, Moscow',lat:55.754,lon:37.620,url:'https://tw.live/en/'},
-    {name:'Taipei 101',lat:25.034,lon:121.565,url:'https://www.webcamtaxi.com/en/taiwan/taipei/taipei-101.html'},
-    {name:'Niagara Falls',lat:43.083,lon:-79.074,url:'https://www.webcamtaxi.com/en/canada/ontario/niagara-falls.html'},
-    {name:'Northern Lights, Norway',lat:69.649,lon:18.955,url:'https://www.webcamtaxi.com/en/norway/troms/tromso-northern-lights.html'},
-  ];
-  cams.forEach(c=>{
+  let fc=window._camIndex;
+  if(!fc){
+    try{
+      const r=await fetch('/.netlify/functions/proxy-cams',{signal:AbortSignal.timeout(30000)});
+      fc=await r.json();
+      if(!fc||!Array.isArray(fc.features)||!fc.features.length)throw new Error('empty');
+      window._camIndex=fc;
+    }catch(e){af('var(--rd)','Webcams: camera index unavailable ('+(e.message||'fetch')+')');return;}
+  }
+  const ico='data:image/svg+xml;base64,'+btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="8" fill="#0a2a2a" stroke="#00ccaa" stroke-width="1.5"/><circle cx="10" cy="10" r="3" fill="#00ccaa" opacity="0.8"/><path d="M5 7 L10 10 L5 13Z" fill="#00ccaa" opacity="0.6"/></svg>`);
+  const icoV='data:image/svg+xml;base64,'+btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="8" fill="#0a2a2a" stroke="#00ccaa" stroke-width="1.5"/><path d="M6 6 L14 10 L6 14Z" fill="#00ccaa"/></svg>`);
+  let nVid=0;
+  // 4.4k entities: suspend events so Cesium batches one scene update instead of 4,400.
+  V.entities.suspendEvents();
+  fc.features.forEach((f,i)=>{
+    const q=f.properties,[lon,lat]=f.geometry.coordinates;
+    if(q.hls)nVid++;
     webcamEnts.push(V.entities.add({
-      position:Cesium.Cartesian3.fromDegrees(c.lon,c.lat),
-      billboard:{image:'data:image/svg+xml;base64,'+btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="8" fill="#0a2a2a" stroke="#00ccaa" stroke-width="1.5"/><circle cx="10" cy="10" r="3" fill="#00ccaa" opacity="0.8"/><path d="M5 7 L10 10 L5 13Z" fill="#00ccaa" opacity="0.6"/></svg>`),width:18,height:18,scaleByDistance:new Cesium.NearFarScalar(5e4,1.2,8e6,0.3),verticalOrigin:Cesium.VerticalOrigin.CENTER,disableDepthTestDistance:5e6},
-      label:{text:c.name,font:'None11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#00ccaa'),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,12),scaleByDistance:new Cesium.NearFarScalar(2e5,1,5e6,0),disableDepthTestDistance:5e6},
+      position:Cesium.Cartesian3.fromDegrees(lon,lat),
+      billboard:{image:q.hls?icoV:ico,width:16,height:16,scaleByDistance:new Cesium.NearFarScalar(5e4,1.1,3e6,0.35),verticalOrigin:Cesium.VerticalOrigin.CENTER,disableDepthTestDistance:5e6},
+      label:{text:q.name,font:'11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#00ccaa'),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,10),scaleByDistance:new Cesium.NearFarScalar(2e4,1,1.5e5,0),disableDepthTestDistance:5e6},
       description:`<div style="font-family:monospace;font-size:12px;max-width:350px;background:#0a0e14;padding:12px;border-radius:2px;border:1px solid #00ccaa22;color:#c8ccd6">
-        <div style="color:#00ccaa;font-size:14px;font-weight:700;margin-bottom:8px">📷 ${esc(c.name)}</div>
-        <div style="color:#7a8194;font-size:10px;margin-bottom:6px"><b style="color:#4a5068">Type:</b> Live Visual Feed</div>
-        <div style="color:#7a8194;font-size:10px;margin-bottom:6px"><b style="color:#4a5068">Coordinates:</b> ${c.lat.toFixed(4)}°, ${c.lon.toFixed(4)}°</div>
-        <button onclick="parent.showCamPanel('${safeUrl(c.url)}','${esc(c.name)}',${c.lat},${c.lon})" style="display:block;width:100%;margin-top:10px;padding:8px;text-align:center;background:#0a2a2a;color:#00ccaa;border:1px solid #00ccaa44;border-radius:2px;cursor:pointer;font-family:monospace;font-size:10px;letter-spacing:1px;font-weight:600">▸ OPEN LIVE FEED</button>
+        <div style="color:#00ccaa;font-size:14px;font-weight:700;margin-bottom:8px">📷 ${esc(q.name)}</div>
+        <div style="color:#7a8194;font-size:10px;margin-bottom:6px"><b style="color:#4a5068">Source:</b> ${esc(q.src)} · ${q.hls?'LIVE VIDEO':'STILL · refreshes every '+q.every+' s'}</div>
+        <div style="color:#7a8194;font-size:10px;margin-bottom:6px"><b style="color:#4a5068">Coordinates:</b> ${lat.toFixed(4)}°, ${lon.toFixed(4)}°</div>
+        <button onclick="parent.showCamPanel(${i})" style="display:block;width:100%;margin-top:10px;padding:8px;text-align:center;background:#0a2a2a;color:#00ccaa;border:1px solid #00ccaa44;border-radius:2px;cursor:pointer;font-family:monospace;font-size:10px;letter-spacing:1px;font-weight:600">▸ OPEN LIVE FEED</button>
         <div style="margin-top:8px;font-size:7px;color:#1e2436;letter-spacing:1px;text-align:right">KITSUNE BDOC — VISINT</div>
       </div>`,
       show:layers.webcams
     }));
   });
-  af('var(--gn)',`Webcams: ${cams.length} live camera feeds loaded`);
+  V.entities.resumeEvents();
+  af('var(--gn)',`Webcams: ${fc.features.length.toLocaleString()} cameras · ${nVid.toLocaleString()} live video`);
 }
 // ═══ RADIO / SCANNER / NOAA — COMPREHENSIVE SIGINT LAYER ═══
 let radioEnts=[];
@@ -13444,88 +13444,74 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 
-<!-- ═══ IN-APP WEBCAM VIEWER PANEL ═══ -->
-<div id="camPanel" style="display:none;position:fixed;top:0;right:0;bottom:0;width:480px;z-index:10500;background:#0a0e14;border-left:1px solid #00ccaa44;flex-direction:column;font-family:'JetBrains Mono',monospace">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0d1117;border-bottom:1px solid #00ccaa33">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="color:#00ccaa;font-size:13px;font-weight:700;letter-spacing:1px">📷 LIVE FEED</span>
-      <span id="camPanelName" style="color:#7a8194;font-size:10px;letter-spacing:.5px"></span>
+<!-- ═══ IN-APP WEBCAM VIEWER PANEL (p159g: plays video in-app, no iframes, no pop-ups) ═══ -->
+<div id="camPanel" style="display:none;position:fixed;top:0;right:0;bottom:0;width:480px;z-index:10500;background:#0a0e14;border-left:1px solid #1e2436;flex-direction:column;font-family:'JetBrains Mono',monospace">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0d1117;border-bottom:1px solid #1e2436">
+    <div style="display:flex;align-items:center;gap:10px;min-width:0">
+      <span id="camLiveDot" style="width:8px;height:8px;border-radius:50%;background:#DA3633;flex:none"></span>
+      <span style="color:#E6EDF3;font-size:11px;font-weight:600;letter-spacing:.1em">LIVE FEED</span>
+      <span id="camPanelName" style="color:#8B919A;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>
     </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <button id="camPanelPopout" onclick="openCamPopup()" style="background:#0a0e14;color:#00ccaa;border:1px solid #00ccaa44;padding:3px 10px;border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;letter-spacing:.5px">⬡ POPOUT</button>
-      <button onclick="closeCamPanel()" style="background:#0a0e14;color:#DA3633;border:1px solid #DA363344;width:26px;height:26px;border-radius:2px;cursor:pointer;font-size:14px;line-height:1">✕</button>
-    </div>
+    <button onclick="closeCamPanel()" style="background:transparent;color:#8B919A;border:1px solid #2a3140;width:26px;height:26px;border-radius:2px;cursor:pointer;font-size:14px;line-height:1">✕</button>
   </div>
-  <div id="camPanelBody" style="flex:1;position:relative;background:#000">
-    <iframe id="camPanelFrame" style="width:100%;height:100%;border:none;min-height:320px" allow="autoplay; fullscreen" sandbox="allow-scripts allow-same-origin allow-popups allow-forms" src="about:blank"></iframe>
-    <div id="camPanelFallback" style="display:none;position:absolute;inset:0;background:#0a0e14;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center">
-      <div style="font-size:36px;margin-bottom:12px">📷</div>
-      <div id="camFallbackName" style="color:#00ccaa;font-size:13px;font-weight:700;margin-bottom:8px"></div>
-      <div class="cam-fb-msg" style="color:#AEB4BE;font-size:10px;line-height:1.6;margin-bottom:16px">This feed can't be embedded directly (the camera provider blocks iframes). Click OPEN FEED to view it in a pop-up viewer.</div>
-      <button id="camFallbackOpen" onclick="openCamPopup()" style="background:#0a2a2a;color:#00ccaa;border:1px solid #00ccaa44;padding:8px 20px;border-radius:2px;cursor:pointer;font-family:monospace;font-size:10px;letter-spacing:1px;font-weight:600">▸ OPEN LIVE FEED</button>
-    </div>
+  <div id="camPanelBody" style="flex:1;position:relative;background:#000;display:flex;align-items:center;justify-content:center">
+    <video id="camVideo" style="display:none;width:100%;max-height:100%;background:#000" muted autoplay playsinline controls></video>
+    <img id="camStill" style="display:none;width:100%;object-fit:contain" alt="">
+    <div id="camPanelMsg" style="position:absolute;left:0;right:0;bottom:0;padding:6px 12px;font-size:10px;color:#8B919A;background:rgba(10,14,20,.85)"></div>
   </div>
-  <div id="camPanelInfo" style="padding:10px 14px;border-top:1px solid #1e2436;font-size:9px;color:#4a5068;letter-spacing:.5px"></div>
+  <div id="camPanelInfo" style="padding:10px 14px;border-top:1px solid #1e2436;font-size:10px;color:#8B919A;letter-spacing:.05em;line-height:1.6"></div>
 </div>
 
 <script>
-window._camPanelUrl='';
-// P154 (Travon bug #18): the panel used to drop every feed straight into an iframe.
-// The camera sites answer X-Frame-Options: SAMEORIGIN (or a Cloudflare challenge that
-// can't run in a frame), Chrome shows "refused to connect", and still fires `load`, so
-// the fallback never appeared. Now: ask /embed-check (reads the framing headers
-// server-side) first. Embeddable → in-app player. Not embeddable → open the feed in
-// a sized pop-up viewer window next to BDOC, with the card as a one-click fallback.
-function openCamPopup(url){
-  const w=Math.min(1100,Math.round(screen.availWidth*0.55)),h=Math.round(w*0.62);
-  const left=Math.max(0,screen.availWidth-w-24),top=80;
-  const win=window.open(url||window._camPanelUrl,'bdocCamViewer',`popup=yes,width=${w},height=${h},left=${left},top=${top}`);
-  if(!win){window.open(url||window._camPanelUrl,'_blank','noopener');}
-  return !!win;
+// p159g: the old panel iframed a third-party webpage (webcamtaxi) — which blocked framing, so the
+// user got a pop-up to someone else's site. Now we have our own camera index (proxy-cams: Caltrans
+// HLS streams + NYC DOT stills) and play it here: HLS via hls.js (Safari plays natively), stills
+// re-fetched on the camera's own cadence. Nothing leaves the app.
+window._camTimer=null;window._camHls=null;window._camCur=null;
+function _camStop(){
+  if(window._camTimer){clearInterval(window._camTimer);window._camTimer=null;}
+  if(window._camHls){try{window._camHls.destroy();}catch(e){}window._camHls=null;}
+  const v=document.getElementById('camVideo');if(v){v.pause();v.removeAttribute('src');v.load();}
 }
-async function showCamPanel(url,name,lat,lon){
-  window._camPanelUrl=url;
-  const panel=document.getElementById('camPanel');
-  const frame=document.getElementById('camPanelFrame');
-  const fallback=document.getElementById('camPanelFallback');
-  const nameEl=document.getElementById('camPanelName');
-  const fallbackName=document.getElementById('camFallbackName');
-  const info=document.getElementById('camPanelInfo');
+function _loadHlsJs(){
+  if(window.Hls)return Promise.resolve();
+  return new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='js/vendor/hls.min.js?v=1.5.17';sc.onload=res;sc.onerror=()=>rej(new Error('hls.js failed to load'));document.head.appendChild(sc);});
+}
+async function showCamPanel(idx){
+  const fc=window._camIndex;if(!fc||!fc.features[idx])return;
+  const f=fc.features[idx],q=f.properties,[lon,lat]=f.geometry.coordinates;
+  _camStop();window._camCur=idx;
+  const panel=document.getElementById('camPanel'),v=document.getElementById('camVideo'),im=document.getElementById('camStill'),msg=document.getElementById('camPanelMsg'),dot=document.getElementById('camLiveDot');
   panel.style.display='flex';
-  nameEl.textContent=name||'';
-  fallbackName.textContent=name||'';
-  if(lat!=null&&lon!=null) info.textContent='LAT '+lat.toFixed(4)+'° · LON '+lon.toFixed(4)+'°';
-  frame.src='about:blank';
-  frame.style.display='none';
-  fallback.style.display='flex';
-  const msg=fallback.querySelector('.cam-fb-msg');
-  if(msg)msg.textContent='Checking whether this camera allows in-app viewing…';
-  const ces=document.getElementById('cesiumContainer');
-  if(ces)ces.style.right='480px';
-  let ok=false,reason='';
-  const isYT=/^https:\/\/(www\.)?youtube(-nocookie)?\.com\/embed\//.test(url);
-  if(isYT){ok=true;}
-  else{
-    try{
-      const r=await fetch('/.netlify/functions/embed-check?url='+encodeURIComponent(url),{signal:AbortSignal.timeout(8000)});
-      const j=await r.json();ok=!!j.embeddable;reason=j.reason||'';
-    }catch(e){ok=false;reason='check failed';}
-  }
-  if(window._camPanelUrl!==url)return; // user already opened another cam
-  if(ok){
-    fallback.style.display='none';
-    frame.style.display='block';
-    frame.src=url;
-  }else{
-    if(msg)msg.textContent='This camera provider blocks in-app viewing ('+(reason||'framing blocked')+'). It opens in a pop-up viewer beside the map instead.';
-    openCamPopup(url);
-  }
+  document.getElementById('camPanelName').textContent=q.name;
+  document.getElementById('camPanelInfo').innerHTML='<b style="color:#E6EDF3">'+esc(q.src)+'</b>'+(q.place?' · '+esc(q.place):'')+(q.route?' · '+esc(q.route):'')+'<br>LAT '+lat.toFixed(4)+'° · LON '+lon.toFixed(4)+'°';
+  const ces=document.getElementById('cesiumContainer');if(ces)ces.style.right='480px';
+  v.style.display='none';im.style.display='none';dot.style.background='#E8B349';
+  const still=()=>{
+    if(!q.img){msg.textContent='No picture available for this camera.';dot.style.background='#DA3633';return;}
+    im.style.display='block';v.style.display='none';
+    const tick=()=>{if(window._camCur!==idx)return;im.src=q.img+(q.img.includes('?')?'&':'?')+'t='+Date.now();msg.textContent='STILL · refreshes every '+q.every+' s · '+new Date().toUTCString().slice(17,25)+'Z';dot.style.background='#3FB950';};
+    im.onerror=()=>{msg.textContent='Camera image not responding.';dot.style.background='#DA3633';};
+    tick();window._camTimer=setInterval(tick,Math.max(3,q.every||5)*1000);
+  };
+  if(!q.hls){still();return;}
+  msg.textContent='Connecting to live stream…';
+  try{
+    if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=q.hls;}
+    else{await _loadHlsJs();if(window._camCur!==idx)return;
+      const h=new Hls({liveSyncDurationCount:2,maxBufferLength:10,enableWorker:true});window._camHls=h;
+      h.loadSource(q.hls);h.attachMedia(v);
+      h.on(Hls.Events.ERROR,(e,d)=>{if(d.fatal){msg.textContent='Stream down — showing still.';h.destroy();window._camHls=null;still();}});
+    }
+    v.style.display='block';
+    v.onplaying=()=>{msg.textContent='LIVE VIDEO · HLS · '+esc(q.src);dot.style.background='#3FB950';};
+    v.play().catch(()=>{});
+  }catch(e){msg.textContent='Player failed ('+e.message+') — showing still.';still();}
 }
 function closeCamPanel(){
+  _camStop();window._camCur=null;
   const panel=document.getElementById('camPanel');
   panel.style.display='none';
-  const frame=document.getElementById('camPanelFrame');
-  if(frame)frame.src='about:blank';
   const ces=document.getElementById('cesiumContainer');
   if(ces)ces.style.right='0';
 }
