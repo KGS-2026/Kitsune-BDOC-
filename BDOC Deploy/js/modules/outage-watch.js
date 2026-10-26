@@ -425,8 +425,8 @@
     // notifications once the user has allowed them (alerts toggle / arming a watch zone).
     setTimeout(pollNews, 4000);                       // first news poll 4s after boot
     setTimeout(pollStatus, 9000);                     // first status sweep 9s after boot
-    setInterval(function () { if (!document.hidden) pollNews(); }, 180e3);   // every 3 min
-    setInterval(function () { if (!document.hidden) pollStatus(); }, 120e3); // every 2 min
+    setInterval(function () { if (!document.hidden) pollNews(); }, 60e3);   // p159f: every 60s
+    setInterval(function () { if (!document.hidden) pollStatus(); }, 60e3); // p159f: every 60s
     console.log('[OutageWatch] Sentinel armed — 15 infra targets (news-detect 3min) + 11 statuspages (2min)');
     try { af('#2D72D2', 'OUTAGE WATCH armed — carriers/clouds/payments/GPS/grid monitored in real time'); } catch (_) {}
   };

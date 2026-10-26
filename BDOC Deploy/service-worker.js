@@ -3,7 +3,7 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v159e';  // p159: Ferrari chrome pass 1 — 56px bar, single amber accent, neutral panels, onboarding redesign, 10px+ globe labels
+const SW_VERSION = 'bdoc-v159f';  // p159: Ferrari chrome pass 1 — 56px bar, single amber accent, neutral panels, onboarding redesign, 10px+ globe labels
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156g: long-press menu, copy grid / share, MGRS setting + search, no boot prompt, og-image
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156f: current flowing along grid lines + pipeline flow (cesium-init + layers-arcgis)
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156e: battle plan autosave/restore, real-shape GeoJSON/CoT export, .bdoc.json save/open
@@ -158,11 +158,13 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Netlify Functions / API proxies — Stale-while-revalidate
-  // Returns last cached data immediately, updates in background when online
+  // Netlify Functions / API proxies — NETWORK-FIRST (p159f).
+  // Was stale-while-revalidate: the page always got the PREVIOUS poll's bytes, so every
+  // "live" layer ran one full refresh interval behind the world. Live data must be fresh;
+  // the cache exists only so the globe still has a picture when the grid is down.
   if (url.pathname.startsWith('/.netlify/functions/') ||
       url.pathname.startsWith('/api/')) {
-    event.respondWith(staleWhileRevalidate(event.request, API_CACHE));
+    event.respondWith(networkFirst(event.request, API_CACHE, 15000));
     return;
   }
 
@@ -214,9 +216,9 @@ async function staleWhileRevalidate(request, cacheName) {
   return cached || (await networkPromise) || offlineFallback(request);
 }
 
-async function networkFirst(request, cacheName) {
+async function networkFirst(request, cacheName, timeoutMs) {
   try {
-    const response = await fetch(request, { signal: AbortSignal.timeout(8000) });
+    const response = await fetch(request, { signal: AbortSignal.timeout(timeoutMs || 8000) });
     if (response.ok) {
       const cache = await caches.open(cacheName);
       cache.put(request, response.clone());

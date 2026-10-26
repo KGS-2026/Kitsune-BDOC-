@@ -513,6 +513,6 @@ window.loadWarLive = async function () {
   af('#DA3633', 'WAR ROOM: ' + eventN + ' geocoded kinetic events (3h) + ' + newsN + ' theater reports + ' + thermalN + ' thermal anomalies (24h)'); us(1);
   // auto-refresh every 15 min while armed
   if (!window.loadWarLive._interval) {
-    window.loadWarLive._interval = setInterval(() => { if (layers.warlive) window.loadWarLive(); }, 15 * 60 * 1000);
+    window.loadWarLive._interval = setInterval(() => { if (layers.warlive) window.loadWarLive(); }, 60 * 1000); // p159f: 60s real-time budget (was 15min)
   }
 };

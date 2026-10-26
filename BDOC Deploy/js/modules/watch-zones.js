@@ -21,7 +21,7 @@
 (function () {
   var LS_ZONES = 'bdoc_watch_zones';
   var LS_SEEN = 'bdoc_wz_seen';
-  var POLL_MS = 5 * 60 * 1000;
+  var POLL_MS = 60 * 1000; // p159f: 60s
   var AMBER = '#E8B349';
 
   var WZ = window.WatchZones = {

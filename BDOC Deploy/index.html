@@ -462,7 +462,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p159e</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p159f</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -1547,7 +1547,7 @@ const CFG={
   keys:{
     cesium:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI0ZDEyMGE4OS1kZThhLTRiM2EtOWIwMS1kMmY2NjI5MDIxYjciLCJpZCI6Mzk2NzYzLCJpYXQiOjE3NzI1Njc3NzF9.JxNqx8m3SA3VB88qobXUuPKWw5p3LLEmzeJztarKuac',
   },
-  refresh:{aircraft:60000,earthquakes:300000,fires:900000,cables:86400000,satellites:600000,health:60000,anomaly:45000},
+  refresh:{aircraft:60000,earthquakes:60000,fires:900000,cables:86400000,satellites:600000,health:60000,anomaly:45000},
   // Phase 16 (2026-05-13): expanded from 6 COCOMs to 12 zones for true global aircraft coverage.
   // adsb.lol has no rate limit on free tier; 12 regions × 60s refresh = 720 req/hr, well within bounds.
   regions:[
@@ -1638,7 +1638,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p159',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p159f',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
@@ -4229,7 +4229,7 @@ async function loadGDELTNews(){
     BDOC.layerLoadFx.done('news',count>0);
     // Auto-refresh every 15 minutes
     if(!loadGDELTNews._interval){
-      loadGDELTNews._interval=setInterval(()=>{if(layers.news)loadGDELTNews()},10800000); // 3h
+      loadGDELTNews._interval=setInterval(()=>{if(layers.news&&!document.hidden)loadGDELTNews()},300000); // p159f: 5min (was 3h)
     }
   }catch(e){
     console.warn('[GDELT] Load failed:',e);
@@ -10668,7 +10668,7 @@ async function bootFeeds(){
     let ms = _airBaseMs;
     // scale by last payload — larger responses = wider refresh
     ms = _airBaseMs * Math.max(0.5, _airLastPayloadBytes / 35000);
-    ms = Math.max(_airBaseMs * 0.5, Math.min(_airBaseMs * 4, ms));
+    ms = Math.max(_airBaseMs * 0.5, Math.min(_airBaseMs, ms)); // p159f: ≤60s visible, hard real-time budget
     // visibility decay: hidden tab → 4×
     if (document.hidden) ms *= 4;
     // visibilitychange fires when user switches tabs: reschedule immediately
