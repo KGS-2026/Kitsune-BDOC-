@@ -1,0 +1,1 @@
+(()=>{for(const id of['bdocWelcome','outageBanner']){const m=document.getElementById(id);if(m)m.style.display='none'}document.querySelectorAll('[id^=bdocFirstRun]').forEach(m=>m.style.display='none');try{V.camera.setView({destination:Cesium.Cartesian3.fromDegrees(119.6,24.2,260000)})}catch(_){}return 1})()

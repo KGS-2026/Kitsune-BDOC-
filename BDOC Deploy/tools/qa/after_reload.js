@@ -1,0 +1,1 @@
+(async()=>{const s=await BDOCOfflineStore.getMeta('battle_plan_v1');return {saved:s?s.items.length:null,savedAt:s?s.saved:null,restoredEnts:typeof battleEntities!=='undefined'?battleEntities.length:null,battleMode:typeof battleMode!=='undefined'?battleMode:null,vEnts:V.entities.values.length}})()

@@ -79,6 +79,49 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Hermes — p159e, on `main` @ `8000c99` (2026-10-26, continuing the night shift)
+Travon's new bar: a geospatial analyst (or Claude-in-Chrome on his enterprise
+profile) must be able to build a full WW3 picture — units, tactical markers,
+building outlines, zones, PL/FEBA/FSCL/MSR, bullseye, comments/tags — and hit
+zero friction. So I wrote the scenario as a script and ran it against prod.
+
+**Harness:** `/root/bdoc-qa/ww3.js` (27-item Taiwan Strait plan, undo, delete,
+GeoJSON, autosave) run by `/root/bdoc-qa/probe2.py <url> 1600 900 30 "$(cat ww3.js)"
+shot.png "<initjs>" RELOAD` — the `RELOAD` arg reloads in the same browser
+context and reports what `bdoc-plan.js` restored. Treat this as the
+regression gate for anything touching `battleEntities`.
+
+Shipped since p159b:
+- **p159c `08bee00`** — active layers persist across reload (`bdoc_layers_on`,
+  staggered restore, `?fresh=1` skips). Before: every reload = empty globe.
+- **p159d `f75e665`** — `css/bdoc-p159d.css`: flat Lattice-style side panels,
+  one button idiom, copilot messages flat with left rule, three boot
+  marketing messages collapsed to one line.
+- **p159e `8000c99`** — three real bugs the scenario found:
+  1. `js/bdoc-plan.js` — markers placed in the first ~6–10 s (while `restore()`
+     awaited IndexedDB) hit `markDirty()` with `ready=false` and were **never
+     autosaved**. Fix: after restore, `markDirty()` if `battleEntities.length >
+     savedCount`. Verified: marker placed at t=4 s survives reload on prod.
+  2. `placeBattleUnit` — HOSTILE/NEUTRAL/UNKNOWN units rendered in **friendly
+     blue** (default swatch won over affiliation). Now affiliation owns the
+     colour (APP-6: red/green/amber) unless the user explicitly picked a swatch
+     (`window._battleColorPicked`).
+  3. First-run weather card stacked on top of the welcome card on a cleared
+     profile — `onboardVisible()` now holds while any modal is open.
+
+Verified on prod after reload: 27/27 items restored, GeoJSON = 39 pt / 6 poly /
+22 line, no JS errors.
+
+Not bugs (harness artefacts, don't chase): `BDOCPlan.cotEvents()` needs the
+`pickCoT` classifier the EXPORT button passes; a 1-point line correctly refuses
+to finish. IndexedDB on the headless droplet takes 5–20 s per 100 KB write —
+environment (swiftshader/tmp profile), untested on a real device; if a user
+reports slow saves, that's the first place to look.
+
+Open next: label collisions when 8 tactical markers sit in one cluster (no
+declutter); battle panel reopen state isn't persisted (plan restores but panel
+is closed); imagery `tilesLoaded=false` at 25 s on droplet — likely environment.
+
 ### Hermes — p159, on `main` @ `9d43268` (2026-10-24 night shift, Travon asleep, "full authority")
 Mission for the night: close bugs, then make BDOC *look* like the Ferrari it is
 (bar: Palantir Gotham / Anduril Lattice). Each pass ships to main with its own
