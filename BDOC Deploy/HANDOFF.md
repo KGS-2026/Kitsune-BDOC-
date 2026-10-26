@@ -79,6 +79,15 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Hermes — p159f/p159g, on `main` @ `44b8b4f` (2026-10-26 — REAL-TIME + LIVE CAMERAS)
+Travon's directive: ≤60 s from world to globe; live cameras must play; online/offline must feel identical.
+Measured BEFORE: SW served `/.netlify/functions/*` stale-while-revalidate → every live layer rendered the *previous* poll (one full interval behind). Warlive polled 15 min, EQ 5 min, outages 2–3 min, GDELT news 3 h. "Live webcams" = 15 links to webcamtaxi.com pages in an iframe that the site blocks → pop-up.
+- **p159f `b413f5e`** SW API path → network-first (15 s) with cache only as offline fallback; aircraft clamp ≤60 s visible; EQ/warlive/outage-watch/watch-zones → 60 s; GDELT news → 5 min. LazyLoader `_version` → p159f.
+- **p159g `44b8b4f`** `netlify/functions/proxy-cams.js`: 4,405 public cams (Caltrans D1–D12 HLS `wzmedia.dot.ca.gov` CORS * + NYC DOT 978 stills), 185 KB gz, edge 10 min. In-app player (`#camPanel`: `<video>` + hls.js **vendored** at `js/vendor/hls.min.js`, Safari native; stills refresh on camera cadence). `media-src` added to CSP-RO. Verified on prod: 4,405 entities in 2.7 s, Caltrans D7 CCTV-196 plays 1280 px, frames advancing.
+- Measured AFTER (prod, 60 s in): USGS feed age 44 s / newest quake 13 min (USGS's own detection lag); ADS-B `seen` 0.0–0.2 s; FIRMS 51 s.
+- **GDELT is the real-time gap**: `api.gdeltproject.org` answers HTTP 429 to *every* call (1 req/5 s/IP, 429 even after 6 s pause from droplet) → conflict/news layers are `_gdelt_status:'down'`, 0 features. A serialize-in-container patch was tried and reverted (unverifiable). Right fix = droplet-side collector (always-on, one IP, paced) publishing a JSON the site reads — or replace with Bluesky Jetstream / Wikipedia RC SSE (sub-second, keyless; see `docs/LIVE-SOURCES-RECON-2026-10-26.md`).
+- QA: `/root/bdoc-qa/rt.js` (feed ages + cam play), `cams.js`. Headless Chrome must be launched with `--autoplay-policy=no-user-gesture-required` for video tests.
+
 ### Hermes — p159e, on `main` @ `8000c99` (2026-10-26, continuing the night shift)
 Travon's new bar: a geospatial analyst (or Claude-in-Chrome on his enterprise
 profile) must be able to build a full WW3 picture — units, tactical markers,
