@@ -3,7 +3,7 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v159c';  // p159: Ferrari chrome pass 1 — 56px bar, single amber accent, neutral panels, onboarding redesign, 10px+ globe labels
+const SW_VERSION = 'bdoc-v159d';  // p159: Ferrari chrome pass 1 — 56px bar, single amber accent, neutral panels, onboarding redesign, 10px+ globe labels
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156g: long-press menu, copy grid / share, MGRS setting + search, no boot prompt, og-image
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156f: current flowing along grid lines + pipeline flow (cesium-init + layers-arcgis)
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156e: battle plan autosave/restore, real-shape GeoJSON/CoT export, .bdoc.json save/open
@@ -37,6 +37,7 @@ const STATIC_PRECACHE = [
   '/css/bdoc-p154.css?v=p154',
   '/css/bdoc-p158f.css?v=p158f',
   '/css/bdoc-p159.css?v=p159',
+  '/css/bdoc-p159d.css?v=p159d',
   '/js/telemetry.js?v=p59',
   '/js/converters.js?v=p156g',
   '/js/data.js?v=p159b',

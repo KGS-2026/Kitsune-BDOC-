@@ -201,6 +201,7 @@ if('serviceWorker' in navigator){
 <link rel="stylesheet" href="css/bdoc-p154.css?v=p154">
 <link rel="stylesheet" href="css/bdoc-p158f.css?v=p158f">
 <link rel="stylesheet" href="css/bdoc-p159.css?v=p159">
+<link rel="stylesheet" href="css/bdoc-p159d.css?v=p159d">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -461,7 +462,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p159c</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p159d</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -596,7 +597,7 @@ if('serviceWorker' in navigator){
 <div class="lp-b">
 <!-- Phase 7A (2026-05-05): CRISIS HOT ZONES. Phase 12 Strike R2 (2026-05-05): neutralized header + uniform muted button styling -->
 <div class="lg-title">CRISIS HOT ZONES</div>
-<div style="display:grid;grid-template-columns:1fr;gap:3px;padding:0 4px 6px 4px">
+<div class="crisis-list" style="display:grid;grid-template-columns:1fr;gap:0;padding:0 4px 6px 4px">
   <button class="bm-btn" onclick="bdocCrisisZone('hormuz')" style="font-size:9px;padding:7px 8px;text-align:left;display:flex;justify-content:space-between;align-items:center"><span>Strait of Hormuz</span><span style="font-size:9px;color:var(--text-tertiary);letter-spacing:0.08em">5/5</span></button>
   <button class="bm-btn" onclick="bdocCrisisZone('ukraine')" style="font-size:9px;padding:6px 8px;text-align:left;display:flex;justify-content:space-between;align-items:center"><span>Ukraine Theater</span><span style="font-size:9px;color:var(--text-tertiary);letter-spacing:0.08em">5/5</span></button>
   <button class="bm-btn" onclick="bdocCrisisZone('gaza')" style="font-size:9px;padding:6px 8px;text-align:left;display:flex;justify-content:space-between;align-items:center"><span>Gaza / Israel</span><span style="font-size:9px;color:var(--text-tertiary);letter-spacing:0.08em">5/5</span></button>
@@ -606,15 +607,15 @@ if('serviceWorker' in navigator){
 <!-- Phase 5B (2026-05-04): Quick-start preset bar. Phase 12 Strike R2 (2026-05-05): neutralized -->
 <div class="lg-title">QUICK START</div>
 <div style="padding:0 4px 4px 4px">
-  <button class="bm-btn" onclick="bdocNearMe()" style="width:100%;font-size:9.5px;padding:8px;text-align:center;letter-spacing:0.14em;border-color:rgba(63,185,80,0.45);color:#3FB950;font-weight:700">&#9678; NEAR ME &mdash; LOCAL HAZARD PICTURE</button>
+  <button class="bm-btn" onclick="bdocNearMe()" style="width:100%;font-size:9.5px;padding:8px;text-align:center;letter-spacing:0.14em;border-color:rgba(63,185,80,0.45);color:#3FB950;font-weight:700">&#9678; NEAR ME</button>
 </div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:0 4px 8px 4px">
-  <button class="bm-btn" onclick="bdocApplyPreset('conflict')" style="font-size:9px;padding:6px;text-align:left">Active Conflicts</button>
-  <button class="bm-btn" onclick="bdocApplyPreset('maritime')" style="font-size:9px;padding:6px;text-align:left">Maritime Intel</button>
-  <button class="bm-btn" onclick="bdocApplyPreset('cyber')" style="font-size:9px;padding:6px;text-align:left">Cyber Threats</button>
+<div class="preset-list" style="display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:0 4px 8px 4px">
+  <button class="bm-btn" onclick="bdocApplyPreset('conflict')" style="font-size:9px;padding:6px;text-align:left">Conflicts</button>
+  <button class="bm-btn" onclick="bdocApplyPreset('maritime')" style="font-size:9px;padding:6px;text-align:left">Maritime</button>
+  <button class="bm-btn" onclick="bdocApplyPreset('cyber')" style="font-size:9px;padding:6px;text-align:left">Cyber</button>
   <button class="bm-btn" onclick="bdocApplyPreset('disasters')" style="font-size:9px;padding:6px;text-align:left">Disasters</button>
   <button class="bm-btn" onclick="bdocApplyPreset('military')" style="font-size:9px;padding:6px;text-align:left">Force Posture</button>
-  <button class="bm-btn" onclick="bdocApplyPreset('emergency')" style="font-size:9px;padding:6px;text-align:left">Emergency Mgmt</button>
+  <button class="bm-btn" onclick="bdocApplyPreset('emergency')" style="font-size:9px;padding:6px;text-align:left">Emergency</button>
   <button class="bm-btn" onclick="bdocApplyPreset('clear')" style="font-size:9px;padding:6px;text-align:left;grid-column:1/-1">Clear All</button>
 </div>
 <div class="lg-title">MAP STYLE</div>
@@ -1289,7 +1290,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <!-- SITUATION BROWSER PANEL (Phase 18b, 2026-05-14) — Palantir Gotham-parity situation list with drill-down, severity badges, COA linkage -->
 <div id="sitPanel" class="sp-open">
   <div class="sp-h">
-    <span class="sp-title">⚠ KITSUNE</span>
+    <span class="sp-title">KITSUNE <span style="color:#8B919A;font-weight:500;letter-spacing:0.12em">/ INTEL</span></span>
     <button class="sp-x" onclick="SituationManager.close()" title="Close">✕</button>
   </div>
   <div class="sp-tabs">
@@ -10574,7 +10575,7 @@ Health.init();
 initMobile();
 // P156g: no notification prompt at load (consumer audit: a cold prompt gets a permanent "Block").
 // Permission is asked in context — arming a watch zone or the alerts toggle (bdoc-push.js).
-msg('sy','<b>KGS BDOC v7.0 \u2014 ONLINE</b><br><br>Multi-domain intelligence platform initializing across '+CFG.regions.length+' surveillance regions (7 geographic COCOM AORs).<br>Type <b>help</b> for available commands. Press <b>?</b> for keyboard shortcuts.');
+msg('sy','<b>KITSUNE AI online.</b> Ask <b>sitrep iran</b>, <b>help</b>, or press <b>?</b> for shortcuts. A \u201cwhat changed\u201d brief follows once feeds arm.'); // p159d: one line, not three paragraphs of marketing
 af('var(--kf)','KGS BDOC v7.0 initialized \u2014 defense intelligence platform online');
 af('var(--bl)','LIVE INTEL \u2014 Monitoring '+CFG.regions.length+' surveillance regions across 7 geographic COCOM AORs');
 af('var(--ok)','FEEDS: USGS Seismic \u2022 NASA FIRMS \u2022 OpenSky \u2022 ADS-B \u2022 TeleGeography \u2022 CelesTrak \u2022 NIFC \u2022 NWS');
@@ -10682,7 +10683,7 @@ async function bootFeeds(){
   _scheduleAir();
   window._fireTimer=setInterval(()=>{if(!document.hidden&&layers.fire)loadFires()},CFG.refresh.fires);
   window._satTimer=setInterval(()=>{if(!document.hidden&&layers.sat&&typeof loadSatellites==='function')loadSatellites()},CFG.refresh.satellites);
-  msg('sy','All feeds initialized. <b>'+srcN+'</b> sources active across <b>8 domains</b>: Air, Space, Seismic, Fire, Maritime, Conflict, Cyber, Infrastructure.<br><br>Type <b>status</b> for system overview or <b>export brief</b> to generate intel report.');
+  // p159d: boot chatter removed — the Health WHAT CHANGED brief (data.js) carries the real numbers.
   EventLog.add('info','All feeds initialized \u2014 BDOC v7.0 operational');
   // P93: AUTO-ARM GLOBAL CONFLICT PICTURE ON FIRST LOAD.
   // Operators open a conflict-intel platform expecting to SEE conflicts — not a bare
@@ -11711,19 +11712,8 @@ function injectAllUI() {
     // [Phase 3 Turn 5] loadNukeSites() removed from boot — lazy-loaded on first toggle of nukes layer
     // [Phase 3 Turn 7] upgradeUSBranchIcons() removed from boot — chained inside milbases/milairfields lazy-load .then()
 
-    msg('sy', `<b>KGS BDOC v7.0 \u2014 ALL MODULES LOADED</b><br><br>` +
-      `\u2022 <b>${_bSafe(()=>Object.keys(CHOKEPOINTS).length, 0)} strategic chokepoints</b> with threat analysis + fly-to nav<br>` +
-      `\u2022 <b>Cable landing points</b> (toggle in left panel)<br>` +
-      `\u2022 <b>Cloudflare Radar</b> internet health monitoring<br>` +
-      `\u2022 <b>${_bCount(()=>MILBASES.length,'milbases')} military bases</b> (US/RU/CN/Allied)<br>` +
-      `\u2022 <b>${_bCount(()=>MILAIRFIELDS.length,'milairfields')} military airfields</b> including ICBM/bomber bases<br>` +
-      `\u2022 <b>${_bCount(()=>NUKESITES.length,'nukesites')} nuclear test sites</b> with contamination rings<br>` +
-      `\u2022 <b>Squawk code monitoring</b> (7500/7600/7700/7400)<br>` +
-      `\u2022 <b>DeFlock surveillance</b> \u2014 ALPRs, gunshot detectors, AI cameras (via OpenStreetMap)<br>` +
-      `\u2022 <b>Cell towers</b> \u2014 Carrier-coded cellular infrastructure (AT&T/Verizon/T-Mobile via OSM)<br>` +
-      `\u2022 <b>Radio SIGINT</b> \u2014 25 NOAA + 30 AM/FM + 25 police scanners = 80 sources<br>` +
-      `\u2022 <b>Service status</b> \u2014 15 platforms monitored LIVE (Cloudflare, GitHub, Discord...)<br><br>` +
-      `Type <b>help</b> for full command list.`);
+    // p159d: the 11-bullet 'ALL MODULES LOADED' feature list is gone from the copilot log; 'help' still lists everything.
+    EventLog.add('info','All modules loaded');
 
     af('var(--kf)', 'KGS BDOC v7.0 \u2014 all modules operational');
     EventLog.add('info', 'KGS BDOC v7.0 all modules loaded');

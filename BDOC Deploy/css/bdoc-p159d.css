@@ -1,0 +1,90 @@
+/* ── BUILD p159d — "Ferrari" chrome pass 2: the two side panels (2026-10-25 night shift)
+   What the p159 screenshot still said "Honda Civic":
+   · left panel: five different button treatments in the first 400px, crisis
+     rows + preset chips + basemap chips all slightly different sizes, every
+     row boxed and bordered → visual noise. Lattice/Gotham: one list idiom,
+     flat rows, hairline separators, hover reveals affordance.
+   · layer rows: iOS-style pill toggles at 24×13 read "consumer". Replaced by a
+     3px state bar (grey → amber) beside the existing category dot.
+   · right panel: every copilot message is a bordered card; the INTEL card is
+     purple-tinted (the only purple in the product). Replaced by flat messages
+     with a 2px left rule — system = neutral, intel = amber, alert = red.
+   · 7.5px timestamps → 10px.
+   Loads after bdoc-p159.css. Revert by deleting one <link>. ─────────────── */
+
+/* ── Left panel: section headers already fixed in p159. Make every button in
+   the panel ONE idiom: flat, 11px, hairline, no fill until hover. */
+.lp .bm-btn{
+  background:transparent!important;
+  border:1px solid rgba(255,255,255,0.07)!important;
+  border-radius:3px!important;
+  color:#B9BFC7!important;
+  font-size:10.5px!important;
+  letter-spacing:0.06em!important;
+  padding:7px 9px!important;
+  line-height:1.2!important;
+  font-weight:500!important;
+  text-transform:uppercase;
+  transition:background .15s,border-color .15s,color .15s;
+}
+.lp .bm-btn:hover{background:rgba(255,255,255,0.04)!important;border-color:rgba(255,255,255,0.16)!important;color:#E6E9EE!important}
+.lp .bm-btn.bm-active{border-color:rgba(232,179,73,0.55)!important;color:#E8B349!important;background:rgba(232,179,73,0.06)!important}
+/* NEAR ME was the one green button on the panel — it's the primary action, so
+   it gets the accent, not a second colour. */
+.lp .bm-btn[onclick="bdocNearMe()"]{border-color:rgba(232,179,73,0.55)!important;color:#E8B349!important;font-weight:600!important;letter-spacing:0.12em!important}
+.lp .bm-btn[onclick="bdocNearMe()"]:hover{background:rgba(232,179,73,0.08)!important}
+/* crisis rows: list, not buttons — no box, hairline between, score right-aligned mono */
+.lp .crisis-list .bm-btn{
+  border:none!important;border-bottom:1px solid rgba(255,255,255,0.05)!important;border-radius:0!important;
+  padding:7px 10px!important;text-transform:none!important;letter-spacing:0.02em!important;font-size:11px!important;
+}
+.lp .crisis-list .bm-btn:last-child{border-bottom:none!important}
+.lp .crisis-list .bm-btn span:last-child{font-family:'IBM Plex Mono','JetBrains Mono',monospace!important;color:#E8B349!important;font-size:10px!important}
+
+/* ── Layer rows: flat list, dot indicator instead of a toggle pill. */
+.ly{padding:5px 10px!important;border-radius:0!important;border:none!important;border-left:2px solid transparent!important;margin:0!important;gap:9px!important;transition:background .15s,border-color .15s!important}
+.ly:hover{background:rgba(255,255,255,0.035)!important}
+.ly.on{background:rgba(232,179,73,0.05)!important;border-left-color:#E8B349!important;box-shadow:none!important}
+.sw{width:3px!important;height:14px!important;border-radius:2px!important;background:rgba(255,255,255,0.14)!important;border:none!important;transition:all .15s!important}
+.sw::after{display:none!important}
+.ly.on .sw{background:#E8B349!important;box-shadow:0 0 6px rgba(232,179,73,0.5)!important}
+.ly.locked .sw{border-style:dashed!important;opacity:.6}
+.ly-n{font-size:11px!important;letter-spacing:0.01em!important}
+.ly-tg{font-size:9.5px!important}
+
+/* ── Left panel tabs (SIT / OPS / LAYERS): underline, not pill. */
+.sp-tab{font-size:10.5px!important;letter-spacing:0.14em!important;padding:9px 0 8px!important;border-radius:0!important;background:transparent!important;border:none!important;border-bottom:2px solid transparent!important;color:#8B919A!important}
+.sp-tab.sp-tab-a{color:#E6E9EE!important;border-bottom-color:#E8B349!important;background:transparent!important}
+
+/* ── Right panel / copilot messages: flat, left rule, no cards. */
+.mg{max-width:100%!important;padding:8px 10px 8px 12px!important;border-radius:0!important;border:none!important;border-left:2px solid rgba(255,255,255,0.10)!important;background:transparent!important;font-size:11.5px!important;line-height:1.5!important;color:#C9CED6!important}
+.mg + .mg{margin-top:8px!important}
+.mg.sy{border-left-color:rgba(255,255,255,0.14)!important}
+.mg.in{border-left-color:#E8B349!important;background:rgba(232,179,73,0.035)!important}
+.mg.al{border-left-color:#DA3633!important;background:rgba(218,54,51,0.05)!important}
+.mg.us{border-left-color:transparent!important;background:rgba(255,255,255,0.045)!important;border-radius:3px!important;align-self:flex-end!important;max-width:88%!important}
+.mg b{color:#E6E9EE;font-weight:600}
+.mg-t{font-size:10px!important;letter-spacing:0.08em!important;color:#8B919A!important;margin-bottom:4px!important;text-transform:uppercase}
+.mg.in .mg-t{color:#E8B349!important}
+.mg.al .mg-t{color:#DA3633!important}
+
+/* ── Copilot input: a real command line. */
+#aiIn{background:rgba(255,255,255,0.03)!important;border:1px solid rgba(255,255,255,0.10)!important;border-radius:3px!important;font-size:12px!important;padding:9px 10px!important;color:#E6E9EE!important;font-family:'IBM Plex Mono','JetBrains Mono',monospace!important}
+#aiIn:focus{border-color:rgba(232,179,73,0.55)!important;outline:none!important;box-shadow:0 0 0 2px rgba(232,179,73,0.12)!important}
+#aiIn::placeholder{color:#5F6670!important}
+
+/* ── Scrollbars: thin and quiet everywhere in the chrome. */
+.lp ::-webkit-scrollbar,.rp ::-webkit-scrollbar,#am::-webkit-scrollbar{width:5px}
+.lp ::-webkit-scrollbar-thumb,.rp ::-webkit-scrollbar-thumb,#am::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px}
+.lp ::-webkit-scrollbar-track,.rp ::-webkit-scrollbar-track,#am::-webkit-scrollbar-track{background:transparent}
+
+/* crisis score tone: 5/5 red, 4/5 amber, else grey — severity is the one place colour is data */
+.lp .crisis-list .bm-btn span:last-child{color:#8B919A!important}
+.lp .crisis-list .bm-btn[onclick*="hormuz"] span:last-child,.lp .crisis-list .bm-btn[onclick*="ukraine"] span:last-child,.lp .crisis-list .bm-btn[onclick*="gaza"] span:last-child{color:#DA3633!important}
+.lp .crisis-list .bm-btn[onclick*="taiwan"] span:last-child,.lp .crisis-list .bm-btn[onclick*="redsea"] span:last-child{color:#E8B349!important}
+.sp-title{font-size:11px!important;letter-spacing:0.16em!important;font-weight:600!important;color:#E6E9EE!important}
+.sp-x{color:#8B919A!important;font-size:12px!important}
+
+/* preset chips: 2-col was colliding at 240px; give them room and drop the caps */
+.lp .preset-list .bm-btn{text-transform:none!important;letter-spacing:0.02em!important;font-size:10.5px!important;padding:7px 8px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lp .preset-list .bm-btn[onclick*="'clear'"]{color:#8B919A!important;text-align:center!important}
