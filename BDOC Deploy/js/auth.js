@@ -362,8 +362,10 @@ const BDOC_Auth={
       el.innerHTML='<span style="color:'+c+';border:1px solid '+c+';padding:1px 6px;border-radius:2px;font-size:9px">'+this.tier.toUpperCase()+'</span> <span style="color:var(--t2)">'+esc(name)+'</span>';
       document.getElementById('authLogout').style.display='inline';
     }else{
-      // Phase 15c (2026-05-13): bigger, more visible SIGN IN pill — was too small to find
-      el.innerHTML='<span class="userBadge-signin" style="color:var(--cyan,#00d4ff);background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.45);padding:5px 14px;border-radius:3px;font-size:11px;font-weight:700;letter-spacing:1.2px;cursor:pointer;transition:all 0.18s ease;text-transform:uppercase">SIGN IN</span>';
+      // p159: the SIGN IN pill duplicated the LOGIN button sitting right next to
+      // it (two sign-in buttons side by side on live). Badge is empty when logged
+      // out; #loginBtn is the single entry point.
+      el.innerHTML='';
     }
   },
   canAccess(feature){

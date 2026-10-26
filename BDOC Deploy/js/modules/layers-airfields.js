@@ -70,7 +70,7 @@ function loadMilAirfields() {
     milairfieldEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(a.lon,a.lat),
       billboard:{image:iconUri,width:42,height:42,scaleByDistance:new Cesium.NearFarScalar(5e4,1.4,1.5e7,0.65),distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,15000000),verticalOrigin:Cesium.VerticalOrigin.CENTER,disableDepthTestDistance:5e6},
-      label:{text:a.n,font:'bold 9px JetBrains Mono',fillColor:cesFColor,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,24),scaleByDistance:new Cesium.NearFarScalar(5e4,1,5e6,0),distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,2500000),disableDepthTestDistance:5e6},
+      label:{text:a.n,font:'bold 11px JetBrains Mono',fillColor:cesFColor,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,24),scaleByDistance:new Cesium.NearFarScalar(5e4,1,5e6,0),distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,2500000),disableDepthTestDistance:5e6},
       description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:400px;background:#0a0e14;padding:14px;border-radius:2px;border:1px solid ${fColor}22;color:#c8ccd6">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #1e2436">
           <div>

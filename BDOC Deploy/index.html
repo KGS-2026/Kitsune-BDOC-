@@ -200,6 +200,7 @@ if('serviceWorker' in navigator){
 <link rel="stylesheet" href="css/bdoc-glass.css?v=p75">
 <link rel="stylesheet" href="css/bdoc-p154.css?v=p154">
 <link rel="stylesheet" href="css/bdoc-p158f.css?v=p158f">
+<link rel="stylesheet" href="css/bdoc-p159.css?v=p159">
 <!-- Phase 4A.1 (2026-05-04): preload heaviest blocking script so browser starts fetch in parallel with stylesheet/CSS parse -->
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Cesium.js" as="script" crossorigin="anonymous">
 <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" as="script" crossorigin="anonymous">
@@ -269,7 +270,7 @@ if('serviceWorker' in navigator){
 <div id="nvgBloomWarn">NVG BLOOM — DAYLIGHT DETECTED</div>
 <div class="anomaly-banner" id="anomBanner"></div>
 <!-- NAVIGATION PANEL -->
-<div id="navPanel" style="display:none;position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:300;background:rgba(15,17,21,0.72);border:1px solid rgba(45,114,210,0.25);border-radius:8px;padding:14px 18px;font-family:var(--m);font-size:10px;color:var(--text-primary);width:360px;max-width:calc(100vw - 20px);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+<div id="navPanel" style="display:none;position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:300;background:rgba(15,17,21,0.72);border:1px solid rgba(232,179,73,0.25);border-radius:8px;padding:14px 18px;font-family:var(--m);font-size:10px;color:var(--text-primary);width:360px;max-width:calc(100vw - 20px);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <span style="color:var(--kf);font-weight:700;letter-spacing:1.5px;font-size:11px">NAVIGATION</span>
     <button onclick="toggleNavPanel()" style="background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:14px;font-family:var(--m)">&times;</button>
@@ -286,12 +287,12 @@ if('serviceWorker' in navigator){
     <input id="navTo" type="text" placeholder="Destination address..." style="width:100%;box-sizing:border-box;padding:7px 10px;background:#0d1117;border:1px solid var(--bdr2);color:var(--text-primary);font-family:var(--m);font-size:10px;border-radius:3px;outline:none" onkeydown="if(event.key==='Enter')startNavigation()">
   </div>
   <div style="display:flex;gap:6px;margin-bottom:8px">
-    <button onclick="startNavigation()" style="flex:1;padding:8px;background:rgba(45,114,210,0.15));border:1px solid rgba(45,114,210,0.3);border-radius:4px;color:var(--kf);font-family:var(--m);font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer">GET DIRECTIONS</button>
+    <button onclick="startNavigation()" style="flex:1;padding:8px;background:rgba(232,179,73,0.15));border:1px solid rgba(232,179,73,0.3);border-radius:4px;color:var(--kf);font-family:var(--m);font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer">GET DIRECTIONS</button>
     <button onclick="clearNavRoute()" style="padding:8px 12px;background:none;border:1px solid var(--bdr2);border-radius:4px;color:var(--text-tertiary);font-family:var(--m);font-size:10px;cursor:pointer">CLEAR</button>
   </div>
   <!-- Phase 13b: visible error surface inside nav panel (was previously only af() toast) -->
   <div id="navError"></div>
-  <div id="navInfo" style="display:none;padding:8px;background:rgba(45,114,210,0.05);border:1px solid rgba(45,114,210,0.15);border-radius:4px;margin-bottom:8px">
+  <div id="navInfo" style="display:none;padding:8px;background:rgba(232,179,73,0.05);border:1px solid rgba(232,179,73,0.15);border-radius:4px;margin-bottom:8px">
     <div style="display:flex;justify-content:space-between;margin-bottom:4px">
       <span style="color:var(--text-secondary)">DISTANCE</span><span id="navDist" style="color:var(--kf);font-weight:700">--</span>
     </div>
@@ -375,7 +376,7 @@ if('serviceWorker' in navigator){
     <span style="display:inline-block;width:14px;height:10px;background:#E8B339;border-radius:1px"></span><span>Moderate</span>
     <span style="display:inline-block;width:14px;height:10px;background:#ff6600;border-radius:1px"></span><span>Heavy</span>
     <span style="display:inline-block;width:14px;height:10px;background:#ff0000;border-radius:1px"></span><span>Extreme</span>
-    <span style="display:inline-block;width:14px;height:10px;background:#2D72D2;border-radius:1px"></span><span>Mix</span>
+    <span style="display:inline-block;width:14px;height:10px;background:#E8B349;border-radius:1px"></span><span>Mix</span>
     <span style="display:inline-block;width:14px;height:10px;background:#00ccff;border-radius:1px"></span><span>Snow</span>
     <span style="color:#555;margin-left:6px">RainViewer</span>
   </div>
@@ -400,9 +401,9 @@ if('serviceWorker' in navigator){
 <div id="ss-watermark">KITSUNE BDOC v7.0 · OSINT · <span id="ss-ts"></span> · Not affiliated with any government</div>
 <!-- Phase 10E (2026-05-05): COMMAND PALETTE (Cmd+K / Ctrl+K) — Mission Control fuzzy command launcher -->
 <div id="bdocCmdK" style="display:none;position:fixed;inset:0;z-index:9700;background:rgba(0,0,0,0.65);align-items:flex-start;justify-content:center;padding-top:18vh;font-family:var(--s)">
-  <div style="width:560px;max-width:calc(100vw - 32px);background:rgba(17,21,28,0.98);border:1px solid rgba(45,114,210,0.3);border-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,0.4);overflow:hidden">
+  <div style="width:560px;max-width:calc(100vw - 32px);background:rgba(17,21,28,0.98);border:1px solid rgba(232,179,73,0.3);border-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,0.4);overflow:hidden">
     <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.06)">
-      <span style="font-family:var(--m);font-size:10px;color:#2D72D2;letter-spacing:0.16em;font-weight:600">⌘ CMD</span>
+      <span style="font-family:var(--m);font-size:10px;color:#E8B349;letter-spacing:0.16em;font-weight:600">⌘ CMD</span>
       <input id="bdocCmdInput" type="text" placeholder="Type a command, layer, or location…" style="flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:var(--s);font-size:14px;letter-spacing:0.005em" autocomplete="off">
       <span style="font-family:var(--m);font-size:9px;color:#6E7681;letter-spacing:0.08em">ESC</span>
     </div>
@@ -414,20 +415,20 @@ if('serviceWorker' in navigator){
   </div>
 </div>
 <!-- Phase 9B (2026-05-05): TACTICAL EVENT TICKER — scrolling readout of new intel events at bottom of screen -->
-<div id="bdocTicker" style="display:none;position:fixed;bottom:0;left:0;right:0;height:24px;z-index:80;background:rgba(8,12,20,0.6));border-top:1px solid rgba(45,114,210,0.25);font-family:var(--m);font-size:10px;color:#c8ccd6;overflow:hidden;display:flex;align-items:center;">
+<div id="bdocTicker" style="display:none;position:fixed;bottom:0;left:0;right:0;height:24px;z-index:80;background:rgba(8,12,20,0.6));border-top:1px solid rgba(232,179,73,0.25);font-family:var(--m);font-size:10px;color:#c8ccd6;overflow:hidden;display:flex;align-items:center;">
   <div style="flex:0 0 auto;padding:0 12px;background:#1D222A;height:100%;display:flex;align-items:center;gap:8px;border-right:1px solid var(--bdr);font-size:10px;letter-spacing:0.12em;color:#9BA1A8;font-weight:500;text-transform:uppercase"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#3FB950;animation:bk 2s infinite"></span>LIVE INTEL FEED</div>
   <div id="bdocTickerScroll" style="flex:1;overflow:hidden;white-space:nowrap;position:relative;height:100%;display:flex;align-items:center">
     <div id="bdocTickerInner" style="display:inline-block;padding-left:100%;animation:bdocTickerScroll 180s linear infinite">Awaiting intel feeds…</div>
   </div>
-  <div style="flex:0 0 auto;padding:0 10px;background:rgba(0,0,0,0.4);height:100%;display:flex;align-items:center;border-left:1px solid rgba(45,114,210,0.15);font-size:8px;letter-spacing:1px;color:#4a5068;cursor:pointer" onclick="document.getElementById('bdocTicker').style.display='none';try{localStorage.setItem('bdoc_ticker_off','1')}catch(_){}">×</div>
+  <div style="flex:0 0 auto;padding:0 10px;background:rgba(0,0,0,0.4);height:100%;display:flex;align-items:center;border-left:1px solid rgba(232,179,73,0.15);font-size:8px;letter-spacing:1px;color:#4a5068;cursor:pointer" onclick="document.getElementById('bdocTicker').style.display='none';try{localStorage.setItem('bdoc_ticker_off','1')}catch(_){}">×</div>
 </div>
 <style>@keyframes bdocTickerScroll{from{transform:translateX(0)}to{transform:translateX(-100%)}}#bdocTickerInner:hover{animation-play-state:paused!important}</style>
 
 <!-- LEGEND (press L) -->
 <div id="legend">
 <div class="leg-i"><div class="leg-d" style="background:#DA3633"></div>MIL AIRCRAFT</div>
-<div class="leg-i"><div class="leg-d" style="background:#2D72D2"></div>VIP/GOV</div>
-<div class="leg-i"><div class="leg-d" style="background:#2D72D2"></div>CIV AIRCRAFT</div>
+<div class="leg-i"><div class="leg-d" style="background:#E8B349"></div>VIP/GOV</div>
+<div class="leg-i"><div class="leg-d" style="background:#E8B349"></div>CIV AIRCRAFT</div>
 <div class="leg-i"><div class="leg-d" style="background:#3FB950"></div>SATELLITE</div>
 <div class="leg-i"><div class="leg-d" style="background:#DA3633"></div>MIL SAT</div>
 <div class="leg-i"><div class="leg-d" style="background:#E8B339"></div>EARTHQUAKE</div>
@@ -460,7 +461,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p158f</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p159</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -677,7 +678,7 @@ if('serviceWorker' in navigator){
 <div class="ly" data-layer="forecastradar" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#00cc00"></div><span class="ly-n">Forecast Radar (6hr)</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="lightning" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#ffff00"></div><span class="ly-n">Lightning</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="airquality" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#00cc00"></div><span class="ly-n">Air Quality (AQI)</span><span class="ly-tg tg-l">LIVE</span></div>
-<div class="ly" data-layer="floods" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#2D72D2"></div><span class="ly-n">Floods (GDACS)</span><span class="ly-tg tg-l">LIVE</span></div>
+<div class="ly" data-layer="floods" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#E8B349"></div><span class="ly-n">Floods (GDACS)</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="tsunamis" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#00CED1"></div><span class="ly-n">Tsunamis (GDACS)</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="dartbuoys" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#00ddff"></div><span class="ly-n">DART Tsunami Buoys</span><span class="ly-tg tg-l">NOAA</span></div>
 <div class="ly" data-layer="volcanoes" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#FF4500"></div><span class="ly-n">Volcanoes (GVP)</span><span class="ly-tg tg-l">LIVE</span></div>
@@ -699,11 +700,11 @@ if('serviceWorker' in navigator){
 </div>
 <div class="lg-title lg-collapse collapsed" onclick="togCat(this)">MARITIME <span class="lg-arrow">&#9660;</span></div>
 <div class="lg-group closed">
-<div class="ly" data-layer="vessels" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#2D72D2"></div><span class="ly-n">Vessel Tracking (AIS)</span><span class="ly-tg tg-l">LIVE</span></div>
+<div class="ly" data-layer="vessels" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#E8B349"></div><span class="ly-n">Vessel Tracking (AIS)</span><span class="ly-tg tg-l">LIVE</span></div>
 <div style="padding:2px 8px 6px 28px;font-family:var(--m);font-size:7px;color:var(--t3);line-height:1.8;display:none" id="vesselLegend">
 <span style="color:#cc0000">\u25CF</span> Tanker <span style="color:#00aa44">\u25CF</span> Cargo <span style="color:#0066cc">\u25CF</span> Passenger <span style="color:#00bbbb">\u25CF</span> Tug <span style="color:#E8B339">\u25CF</span> Fast <span style="color:#888">\u25CF</span> Other
 </div>
-<div class="ly" data-layer="darkships" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#2D72D2"></div><span class="ly-n">&#x1F4A1; Dark Fleet (Sanctions Evasion)</span><span class="ly-tg" style="color:#2D72D2;background:rgba(45,114,210,0.1)">OSINT</span></div>
+<div class="ly" data-layer="darkships" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#E8B349"></div><span class="ly-n">&#x1F4A1; Dark Fleet (Sanctions Evasion)</span><span class="ly-tg" style="color:#E8B349;background:rgba(232,179,73,0.1)">OSINT</span></div>
 </div>
 <div class="lg-title lg-collapse collapsed" onclick="togCat(this)">CYBER / DIGITAL <span class="lg-arrow">&#9660;</span></div>
 <div class="lg-group closed">
@@ -733,7 +734,7 @@ if('serviceWorker' in navigator){
 <div class="ly" data-layer="mesh" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#3FB950"></div><span class="ly-n">Meshtastic Mesh Network</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="meshworld" onclick="togLy(this)" title="Every public Meshtastic node worldwide + relay route finder"><div class="sw"></div><div class="ly-d" style="background:#76FF03"></div><span class="ly-n">Meshtastic World (~20k nodes)</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="skybridge" onclick="togLy(this)" title="Weather satellite data from a BDOC ground station, sent as binary over the mesh and rebuilt here — works with no internet"><div class="sw"></div><div class="ly-d" style="background:#9CC4FF"></div><span class="ly-n">Skybridge Sat-over-Mesh</span><span class="ly-tg" style="color:#9CC4FF;background:rgba(156,196,255,0.08)">OFFLINE</span></div>
-<div class="ly" data-layer="community" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#2D72D2"></div><span class="ly-n">Community Intel Reports</span><span class="ly-tg tg-l">LIVE</span></div>
+<div class="ly" data-layer="community" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#E8B349"></div><span class="ly-n">Community Intel Reports</span><span class="ly-tg tg-l">LIVE</span></div>
 </div>
 <div class="lg-title lg-collapse collapsed" onclick="togCat(this)">AUXILIARY <span class="lg-arrow">&#9660;</span></div>
 <div class="lg-group closed">
@@ -763,7 +764,7 @@ if('serviceWorker' in navigator){
 <div class="si"><div class="si-l">HEADLINES</div><div class="si-v" id="headlineV">--</div></div>
 <div class="si"><div class="si-l">SOLAR</div><div class="si-v" id="spwxV">--</div></div>
 <div class="si"><div class="si-l">MESH</div><div class="si-v" id="meshV">--</div></div>
-<div class="si"><div class="si-l">REPORTS</div><div class="si-v" style="color:#2D72D2" id="communityV">0</div></div>
+<div class="si"><div class="si-l">REPORTS</div><div class="si-v" style="color:#E8B349" id="communityV">0</div></div>
 <div class="si"><div class="si-l">STATUS</div><div class="si-v" style="color:var(--gn);font-size:12px">NOMINAL</div></div>
 </div>
 <!-- FORCE TRACKER PANEL -->
@@ -945,7 +946,7 @@ if('serviceWorker' in navigator){
 <div id="authSignupExtra" style="display:none">
 <input id="authPhone" type="tel" placeholder="Phone number (optional)" style="width:100%;padding:10px;margin:6px 0;background:#1a1a2e;border:1px solid #2d2d3a;color:#e6edf3;font-family:var(--m);font-size:12px;border-radius:2px;box-sizing:border-box">
 <label style="display:flex;align-items:flex-start;gap:8px;margin:10px 0 4px;cursor:pointer;font-size:10px;color:var(--t2);line-height:1.5">
-<input id="authConsent" type="checkbox" style="margin-top:2px;flex-shrink:0;width:15px;height:15px;accent-color:#2D72D2;cursor:pointer">
+<input id="authConsent" type="checkbox" style="margin-top:2px;flex-shrink:0;width:15px;height:15px;accent-color:#E8B349;cursor:pointer">
 <span>I agree to receive intelligence briefings, product updates, and promotional messages from Kitsune Global Solutions LLC at the email and phone number provided. I understand I can opt out anytime. See our <a href="/privacy.html" target="_blank" style="color:var(--kf)">Privacy Policy</a>.</span>
 </label>
 </div>
@@ -1143,7 +1144,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <button class="bp-tool" onclick="setBattleTool('engagement_area')" data-tool="engagement_area" title="Click points to define Engagement Area. Double-click to finish." style="border-color:#DA3633;color:#DA3633">&#9724; EA</button>
 <button class="bp-tool" onclick="setBattleTool('msr')" data-tool="msr" title="Main Supply Route — click waypoints, double-click to finish" style="border-color:#00cc66;color:#00cc66">&#10144; MSR</button>
 <button class="bp-tool" onclick="setBattleTool('minefield_area')" data-tool="minefield_area" title="Click points to mark minefield boundary. Double-click to finish." style="border-color:#ff6600;color:#ff6600">&#9888; MINEFIELD</button>
-<button class="bp-tool" onclick="setBattleTool('coord_line')" data-tool="coord_line" title="Fire Support Coordination Line (FSCL). Click points, double-click to finish." style="border-color:#2D72D2;color:#2D72D2">&#9476; FSCL</button>
+<button class="bp-tool" onclick="setBattleTool('coord_line')" data-tool="coord_line" title="Fire Support Coordination Line (FSCL). Click points, double-click to finish." style="border-color:#E8B349;color:#E8B349">&#9476; FSCL</button>
 <button class="bp-tool" onclick="battleMeasureTool()" title="Measure distance between two points" style="border-color:#00bbff;color:#00bbff">MEASURE</button>
 <button class="bp-tool" onclick="exportBattlePlan()" title="Export all battle markers as GeoJSON" style="border-color:#FFD700;color:#FFD700">EXPORT</button>
 <button class="bp-tool" onclick="exportBattlePlanCoT()" title="Export all battle markers as CoT XML — imports into ATAK / WinTAK / iTAK" style="border-color:#52b788;color:#52b788">⬇ TAK</button>
@@ -1155,7 +1156,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <div class="bp-section" style="display:flex;align-items:center;gap:8px">
 <span style="font-size:8px;color:var(--t3);letter-spacing:1px">COLOR</span>
 <div style="display:flex;gap:3px" id="bp-colors">
-<div class="bp-color active" data-color="#2D72D2" style="background:#2D72D2" onclick="setBattleColor(this)" title="Blue (Friendly)"></div>
+<div class="bp-color active" data-color="#2D72D2" style="background:#E8B349" onclick="setBattleColor(this)" title="Blue (Friendly)"></div>
 <div class="bp-color" data-color="#c4504a" style="background:#c4504a" onclick="setBattleColor(this)" title="Red (Hostile)"></div>
 <div class="bp-color" data-color="#4a8a5a" style="background:#4a8a5a" onclick="setBattleColor(this)" title="Green (Neutral)"></div>
 <div class="bp-color" data-color="#c4933f" style="background:#c4933f" onclick="setBattleColor(this)" title="Yellow (Unknown)"></div>
@@ -1274,7 +1275,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
   </div>
 </div>
 <!-- DASHBOARD PRESETS PANEL (Phase 17a, 2026-05-14) -->
-<div id="presetsPanel" style="display:none;position:fixed;top:110px;right:670px;z-index:200;width:260px;background:rgba(15,17,21,0.72);border:1px solid rgba(45,114,210,0.22);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+<div id="presetsPanel" style="display:none;position:fixed;top:110px;right:670px;z-index:200;width:260px;background:rgba(15,17,21,0.72);border:1px solid rgba(232,179,73,0.22);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
   <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06)">
     <span style="color:var(--kf);font-size:10px;font-weight:700;letter-spacing:1.5px">💾 SAVED VIEWS</span>
     <button onclick="DashboardPresets.togglePanel()" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:var(--t3);cursor:pointer;font-size:12px;line-height:1;padding:1px 5px">×</button>
@@ -1282,7 +1283,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
   <div style="padding:8px 10px">
     <div style="font-size:8px;color:var(--t3);margin-bottom:8px;line-height:1.5">Save current globe view, layer state, and camera position to a named slot. Reload any time.</div>
     <div id="presets-list"></div>
-    <button onclick="DashboardPresets.saveNew()" style="width:100%;margin-top:8px;padding:7px;background:rgba(45,114,210,0.08);border:1px solid rgba(45,114,210,0.25);border-radius:3px;color:var(--kf);font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer">+ SAVE CURRENT VIEW</button>
+    <button onclick="DashboardPresets.saveNew()" style="width:100%;margin-top:8px;padding:7px;background:rgba(232,179,73,0.08);border:1px solid rgba(232,179,73,0.25);border-radius:3px;color:var(--kf);font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer">+ SAVE CURRENT VIEW</button>
   </div>
 </div>
 <!-- SITUATION BROWSER PANEL (Phase 18b, 2026-05-14) — Palantir Gotham-parity situation list with drill-down, severity badges, COA linkage -->
@@ -1304,7 +1305,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
     <span style="color:#DA3633;font-size:10px;font-weight:700;letter-spacing:1.5px">⚔ COURSE OF ACTION</span>
     <div style="display:flex;gap:6px;align-items:center">
       <span style="color:var(--t3);font-size:16px;opacity:0.35;margin-right:2px;pointer-events:none">⠿</span>
-      <button onclick="COAManager.compare()" style="padding:2px 7px;background:rgba(45,114,210,0.1);border:1px solid rgba(45,114,210,0.28);border-radius:2px;color:var(--kf);font-family:var(--m);font-size:7px;font-weight:700;cursor:pointer;letter-spacing:.5px">COMPARE</button>
+      <button onclick="COAManager.compare()" style="padding:2px 7px;background:rgba(232,179,73,0.1);border:1px solid rgba(232,179,73,0.28);border-radius:2px;color:var(--kf);font-family:var(--m);font-size:7px;font-weight:700;cursor:pointer;letter-spacing:.5px">COMPARE</button>
       <button onclick="COAManager.togglePanel()" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:var(--t3);cursor:pointer;font-size:12px;line-height:1;padding:1px 5px">×</button>
     </div>
   </div>
@@ -1315,9 +1316,9 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
   </div>
 </div>
 <!-- METAR PANEL (Phase 19b) — Aviation weather for air-capable military bases -->
-<div id="metarPanel" style="display:none;position:fixed;top:62px;right:12px;z-index:300;width:340px;background:rgba(15,17,21,0.72);border:1px solid rgba(45,114,210,0.30);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
+<div id="metarPanel" style="display:none;position:fixed;top:62px;right:12px;z-index:300;width:340px;background:rgba(15,17,21,0.72);border:1px solid rgba(232,179,73,0.30);border-radius:4px;font-family:var(--m);box-shadow:0 8px 32px rgba(0,0,0,0.5)">
   <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06)">
-    <span style="color:#2D72D2;font-size:10px;font-weight:700;letter-spacing:1.5px">☁ AVIATION WEATHER // METAR</span>
+    <span style="color:#E8B349;font-size:10px;font-weight:700;letter-spacing:1.5px">☁ AVIATION WEATHER // METAR</span>
     <button onclick="document.getElementById('metarPanel').style.display='none'" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:var(--t3);cursor:pointer;font-size:12px;line-height:1;padding:1px 5px">×</button>
   </div>
   <div id="metarContent" style="padding:10px 12px;font-size:9px;color:var(--t2);min-height:60px">Loading…</div>
@@ -1408,24 +1409,24 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <!-- Phase 8B (2026-05-05): First-launch walkthrough — use-case questionnaire then highlighted tour -->
 <div id="bdocOnboard" style="display:none;position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,0.85);font-family:var(--s);color:#c8ccd6">
   <!-- STEP 1: Use-case questionnaire -->
-  <div id="onboardQ" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:560px;max-width:calc(100vw - 24px);background:rgba(19,23,31,0.98);border:1px solid var(--bdr2);border-radius:3px;padding:28px 32px;box-shadow:0 1px 2px rgba(0,0,0,0.4)">
+  <div id="onboardQ" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:560px;max-width:calc(100vw - 24px);background:rgba(19,23,31,0.98);border:1px solid var(--bdr2);border-radius:14px;padding:32px 36px;box-shadow:0 8px 32px rgba(0,0,0,0.45)">
     <div style="text-align:center;margin-bottom:20px">
-      <div style="color:#2D72D2;font-size:11px;letter-spacing:0.16em;font-weight:600;margin-bottom:8px;text-transform:uppercase">KITSUNE BDOC · WELCOME</div>
-      <div style="color:var(--text-primary);font-size:20px;font-weight:600;letter-spacing:-0.005em;margin-bottom:6px">What brought you here?</div>
+      <div style="color:#E8B349;font-size:11px;letter-spacing:0.16em;font-weight:600;margin-bottom:8px;text-transform:uppercase">KITSUNE BDOC · WELCOME</div>
+      <div style="color:var(--text-primary);font-size:22px;font-weight:600;letter-spacing:-0.01em;margin-bottom:8px;font-family:var(--s)">What brought you here?</div>
       <div style="font-size:12px;color:var(--text-secondary)">Pick what matters most — we'll set up the right intel layers for you.</div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">
-      <button onclick="bdocPickUseCase('weather')" class="ob-btn" data-bg="rgba(0,170,255,0.08)" data-bc="rgba(0,170,255,0.3)" data-fc="#2D72D2"><div style="font-size:18px;margin-bottom:4px">🌪</div><div style="font-size:11px;font-weight:700">Weather &amp; Storms</div><div style="font-size:8px;color:#7a8194;margin-top:3px">Hurricanes, radar, alerts, lightning</div></button>
-      <button onclick="bdocPickUseCase('conflict')" class="ob-btn" data-bg="rgba(255,68,68,0.08)" data-bc="rgba(255,68,68,0.3)" data-fc="#ff6666"><div style="font-size:18px;margin-bottom:4px">⚔</div><div style="font-size:11px;font-weight:700">Active Conflicts</div><div style="font-size:8px;color:#7a8194;margin-top:3px">Ukraine, Gaza, Taiwan, Hormuz</div></button>
-      <button onclick="bdocPickUseCase('maritime')" class="ob-btn" data-bg="rgba(0,136,255,0.08)" data-bc="rgba(0,136,255,0.3)" data-fc="#2D72D2"><div style="font-size:18px;margin-bottom:4px">⚓</div><div style="font-size:11px;font-weight:700">Maritime &amp; Vessels</div><div style="font-size:8px;color:#7a8194;margin-top:3px">AIS, dark fleet, cables, chokepoints</div></button>
-      <button onclick="bdocPickUseCase('cyber')" class="ob-btn" data-bg="rgba(45,114,210,0.08)" data-bc="rgba(45,114,210,0.3)" data-fc="#2D72D2"><div style="font-size:18px;margin-bottom:4px">⚡</div><div style="font-size:11px;font-weight:700">Cyber Threats</div><div style="font-size:8px;color:#7a8194;margin-top:3px">DDoS, outages, internet health</div></button>
-      <button onclick="bdocPickUseCase('disaster')" class="ob-btn" data-bg="rgba(255,255,255,0.08)" data-bc="rgba(255,255,255,0.3)" data-fc="#E6E8EB"><div style="font-size:18px;margin-bottom:4px">🌋</div><div style="font-size:11px;font-weight:700">Natural Disasters</div><div style="font-size:8px;color:#7a8194;margin-top:3px">Earthquakes, fires, floods, volcanoes</div></button>
-      <button onclick="bdocPickUseCase('military')" class="ob-btn" data-bg="rgba(0,255,102,0.08)" data-bc="rgba(0,255,102,0.3)" data-fc="#3FB950"><div style="font-size:18px;margin-bottom:4px">🛡</div><div style="font-size:11px;font-weight:700">Military / GEOINT</div><div style="font-size:8px;color:#7a8194;margin-top:3px">Bases, aircraft, satellites, nukes</div></button>
-      <button onclick="bdocPickUseCase('all')" class="ob-btn" data-bg="rgba(45,114,210,0.08)" data-bc="rgba(45,114,210,0.3)" data-fc="#2D72D2" style="grid-column:1/-1"><div style="font-size:11px;font-weight:700">All of the above — show me everything</div></button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <button onclick="bdocPickUseCase('weather')" class="ob-btn"><div style="font-size:12px;font-weight:600;font-family:var(--s);letter-spacing:0;color:#E6E9EE">Weather &amp; Storms</div><div style="font-size:10.5px;color:#8B919A;margin-top:4px;font-family:var(--s);letter-spacing:0">Hurricanes, radar, alerts, lightning</div></button>
+      <button onclick="bdocPickUseCase('conflict')" class="ob-btn"><div style="font-size:12px;font-weight:600;font-family:var(--s);letter-spacing:0;color:#E6E9EE">Active Conflicts</div><div style="font-size:10.5px;color:#8B919A;margin-top:4px;font-family:var(--s);letter-spacing:0">Ukraine, Gaza, Taiwan, Hormuz</div></button>
+      <button onclick="bdocPickUseCase('maritime')" class="ob-btn"><div style="font-size:12px;font-weight:600;font-family:var(--s);letter-spacing:0;color:#E6E9EE">Maritime &amp; Vessels</div><div style="font-size:10.5px;color:#8B919A;margin-top:4px;font-family:var(--s);letter-spacing:0">AIS, dark fleet, cables, chokepoints</div></button>
+      <button onclick="bdocPickUseCase('cyber')" class="ob-btn"><div style="font-size:12px;font-weight:600;font-family:var(--s);letter-spacing:0;color:#E6E9EE">Cyber Threats</div><div style="font-size:10.5px;color:#8B919A;margin-top:4px;font-family:var(--s);letter-spacing:0">DDoS, outages, internet health</div></button>
+      <button onclick="bdocPickUseCase('disaster')" class="ob-btn"><div style="font-size:12px;font-weight:600;font-family:var(--s);letter-spacing:0;color:#E6E9EE">Natural Disasters</div><div style="font-size:10.5px;color:#8B919A;margin-top:4px;font-family:var(--s);letter-spacing:0">Earthquakes, fires, floods, volcanoes</div></button>
+      <button onclick="bdocPickUseCase('military')" class="ob-btn"><div style="font-size:12px;font-weight:600;font-family:var(--s);letter-spacing:0;color:#E6E9EE">Military / GEOINT</div><div style="font-size:10.5px;color:#8B919A;margin-top:4px;font-family:var(--s);letter-spacing:0">Bases, aircraft, satellites, nukes</div></button>
+      <button onclick="bdocPickUseCase('all')" class="ob-btn" style="grid-column:1/-1"><div style="font-size:12px;font-weight:600;font-family:var(--s);letter-spacing:0;color:#E6E9EE">All of the above — show me everything</div></button>
     </div>
     <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid rgba(255,255,255,0.04)">
-      <button onclick="bdocSkipOnboarding()" style="background:none;color:#7a8194;border:none;font-family:var(--m);font-size:9px;letter-spacing:1px;cursor:pointer;padding:6px 0">Skip onboarding</button>
-      <div style="font-size:8px;color:#4a5068;letter-spacing:1px">STEP 1 OF 3</div>
+      <button onclick="bdocSkipOnboarding()" style="background:none;color:#7a8194;border:none;font-family:var(--m);font-size:10px;letter-spacing:1px;cursor:pointer;padding:6px 0">Skip onboarding</button>
+      <div style="font-size:10px;color:#5C636B;letter-spacing:1px;font-family:var(--m)">STEP 1 OF 3</div>
     </div>
   </div>
   <!-- STEP 2: Tour spotlight overlay — built dynamically by bdocTourStep() -->
@@ -1434,29 +1435,32 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
       <defs><mask id="spotMask"><rect width="100%" height="100%" fill="white"/><rect id="spotHole" x="0" y="0" width="0" height="0" rx="8" fill="black"/></mask></defs>
       <rect width="100%" height="100%" fill="rgba(0,0,0,0.78)" mask="url(#spotMask)"/>
     </svg>
-    <div id="onboardCard" style="position:absolute;background:rgba(10,14,26,0.98);border:1px solid rgba(45,114,210,0.4);border-radius:6px;padding:16px 20px;width:340px;max-width:calc(100vw - 24px);box-shadow:0 16px 48px rgba(0,0,0,0.8);z-index:9510">
-      <div id="onboardTitle" style="color:#2D72D2;font-size:10px;letter-spacing:2px;font-weight:700;margin-bottom:6px">STEP 2 — INTEL LAYERS</div>
+    <div id="onboardCard" style="position:absolute;background:rgba(10,14,26,0.98);border:1px solid rgba(232,179,73,0.4);border-radius:6px;padding:16px 20px;width:340px;max-width:calc(100vw - 24px);box-shadow:0 16px 48px rgba(0,0,0,0.8);z-index:9510">
+      <div id="onboardTitle" style="color:#E8B349;font-size:10px;letter-spacing:2px;font-weight:700;margin-bottom:6px">STEP 2 — INTEL LAYERS</div>
       <div id="onboardBody" style="font-size:11px;color:#c8ccd6;line-height:1.55;margin-bottom:14px">Body text…</div>
       <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
         <button onclick="bdocSkipOnboarding()" style="background:none;color:#7a8194;border:none;font-family:var(--m);font-size:9px;letter-spacing:1px;cursor:pointer">Skip tour</button>
         <div style="display:flex;gap:6px">
           <button id="onboardPrev" onclick="bdocTourPrev()" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#7a8194;padding:6px 12px;border-radius:3px;font-family:var(--m);font-size:9px;letter-spacing:1px;cursor:pointer">◂ BACK</button>
-          <button id="onboardNext" onclick="bdocTourNext()" style="background:#2D72D2;color:#fff;border:none;padding:6px 14px;border-radius:3px;font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer">NEXT ▸</button>
+          <button id="onboardNext" onclick="bdocTourNext()" style="background:#E8B349;color:#fff;border:none;padding:6px 14px;border-radius:3px;font-family:var(--m);font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer">NEXT ▸</button>
         </div>
       </div>
-      <div id="onboardProgress" style="margin-top:10px;font-size:7px;color:#4a5068;letter-spacing:1px;text-align:center">2 OF 6</div>
+      <div id="onboardProgress" style="margin-top:10px;font-size:10px;color:#5C636B;letter-spacing:1px;text-align:center">2 OF 6</div>
     </div>
   </div>
 </div>
 <style>
-.ob-btn{padding:14px 12px;border-radius:5px;cursor:pointer;font-family:var(--m);text-align:left;color:#c8ccd6;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);transition:all 0.15s}
-.ob-btn:hover{transform:translateY(-1px)}
+.ob-btn{padding:16px 16px;border-radius:8px;cursor:pointer;font-family:var(--s);text-align:left;color:#c8ccd6;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);transition:all 150ms ease;position:relative}
+.ob-btn::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:2px;background:rgba(232,179,73,0);border-radius:1px;transition:background 150ms ease}
+.ob-btn:hover{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.16)}
+.ob-btn:hover::before{background:#E8B349}
+.ob-btn:focus-visible{outline:none;border-color:#E8B349}
 </style>
 <!-- Phase 5A (2026-05-04): First-load welcome card. localStorage-gated so power users see it once. -->
 <div id="bdocWelcome" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9000;background:rgba(19,23,31,0.97);border:1px solid var(--bdr2);border-radius:3px;padding:24px 28px;font-family:var(--m);color:var(--text-primary);width:520px;max-width:calc(100vw - 24px);box-shadow:0 1px 2px rgba(0,0,0,0.4)">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bdr)">
     <div>
-      <div style="color:#2D72D2;font-size:11px;letter-spacing:0.16em;font-weight:600;margin-bottom:6px;text-transform:uppercase">KGS BDOC v7.0</div>
+      <div style="color:#E8B349;font-size:11px;letter-spacing:0.16em;font-weight:600;margin-bottom:6px;text-transform:uppercase">KGS BDOC v7.0</div>
       <div style="color:var(--text-primary);font-size:20px;font-weight:600;letter-spacing:-0.01em">Real-Time Global Intelligence</div>
     </div>
     <button onclick="dismissBdocWelcome(false)" style="background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:18px;padding:0 4px;line-height:1">&times;</button>
@@ -1465,8 +1469,8 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
     50+ live intelligence layers on a 3D globe — military aircraft, maritime AIS, conflict events, submarine cables, cyber attacks, satellites, weather, sanctions, dark fleet, and more. Built for analysts, operators, and intelligence professionals.
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-    <div style="padding:10px 12px;background:rgba(45,114,210,0.06);border:1px solid rgba(45,114,210,0.15);border-radius:4px">
-      <div style="color:#2D72D2;font-size:8px;letter-spacing:1px;font-weight:600;margin-bottom:4px">LEFT PANEL</div>
+    <div style="padding:10px 12px;background:rgba(232,179,73,0.06);border:1px solid rgba(232,179,73,0.15);border-radius:4px">
+      <div style="color:#E8B349;font-size:8px;letter-spacing:1px;font-weight:600;margin-bottom:4px">LEFT PANEL</div>
       <div style="font-size:10px;color:#c8ccd6;line-height:1.5">Toggle any of 50+ layers. Categories collapse with the arrows.</div>
     </div>
     <div style="padding:10px 12px;background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.15);border-radius:4px">
@@ -1483,7 +1487,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
     </div>
   </div>
   <div style="display:flex;gap:10px">
-    <button onclick="dismissBdocWelcome(true)" style="flex:1;background:#2D72D2;color:#fff;border:none;padding:11px 16px;border-radius:4px;font-family:var(--m);font-size:10px;font-weight:700;letter-spacing:1.5px;cursor:pointer">START EXPLORING</button>
+    <button onclick="dismissBdocWelcome(true)" style="flex:1;background:#E8B349;color:#fff;border:none;padding:11px 16px;border-radius:4px;font-family:var(--m);font-size:10px;font-weight:700;letter-spacing:1.5px;cursor:pointer">START EXPLORING</button>
     <button onclick="dismissBdocWelcome(false)" style="flex:0 0 auto;background:transparent;color:#7a8194;border:1px solid rgba(255,255,255,0.06);padding:11px 16px;border-radius:4px;font-family:var(--m);font-size:9px;letter-spacing:1px;cursor:pointer">Show again next time</button>
   </div>
   <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04);font-size:8px;color:#4a5068;letter-spacing:1px;text-align:center">© Kitsune Global Solutions LLC · SDVOSB · CAGE 174S8</div>
@@ -1514,7 +1518,7 @@ if(!window.Cesium){
 <script src="js/modules/icon-factory.js?v=p116"></script>
 <script src="js/converters.js?v=p156g"></script>
 <script src="js/data.js?v=p156d"></script>
-<script src="js/auth.js?v=p158e"></script>
+<script src="js/auth.js?v=p159"></script>
 <!-- p157: must load AFTER auth.js (needs window.Auth.client) and BEFORE any
      layer module that fetches. Attaches the Supabase JWT to our own function
      calls so the server can enforce tier; see netlify/functions/_lib/guard.js. -->
@@ -1633,7 +1637,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p158f',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p159',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
@@ -1917,7 +1921,7 @@ const DashboardPresets={
       return;
     }
     const self=this;
-    p.innerHTML=this._items.map(function(it){return '<div style="display:flex;align-items:center;gap:4px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><div style="flex:1;min-width:0"><div style="color:var(--text-primary);font-size:9px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div><div style="color:var(--t3);font-size:8px">'+(it.layerCount||0)+' layers · '+new Date(it.saved).toLocaleDateString()+'</div></div><div style="display:flex;gap:3px;flex-shrink:0"><button onclick="DashboardPresets.load(\''+it.id+'\')" style="padding:2px 5px;background:rgba(45,114,210,0.1);border:1px solid rgba(45,114,210,0.25);border-radius:2px;color:var(--kf);font-family:var(--m);font-size:7px;cursor:pointer;letter-spacing:.5px">LOAD</button><button onclick="DashboardPresets.remove(\''+it.id+'\')" style="padding:2px 5px;background:rgba(218,54,51,0.1);border:1px solid rgba(218,54,51,0.25);border-radius:2px;color:#f87171;font-family:var(--m);font-size:7px;cursor:pointer">✕</button></div></div>';}).join('');
+    p.innerHTML=this._items.map(function(it){return '<div style="display:flex;align-items:center;gap:4px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04)"><div style="flex:1;min-width:0"><div style="color:var(--text-primary);font-size:9px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div><div style="color:var(--t3);font-size:8px">'+(it.layerCount||0)+' layers · '+new Date(it.saved).toLocaleDateString()+'</div></div><div style="display:flex;gap:3px;flex-shrink:0"><button onclick="DashboardPresets.load(\''+it.id+'\')" style="padding:2px 5px;background:rgba(232,179,73,0.1);border:1px solid rgba(232,179,73,0.25);border-radius:2px;color:var(--kf);font-family:var(--m);font-size:7px;cursor:pointer;letter-spacing:.5px">LOAD</button><button onclick="DashboardPresets.remove(\''+it.id+'\')" style="padding:2px 5px;background:rgba(218,54,51,0.1);border:1px solid rgba(218,54,51,0.25);border-radius:2px;color:#f87171;font-family:var(--m);font-size:7px;cursor:pointer">✕</button></div></div>';}).join('');
   }
 };
 DashboardPresets.init();
@@ -2084,7 +2088,7 @@ const COAManager={
           ${p.status!=='approved'?`<button onclick="COAManager.approve('${p.id}')" style="padding:2px 6px;background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);border-radius:2px;color:#3FB950;font-family:var(--m);font-size:7px;font-weight:700;cursor:pointer">✓ APPROVE</button>`:''}
           ${p.status!=='rejected'?`<button onclick="COAManager.reject('${p.id}')" style="padding:2px 6px;background:rgba(218,54,51,0.1);border:1px solid rgba(218,54,51,0.3);border-radius:2px;color:#f87171;font-family:var(--m);font-size:7px;font-weight:700;cursor:pointer">✕ REJECT</button>`:''}
           <button onclick="COAManager.addNote('${p.id}')" style="padding:2px 6px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:2px;color:var(--t2);font-family:var(--m);font-size:7px;cursor:pointer">💬 NOTE</button>
-          <button onclick="COAManager.loadView('${p.id}')" style="padding:2px 6px;background:rgba(45,114,210,0.07);border:1px solid rgba(45,114,210,0.2);border-radius:2px;color:var(--kf);font-family:var(--m);font-size:7px;cursor:pointer">LOAD</button>
+          <button onclick="COAManager.loadView('${p.id}')" style="padding:2px 6px;background:rgba(232,179,73,0.07);border:1px solid rgba(232,179,73,0.2);border-radius:2px;color:var(--kf);font-family:var(--m);font-size:7px;cursor:pointer">LOAD</button>
           <button onclick="COAManager.remove('${p.id}')" style="padding:2px 6px;background:rgba(218,54,51,0.1);border:1px solid rgba(218,54,51,0.35);border-radius:2px;color:#f87171;font-family:var(--m);font-size:7px;font-weight:700;cursor:pointer;letter-spacing:.5px">✕ DEL</button>
         </div>
       </div>`;
@@ -2226,7 +2230,7 @@ const SituationManager=(()=>{
           // Phase 24 (2026-05-23): use safeUrl() to block javascript: protocol injection from GDELT HTML;
           // use esc() for text content (replaces incomplete .replace(/</g,'&lt;') partial-escaping).
           const safeLink=safeUrl(link);
-          return `<div class="sit-card" style="border-left-color:#2D72D255;${safeLink&&safeLink!=='#'?'cursor:pointer':''}opacity:0.88" ${safeLink&&safeLink!=='#'?`onclick="window.open('${safeLink}','_blank','')"`:''}>
+          return `<div class="sit-card" style="border-left-color:#E8B34955;${safeLink&&safeLink!=='#'?'cursor:pointer':''}opacity:0.88" ${safeLink&&safeLink!=='#'?`onclick="window.open('${safeLink}','_blank','')"`:''}>
             <div class="sit-title" style="font-size:9px">${esc(headline)}</div>
             <div class="sit-meta">${esc(loc)}${srcDom?' · '+esc(srcDom):''}</div>
           </div>`;
@@ -2422,7 +2426,7 @@ const Watchlist={
       p.innerHTML='<div style="padding:12px;text-align:center;color:var(--t3);font-size:9px;line-height:1.6">No watchlist items.<br>Right-click any entity or location \u2192 \u2b50 Add to Watchlist</div>';
       return;
     }
-    p.innerHTML=this._items.map(function(it){return '<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.04)"><div style="flex:1;min-width:0"><div style="color:var(--text-primary);font-weight:600;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div><div style="color:var(--t3);font-size:8px;margin-top:1px">'+(+it.lat||0).toFixed(4)+'\u00b0, '+(+it.lon||0).toFixed(4)+'\u00b0 \u00b7 '+esc(it.type||'location')+'</div></div><div style="display:flex;gap:3px;flex-shrink:0"><button onclick="Watchlist.fly(\''+String(it.id).replace(/[\\'"<>]/g,'')+'\')" style="padding:2px 5px;background:rgba(45,114,210,0.1);border:1px solid rgba(45,114,210,0.25);border-radius:2px;color:var(--kf);font-family:var(--m);font-size:7px;cursor:pointer;letter-spacing:.5px">FLY</button><button onclick="Watchlist.remove(\''+String(it.id).replace(/[\\'"<>]/g,'')+'\')" style="padding:2px 5px;background:rgba(218,54,51,0.1);border:1px solid rgba(218,54,51,0.25);border-radius:2px;color:#f87171;font-family:var(--m);font-size:7px;cursor:pointer">\u2715</button></div></div>';}).join('');
+    p.innerHTML=this._items.map(function(it){return '<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid rgba(255,255,255,0.04)"><div style="flex:1;min-width:0"><div style="color:var(--text-primary);font-weight:600;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(it.name)+'</div><div style="color:var(--t3);font-size:8px;margin-top:1px">'+(+it.lat||0).toFixed(4)+'\u00b0, '+(+it.lon||0).toFixed(4)+'\u00b0 \u00b7 '+esc(it.type||'location')+'</div></div><div style="display:flex;gap:3px;flex-shrink:0"><button onclick="Watchlist.fly(\''+String(it.id).replace(/[\\'"<>]/g,'')+'\')" style="padding:2px 5px;background:rgba(232,179,73,0.1);border:1px solid rgba(232,179,73,0.25);border-radius:2px;color:var(--kf);font-family:var(--m);font-size:7px;cursor:pointer;letter-spacing:.5px">FLY</button><button onclick="Watchlist.remove(\''+String(it.id).replace(/[\\'"<>]/g,'')+'\')" style="padding:2px 5px;background:rgba(218,54,51,0.1);border:1px solid rgba(218,54,51,0.25);border-radius:2px;color:#f87171;font-family:var(--m);font-size:7px;cursor:pointer">\u2715</button></div></div>';}).join('');
   }
 };
 Watchlist.init();
@@ -2859,7 +2863,7 @@ BDOC.cmdk={
       const name=el.querySelector('.ly-n')?.textContent||ly;
       const isOn=el.classList.contains('on');
       const isLocked=el.classList.contains('locked');
-      cmds.push({label:(isOn?'Disable: ':'Enable: ')+name.replace(/\\s+/g,' ').trim(),sub:isLocked?'🔒 Operator $9.99/mo':'Toggle layer: '+ly,sec:'LAYER',color:isLocked?'#E8B339':'#2D72D2',fn:()=>{if(isLocked){if(typeof showMo==='function')showMo(ly)}else{togLy(el)}}});
+      cmds.push({label:(isOn?'Disable: ':'Enable: ')+name.replace(/\\s+/g,' ').trim(),sub:isLocked?'🔒 Operator $9.99/mo':'Toggle layer: '+ly,sec:'LAYER',color:isLocked?'#E8B339':'#C4C9D0',fn:()=>{if(isLocked){if(typeof showMo==='function')showMo(ly)}else{togLy(el)}}});
     });
     // System actions
     cmds.push({label:'Open Health Dashboard',sub:'Ctrl+Shift+H · Feed monitoring',sec:'SYSTEM',color:'#3FB950',fn:()=>{if(typeof Health!=='undefined'&&Health.togDash)Health.togDash()}});
@@ -2867,8 +2871,8 @@ BDOC.cmdk={
     cmds.push({label:'Save Workspace',sub:'Snapshot camera + active layers',sec:'SYSTEM',color:'#3FB950',fn:()=>{const n=prompt('Workspace name:','default');if(n)saveWorkspace(n)}});
     cmds.push({label:'Load Workspace',sub:'Restore saved view',sec:'SYSTEM',color:'#3FB950',fn:()=>{const list=listWorkspaces();if(!list.length){if(typeof af==='function')af('var(--yl)','No workspaces saved yet');return}const n=prompt('Load which workspace?\\n\\nAvailable: '+list.join(', '),list[0]);if(n)loadWorkspace(n)}});
     cmds.push({label:'Show Changelog',sub:'Recent updates and features',sec:'SYSTEM',color:'#3FB950',fn:()=>showBdocChangelog()});
-    cmds.push({label:'Toggle 3D Terrain',sub:'Real elevation data',sec:'VIEW',color:'#2D72D2',fn:()=>{if(typeof toggle3DTerrain==='function')toggle3DTerrain()}});
-    cmds.push({label:'Restart Onboarding Tour',sub:'Replay first-launch walkthrough',sec:'HELP',color:'#2D72D2',fn:()=>{try{localStorage.removeItem('bdoc_onboard_done');location.reload()}catch(_){}}});
+    cmds.push({label:'Toggle 3D Terrain',sub:'Real elevation data',sec:'VIEW',color:'#E8B349',fn:()=>{if(typeof toggle3DTerrain==='function')toggle3DTerrain()}});
+    cmds.push({label:'Restart Onboarding Tour',sub:'Replay first-launch walkthrough',sec:'HELP',color:'#E8B349',fn:()=>{try{localStorage.removeItem('bdoc_onboard_done');location.reload()}catch(_){}}});
     return cmds;
   },
   open(){
@@ -2899,7 +2903,7 @@ BDOC.cmdk={
     const out=document.getElementById('bdocCmdResults');
     if(this._results.length===0){out.innerHTML='<div style="padding:16px;text-align:center;color:#6E7681;font-size:12px">No results for "'+esc(q)+'"</div>';return}
     out.innerHTML=this._results.map((c,i)=>`
-      <div class="cmdk-row" data-i="${i}" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-left:2px solid ${i===this._idx?c.color:'transparent'};background:${i===this._idx?'rgba(45,114,210,0.06)':'transparent'};transition:background 100ms">
+      <div class="cmdk-row" data-i="${i}" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-left:2px solid ${i===this._idx?c.color:'transparent'};background:${i===this._idx?'rgba(232,179,73,0.06)':'transparent'};transition:background 100ms">
         <span style="font-family:var(--m);font-size:8px;letter-spacing:0.12em;color:${c.color};min-width:54px;font-weight:600;text-transform:uppercase">${c.sec}</span>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;color:#fff;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.label)}</div>
@@ -3271,15 +3275,15 @@ const _BDOC_CHANGELOG=[
   ]}
 ];
 function showBdocChangelog(){
-  let html='<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;background:#0a0e14;padding:18px 22px;border:1px solid rgba(45,114,210,0.3);border-radius:6px;max-width:520px;color:#c8ccd6">';
-  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(45,114,210,0.15)"><div style="color:#2D72D2;font-size:13px;font-weight:700;letter-spacing:2px">CHANGELOG</div><div style="font-size:8px;color:#4a5068;letter-spacing:1px">KITSUNE BDOC</div></div>';
+  let html='<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;background:#0a0e14;padding:18px 22px;border:1px solid rgba(232,179,73,0.3);border-radius:6px;max-width:520px;color:#c8ccd6">';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(232,179,73,0.15)"><div style="color:#E8B349;font-size:13px;font-weight:700;letter-spacing:2px">CHANGELOG</div><div style="font-size:8px;color:#4a5068;letter-spacing:1px">KITSUNE BDOC</div></div>';
   _BDOC_CHANGELOG.forEach((rel,i)=>{
     const isLatest=i===0;
     html+=`<div style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="color:${isLatest?'#3FB950':'#7a8194'};font-size:10px;font-weight:700;letter-spacing:1px">${rel.ver}</span>${isLatest?'<span style="padding:1px 6px;background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);border-radius:8px;color:#3FB950;font-size:7px;letter-spacing:1px;font-weight:700">LATEST</span>':''}</div><ul style="margin:0;padding-left:16px;color:#8a9099;font-size:10px;line-height:1.6">`;
     rel.items.forEach(it=>{html+=`<li>${esc(it)}</li>`});
     html+='</ul></div>';
   });
-  html+='<div style="text-align:right;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.04)"><button onclick="document.getElementById(\'bdocChangelogModal\').remove()" style="background:#2D72D2;color:#fff;border:none;padding:6px 14px;border-radius:3px;font-family:var(--m);font-size:9px;letter-spacing:1px;font-weight:700;cursor:pointer">CLOSE</button></div>';
+  html+='<div style="text-align:right;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.04)"><button onclick="document.getElementById(\'bdocChangelogModal\').remove()" style="background:#E8B349;color:#fff;border:none;padding:6px 14px;border-radius:3px;font-family:var(--m);font-size:9px;letter-spacing:1px;font-weight:700;cursor:pointer">CLOSE</button></div>';
   html+='</div>';
   // Remove any existing modal
   const old=document.getElementById('bdocChangelogModal');if(old)old.remove();
@@ -3992,7 +3996,7 @@ async function loadFirePerimeters(){
           const labelColor=contained>=90?'#00aa44':contained>=50?'#E8B339':'#DA3633';
           firePerimEnts.push(V.entities.add({
             position:Cesium.Cartesian3.fromDegrees(cLon,cLat),
-            label:{text:`${name}\n${acres>0?'~'+acres.toLocaleString()+' acres':''}${contained>0?' \u00B7 '+contained+'% contained':''}`,font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(labelColor),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.CENTER,scaleByDistance:new Cesium.NearFarScalar(1e4,1,2e6,0.3),disableDepthTestDistance:5e6,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3)},
+            label:{text:`${name}\n${acres>0?'~'+acres.toLocaleString()+' acres':''}${contained>0?' \u00B7 '+contained+'% contained':''}`,font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(labelColor),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.CENTER,scaleByDistance:new Cesium.NearFarScalar(1e4,1,2e6,0.3),disableDepthTestDistance:5e6,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3)},
             show:layers.fire
           }));
         }
@@ -4080,7 +4084,7 @@ async function loadAirQuality(){
         aqiEnts.push(V.entities.add({
           position:Cesium.Cartesian3.fromDegrees(c.lon,c.lat),
           point:{pixelSize:12,color:Cesium.Color.fromCssColorString(col).withAlpha(0.7),outlineColor:Cesium.Color.fromCssColorString(col),outlineWidth:2,disableDepthTestDistance:5e6},
-          label:{text:`${aqi}`,font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.WHITE,outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-10),scaleByDistance:new Cesium.NearFarScalar(5e5,1,5e6,0.4),disableDepthTestDistance:5e6},
+          label:{text:`${aqi}`,font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.WHITE,outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-10),scaleByDistance:new Cesium.NearFarScalar(5e5,1,5e6,0.4),disableDepthTestDistance:5e6},
           description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:400px;background:#0a0e14;padding:14px;border-radius:2px;border:1px solid ${col}22;color:#c8ccd6">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #1e2436">
               <div>
@@ -4116,7 +4120,7 @@ async function loadAirQuality(){
       aqiEnts.push(V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(lon,lat),
         point:{pixelSize:8+Math.min(aqi/25,8),color:Cesium.Color.fromCssColorString(col).withAlpha(0.6),outlineColor:Cesium.Color.fromCssColorString(col),outlineWidth:1.5,disableDepthTestDistance:5e6},
-        label:aqi>=100?{text:`${aqi}`,font:'bold 8px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-8),scaleByDistance:new Cesium.NearFarScalar(3e5,1,5e6,0.3)}:undefined,
+        label:aqi>=100?{text:`${aqi}`,font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-8),scaleByDistance:new Cesium.NearFarScalar(3e5,1,5e6,0.3)}:undefined,
         description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:380px;background:#0a0e14;padding:12px;border-radius:2px;border:1px solid ${col}22;color:#c8ccd6">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #1e2436">
             <div style="color:${col};font-size:13px;font-weight:700">${s.station&&s.station.name?esc(s.station.name):'Station'}</div>
@@ -4631,7 +4635,7 @@ async function loadHurricanes(){
         hurricaneEnts.push(V.entities.add({
           position:Cesium.Cartesian3.fromDegrees(coords.lon,coords.lat),
           billboard:{image:makeHurricaneIcon(sevColor),width:30,height:30,scaleByDistance:new Cesium.NearFarScalar(1e5,1.2,8e6,0.4),disableDepthTestDistance:5e6},
-          label:{text:headline.substring(0,25),font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(sevColor),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,18),scaleByDistance:new Cesium.NearFarScalar(2e5,1,6e6,0.3),disableDepthTestDistance:5e6},
+          label:{text:headline.substring(0,25),font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(sevColor),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,18),scaleByDistance:new Cesium.NearFarScalar(2e5,1,6e6,0.3),disableDepthTestDistance:5e6},
           description:`<div style="font-family:monospace;font-size:12px;max-width:420px;background:#1a0a1a;padding:12px;border-radius:6px;border:1px solid ${sevColor}44">
             <b style="color:${sevColor};font-size:14px">${esc(headline)}</b><br>
             <span style="color:#888;font-size:10px">Severity: ${esc(severity)} | Urgency: ${esc(urgency)}</span><br><br>
@@ -4672,7 +4676,7 @@ async function loadHurricanes(){
           hurricaneEnts.push(V.entities.add({
             position:Cesium.Cartesian3.fromDegrees(lon,lat),
             billboard:{image:makeHurricaneIcon(clr),width:30,height:30,scaleByDistance:new Cesium.NearFarScalar(1e5,1.2,8e6,0.4),disableDepthTestDistance:5e6},
-            label:{text:String(name).substring(0,22),font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,18),scaleByDistance:new Cesium.NearFarScalar(2e5,1,6e6,0.3),disableDepthTestDistance:5e6},
+            label:{text:String(name).substring(0,22),font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,18),scaleByDistance:new Cesium.NearFarScalar(2e5,1,6e6,0.3),disableDepthTestDistance:5e6},
             description:`<div style="font-family:monospace;font-size:12px;max-width:380px;background:#1a0a1a;padding:12px;border-radius:6px;border:1px solid ${clr}44"><b style="color:${clr};font-size:14px">${esc(String(name))}</b><br><span style="color:#888;font-size:10px">Alert: ${esc(alert)} | Country: ${esc(String(country))}</span><br><div style="color:#555;font-size:8px;margin-top:8px">Source: GDACS Tropical Cyclone feed</div></div>`,
             show:layers.hurricanes
           }));
@@ -4815,7 +4819,7 @@ async function loadSevereAlerts(){
       alertEnts.push(V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(coords.lon,coords.lat),
         point:{pixelSize:8,color:Cesium.Color.fromCssColorString(color).withAlpha(0.85),outlineColor:Cesium.Color.BLACK,outlineWidth:1,scaleByDistance:new Cesium.NearFarScalar(1e5,1.5,8e6,0.3),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-        label:{text:event.length>20?event.substring(0,18)+'..':event,font:'bold 8px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(color),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,10),scaleByDistance:new Cesium.NearFarScalar(5e4,1,4e6,0),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.5),backgroundPadding:new Cesium.Cartesian2(3,1),disableDepthTestDistance:5e6},
+        label:{text:event.length>20?event.substring(0,18)+'..':event,font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(color),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,10),scaleByDistance:new Cesium.NearFarScalar(5e4,1,4e6,0),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.5),backgroundPadding:new Cesium.Cartesian2(3,1),disableDepthTestDistance:5e6},
         description:`<div style="font-family:'Segoe UI',monospace;font-size:12px;max-width:440px;background:#1a1010;padding:14px;border-radius:6px;border:1px solid ${color}44">
           <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
             <b style="color:${color};font-size:14px">${esc(event)}</b>
@@ -5059,7 +5063,7 @@ async function fetchNWSForecast(lat,lon){
           html+=`<div style="display:flex;gap:8px;padding:4px 6px;margin-bottom:4px;background:rgba(255,255,255,0.03);border-radius:3px;font-size:10px">`;
           html+=`<span style="min-width:80px;color:var(--t2)">${date}</span>`;
           html+=`<span style="color:#ff6644;min-width:30px">${hi}°</span>`;
-          html+=`<span style="color:#2D72D2;min-width:30px">${lo}°</span>`;
+          html+=`<span style="color:#E8B349;min-width:30px">${lo}°</span>`;
           html+=`<span style="color:#8b949e">\u{1F4A7}${precip}% \u{1F4A8}${wind}${windG?'g'+windG:''}mph${humid?' · '+humid+'%rh':''}${uv?' · UV'+uv:''}</span>`;
           html+=`</div>`;
         });
@@ -5174,7 +5178,7 @@ async function loadLightning(){
       lightningEnts.push(V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(coords.lon,coords.lat),
         billboard:{image:svgToDataUri(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="${col}" opacity="0.25"/><path d="M13 2L4 14h6l-2 8 9-12h-6l2-8z" fill="${col}" stroke="#000" stroke-width="0.8"/></svg>`),width:24,height:24,scaleByDistance:new Cesium.NearFarScalar(1e5,1.2,5e6,0.4),disableDepthTestDistance:5e6},
-        label:{text:event.substring(0,30),font:'bold 8px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,14),scaleByDistance:new Cesium.NearFarScalar(2e5,1,3e6,0),disableDepthTestDistance:5e6},
+        label:{text:event.substring(0,30),font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,14),scaleByDistance:new Cesium.NearFarScalar(2e5,1,3e6,0),disableDepthTestDistance:5e6},
         description:`<div style="font-family:monospace;font-size:11px;max-width:380px;background:#0a0e14;padding:12px;border-radius:2px;border:1px solid ${col}33;color:#c8ccd6">
           <div style="color:${col};font-size:13px;font-weight:700;margin-bottom:6px">⚡ ${esc(event)}</div>
           <div style="color:#888;font-size:9px;margin-bottom:6px">${esc(props.areaDesc||'').substring(0,200)}</div>
@@ -5384,8 +5388,8 @@ function loadDarkShips(){
     darkshipEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(v.lon,v.lat),
       billboard:{image:icon,width:28,height:28,scaleByDistance:new Cesium.NearFarScalar(1e5,1.3,1e7,0.4),verticalOrigin:Cesium.VerticalOrigin.CENTER,disableDepthTestDistance:5e6},
-      label:{text:v.n,font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(riskCol),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,18),scaleByDistance:new Cesium.NearFarScalar(5e5,1,5e6,0),disableDepthTestDistance:5e6},
-      description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:420px;background:#0a0e14;padding:14px;border-radius:2px;border:1px solid ${riskCol}33;color:#c8ccd6"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #1e2436"><div><div style="color:${riskCol};font-size:14px;font-weight:700;letter-spacing:1px">${esc(v.n)}</div><div style="display:flex;gap:6px;margin-top:4px;align-items:center"><span style="padding:2px 6px;background:${riskCol}15;border:1px solid ${riskCol}33;border-radius:2px;font-size:8px;color:${riskCol};letter-spacing:1px;font-weight:600">${esc(v.risk)}</span><span style="color:#4a5068;font-size:9px">${isHub?'STS TRANSFER HUB':'VESSEL'}</span></div></div><div style="text-align:right"><div style="color:#c8ccd6;font-size:11px;font-weight:600">${esc(v.flag)}</div><div style="color:#4a5068;font-size:8px">FLAG</div></div></div><table style="width:100%;border-collapse:collapse;font-size:10px;color:#7a8194"><tr><td style="padding:3px 0;width:35%"><b style="color:#4a5068">SANCTIONS REGIME</b></td><td style="color:${riskCol}">${esc(v.program)}</td></tr>${v.mmsi?'<tr><td style="padding:3px 0"><b style="color:#4a5068">MMSI</b></td><td style="color:#c8ccd6">'+esc(v.mmsi)+'</td></tr>':''}<tr><td style="padding:3px 0"><b style="color:#4a5068">VESSEL TYPE</b></td><td style="color:#c8ccd6">${esc(v.type).toUpperCase()}</td></tr><tr><td style="padding:3px 0"><b style="color:#4a5068">POSITION</b></td><td style="color:#c8ccd6">${v.lat.toFixed(4)}°, ${v.lon.toFixed(4)}°</td></tr></table><div style="margin-top:8px;padding:8px;background:${riskCol}08;border:1px solid ${riskCol}14;border-radius:2px;font-size:10px;color:#8a8f9e;line-height:1.5">${esc(v.desc)}</div><div style="margin-top:8px;padding:6px 8px;background:rgba(45,114,210,0.04);border-left:2px solid #2D72D244;font-size:9px;color:#2D72D2">OSINT — Atlantic Council / Lloyd's List / OFAC / RUSI / C4ADS</div><div style="display:flex;gap:6px;margin-top:10px"><button onclick="if(parent.V)parent.flyToTarget(${v.lon},${v.lat},80000,1.2)" style="flex:1;padding:5px;background:#0a0e14;color:${riskCol};border:1px solid ${riskCol}33;border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;letter-spacing:.5px">◎ ZOOM</button>${v.mmsi?`<button onclick="window.open('https://www.marinetraffic.com/en/ais/details/ships/mmsi:${esc(v.mmsi)}','_blank')" style="flex:1;padding:5px;background:#0a0e14;color:#2D72D2;border:1px solid #2D72D233;border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;letter-spacing:.5px">MARINETRAFFIC</button>`:''}</div><div style="margin-top:8px;font-size:7px;color:#1e2436;letter-spacing:1px;text-align:right">KITSUNE BDOC — DARK FLEET INTEL</div></div>`,
+      label:{text:v.n,font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(riskCol),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,18),scaleByDistance:new Cesium.NearFarScalar(5e5,1,5e6,0),disableDepthTestDistance:5e6},
+      description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:420px;background:#0a0e14;padding:14px;border-radius:2px;border:1px solid ${riskCol}33;color:#c8ccd6"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #1e2436"><div><div style="color:${riskCol};font-size:14px;font-weight:700;letter-spacing:1px">${esc(v.n)}</div><div style="display:flex;gap:6px;margin-top:4px;align-items:center"><span style="padding:2px 6px;background:${riskCol}15;border:1px solid ${riskCol}33;border-radius:2px;font-size:8px;color:${riskCol};letter-spacing:1px;font-weight:600">${esc(v.risk)}</span><span style="color:#4a5068;font-size:9px">${isHub?'STS TRANSFER HUB':'VESSEL'}</span></div></div><div style="text-align:right"><div style="color:#c8ccd6;font-size:11px;font-weight:600">${esc(v.flag)}</div><div style="color:#4a5068;font-size:8px">FLAG</div></div></div><table style="width:100%;border-collapse:collapse;font-size:10px;color:#7a8194"><tr><td style="padding:3px 0;width:35%"><b style="color:#4a5068">SANCTIONS REGIME</b></td><td style="color:${riskCol}">${esc(v.program)}</td></tr>${v.mmsi?'<tr><td style="padding:3px 0"><b style="color:#4a5068">MMSI</b></td><td style="color:#c8ccd6">'+esc(v.mmsi)+'</td></tr>':''}<tr><td style="padding:3px 0"><b style="color:#4a5068">VESSEL TYPE</b></td><td style="color:#c8ccd6">${esc(v.type).toUpperCase()}</td></tr><tr><td style="padding:3px 0"><b style="color:#4a5068">POSITION</b></td><td style="color:#c8ccd6">${v.lat.toFixed(4)}°, ${v.lon.toFixed(4)}°</td></tr></table><div style="margin-top:8px;padding:8px;background:${riskCol}08;border:1px solid ${riskCol}14;border-radius:2px;font-size:10px;color:#8a8f9e;line-height:1.5">${esc(v.desc)}</div><div style="margin-top:8px;padding:6px 8px;background:rgba(232,179,73,0.04);border-left:2px solid #E8B34944;font-size:9px;color:#E8B349">OSINT — Atlantic Council / Lloyd's List / OFAC / RUSI / C4ADS</div><div style="display:flex;gap:6px;margin-top:10px"><button onclick="if(parent.V)parent.flyToTarget(${v.lon},${v.lat},80000,1.2)" style="flex:1;padding:5px;background:#0a0e14;color:${riskCol};border:1px solid ${riskCol}33;border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;letter-spacing:.5px">◎ ZOOM</button>${v.mmsi?`<button onclick="window.open('https://www.marinetraffic.com/en/ais/details/ships/mmsi:${esc(v.mmsi)}','_blank')" style="flex:1;padding:5px;background:#0a0e14;color:#E8B349;border:1px solid #E8B34933;border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;letter-spacing:.5px">MARINETRAFFIC</button>`:''}</div><div style="margin-top:8px;font-size:7px;color:#1e2436;letter-spacing:1px;text-align:right">KITSUNE BDOC — DARK FLEET INTEL</div></div>`,
       show:layers.darkships
     }));
   });
@@ -5538,7 +5542,7 @@ async function loadNewsAPI(){
       headlineEnts.push(V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(jlon,jlat),
         billboard:{image:buildNewsSVG('#9BA1A8'),width:22,height:22,scaleByDistance:new Cesium.NearFarScalar(1e5,1,8e6,0.3),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-        label:{text:(art.title||'').substring(0,30),font:'9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,14),scaleByDistance:new Cesium.NearFarScalar(2e5,1,5e6,0),disableDepthTestDistance:5e6},
+        label:{text:(art.title||'').substring(0,30),font:'None11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,14),scaleByDistance:new Cesium.NearFarScalar(2e5,1,5e6,0),disableDepthTestDistance:5e6},
         description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:420px;background:#0a0e14;padding:14px;border-radius:2px;border:1px solid ${col}22;color:#c8ccd6">
           <div style="color:${col};font-size:13px;font-weight:700;line-height:1.4">${esc(art.title)}</div>
           <div style="color:#4a5068;font-size:9px;margin-top:4px">${esc(art.source?.name||'Unknown')} \u2022 ${esc(timeAgo)}</div>
@@ -5689,7 +5693,7 @@ async function loadSpaceWeather(){
     spwxEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(0,75),
       billboard:{image:buildSpaceWeatherIcon(maxLevel),width:32,height:32,scaleByDistance:new Cesium.NearFarScalar(1e6,1.2,2e7,0.4),disableDepthTestDistance:5e6},
-      label:{text:`G${gLevel} S${sLevel} R${rLevel}`,font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(swColor),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,20),scaleByDistance:new Cesium.NearFarScalar(1e6,1,1e7,0.3),disableDepthTestDistance:5e6},
+      label:{text:`G${gLevel} S${sLevel} R${rLevel}`,font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(swColor),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,20),scaleByDistance:new Cesium.NearFarScalar(1e6,1,1e7,0.3),disableDepthTestDistance:5e6},
       description:summaryHtml,
       name:'NOAA Space Weather',
       show:layers.spaceweather
@@ -5768,7 +5772,7 @@ function connectMeshtastic(){
           node.ent=V.entities.add({
             position:Cesium.Cartesian3.fromDegrees(lon,lat,alt),
             billboard:{image:buildMeshNodeIcon(),width:24,height:24,scaleByDistance:new Cesium.NearFarScalar(1e4,1.2,5e6,0.3),disableDepthTestDistance:5e6},
-            label:{text:'MESH:'+String(nodeId).slice(-4),font:'bold 8px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,16),scaleByDistance:new Cesium.NearFarScalar(1e4,1,2e6,0),disableDepthTestDistance:5e6},
+            label:{text:'MESH:'+String(nodeId).slice(-4),font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,16),scaleByDistance:new Cesium.NearFarScalar(1e4,1,2e6,0),disableDepthTestDistance:5e6},
             description:new Cesium.CallbackProperty(()=>{
               const ago=Math.floor((Date.now()-node.lastSeen)/1000);
               const agoStr=ago<60?ago+'s':ago<3600?Math.floor(ago/60)+'m':Math.floor(ago/3600)+'h';
@@ -5863,7 +5867,7 @@ function renderCommunityReport(r){
   const ent=V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(r.lon,r.lat),
     billboard:{image:svgToDataUri(svg),width:28,height:28,scaleByDistance:new Cesium.NearFarScalar(1e4,1.2,5e6,0.3),disableDepthTestDistance:5e6},
-    label:{text:(r.description||'').substring(0,25),font:'9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(t.color),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,18),scaleByDistance:new Cesium.NearFarScalar(1e4,1,3e6,0),disableDepthTestDistance:5e6},
+    label:{text:(r.description||'').substring(0,25),font:'None11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(t.color),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,18),scaleByDistance:new Cesium.NearFarScalar(1e4,1,3e6,0),disableDepthTestDistance:5e6},
     description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:400px;background:#0a0e14;padding:14px;border-radius:2px;border:1px solid ${t.color}22;color:#c8ccd6">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div style="color:${t.color};font-size:14px;font-weight:700">${t.icon} COMMUNITY REPORT</div>
@@ -5898,7 +5902,7 @@ function submitCommunityReport(lat,lon){
   });
   form.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <span style="color:#2D72D2;font-weight:700;font-size:11px;letter-spacing:1.5px">\u{1F4E1} SUBMIT INTEL REPORT</span>
+      <span style="color:#E8B349;font-weight:700;font-size:11px;letter-spacing:1.5px">\u{1F4E1} SUBMIT INTEL REPORT</span>
       <button onclick="document.getElementById('communityForm').remove()" style="background:none;border:none;color:#4a5068;cursor:pointer;font-size:14px;font-family:var(--m)">\u2715</button>
     </div>
     <div style="font-size:8px;color:#7a8194;margin-bottom:8px">${lat.toFixed(5)}\u00B0, ${lon.toFixed(5)}\u00B0</div>
@@ -5908,7 +5912,7 @@ function submitCommunityReport(lat,lon){
     <div style="font-size:8px;color:#4a5068;margin-bottom:4px;letter-spacing:1px">DESCRIPTION</div>
     <textarea id="crDesc" placeholder="What did you observe? Be specific — location, time, details..." style="width:100%;box-sizing:border-box;height:70px;padding:8px;background:#0d1117;border:1px solid rgba(255,255,255,0.08);border-radius:3px;color:#c8ccd6;font-family:var(--m);font-size:10px;resize:vertical"></textarea>
     <div style="display:flex;gap:8px;margin-top:10px">
-      <button onclick="finalizeCommunityReport(${lat},${lon})" style="flex:1;padding:8px;background:rgba(255,68,221,0.15));border:1px solid rgba(255,255,255,0.10);border-radius:3px;color:#2D72D2;font-family:var(--m);font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer">\u{1F4E1} SUBMIT</button>
+      <button onclick="finalizeCommunityReport(${lat},${lon})" style="flex:1;padding:8px;background:rgba(255,68,221,0.15));border:1px solid rgba(255,255,255,0.10);border-radius:3px;color:#E8B349;font-family:var(--m);font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer">\u{1F4E1} SUBMIT</button>
       <button onclick="document.getElementById('communityForm').remove()" style="padding:8px 14px;background:none;border:1px solid rgba(255,255,255,0.08);border-radius:3px;color:#4a5068;font-family:var(--m);font-size:10px;cursor:pointer">CANCEL</button>
     </div>`;
   document.body.appendChild(form);
@@ -6069,7 +6073,7 @@ async function loadCyberAttacks(){
     cyberEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(h.lon,h.lat),
       ellipse:{semiMajorAxis:pulseSize,semiMinorAxis:pulseSize,material:Cesium.Color.fromCssColorString(col).withAlpha(0.12),outline:true,outlineColor:Cesium.Color.fromCssColorString(col).withAlpha(0.35),height:0},
-      label:{text:`${dataSource==='SIMULATED'?'[SIM] ':''}${h.name}\n${h.share!=null?h.share.toFixed(1)+'%':h.attacks.toLocaleString()}`,font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.CENTER,scaleByDistance:new Cesium.NearFarScalar(5e5,1,8e6,0.3),disableDepthTestDistance:5e6},
+      label:{text:`${dataSource==='SIMULATED'?'[SIM] ':''}${h.name}\n${h.share!=null?h.share.toFixed(1)+'%':h.attacks.toLocaleString()}`,font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.CENTER,scaleByDistance:new Cesium.NearFarScalar(5e5,1,8e6,0.3),disableDepthTestDistance:5e6},
       description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:420px;background:#0a0e14;padding:14px;border-radius:2px;border:1px solid ${col}22;color:#c8ccd6">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #1e2436">
           <div>
@@ -6090,7 +6094,7 @@ async function loadCyberAttacks(){
           <tr><td style="padding:3px 0"><b style="color:#4a5068">TARGETS</b></td><td style="color:#c8ccd6">${h.targets.join(', ')}</td></tr>
           <tr><td style="padding:3px 0"><b style="color:#4a5068">POSITION</b></td><td style="color:#c8ccd6">${h.lat.toFixed(2)}\u00B0, ${h.lon.toFixed(2)}\u00B0</td></tr>
         </table>
-        <div style="margin-top:8px;padding:6px 8px;background:rgba(${h.intensity==='SOURCE'?'204,0,255':'255,0,68'},0.04);border-left:2px solid ${col}44;font-size:9px;color:#2D72D2">${dataSource==='SIMULATED'?'SIMULATED \u2014 both Cloudflare Radar and DShield unreachable':'LIVE DATA \u2014 '+esc(dataSource)}</div>
+        <div style="margin-top:8px;padding:6px 8px;background:rgba(${h.intensity==='SOURCE'?'204,0,255':'255,0,68'},0.04);border-left:2px solid ${col}44;font-size:9px;color:#E8B349">${dataSource==='SIMULATED'?'SIMULATED \u2014 both Cloudflare Radar and DShield unreachable':'LIVE DATA \u2014 '+esc(dataSource)}</div>
         <div style="margin-top:8px;font-size:7px;color:#1e2436;letter-spacing:1px;text-align:right">KITSUNE BDOC \u2014 ${esc(dataSource)}</div>
       </div>`,
       show:layers.cyber
@@ -6181,7 +6185,7 @@ function updateCyberHUD(hotspots,sources,targets,total,dataSource){
   // Top 3 origins (sources)
   const oList=sources.slice(0,3).map(s=>{
     const pct=s.share!=null?s.share.toFixed(1)+'%':s.attacks.toLocaleString();
-    return `<div style="display:flex;justify-content:space-between"><span style="color:#2D72D2">${esc(s.name)}</span><span style="color:#7a8194">${pct}</span></div>`;
+    return `<div style="display:flex;justify-content:space-between"><span style="color:#E8B349">${esc(s.name)}</span><span style="color:#7a8194">${pct}</span></div>`;
   }).join('');
   document.getElementById('cyberHudOrigins').innerHTML=oList||'<span style="color:#4a5068">No data</span>';
   // Top 3 targets
@@ -6281,7 +6285,7 @@ const IPIntel={
     const marker=V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(lon,lat),
       point:{pixelSize:10,color:Cesium.Color.fromCssColorString(threatColor),outlineColor:Cesium.Color.fromCssColorString('#0d1117'),outlineWidth:2},
-      label:{text:ip,font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(threatColor),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-12),scaleByDistance:new Cesium.NearFarScalar(1e4,1,8e6,0),distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,5000000)},
+      label:{text:ip,font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(threatColor),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-12),scaleByDistance:new Cesium.NearFarScalar(1e4,1,8e6,0),distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,5000000)},
       description:`<div style="font-family:monospace;font-size:12px;max-width:400px;background:#0a0e14;padding:14px;border-radius:2px;border:1px solid ${threatColor}33;color:#c8ccd6">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:1px solid #1e2436;padding-bottom:8px">
           <div>
@@ -6398,7 +6402,7 @@ async function loadPowerOutages(){
           outageEnts.push(V.entities.add({
             position:Cesium.Cartesian3.fromDegrees(n.lon,n.lat),
             point:{pixelSize:sz,color:Cesium.Color.fromCssColorString(col).withAlpha(0.85),outlineColor:Cesium.Color.BLACK,outlineWidth:1,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,scaleByDistance:new Cesium.NearFarScalar(1e5,1.5,8e6,0.25),disableDepthTestDistance:5e6},
-            label:{text:n.demandMW>=15000?esc(n.id):'',font:'bold 8px JetBrains Mono',fillColor:Cesium.Color.WHITE,outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,sz+2),scaleByDistance:new Cesium.NearFarScalar(5e4,1,3e6,0),disableDepthTestDistance:5e6},
+            label:{text:n.demandMW>=15000?esc(n.id):'',font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.WHITE,outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,sz+2),scaleByDistance:new Cesium.NearFarScalar(5e4,1,3e6,0),disableDepthTestDistance:5e6},
             description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:340px;padding:8px">
               <div style="border-bottom:1px solid #333;padding-bottom:6px;margin-bottom:6px">
                 <b style="font-size:13px;color:${col}">\u26A1 GRID: ${esc(n.id)}</b>
@@ -6432,7 +6436,7 @@ async function loadPowerOutages(){
         outageEnts.push(V.entities.add({
           position:Cesium.Cartesian3.fromDegrees(c.Longitude,c.Latitude),
           point:{pixelSize:sz,color:Cesium.Color.fromCssColorString(col).withAlpha(0.8),outlineColor:Cesium.Color.BLACK,outlineWidth:1,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,scaleByDistance:new Cesium.NearFarScalar(1e5,1.5,8e6,0.2),disableDepthTestDistance:5e6},
-          label:{text:c.OutageCount>=500?c.OutageCount.toLocaleString():'',font:'bold 8px JetBrains Mono',fillColor:Cesium.Color.WHITE,outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,sz+2),scaleByDistance:new Cesium.NearFarScalar(5e4,1,2e6,0),disableDepthTestDistance:5e6},
+          label:{text:c.OutageCount>=500?c.OutageCount.toLocaleString():'',font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.WHITE,outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,sz+2),scaleByDistance:new Cesium.NearFarScalar(5e4,1,2e6,0),disableDepthTestDistance:5e6},
           description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:340px;padding:8px">
             <div style="border-bottom:1px solid #333;padding-bottom:6px;margin-bottom:6px">
               <b style="font-size:13px;color:${col}">\u26A1 POWER OUTAGE</b>
@@ -6494,7 +6498,7 @@ async function loadPowerOutages(){
       outageEnts.push(V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(u.lon,u.lat),
         point:{pixelSize:7,color:Cesium.Color.fromCssColorString(col).withAlpha(0.7),outlineColor:Cesium.Color.WHITE,outlineWidth:1,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,scaleByDistance:new Cesium.NearFarScalar(1e5,1.5,8e6,0.3),disableDepthTestDistance:5e6},
-        label:{text:u.name,font:'bold 8px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#E8B339'),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,10),scaleByDistance:new Cesium.NearFarScalar(3e5,1,5e6,0),disableDepthTestDistance:5e6},
+        label:{text:u.name,font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#E8B339'),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,10),scaleByDistance:new Cesium.NearFarScalar(3e5,1,5e6,0),disableDepthTestDistance:5e6},
         description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:360px;padding:8px;background:#0a0e14;border:1px solid #E8B33933;border-radius:2px;color:#c8ccd6">
           <div style="border-bottom:1px solid #333;padding-bottom:6px;margin-bottom:6px">
             <b style="font-size:13px;color:#E8B339">\u26A1 ${esc(u.name)}</b>
@@ -6570,7 +6574,7 @@ async function loadDowndetector(){
     downEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(s.lon+_off.dlon,s.lat+_off.dlat),
       point:{pixelSize:iconSize,color:Cesium.Color.fromCssColorString(s.color).withAlpha(0.85),outlineColor:Cesium.Color.WHITE,outlineWidth:1,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,scaleByDistance:new Cesium.NearFarScalar(1e5,1.8,8e6,0.3),disableDepthTestDistance:5e6},
-      label:{text:s.name+(s.status!=='none'?' \u26A0':''),font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(s.color),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,10),scaleByDistance:new Cesium.NearFarScalar(2e5,1,4e6,0),disableDepthTestDistance:5e6},
+      label:{text:s.name+(s.status!=='none'?' \u26A0':''),font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(s.color),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,10),scaleByDistance:new Cesium.NearFarScalar(2e5,1,4e6,0),disableDepthTestDistance:5e6},
       description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:340px;padding:8px;background:#0a0e14;border:1px solid ${s.color}33;border-radius:2px;color:#c8ccd6">
         <div style="border-bottom:1px solid #333;padding-bottom:6px;margin-bottom:6px">
           <b style="font-size:13px;color:${s.color}">${statusIcon[s.status]||''} ${esc(s.name)}</b>
@@ -6619,7 +6623,7 @@ async function loadWebcams(){
     webcamEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(c.lon,c.lat),
       billboard:{image:'data:image/svg+xml;base64,'+btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="8" fill="#0a2a2a" stroke="#00ccaa" stroke-width="1.5"/><circle cx="10" cy="10" r="3" fill="#00ccaa" opacity="0.8"/><path d="M5 7 L10 10 L5 13Z" fill="#00ccaa" opacity="0.6"/></svg>`),width:18,height:18,scaleByDistance:new Cesium.NearFarScalar(5e4,1.2,8e6,0.3),verticalOrigin:Cesium.VerticalOrigin.CENTER,disableDepthTestDistance:5e6},
-      label:{text:c.name,font:'9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#00ccaa'),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,12),scaleByDistance:new Cesium.NearFarScalar(2e5,1,5e6,0),disableDepthTestDistance:5e6},
+      label:{text:c.name,font:'None11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#00ccaa'),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,12),scaleByDistance:new Cesium.NearFarScalar(2e5,1,5e6,0),disableDepthTestDistance:5e6},
       description:`<div style="font-family:monospace;font-size:12px;max-width:350px;background:#0a0e14;padding:12px;border-radius:2px;border:1px solid #00ccaa22;color:#c8ccd6">
         <div style="color:#00ccaa;font-size:14px;font-weight:700;margin-bottom:8px">📷 ${esc(c.name)}</div>
         <div style="color:#7a8194;font-size:10px;margin-bottom:6px"><b style="color:#4a5068">Type:</b> Live Visual Feed</div>
@@ -6670,7 +6674,7 @@ async function loadRadioStations(){
     radioEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(n.lon,n.lat),
       billboard:{image:noaaIcon,width:16,height:16,scaleByDistance:new Cesium.NearFarScalar(5e4,1.2,5e6,0.2),verticalOrigin:Cesium.VerticalOrigin.CENTER,disableDepthTestDistance:5e6},
-      label:{text:n.freq+' MHz',font:'bold 7px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#4499ff'),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,10),scaleByDistance:new Cesium.NearFarScalar(1e5,1,3e6,0),disableDepthTestDistance:5e6},
+      label:{text:n.freq+' MHz',font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#4499ff'),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,10),scaleByDistance:new Cesium.NearFarScalar(1e5,1,3e6,0),disableDepthTestDistance:5e6},
       description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:340px;padding:8px">
         <div style="border-bottom:1px solid #336;padding-bottom:6px;margin-bottom:6px">
           <b style="font-size:13px;color:#4499ff">\uD83C\uDF0A NOAA Weather Radio</b>
@@ -6728,7 +6732,7 @@ async function loadRadioStations(){
     radioEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(s.lon,s.lat),
       billboard:{image:amIcon,width:14,height:14,scaleByDistance:new Cesium.NearFarScalar(5e4,1.2,5e6,0.2),verticalOrigin:Cesium.VerticalOrigin.CENTER,disableDepthTestDistance:5e6},
-      label:{text:s.call,font:'bold 7px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(tc),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,10),scaleByDistance:new Cesium.NearFarScalar(1e5,1,3e6,0),disableDepthTestDistance:5e6},
+      label:{text:s.call,font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(tc),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,10),scaleByDistance:new Cesium.NearFarScalar(1e5,1,3e6,0),disableDepthTestDistance:5e6},
       description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:340px;padding:8px">
         <div style="border-bottom:1px solid #333;padding-bottom:6px;margin-bottom:6px">
           <b style="font-size:13px;color:${tc}">\uD83D\uDCFB ${esc(s.call)}</b>
@@ -6779,7 +6783,7 @@ async function loadRadioStations(){
     radioEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(s.lon,s.lat),
       billboard:{image:isPolice?scanIcon:fireIcon,width:16,height:16,scaleByDistance:new Cesium.NearFarScalar(5e4,1.2,5e6,0.2),verticalOrigin:Cesium.VerticalOrigin.CENTER,disableDepthTestDistance:5e6},
-      label:{text:s.name,font:'bold 7px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,10),scaleByDistance:new Cesium.NearFarScalar(1e5,1,3e6,0),disableDepthTestDistance:5e6},
+      label:{text:s.name,font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,10),scaleByDistance:new Cesium.NearFarScalar(1e5,1,3e6,0),disableDepthTestDistance:5e6},
       description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:340px;padding:8px;background:#0a0e14;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6">
         <div style="border-bottom:1px solid #333;padding-bottom:6px;margin-bottom:6px">
           <b style="font-size:13px;color:${col}">${isPolice?'\uD83D\uDE94':'\uD83D\uDE92'} ${esc(s.name)}</b>
@@ -6874,7 +6878,7 @@ async function loadDeflock(){
       deflockEnts.push(V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(el.lon,el.lat),
         billboard:{image:makeDeflockIcon(type),width:20,height:20,scaleByDistance:new Cesium.NearFarScalar(500,1.5,200000,0.3),distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,500000),verticalOrigin:Cesium.VerticalOrigin.CENTER,disableDepthTestDistance:5e6},
-        label:{text:type==='alpr'?'ALPR':type==='gunshot'?'GSD':'CAM',font:'bold 7px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(typeColor),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,12),scaleByDistance:new Cesium.NearFarScalar(500,1,50000,0),distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,100000),disableDepthTestDistance:5e6},
+        label:{text:type==='alpr'?'ALPR':type==='gunshot'?'GSD':'CAM',font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(typeColor),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,12),scaleByDistance:new Cesium.NearFarScalar(500,1,50000,0),distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,100000),disableDepthTestDistance:5e6},
         description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:380px;background:#0a0e14;padding:14px;border-radius:2px;border:1px solid ${typeColor}22;color:#c8ccd6">
           <div style="color:${typeColor};font-size:13px;font-weight:700;letter-spacing:1px;margin-bottom:8px">${esc(typeLabel)}</div>
           <div style="border-bottom:1px solid #1e2436;padding-bottom:8px;margin-bottom:8px">
@@ -7076,7 +7080,7 @@ async function loadCellTowers(){
     cellTowerEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(el.lon,el.lat),
       billboard:{image:makeCellIcon(operator,carrierCol),width:26,height:26,scaleByDistance:new Cesium.NearFarScalar(1e4,1.5,5e5,0.45),verticalOrigin:Cesium.VerticalOrigin.BOTTOM,disableDepthTestDistance:5e6},
-      label:{text:labelText,font:'bold 8px JetBrains Mono',fillColor:labelColor,outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,4),scaleByDistance:new Cesium.NearFarScalar(5e4,1,2e5,0),disableDepthTestDistance:5e6},
+      label:{text:labelText,font:'bold 10px JetBrains Mono',fillColor:labelColor,outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,4),scaleByDistance:new Cesium.NearFarScalar(5e4,1,2e5,0),disableDepthTestDistance:5e6},
       description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:340px;padding:8px">
         <div style="border-bottom:1px solid #333;padding-bottom:6px;margin-bottom:6px">
           <b style="font-size:13px;color:${carrierCol}">\uD83D\uDCF6 ${esc(operator)} Tower</b>
@@ -7284,14 +7288,14 @@ function loadIMINT(){
         <button onclick="if(parent.V)parent.flyToTarget(${f.lon},${f.lat},8000,1.5)" style="padding:5px 14px;background:#0a1a0a;color:#3FB950;border:1px solid #3FB95044;border-radius:3px;cursor:pointer;font-family:monospace;font-size:10px">Zoom In</button>
         <button onclick="if(parent.V)parent.V.camera.flyTo({destination:parent.Cesium.Cartesian3.fromDegrees(${f.lon},${f.lat},500000),duration:1.2})" style="padding:5px 14px;background:#0a1a0a;color:#E8B339;border:1px solid #E8B33944;border-radius:3px;cursor:pointer;font-family:monospace;font-size:10px">Zoom Out</button>
         <button onclick="if(parent.V)parent.V.camera.flyTo({destination:parent.Cesium.Cartesian3.fromDegrees(50,25,18000000),duration:1.5})" style="padding:5px 14px;background:#0a1a0a;color:#aaa;border:1px solid #aaa4;border-radius:3px;cursor:pointer;font-family:monospace;font-size:10px">Go Back</button>
-        <button onclick="if(parent.V)parent.setBasemap('satellite')" style="padding:5px 14px;background:#0a1a0a;color:#2D72D2;border:1px solid rgba(45,114,210,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:10px">SAT VIEW</button>
+        <button onclick="if(parent.V)parent.setBasemap('satellite')" style="padding:5px 14px;background:#0a1a0a;color:#E8B349;border:1px solid rgba(232,179,73,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:10px">SAT VIEW</button>
       </div>
       <div style="margin-top:8px;font-size:7px;color:#2a3040;letter-spacing:1px">KITSUNE BDOC \u2014 IMAGERY INTELLIGENCE \u2014 UNCLASSIFIED</div>
     </div>`;
     imintEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(f.lon,f.lat),
       billboard:{image:_imintIcon,width:22,height:22,scaleByDistance:new Cesium.NearFarScalar(5e4,1.2,8e6,0.4),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-      label:{text:f.name,font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#3FB950'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,14),scaleByDistance:new Cesium.NearFarScalar(3e5,1,6e6,0.3),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},
+      label:{text:f.name,font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#3FB950'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,14),scaleByDistance:new Cesium.NearFarScalar(3e5,1,6e6,0.3),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},
       description:popup,
       show:layers.imint
     }));
@@ -8292,7 +8296,7 @@ function placeBattleUnit(lat,lon){
   const ent=V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(lon,lat),
     billboard:{image:imgUrl,width:48,height:48,scaleByDistance:new Cesium.NearFarScalar(5e4,1.4,5e6,0.4),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-    label:{text:icon.label.toUpperCase()+echLabel,font:'bold 9px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,28),scaleByDistance:new Cesium.NearFarScalar(1e5,1,4e6,0.3),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},
+    label:{text:icon.label.toUpperCase()+echLabel,font:'bold 11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,28),scaleByDistance:new Cesium.NearFarScalar(1e5,1,4e6,0.3),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},
     description:buildEntityPopup({title:icon.label.toUpperCase()+echLabel,subtitle:aff.toUpperCase(),lat,lon,comment:'',color:col,extras:`<b style="color:#4a5068">AFFILIATION:</b> ${aff.toUpperCase()}<br><b style="color:#4a5068">ECHELON:</b> ${(battleEchelon||'none').toUpperCase()}<br><b style="color:#4a5068">FRAME:</b> NATO APP-6D ${icon.frame.toUpperCase()}`})
   });
   // Persist SALT/symbology fields in meta so editEntityNote() can rebuild the
@@ -8321,7 +8325,7 @@ function finishPolygon(){
   const zoneName=prompt('Zone name (e.g. "AO EAGLE"):')||'Zone';
   const ent=_groundBorder(V.entities.add({
     polygon:{hierarchy:new Cesium.PolygonHierarchy(positions),material:Cesium.Color.fromCssColorString(col).withAlpha(0.15),outline:true,outlineColor:Cesium.Color.fromCssColorString(col).withAlpha(0.7),outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND},
-    label:{text:String(zoneName),font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
+    label:{text:String(zoneName),font:'bold 11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
     position:Cesium.Cartesian3.fromDegrees(battleDrawPoints[0],battleDrawPoints[1]),
     description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(zoneName)}</b><br><br><b style="color:#4a5068">TYPE:</b> Polygon Zone<br><b style="color:#4a5068">VERTICES:</b> ${battleDrawPoints.length/2}<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
   }));
@@ -8352,7 +8356,7 @@ function handleCircleClick(lat,lon){
     const ent=_groundBorder(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(c.lon,c.lat),
       ellipse:{semiMajorAxis:radius,semiMinorAxis:radius,material:Cesium.Color.fromCssColorString(col).withAlpha(0.15),outline:true,outlineColor:Cesium.Color.fromCssColorString(col).withAlpha(0.7),outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND},
-      label:{text:String(zoneName)+' ('+Math.round(radius/1000)+'km)',font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
+      label:{text:String(zoneName)+' ('+Math.round(radius/1000)+'km)',font:'bold 11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
       description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(zoneName)}</b><br><br><b style="color:#4a5068">TYPE:</b> Circular Zone<br><b style="color:#4a5068">CENTER:</b> ${c.lat.toFixed(5)}\u00B0N, ${c.lon.toFixed(5)}\u00B0E<br><b style="color:#4a5068">RADIUS:</b> ${(radius/1000).toFixed(1)} km (${Math.round(radius/1852)} nm)<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
     }));
     battleEntities.push(ent);
@@ -8378,7 +8382,7 @@ function handleRectClick(lat,lon){
     const positions=Cesium.Cartesian3.fromDegreesArray(pts);
     const ent=_groundBorder(V.entities.add({
       polygon:{hierarchy:new Cesium.PolygonHierarchy(positions),material:Cesium.Color.fromCssColorString(col).withAlpha(0.15),outline:true,outlineColor:Cesium.Color.fromCssColorString(col).withAlpha(0.7),outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND},
-      label:{text:String(zoneName),font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
+      label:{text:String(zoneName),font:'bold 11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
       position:Cesium.Cartesian3.fromDegrees((c.lon+lon)/2,(c.lat+lat)/2),
       description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(zoneName)}</b><br><br><b style="color:#4a5068">TYPE:</b> Rectangular Zone<br><b style="color:#4a5068">CORNERS:</b> ${c.lat.toFixed(3)}\u00B0,${c.lon.toFixed(3)}\u00B0 \u2194 ${lat.toFixed(3)}\u00B0,${lon.toFixed(3)}\u00B0<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
     }));
@@ -8405,7 +8409,7 @@ function finishLine(){
   const positions=Cesium.Cartesian3.fromDegreesArray(battleDrawPoints);
   const ent=V.entities.add({
     polyline:{positions:positions,width:3,material:new Cesium.PolylineDashMaterialProperty({color:Cesium.Color.fromCssColorString(col).withAlpha(0.8),dashLength:12}),clampToGround:true},
-    label:{text:String(lineName),font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
+    label:{text:String(lineName),font:'bold 11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.6),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6},
     position:Cesium.Cartesian3.fromDegrees(battleDrawPoints[0],battleDrawPoints[1]),
     description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(lineName)}</b><br><br><b style="color:#4a5068">TYPE:</b> Line/Route<br><b style="color:#4a5068">WAYPOINTS:</b> ${battleDrawPoints.length/2}<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
   });
@@ -8424,7 +8428,7 @@ function placeAnnotation(lat,lon){
   const col=battleMode?battleColor:'#2D72D2';
   const ent=V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(lon,lat),
-    label:{text:String(note.trim()),font:'11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(8,4),scaleByDistance:new Cesium.NearFarScalar(5e4,1,3e6,0.3),disableDepthTestDistance:5e6},
+    label:{text:String(note.trim()),font:'None11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(8,4),scaleByDistance:new Cesium.NearFarScalar(5e4,1,3e6,0.3),disableDepthTestDistance:5e6},
     point:{pixelSize:8,color:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:1,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
     description:buildEntityPopup({title:'ANNOTATION',lat,lon,comment:note.trim(),color:col})
   });
@@ -8524,14 +8528,14 @@ function placeRangeRings(lat,lon,customRings){
     const labelLat=lat+(r/111320);
     group.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(lon,labelLat),
-      label:{text:labels[i],font:'bold 9px JetBrains Mono',fillColor:clr.withAlpha(0.7),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(1e4,1,5e5,0.3)}
+      label:{text:labels[i],font:'bold 11px JetBrains Mono',fillColor:clr.withAlpha(0.7),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(1e4,1,5e5,0.3)}
     }));
   });
   // Center marker
   group.push(V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(lon,lat),
     point:{pixelSize:6,color:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:1.5,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-    label:{text:'RANGE',font:'bold 10px JetBrains Mono',fillColor:_readable(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,14),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6}
+    label:{text:'RANGE',font:'bold 11px JetBrains Mono',fillColor:_readable(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,14),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6}
   }));
   battleEntities.push(group);
   af('var(--bl)',`Range rings placed: ${labels.join(', ')}`);
@@ -8555,7 +8559,7 @@ function placeBullseye(lat,lon){
     const labelLat=lat+(r/111320);
     group.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(lon,labelLat),
-      label:{text:(r/1000).toFixed(0)+'km',font:'bold 9px JetBrains Mono',fillColor:clr.withAlpha(0.85),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(1e4,1,5e5,0.3)}
+      label:{text:(r/1000).toFixed(0)+'km',font:'bold 11px JetBrains Mono',fillColor:clr.withAlpha(0.85),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(1e4,1,5e5,0.3)}
     }));
   });
   // 12 radial spokes every 30°
@@ -8573,7 +8577,7 @@ function placeBullseye(lat,lon){
       const dir=deg===0?'N':deg===90?'E':deg===180?'S':'W';
       group.push(V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(lblLon,lblLat),
-        label:{text:dir,font:'bold 10px JetBrains Mono',fillColor:_readable(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6}
+        label:{text:dir,font:'bold 11px JetBrains Mono',fillColor:_readable(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6}
       }));
     }
   }
@@ -8585,7 +8589,7 @@ function placeBullseye(lat,lon){
     const dlon=r2/(111320*Math.cos(lat*Math.PI/180))*Math.sin(rad);
     group.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(lon+dlon,lat+dlat),
-      label:{text:deg+'°',font:'8px JetBrains Mono',fillColor:clr.withAlpha(0.6),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(1e4,0.9,3e5,0)}
+      label:{text:deg+'°',font:'None10px JetBrains Mono',fillColor:clr.withAlpha(0.6),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(1e4,0.9,3e5,0)}
     }));
   }
   // Center dot + label
@@ -8593,7 +8597,7 @@ function placeBullseye(lat,lon){
   group.push(V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(lon,lat),
     point:{pixelSize:7,color:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-    label:{text:'BULLSEYE\n'+mgrs,font:'bold 9px JetBrains Mono',fillColor:_readable(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,14),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.75),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6}
+    label:{text:'BULLSEYE\n'+mgrs,font:'bold 11px JetBrains Mono',fillColor:_readable(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,14),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.75),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6}
   }));
   battleEntities.push(group);
   af('var(--bl)',`Bullseye placed at ${mgrs} — rings: ${rings.map(r=>(r/1000)+'km').join(', ')}`);
@@ -8700,7 +8704,7 @@ function handleMeasureClick(lat,lon){
     }));
     group.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees((lon+_measureState.lon1)/2,(lat+_measureState.lat1)/2),
-      label:{text:`${km} km | ${nm} nm\n${brg.toFixed(1)}° → ${brgBack.toFixed(1)}°`,font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6}
+      label:{text:`${km} km | ${nm} nm\n${brg.toFixed(1)}° → ${brgBack.toFixed(1)}°`,font:'bold 11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(6,3),disableDepthTestDistance:5e6}
     }));
     battleEntities.push(group);
     af('var(--bl)',`R&B: ${km} km | ${brg.toFixed(1)}° true (back ${brgBack.toFixed(1)}°)`);
@@ -8972,7 +8976,7 @@ function ctxAction(action){
           });
           const lbl=V.entities.add({
             position:Cesium.Cartesian3.fromDegrees((lon+s.lon)/2,(lat+s.lat)/2),
-            label:{text:`${dist.toFixed(1)} km | ${distNm} nm\n${brg.toFixed(1)}° → ${brgBack.toFixed(1)}°`,font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.YELLOW,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(5,3),disableDepthTestDistance:5e6}
+            label:{text:`${dist.toFixed(1)} km | ${distNm} nm\n${brg.toFixed(1)}° → ${brgBack.toFixed(1)}°`,font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.YELLOW,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(5,3),disableDepthTestDistance:5e6}
           });
           window._measureLines.push(ml,lbl);
           try{BDOCUndo.record([ml,lbl],'Measurement')}catch(_){}
@@ -9067,7 +9071,7 @@ function ctxAction(action){
       const col=battleMode?battleColor:'#2D72D2';
       const ent=V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(lon,lat),
-        label:{text:String(label.trim()),font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(6,3),scaleByDistance:new Cesium.NearFarScalar(5e4,1.2,3e6,0.3),disableDepthTestDistance:5e6},
+        label:{text:String(label.trim()),font:'bold 11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(6,3),scaleByDistance:new Cesium.NearFarScalar(5e4,1.2,3e6,0.3),disableDepthTestDistance:5e6},
         point:{pixelSize:8,color:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:1,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
         description:buildEntityPopup({title:label.trim(),lat,lon,comment:tagComment,color:col})
       });
@@ -9259,8 +9263,8 @@ function finishBuilding(lat,lon){
   const ent=_groundBorder(V.entities.add({
     polygon:{hierarchy:new Cesium.PolygonHierarchy(positions),material:Cesium.Color.fromCssColorString(col).withAlpha(0.12),outline:true,outlineColor:Cesium.Color.fromCssColorString(col).withAlpha(0.9),outlineWidth:3,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND},
     position:Cesium.Cartesian3.fromDegrees(cLon,cLat),
-    label:{text:String(label),font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(6,3),scaleByDistance:new Cesium.NearFarScalar(1e4,1.2,2e6,0.3),disableDepthTestDistance:5e6},
-    description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(label)}</b><br><br>${comment?'<div style="color:#c8ccd6;padding:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:2px;margin:6px 0;white-space:pre-wrap">'+esc(comment)+'</div>':''}<b style="color:#4a5068">TYPE:</b> Building Outline<br><b style="color:#4a5068">CORNERS:</b> ${c1.lat.toFixed(5)}, ${c1.lon.toFixed(5)} → ${lat.toFixed(5)}, ${lon.toFixed(5)}<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.editOutlineComment()" style="padding:4px 12px;background:#0a0e14;color:#2D72D2;border:1px solid rgba(45,114,210,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;margin-right:4px">EDIT NOTE</button><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
+    label:{text:String(label),font:'bold 11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.8),backgroundPadding:new Cesium.Cartesian2(6,3),scaleByDistance:new Cesium.NearFarScalar(1e4,1.2,2e6,0.3),disableDepthTestDistance:5e6},
+    description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(label)}</b><br><br>${comment?'<div style="color:#c8ccd6;padding:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:2px;margin:6px 0;white-space:pre-wrap">'+esc(comment)+'</div>':''}<b style="color:#4a5068">TYPE:</b> Building Outline<br><b style="color:#4a5068">CORNERS:</b> ${c1.lat.toFixed(5)}, ${c1.lon.toFixed(5)} → ${lat.toFixed(5)}, ${lon.toFixed(5)}<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.editOutlineComment()" style="padding:4px 12px;background:#0a0e14;color:#E8B349;border:1px solid rgba(232,179,73,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;margin-right:4px">EDIT NOTE</button><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
   }));
   attachMeta(ent,{label:label,comment:comment,type:'building',color:col});
   battleEntities.push(ent);
@@ -9294,8 +9298,8 @@ function finishOutline(){
   const ent=_groundBorder(V.entities.add({
     polygon:{hierarchy:new Cesium.PolygonHierarchy(positions),material:Cesium.Color.fromCssColorString(col).withAlpha(0.12),outline:true,outlineColor:Cesium.Color.fromCssColorString(col).withAlpha(0.8),outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND},
     position:Cesium.Cartesian3.fromDegrees(cLon,cLat),
-    label:{text:String(label),font:'bold 10px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.75),backgroundPadding:new Cesium.Cartesian2(6,3),scaleByDistance:new Cesium.NearFarScalar(1e4,1.2,2e6,0.3),disableDepthTestDistance:5e6},
-    description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(label)}</b><br><br>${comment?'<div style="color:#c8ccd6;padding:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:2px;margin:6px 0;white-space:pre-wrap">'+esc(comment)+'</div>':''}<b style="color:#4a5068">TYPE:</b> Tagged Area<br><b style="color:#4a5068">CORNERS:</b> ${n}<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.editOutlineComment()" style="padding:4px 12px;background:#0a0e14;color:#2D72D2;border:1px solid rgba(45,114,210,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;margin-right:4px">EDIT COMMENT</button><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
+    label:{text:String(label),font:'bold 11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.75),backgroundPadding:new Cesium.Cartesian2(6,3),scaleByDistance:new Cesium.NearFarScalar(1e4,1.2,2e6,0.3),disableDepthTestDistance:5e6},
+    description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">${esc(label)}</b><br><br>${comment?'<div style="color:#c8ccd6;padding:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:2px;margin:6px 0;white-space:pre-wrap">'+esc(comment)+'</div>':''}<b style="color:#4a5068">TYPE:</b> Tagged Area<br><b style="color:#4a5068">CORNERS:</b> ${n}<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.editOutlineComment()" style="padding:4px 12px;background:#0a0e14;color:#E8B349;border:1px solid rgba(232,179,73,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;margin-right:4px">EDIT COMMENT</button><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
   }));
   attachMeta(ent,{label:label,comment:comment,type:'outline',color:col});
   battleEntities.push(ent);
@@ -9353,7 +9357,7 @@ function buildEntityPopup(opts){
     ${posText?'<b style="color:#4a5068">POSITION:</b> '+posText+'<br>':''}
     <b style="color:#4a5068">PLACED:</b> ${new Date().toISOString().slice(0,19)}Z<br>
     ${extras?extras+'<br>':''}
-    <br><button onclick="window.parent.editEntityNote()" style="padding:4px 12px;background:#0a0e14;color:#2D72D2;border:1px solid rgba(45,114,210,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;letter-spacing:.5px;margin-right:4px">EDIT NOTE</button><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;letter-spacing:.5px">REMOVE</button>
+    <br><button onclick="window.parent.editEntityNote()" style="padding:4px 12px;background:#0a0e14;color:#E8B349;border:1px solid rgba(232,179,73,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;letter-spacing:.5px;margin-right:4px">EDIT NOTE</button><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;letter-spacing:.5px">REMOVE</button>
   </div>`;
 }
 
@@ -9483,7 +9487,7 @@ function finishArrow(lat,lon){
   const midLon=(s.lon+lon)/2,midLat=(s.lat+lat)/2;
   const label=V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(midLon,midLat),
-    label:{text:`${Math.round(bearing)}\u00B0 / ${dist>1000?(dist/1000).toFixed(1)+'km':Math.round(dist)+'m'}`,font:'bold 9px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),scaleByDistance:new Cesium.NearFarScalar(5e4,1,2e6,0.3),pixelOffset:new Cesium.Cartesian2(0,-12),disableDepthTestDistance:5e6},
+    label:{text:`${Math.round(bearing)}\u00B0 / ${dist>1000?(dist/1000).toFixed(1)+'km':Math.round(dist)+'m'}`,font:'bold 11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),scaleByDistance:new Cesium.NearFarScalar(5e4,1,2e6,0.3),pixelOffset:new Cesium.Cartesian2(0,-12),disableDepthTestDistance:5e6},
     description:`<div style="font-family:monospace;font-size:11px;background:#0a0e14;padding:12px;border:1px solid ${col}33;border-radius:2px;color:#c8ccd6"><b style="color:${col}">DIRECTIONAL ARROW</b><br><br><b style="color:#4a5068">BEARING:</b> ${Math.round(bearing)}\u00B0<br><b style="color:#4a5068">DISTANCE:</b> ${(dist/1000).toFixed(2)} km (${(dist/1852).toFixed(1)} nm)<br><b style="color:#4a5068">FROM:</b> ${s.lat.toFixed(5)}\u00B0N, ${s.lon.toFixed(5)}\u00B0E<br><b style="color:#4a5068">TO:</b> ${lat.toFixed(5)}\u00B0N, ${lon.toFixed(5)}\u00B0E<br><b style="color:#4a5068">CREATED:</b> ${new Date().toISOString().slice(0,19)}Z<br><br><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px">REMOVE</button></div>`
   });
   // Group all parts as an array so undo removes them together
@@ -9609,7 +9613,7 @@ function placeTacticalMarker(type,lat,lon){
   const ent=V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(lon,lat),
     billboard:{image:imgUrl,width:32,height:32,scaleByDistance:new Cesium.NearFarScalar(5e4,1.3,5e6,0.4),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-    label:{text:mk.label,font:'bold 9px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,20),scaleByDistance:new Cesium.NearFarScalar(1e5,1,4e6,0.3),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},
+    label:{text:mk.label,font:'bold 11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,20),scaleByDistance:new Cesium.NearFarScalar(1e5,1,4e6,0.3),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},
     description:buildEntityPopup({title:mk.label,lat,lon,comment:'',color:col})
   });
   attachMeta(ent,{label:mk.label,comment:'',type:'tactical',color:col});
@@ -10011,8 +10015,8 @@ async function locateMe(){
       _myLocMarker=V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(lon,lat),
         point:{pixelSize:13,color:Cesium.Color.fromCssColorString('#2D72D2'),outlineColor:Cesium.Color.WHITE,outlineWidth:3,disableDepthTestDistance:5e6,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND},
-        label:{text:'MY LOCATION',font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#2D72D2'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-16),scaleByDistance:new Cesium.NearFarScalar(1e3,1,2e6,0),disableDepthTestDistance:5e6},
-        description:`<div style="font-family:monospace;font-size:12px"><b style="color:#2D72D2">📍 MY LOCATION</b><br><br>Lat: ${lat.toFixed(6)}<br>Lon: ${lon.toFixed(6)}<br>Accuracy: ±${acc.toFixed(0)}m<br>Time: ${new Date().toLocaleTimeString()}</div>`
+        label:{text:'MY LOCATION',font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#2D72D2'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-16),scaleByDistance:new Cesium.NearFarScalar(1e3,1,2e6,0),disableDepthTestDistance:5e6},
+        description:`<div style="font-family:monospace;font-size:12px"><b style="color:#E8B349">📍 MY LOCATION</b><br><br>Lat: ${lat.toFixed(6)}<br>Lon: ${lon.toFixed(6)}<br>Accuracy: ±${acc.toFixed(0)}m<br>Time: ${new Date().toLocaleTimeString()}</div>`
       });
       V.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(lon,lat,acc<100?2000:15000),duration:1.5});
       _locateMeInFlight=false;
@@ -10193,13 +10197,13 @@ async function startNavigation(){
     _navRouteEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(from.lon,from.lat),
       point:{pixelSize:14,color:Cesium.Color.fromCssColorString('#3FB950'),outlineColor:Cesium.Color.BLACK,outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-      label:{text:'START',font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#3FB950'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-14),disableDepthTestDistance:5e6}
+      label:{text:'START',font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#3FB950'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-14),disableDepthTestDistance:5e6}
     }));
     // End marker (red)
     _navRouteEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(to.lon,to.lat),
       point:{pixelSize:14,color:Cesium.Color.fromCssColorString('#DA3633'),outlineColor:Cesium.Color.BLACK,outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-      label:{text:'DESTINATION',font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#DA3633'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-14),disableDepthTestDistance:5e6}
+      label:{text:'DESTINATION',font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#DA3633'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-14),disableDepthTestDistance:5e6}
     }));
     // Show distance/time
     document.getElementById('navInfo').style.display='block';
@@ -10401,7 +10405,7 @@ const VegIntel={
     const scanMarker=V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(lon,lat),
       point:{pixelSize:10,color:Cesium.Color.fromCssColorString('#52b788'),outlineColor:Cesium.Color.fromCssColorString('#0d1117'),outlineWidth:2},
-      label:{text:'VEG SCAN',font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#52b788'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-12),scaleByDistance:new Cesium.NearFarScalar(1e4,1,5e6,0)},
+      label:{text:'VEG SCAN',font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#52b788'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-12),scaleByDistance:new Cesium.NearFarScalar(1e4,1,5e6,0)},
       description:`<div style="font-family:monospace;font-size:13px;max-width:380px">
         <b style="color:#52b788">${terrain.icon} VEGETATION INTELLIGENCE SCAN</b><br><br>
         <table style="width:100%;border-collapse:collapse">
@@ -10848,7 +10852,7 @@ async function loadFloods(){
       floodEnts.push(V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(lon,lat),
         billboard:{image:makeSvgIcon('\u{1F4A7}',clr),width:28,height:28,verticalOrigin:Cesium.VerticalOrigin.CENTER,disableDepthTestDistance:5e6},
-        label:{text:name.substring(0,20),font:'9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,18),disableDepthTestDistance:5e6,show:true},
+        label:{text:name.substring(0,20),font:'None11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,18),disableDepthTestDistance:5e6,show:true},
         description:desc,show:layers.floods
       }));
     });
@@ -10903,7 +10907,7 @@ async function loadTsunamis(){
       tsunamiEnts.push(V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(lon,lat),
         billboard:{image:makeSvgIcon('\u{1F30A}',clr),width:30,height:30,verticalOrigin:Cesium.VerticalOrigin.CENTER,pixelOffset:new Cesium.Cartesian2(-18,0),disableDepthTestDistance:5e6},
-        label:{text:'TSUNAMI',font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(-18,22),disableDepthTestDistance:5e6,show:true},
+        label:{text:'TSUNAMI',font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(-18,22),disableDepthTestDistance:5e6,show:true},
         description:desc,show:layers.tsunamis
       }));
     });
@@ -10943,13 +10947,13 @@ async function loadVolcanoes(){
         '<div style="font-size:10px;margin-bottom:3px"><b>'+name+'</b></div>'+
         '<div style="font-size:9px;color:#8b949e">Region: '+esc(p.Region||'--')+' | Elev: '+esc(String(p.Elevation||'--'))+' m</div>'+
         '<div style="font-size:9px;color:#8b949e">Aviation code: <span style="color:'+clr+'">'+esc(code||'UNASSIGNED')+'</span> | Threat: '+esc(p.Threat||'--')+'</div>'+
-        (p.Link&&/^https?:/.test(p.Link)?'<div style="font-size:9px;margin-top:4px"><a href="'+esc(p.Link)+'" target="_blank" style="color:#2D72D2">USGS volcano page →</a></div>':'')+
+        (p.Link&&/^https?:/.test(p.Link)?'<div style="font-size:9px;margin-top:4px"><a href="'+esc(p.Link)+'" target="_blank" style="color:#E8B349">USGS volcano page →</a></div>':'')+
         '<div style="font-size:8px;color:#555;margin-top:6px">Source: USGS Volcano Hazards (live, ~1h refresh)</div></div>';
       volcanoEnts.push(V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(lon,lat),
         billboard:hot?{image:makeSvgIcon('\u{1F30B}',clr),width:30,height:30,verticalOrigin:Cesium.VerticalOrigin.CENTER,pixelOffset:new Cesium.Cartesian2(18,0),disableDepthTestDistance:5e6}:undefined,
         point:hot?undefined:{pixelSize:5,color:Cesium.Color.fromCssColorString(clr).withAlpha(0.85),outlineColor:Cesium.Color.BLACK,outlineWidth:1,disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1.1,1e7,0.35)},
-        label:hot?{text:name.substring(0,18),font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(18,22),disableDepthTestDistance:5e6}:undefined,
+        label:hot?{text:name.substring(0,18),font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(18,22),disableDepthTestDistance:5e6}:undefined,
         description:desc,show:layers.volcanoes
       }));
     });
@@ -10989,7 +10993,7 @@ async function loadVolcanoes(){
       volcanoEnts.push(V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(lon,lat),
         billboard:{image:makeSvgIcon('\u{1F30B}',clr),width:30,height:30,verticalOrigin:Cesium.VerticalOrigin.CENTER,pixelOffset:new Cesium.Cartesian2(18,0),disableDepthTestDistance:5e6},
-        label:{text:name.substring(0,18),font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(18,22),disableDepthTestDistance:5e6,show:true},
+        label:{text:name.substring(0,18),font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(clr),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(18,22),disableDepthTestDistance:5e6,show:true},
         description:desc,show:layers.volcanoes
       }));
     });
@@ -11094,7 +11098,7 @@ function loadNuclearRanges(){
     nucRangeEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(s.lon,s.lat),
       ellipse:{semiMajorAxis:s.range*1000,semiMinorAxis:s.range*1000,material:clr,outline:true,outlineColor:border,outlineWidth:1.5,height:0,granularity:Cesium.Math.toRadians(1.5)},
-      label:{text:s.name+'\n'+s.warheads+' warheads | '+s.range.toLocaleString()+' km range',font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(s.color),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.CENTER,disableDepthTestDistance:5e6,show:true,scaleByDistance:new Cesium.NearFarScalar(1e6,1,2e7,0.5)},
+      label:{text:s.name+'\n'+s.warheads+' warheads | '+s.range.toLocaleString()+' km range',font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(s.color),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.CENTER,disableDepthTestDistance:5e6,show:true,scaleByDistance:new Cesium.NearFarScalar(1e6,1,2e7,0.5)},
       description:'<div style="font-family:\'JetBrains Mono\',monospace;padding:10px;max-width:300px;color:#c8ccd6;background:#0d1117;border:1px solid '+esc(s.color)+'">'+
         '<div style="font-size:12px;font-weight:700;color:'+esc(s.color)+';margin-bottom:8px">NUCLEAR ARSENAL — '+esc(s.name)+'</div>'+
         '<div style="font-size:10px;margin-bottom:4px">Estimated Warheads: <b>'+s.warheads+'</b></div>'+
@@ -11109,7 +11113,7 @@ function loadNuclearRanges(){
         nucRangeEnts.push(V.entities.add({
           position:Cesium.Cartesian3.fromDegrees(silo.lon,silo.lat),
           point:{pixelSize:7,color:Cesium.Color.fromCssColorString(s.color),outlineColor:Cesium.Color.BLACK,outlineWidth:1.5,disableDepthTestDistance:5e6},
-          label:{text:String(silo.n),font:'8px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(s.color).withAlpha(0.8),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,12),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1,5e6,0),show:true},
+          label:{text:String(silo.n),font:'None10px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(s.color).withAlpha(0.8),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,12),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1,5e6,0),show:true},
           description:'<div style="font-family:\'JetBrains Mono\',monospace;padding:8px;color:#c8ccd6;background:#0d1117;border:1px solid '+esc(s.color)+'">'+
             '<div style="font-size:10px;font-weight:600;color:'+esc(s.color)+'">'+esc(silo.n)+'</div>'+
             '<div style="font-size:9px;color:#8b949e">Nuclear facility — '+esc(s.name)+'</div></div>',
@@ -11247,7 +11251,7 @@ async function loadSanctions(){
       sanctionEnts.push(V.entities.add({
         position:Cesium.Cartesian3.fromDegrees(e.lon,e.lat),
         point:{pixelSize:8,color:clr,outlineColor:Cesium.Color.WHITE,outlineWidth:2,disableDepthTestDistance:5e6},
-        label:{text:String(e.n),font:'bold 8px JetBrains Mono',fillColor:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,14),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1,4e6,0)},
+        label:{text:String(e.n),font:'bold 10px JetBrains Mono',fillColor:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,14),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1,4e6,0)},
         description:'<div style="font-family:monospace;padding:12px;background:#0d1117;color:#c8ccd6;border:1px solid '+prog.color+'44;max-width:340px"><b style="color:'+prog.color+'">'+icon+' SANCTIONED ENTITY</b><br><br><b>'+esc(e.n)+'</b><br><span style="font-size:9px;color:#DA3633">Program: '+esc(prog.name)+'</span><br><span style="font-size:9px;color:#888">Type: '+esc(e.type)+'</span><br><br><span style="font-size:9px;color:#b0b8c4">'+esc(e.note)+'</span></div>',
         show:layers.sanctions
       }));
@@ -11292,7 +11296,7 @@ function loadEmbassies(){
     embassyEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(m.lon,m.lat),
       point:{pixelSize:7,color:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:1.5,disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1,8e6,0.3)},
-      label:{text:String(m.n),font:'8px JetBrains Mono',fillColor:clr.withAlpha(0.9),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,12),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(3e5,1,4e6,0)},
+      label:{text:String(m.n),font:'None10px JetBrains Mono',fillColor:clr.withAlpha(0.9),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,12),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(3e5,1,4e6,0)},
       description:'<div style="font-family:\'JetBrains Mono\',monospace;padding:10px;color:#c8ccd6;background:#0d1117;border:1px solid '+(isUS?'#4A90D9':'#E8B339')+';max-width:320px">'+
         '<div style="font-size:12px;font-weight:700;color:'+(isUS?'#4A90D9':'#E8B339')+';margin-bottom:6px">'+(isUS?'\u{1F1FA}\u{1F1F8}':'\u{1F3F4}')+' DIPLOMATIC MISSION</div>'+
         '<div style="font-size:11px;font-weight:600">'+esc(m.n)+'</div>'+
@@ -11327,7 +11331,7 @@ async function loadCableLandings() {
       landingEnts.push(V.entities.add({
         position: Cesium.Cartesian3.fromDegrees(lon, lat),
         point: {pixelSize:7,color:Cesium.Color.fromCssColorString('#06B6D4'),outlineColor:Cesium.Color.fromCssColorString('#0d1117'),outlineWidth:2,scaleByDistance:new Cesium.NearFarScalar(5e4,1.2,8e6,0.4)},
-        label: {text:rawName.length>25?rawName.substring(0,25)+'\u2026':rawName,font:'bold 9px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#06B6D4'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-10),scaleByDistance:new Cesium.NearFarScalar(1e4,1,5e6,0),distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,3000000)},
+        label: {text:rawName.length>25?rawName.substring(0,25)+'\u2026':rawName,font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString('#06B6D4'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-10),scaleByDistance:new Cesium.NearFarScalar(1e4,1,5e6,0),distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,3000000)},
         description:`<div style="font-family:monospace;font-size:13px;max-width:350px"><b style="color:#06B6D4">CABLE LANDING POINT</b><br><br><b>Name:</b> ${safeName}<br><b>Coordinates:</b> ${lat.toFixed(4)}\u00B0, ${lon.toFixed(4)}\u00B0<br><b>Source:</b> TeleGeography</div>`,
         show: layers.landings,
       }));
@@ -11401,7 +11405,7 @@ function loadChokepoints() {
     chokepointEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(cp.lon,cp.lat),
       point:{pixelSize:14,color:threatColor.withAlpha(0.85),outlineColor:Cesium.Color.WHITE,outlineWidth:2,disableDepthTestDistance:5e6},
-      label:{text:'\u2B25 '+cp.name.toUpperCase(),font:'bold 10px JetBrains Mono',fillColor:threatColor,outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-16),scaleByDistance:new Cesium.NearFarScalar(1e5,1,1e7,0.3),disableDepthTestDistance:5e6},
+      label:{text:'\u2B25 '+cp.name.toUpperCase(),font:'bold 11px JetBrains Mono',fillColor:threatColor,outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-16),scaleByDistance:new Cesium.NearFarScalar(1e5,1,1e7,0.3),disableDepthTestDistance:5e6},
       description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:400px;background:#0a0e14;padding:14px;border-radius:2px;border:1px solid ${cp.threat>=4?'#DA363322':'#ffc80022'};color:#c8ccd6">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #1e2436">
           <div>
@@ -11414,7 +11418,7 @@ function loadChokepoints() {
           </div>
         </div>
         <div style="padding:8px;background:rgba(255,255,255,0.02);border:1px solid #1e2436;border-radius:2px;font-size:10px;color:#8a8f9e;line-height:1.5">${cp.desc}</div>
-        <div style="margin-top:8px;padding:6px 8px;background:rgba(45,114,210,0.04);border:1px solid rgba(45,114,210,0.1);border-radius:2px">
+        <div style="margin-top:8px;padding:6px 8px;background:rgba(232,179,73,0.04);border:1px solid rgba(232,179,73,0.1);border-radius:2px">
           <div style="color:#4a5068;font-size:8px;letter-spacing:1px;margin-bottom:4px">SUBMARINE CABLES</div>
           <div style="color:#7a8cc9;font-size:10px;line-height:1.5">${cp.cables}</div>
         </div>
@@ -11477,7 +11481,7 @@ BRIEFS.nuclear = ()=>`<b>NUCLEAR TEST SITES \u2014 GLOBAL DETONATION HISTORY</b>
   _bSafe(()=>NUKESITES.map(s=>`<b>${esc(s.n)}</b> (${esc(s.c)}): ${s.tests} tests`).join('<br>'), '<i>Nuclear sites data not yet loaded.</i>') +
   `<br><br><b>INTELLIGENCE VALUE:</b> Any seismic event M3.5+ at shallow depth near a known test site warrants immediate analysis. North Korea\u2019s Punggye-ri and China\u2019s Lop Nur are the most likely future test locations. Ring size on globe is proportional to historical test count. Toggle in left panel.`;
 BRIEFS.fallout = ()=>`<b>FALLOUT SHELTERS — COLD WAR CIVIL DEFENSE (GEORGIA)</b><br><br>Cold War-era designated fallout shelters across the state of Georgia. These were buildings officially licensed by the U.S. Office of Civil Defense to shelter the public in the event of nuclear attack. Most were marked with the distinctive black-and-yellow FALLOUT SHELTER sign (three downward-pointing triangles on black background).<br><br><b>HISTORICAL CONTEXT:</b><br>At the height of the Cold War (1950s-1980s), the U.S. government surveyed and designated thousands of public buildings as fallout shelters. Qualifying structures needed sufficient mass (concrete, earth) to reduce radiation exposure to survivable levels. Approved shelters were stocked with survival supplies: water drums, crackers, medical kits, radiation meters. The program peaked around 1962 (Cuban Missile Crisis).<br><br><b>WHAT QUALIFIES:</b><br>• Schools, churches, courthouses, federal buildings<br>• Basements and lower floors with adequate overhead mass<br>• Minimum shelter factor of 40x (reducing 5,000R/hr fallout to survivable 125R/hr)<br><br><b>STATUS:</b> Most shelters are no longer maintained or stocked. Signs remain on many buildings. Some have been officially decommissioned. Data sourced from Google My Maps community mapping project.<br><br>Data covers the state of Georgia (60+ locations). Toggle in left panel under STRATEGIC.`;
-BRIEFS.squawk = ()=>`<b>SQUAWK CODE MONITORING \u2014 EMERGENCY TRANSPONDER DETECTION</b><br><br>BDOC continuously scans all tracked aircraft for emergency transponder (Mode A/Mode S) squawk codes. These are standardized ICAO codes that pilots set to silently communicate emergencies to ATC and ground systems.<br><br><b>MONITORED CODES:</b><br>\u2022 <b style="color:#ff0000">7500 \u2014 HIJACK</b> \u2014 Aircraft seized by hostile actors. Pilot sets this code covertly (ATC trained not to acknowledge verbally). Triggers immediate military intercept scramble. Extremely rare \u2014 any 7500 squawk is a FLASH priority event.<br>\u2022 <b style="color:#ff6600">7600 \u2014 RADIO FAILURE (NORDO)</b> \u2014 Aircraft has lost radio communications. Pilot follows last assigned clearance and squawks 7600 so ATC can track via radar. Common in GA aircraft, less so in commercial aviation. Can indicate equipment failure or deliberate jamming.<br>\u2022 <b style="color:#DA3633">7700 \u2014 GENERAL EMERGENCY</b> \u2014 Catchall for any in-flight emergency: engine failure, medical emergency, fuel emergency, structural damage, smoke/fire, decompression. Most common emergency squawk. ATC immediately clears surrounding traffic.<br>\u2022 <b style="color:#2D72D2">7400 \u2014 UAV LOST LINK</b> \u2014 Unmanned aircraft has lost its command-and-control data link. The drone is flying autonomously on its pre-programmed lost-link profile. Particularly significant for military UAVs (MQ-9 Reaper, RQ-4 Global Hawk) operating near contested airspace.<br><br><b>BDOC RESPONSE:</b> When a squawk code is detected, BDOC automatically:<br>1. Fires a browser notification with aircraft callsign and code<br>2. Flies the camera to the aircraft\u2019s position<br>3. Logs the event with timestamp, position, callsign, and aircraft type<br>4. Highlights the aircraft with a pulsing alert indicator<br><br><b>ALERTS THIS SESSION:</b> ${_bSafe(()=>squawkAlertHistory.size, 0)} squawk events detected.<br><br><b>NOTE:</b> False positives occur \u2014 pilots occasionally set emergency codes accidentally or during training. A 7500 on a commercial airliner at FL350 warrants serious attention. A 7700 on a Cessna 172 near a training airport is likely a student exercise.`;
+BRIEFS.squawk = ()=>`<b>SQUAWK CODE MONITORING \u2014 EMERGENCY TRANSPONDER DETECTION</b><br><br>BDOC continuously scans all tracked aircraft for emergency transponder (Mode A/Mode S) squawk codes. These are standardized ICAO codes that pilots set to silently communicate emergencies to ATC and ground systems.<br><br><b>MONITORED CODES:</b><br>\u2022 <b style="color:#ff0000">7500 \u2014 HIJACK</b> \u2014 Aircraft seized by hostile actors. Pilot sets this code covertly (ATC trained not to acknowledge verbally). Triggers immediate military intercept scramble. Extremely rare \u2014 any 7500 squawk is a FLASH priority event.<br>\u2022 <b style="color:#ff6600">7600 \u2014 RADIO FAILURE (NORDO)</b> \u2014 Aircraft has lost radio communications. Pilot follows last assigned clearance and squawks 7600 so ATC can track via radar. Common in GA aircraft, less so in commercial aviation. Can indicate equipment failure or deliberate jamming.<br>\u2022 <b style="color:#DA3633">7700 \u2014 GENERAL EMERGENCY</b> \u2014 Catchall for any in-flight emergency: engine failure, medical emergency, fuel emergency, structural damage, smoke/fire, decompression. Most common emergency squawk. ATC immediately clears surrounding traffic.<br>\u2022 <b style="color:#E8B349">7400 \u2014 UAV LOST LINK</b> \u2014 Unmanned aircraft has lost its command-and-control data link. The drone is flying autonomously on its pre-programmed lost-link profile. Particularly significant for military UAVs (MQ-9 Reaper, RQ-4 Global Hawk) operating near contested airspace.<br><br><b>BDOC RESPONSE:</b> When a squawk code is detected, BDOC automatically:<br>1. Fires a browser notification with aircraft callsign and code<br>2. Flies the camera to the aircraft\u2019s position<br>3. Logs the event with timestamp, position, callsign, and aircraft type<br>4. Highlights the aircraft with a pulsing alert indicator<br><br><b>ALERTS THIS SESSION:</b> ${_bSafe(()=>squawkAlertHistory.size, 0)} squawk events detected.<br><br><b>NOTE:</b> False positives occur \u2014 pilots occasionally set emergency codes accidentally or during training. A 7500 on a commercial airliner at FL350 warrants serious attention. A 7700 on a Cessna 172 near a training airport is likely a student exercise.`;
 
 // ═══ FALLOUT SHELTERS (Cold War Civil Defense) ═══
 const _FALLOUT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#0a0e14" opacity="0.9"/><circle cx="32" cy="32" r="30" fill="none" stroke="#FFD700" stroke-width="1.8" opacity="0.7"/><circle cx="32" cy="32" r="22" fill="#FFD700"/><path d="M21,13 A22,22 0 0,1 43,13 L36,25 A8,8 0 0,0 28,25 Z" fill="#0a0e14"/><path d="M54,32 A22,22 0 0,1 43,51 L36,39 A8,8 0 0,0 40,32 Z" fill="#0a0e14"/><path d="M21,51 A22,22 0 0,1 10,32 L24,32 A8,8 0 0,0 28,39 Z" fill="#0a0e14"/><circle cx="32" cy="32" r="8" fill="#0a0e14"/></svg>`;
@@ -11625,8 +11629,8 @@ function injectAllUI() {
     <div class="ly" data-layer="milbases" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#3FB950"></div><span class="ly-n">Military Bases</span><span class="ly-tg tg-l">${_bSafe(()=>MILBASES.length, '\u2014')}</span></div>
     <div class="ly" data-layer="milairfields" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#3FB950"></div><span class="ly-n">Military Airfields</span><span class="ly-tg tg-l">${_bSafe(()=>MILAIRFIELDS.length, '\u2014')}</span></div>
     <div class="ly" data-layer="nukes" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#c4933f"></div><span class="ly-n">\u2622 Nuclear Test Sites</span><span class="ly-tg tg-l">${_bSafe(()=>NUKESITES.length, '\u2014')}</span></div>
-    <div class="lg-title" style="color:#2D72D2">SURVEILLANCE / COMMS INFRASTRUCTURE</div>
-    <div class="ly" data-layer="deflock" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#2D72D2"></div><span class="ly-n">\uD83D\uDCF7 DeFlock Surveillance</span><span class="ly-tg" style="color:#2D72D2;background:rgba(45,114,210,0.1)">OSM</span></div>
+    <div class="lg-title" style="color:#E8B349">SURVEILLANCE / COMMS INFRASTRUCTURE</div>
+    <div class="ly" data-layer="deflock" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#E8B349"></div><span class="ly-n">\uD83D\uDCF7 DeFlock Surveillance</span><span class="ly-tg" style="color:#E8B349;background:rgba(232,179,73,0.1)">OSM</span></div>
     <div class="ly" data-layer="celltowers" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#4488ff"></div><span class="ly-n">\uD83D\uDCF6 Cell Towers</span><span class="ly-tg" style="color:#4488ff;background:rgba(68,136,255,0.1)">OSM</span></div>
     <div class="lg-title" style="color:#E8B349">FIELD HAZARDS / BIOLOGICAL</div>
     <div class="ly" data-layer="hazardbio" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#E8B349"></div><span class="ly-n">\u2623 Hazardous Species</span><span class="ly-tg" style="color:#E8B349;background:rgba(232,179,73,0.1)">LIVE</span></div>
@@ -11787,7 +11791,7 @@ function injectGTA(){
   if(document.getElementById('gtaWidget'))return;
   const w=document.createElement('div');
   w.id='gtaWidget';
-  w.style.cssText='position:fixed;bottom:12px;left:12px;z-index:999;font-family:"JetBrains Mono",monospace;background:#0a0e14;border:1px solid rgba(45,114,210,0.15);border-radius:4px;padding:10px 14px;min-width:200px;box-shadow:0 4px 20px rgba(0,0,0,0.5);cursor:grab;transition:box-shadow .3s;user-select:none';
+  w.style.cssText='position:fixed;bottom:12px;left:12px;z-index:999;font-family:"JetBrains Mono",monospace;background:#0a0e14;border:1px solid rgba(255,255,255,0.10);border-radius:8px;padding:10px 14px;min-width:200px;box-shadow:0 4px 20px rgba(0,0,0,0.5);cursor:grab;transition:box-shadow .3s;user-select:none';
   // Drag functionality — P110: disabled on touch devices (iPad/Android). Coarse-pointer
   // dragging fought with Cesium's touch handling and half-worked at best; on touch the
   // widget stays pinned and tap still expands/collapses.
@@ -11846,7 +11850,7 @@ function injectGTA(){
       <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>Seismic M4.5+/24h</span><span id="gtaEq" style="color:#E8B339">--</span></div>
       <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>Disasters (GDACS)</span><span id="gtaDisaster" style="color:#ff6600">--</span></div>
       <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>Fire Hotspots</span><span id="gtaFire" style="color:#ff6600">--</span></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>Aircraft Tracked</span><span id="gtaAir" style="color:#2D72D2">--</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>Aircraft Tracked</span><span id="gtaAir" style="color:#E8B349">--</span></div>
       <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>Vessels Tracked</span><span id="gtaVessel" style="color:#00aa44">--</span></div>
       <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>Space Weather</span><span id="gtaKp" style="color:#E8B339">--</span></div>
       <div style="display:flex;justify-content:space-between;margin-top:5px;padding-top:5px;border-top:1px solid #1e2436"><span style="color:#1e2436;letter-spacing:.5px">Sources</span><span style="color:#1e2436;letter-spacing:.3px">USGS \u00b7 GDELT \u00b7 GDACS</span></div>
@@ -12018,7 +12022,7 @@ function showMetar(icao,name,lat,lon){
   const cp=document.getElementById('cisaPanel');if(cp)cp.style.display='none';
   if(!panel||!content)return;
   panel.style.display='block';
-  content.innerHTML=`<div style="color:var(--t3)">Fetching METAR for <b style="color:#2D72D2">${esc(name)}</b> (${icao})…</div>`;
+  content.innerHTML=`<div style="color:var(--t3)">Fetching METAR for <b style="color:#E8B349">${esc(name)}</b> (${icao})…</div>`;
   fetch(`/.netlify/functions/proxy-aw?icao=${encodeURIComponent(icao)}&type=metar`)
     .then(r=>r.json())
     .then(data=>{
@@ -13352,11 +13356,11 @@ WiresharkBridge.connect = async function() {
     card.innerHTML=`
       <div style="font-family:var(--s);font-size:18px;color:var(--t1);font-weight:700;letter-spacing:-0.005em;margin-bottom:10px">WELCOME TO BDOC</div>
       <div style="font-size:13px;color:#c8ccd6;line-height:1.5;margin-bottom:16px">
-        Want to see the <b style="color:var(--cyan,#2D72D2)">weather over your area</b> right now?<br>
+        Want to see the <b style="color:var(--cyan,#E8B349)">weather over your area</b> right now?<br>
         We'll use your location to show local clouds, radar, and storm tracking.
       </div>
       <div style="display:flex;gap:8px;flex-direction:column">
-        <button id="bdocFirstRunYes" style="padding:11px 16px;background:rgba(45,114,210,0.32);border:1px solid rgba(45,114,210,0.75);border-radius:3px;color:#fff;font-family:var(--m,monospace);font-size:12px;font-weight:700;letter-spacing:1.2px;cursor:pointer;text-transform:uppercase;box-shadow:0 1px 2px rgba(0,0,0,0.4)">✓ YES — SHOW MY WEATHER</button>
+        <button id="bdocFirstRunYes" style="padding:11px 16px;background:rgba(232,179,73,0.32);border:1px solid rgba(232,179,73,0.75);border-radius:3px;color:#fff;font-family:var(--m,monospace);font-size:12px;font-weight:700;letter-spacing:1.2px;cursor:pointer;text-transform:uppercase;box-shadow:0 1px 2px rgba(0,0,0,0.4)">✓ YES — SHOW MY WEATHER</button>
         <button id="bdocFirstRunNo" style="padding:9px 16px;background:transparent;border:1px solid rgba(138,146,164,0.4);border-radius:3px;color:#8a92a4;font-family:var(--m,monospace);font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;text-transform:uppercase">SKIP — I'M AN INTEL ANALYST</button>
       </div>
       <div style="margin-top:14px;font-size:9px;color:#5a6378;text-align:center;letter-spacing:0.5px">Location is used only on your device. Never sent to our servers.</div>
@@ -13529,7 +13533,7 @@ window.closeCamPanel=closeCamPanel;
   </div>
   <!-- Connect section (shown when not logged in) -->
   <div id="spAuth" style="padding:12px;border-bottom:1px solid #1e2436;flex-shrink:0">
-    <div style="font-size:9px;color:#888;margin-bottom:8px;line-height:1.5">Connect your Spotify account for full playback &amp; playlist access. Get your <b style="color:#1DB954">Client ID</b> from <span style="color:#2D72D2">developer.spotify.com</span> &rarr; your app. Add <code style="color:#c8ccd6;font-size:8px">https://kgsbdoc.netlify.app/</code> as a Redirect URI.</div>
+    <div style="font-size:9px;color:#888;margin-bottom:8px;line-height:1.5">Connect your Spotify account for full playback &amp; playlist access. Get your <b style="color:#1DB954">Client ID</b> from <span style="color:#E8B349">developer.spotify.com</span> &rarr; your app. Add <code style="color:#c8ccd6;font-size:8px">https://kgsbdoc.netlify.app/</code> as a Redirect URI.</div>
     <input id="spClientId" type="text" placeholder="Paste Spotify App Client ID here" style="width:100%;box-sizing:border-box;background:#0d1117;border:1px solid #2a3045;border-radius:3px;color:#c8ccd6;font-family:monospace;font-size:9px;padding:6px 8px;outline:none;margin-bottom:7px">
     <button onclick="spotifyLogin()" style="width:100%;padding:9px;background:rgba(29,185,84,0.15);color:#1DB954;border:1px solid rgba(29,185,84,0.45);border-radius:3px;cursor:pointer;font-family:monospace;font-size:10px;font-weight:700;letter-spacing:1px">&#9834; CONNECT WITH SPOTIFY</button>
   </div>

@@ -36,7 +36,7 @@ function loadNukeSites() {
     nukeEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(s.lon,s.lat),
       billboard:{image:iconUri,width:34,height:34,scaleByDistance:new Cesium.NearFarScalar(1e5,1.5,1.2e7,0.45),distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,8000000),verticalOrigin:Cesium.VerticalOrigin.CENTER,disableDepthTestDistance:5e6},
-      label:{text:'\u2622 '+s.n,font:'bold 10px JetBrains Mono',fillColor:Cesium.Color.YELLOW,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,18),scaleByDistance:new Cesium.NearFarScalar(1e5,1,8e6,0.2),distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,5000000),disableDepthTestDistance:5e6},
+      label:{text:'\u2622 '+s.n,font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.YELLOW,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,18),scaleByDistance:new Cesium.NearFarScalar(1e5,1,8e6,0.2),distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,5000000),disableDepthTestDistance:5e6},
       description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:400px;background:#0a0e14;padding:14px;border-radius:2px;border:1px solid #E8B33922;color:#c8ccd6">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #1e2436">
           <div>

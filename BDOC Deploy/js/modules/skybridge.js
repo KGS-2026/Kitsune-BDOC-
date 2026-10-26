@@ -159,7 +159,7 @@ function drawWarnings(obj){
     ents.push(V.entities.add({polyline:{positions:Cesium.Cartesian3.fromDegreesArray(flat),width:3,material:SB.style==='ink'?Cesium.Color.BLACK:col,clampToGround:true},show:SB.show.warnings}));
     const c=p.coords.reduce((a,q)=>[a[0]+q[0]/p.coords.length,a[1]+q[1]/p.coords.length],[0,0]);
     ents.push(V.entities.add({position:Cesium.Cartesian3.fromDegrees(c[0],c[1]),show:SB.show.warnings,
-      label:{text:p.event.replace(' Warning','').toUpperCase()+(until?' · '+until:''),font:'bold 10px JetBrains Mono',fillColor:col,outlineColor:Cesium.Color.BLACK,outlineWidth:3,
+      label:{text:p.event.replace(' Warning','').toUpperCase()+(until?' · '+until:''),font:'bold 11px JetBrains Mono',fillColor:col,outlineColor:Cesium.Color.BLACK,outlineWidth:3,
         style:Cesium.LabelStyle.FILL_AND_OUTLINE,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6,distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,1.5e6)}}));
   });
   SB.warnings={obj,ents};

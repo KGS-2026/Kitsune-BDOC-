@@ -49,7 +49,7 @@ function loadPowerPlants(){
     powerplantEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(p.lon,p.lat),
       point:{pixelSize:6,color:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:1,disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1.2,1e7,0.4)},
-      label:{text:esc(p.n),font:'8px JetBrains Mono',fillColor:clr.withAlpha(0.85),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,12),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(3e5,1,3e6,0)},
+      label:{text:esc(p.n),font:'None10px JetBrains Mono',fillColor:clr.withAlpha(0.85),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,12),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(3e5,1,3e6,0)},
       description:'<div style="font-family:\'JetBrains Mono\',monospace;padding:10px;color:#c8ccd6;background:#0d1117;border:1px solid '+esc(fc)+'">'+
         '<div style="font-size:12px;font-weight:700;color:'+esc(fc)+';margin-bottom:6px">'+esc(p.fuel.toUpperCase())+' POWER PLANT</div>'+
         '<div style="font-size:11px;font-weight:600">'+esc(p.n)+'</div>'+
@@ -144,7 +144,7 @@ function loadOilGas(){
     oilgasEnts.push(V.entities.add({
       position:Cesium.Cartesian3.fromDegrees(f.lon,f.lat),
       point:{pixelSize:7,color:clr,outlineColor:Cesium.Color.BLACK,outlineWidth:1.5,disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(5e5,1.2,1e7,0.4)},
-      label:{text:esc(f.n),font:'8px JetBrains Mono',fillColor:clr.withAlpha(0.85),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,12),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(3e5,1,3e6,0)},
+      label:{text:esc(f.n),font:'None10px JetBrains Mono',fillColor:clr.withAlpha(0.85),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,12),disableDepthTestDistance:5e6,scaleByDistance:new Cesium.NearFarScalar(3e5,1,3e6,0)},
       description:'<div style="font-family:\'JetBrains Mono\',monospace;padding:10px;color:#c8ccd6;background:#0d1117;border:1px solid '+esc(tc)+'">'+
         '<div style="font-size:12px;font-weight:700;color:'+esc(tc)+';margin-bottom:6px">'+esc(f.type.replace('_',' ').toUpperCase())+'</div>'+
         '<div style="font-size:11px;font-weight:600">'+esc(f.n)+'</div>'+

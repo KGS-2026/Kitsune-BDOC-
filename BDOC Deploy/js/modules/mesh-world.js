@@ -289,7 +289,7 @@ function drawGap(g){
   for(let s=1;s<=pins;s++){const c=geo.interpolateUsingFraction(s/(pins+1));
     MW.routeEnts.push(V.entities.add({position:Cesium.Cartesian3.fromRadians(c.longitude,c.latitude,0),
       billboard:{image:relayPin(),width:22,height:30,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-      label:{text:'PLACE RELAY',font:'bold 9px JetBrains Mono',fillColor:red,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+      label:{text:'PLACE RELAY',font:'bold 11px JetBrains Mono',fillColor:red,outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,
         pixelOffset:new Cesium.Cartesian2(0,-34),heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6,distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,2e6)}}));}
   frame([g.P,g.Q]);
   settle();

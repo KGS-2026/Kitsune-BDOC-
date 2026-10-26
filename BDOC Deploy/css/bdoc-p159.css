@@ -1,0 +1,103 @@
+/* ── BUILD p159 — "Ferrari" chrome pass 1 (2026-10-24 night shift) ──────────
+   Reference bar: Palantir Gotham / Anduril Lattice marketing shots.
+   Rules: ONE accent (amber #E8B349), neutral chrome, hairline borders, a bar
+   you can breathe in, no emoji in chrome, no colored glows, no live blur on
+   the globe. Loaded LAST; overrides the stacked legacy layers in bdoc.css. */
+
+/* ── Top bar: 48 → 56px. Every panel that keyed off 48px follows the token. */
+:root{--tbh:56px}
+.tb{height:var(--tbh)!important;padding:0 16px!important;gap:12px!important;background:rgba(10,13,18,0.96)!important;border-bottom:1px solid rgba(255,255,255,0.08)!important;box-shadow:0 1px 0 rgba(0,0,0,0.6)!important}
+.lp,#sitPanel{top:calc(var(--tbh) + var(--bnh,0px))!important}
+.rp{top:var(--tbh)!important}
+.hud-corner.tl,.hud-corner.tr{top:var(--tbh)!important}
+#outageBanner{top:calc(var(--tbh) + 6px)!important}
+@media (max-width:767px){:root{--tbh:48px}.tb{height:var(--tbh)!important;padding:0 8px!important}.lp{top:auto!important}}
+
+/* ── Brand block: wordmark + quiet subline */
+.lg-t{font-family:var(--s)!important;font-size:14px!important;font-weight:600!important;letter-spacing:0.02em!important;color:#E6E9EE!important}
+.lg-s{font-size:9.5px!important;letter-spacing:0.12em!important;color:#5C636B!important;text-transform:uppercase}
+
+/* ── Bar pills: uniform 28px height, 2px radius, neutral unless they carry state */
+#bdocBuildPill,#bdocThreatPill,#bdoc-link-badge,.menu-btn,.nb{height:28px!important;box-sizing:border-box;display:inline-flex!important;align-items:center!important;border-radius:2px!important}
+#bdocBuildPill{color:#5C636B!important;border-color:rgba(255,255,255,0.08)!important;font-size:10px!important}
+#battleBtn{height:28px!important;border-radius:2px!important;font-size:10.5px!important;letter-spacing:0.08em!important;padding:0 14px!important;background:#B42B28!important;box-shadow:none!important;transition:background 150ms ease}
+#battleBtn:hover{background:#DA3633!important}
+.menu-btn{padding:0 10px!important;color:#9BA1A8!important}
+.menu-btn:hover{color:#E6E9EE!important;background:rgba(255,255,255,0.05)!important}
+
+/* ── Outage banner: a strip under the bar, not a red card floating over the globe */
+#outageBanner{left:50%!important;transform:translateX(-50%)!important;max-width:760px!important;width:auto!important;min-width:420px;padding:8px 36px 8px 14px!important;font-size:11px!important;background:rgba(14,17,22,0.96)!important;border:1px solid rgba(255,255,255,0.10)!important;border-left:3px solid #DA3633!important;border-radius:4px!important;box-shadow:0 8px 32px rgba(0,0,0,0.45)!important;line-height:1.45}
+#outageBanner b{color:#E6E9EE;font-weight:600}
+
+/* ── Panels: one surface colour, one hairline, no inner glow lines */
+.lp{background:rgba(14,17,22,0.96)!important;border-right:1px solid rgba(255,255,255,0.08)!important;box-shadow:none!important}
+.rp{background:rgba(14,17,22,0.96)!important;border-left:1px solid rgba(255,255,255,0.08)!important;box-shadow:none!important}
+.lp-h{padding:14px 16px 12px!important}
+.lp-b{padding:10px 12px 16px!important}
+
+/* ── Section titles: amber hairline rail, no cyan-era underline */
+.lg-title{color:#9BA1A8!important;border-bottom:none!important;border-left:2px solid rgba(232,179,73,0.55)!important;padding:5px 10px!important;margin:14px 0 6px!important;letter-spacing:0.16em!important;font-weight:600!important}
+.lg-title:hover{color:#E6E9EE!important}
+
+/* ── Layer rows: 30px rhythm, counts as quiet mono on the right */
+.ly{min-height:30px;padding:2px 10px!important;border-radius:4px!important;transition:background 150ms ease,border-color 150ms ease!important}
+.ly:hover{background:rgba(255,255,255,0.04)!important}
+.ly.on{background:rgba(232,179,73,0.06)!important;border-color:rgba(232,179,73,0.25)!important;box-shadow:none!important}
+.ly-tg{color:#8B919A!important;background:transparent!important;border:none!important;font-weight:500!important}
+.ly.on .ly-tg{color:#E8B349!important}
+.lp .ly.on .ly-label,.lp .ly.on .ly-name,.lp .ly.on .ly-n{color:#E6E9EE!important}
+
+/* ── Toggle switches: pill, amber when on */
+.sw{border-radius:7px!important;background:rgba(255,255,255,0.08)!important;border:1px solid rgba(255,255,255,0.10)!important;box-shadow:none!important}
+.ly.on .sw{background:#E8B349!important;border-color:#E8B349!important}
+.ly.on .sw::after{background:#0E1116!important;box-shadow:none!important}
+
+/* ── Basemap + feed buttons: neutral ghost buttons, amber when active */
+.bm-btn,.fb,.eb{color:#9BA1A8!important;background:rgba(255,255,255,0.02)!important;border:1px solid rgba(255,255,255,0.09)!important;border-radius:4px!important}
+.bm-btn:hover,.fb:hover,.eb:hover{color:#E6E9EE!important;border-color:rgba(255,255,255,0.18)!important;background:rgba(255,255,255,0.05)!important}
+.bm-btn.on,.bm-btn.active,.fb.on,.eb.on{color:#E8B349!important;border-color:rgba(232,179,73,0.5)!important;background:rgba(232,179,73,0.06)!important}
+
+/* ── GTA widget: neutral card, amber only on the number */
+#gtaWidget{background:rgba(14,17,22,0.96)!important;border:1px solid rgba(255,255,255,0.10)!important;border-radius:8px!important;box-shadow:0 8px 32px rgba(0,0,0,0.45)!important}
+#gtaScore{font-size:34px!important;letter-spacing:-0.02em!important}
+#gtaLevel{color:#9BA1A8!important}
+
+/* ── Right panel header + copilot body */
+.rp-h{padding:12px 16px!important;border-bottom:1px solid rgba(255,255,255,0.08)!important}
+.ai-n{color:#E6E9EE!important;font-family:var(--s)!important;font-size:12.5px!important;font-weight:600!important;letter-spacing:0.02em!important}
+.am,.mg{font-size:12px!important;line-height:1.55!important}
+.mg b,.am .mg b{color:#E6E9EE!important}
+
+/* ── Bottom ticker */
+#bdocTicker{background:rgba(10,13,18,0.96)!important;border-top:1px solid rgba(255,255,255,0.08)!important}
+
+/* ── Kill leftover colored glows anywhere in chrome */
+.tb *,.lp *,.rp *{text-shadow:none!important}
+
+/* ── Top bar overflow (pre-existing, found on live p158f): bar content measured
+   2461px wide on a 1600px viewport — status strip, CRT/NVG/FLIR, every export
+   button, the clock and LOGIN were pushed off the right edge. The export strip
+   duplicates File ▸ Export, the subline + build pill are decoration. Collapse
+   them by width so the bar always fits; nothing is removed from the DOM. */
+.tb{gap:8px!important}
+@media (max-width:2799px){.etb{display:none!important}}
+@media (max-width:2199px){.lg-s,#bdocBuildPill{display:none!important}}
+@media (max-width:1699px){.tb > .st{display:none!important}}
+@media (max-width:1799px){.ftb{display:none!important}}
+@media (max-width:1599px){#bdoc-link-badge{display:none!important}}
+
+/* LOGIN was position:fixed (Phase 31) so it floated over whatever the bar put
+   under it — on live it sat on top of the NAV button and the user badge. Put it
+   back in flow at the end of the right cluster; the bar now fits so it is
+   always visible anyway. */
+#loginBtn{position:static!important;height:28px!important;padding:0 14px!important;font-size:10.5px!important;letter-spacing:0.1em!important;background:transparent!important;border:1px solid rgba(255,255,255,0.22)!important;color:#E6E9EE!important;border-radius:2px!important;box-shadow:none!important;transform:none!important}
+#loginBtn:hover{background:rgba(255,255,255,0.08)!important;border-color:rgba(255,255,255,0.4)!important}
+#loginBtn.logged-in{border-color:rgba(63,185,80,0.55)!important;color:#3FB950!important}
+#userBadge:empty{display:none!important}
+.tb-r{gap:8px!important}
+.tb-r .st{border-right:none!important;padding:0 6px 0 0!important;font-size:10.5px!important;color:#9BA1A8!important}
+.tb-r .st:first-child{color:#E6E9EE!important}
+#clk{font-variant-numeric:tabular-nums;color:#E6E9EE!important}
+/* cursor coords: align to the new bar height, same surface as the panels */
+#cursorCoords{top:calc(var(--tbh) + 12px)!important;left:calc(var(--lw,248px) + 14px)!important;background:rgba(14,17,22,0.92)!important;border:1px solid rgba(255,255,255,0.10)!important;border-radius:4px!important}
+#battleBtn{white-space:nowrap!important}
