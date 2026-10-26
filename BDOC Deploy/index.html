@@ -462,7 +462,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p159d</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p159e</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -8138,6 +8138,7 @@ function setBattleColor(el){
   document.querySelectorAll('.bp-color').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');
   battleColor=el.dataset.color;
+  window._battleColorPicked=true; // p159e: explicit swatch beats affiliation colour
   // Refresh icon grid with new color
   const affEl=document.getElementById('bp-affiliation');
   refreshIconGrid(affEl?affEl.value:'friendly');
@@ -8293,9 +8294,13 @@ function placeBattleUnit(lat,lon){
   const icon=BATTLE_ICONS[battleSelectedIcon];
   if(!icon)return;
   const aff=document.getElementById('bp-affiliation').value;
-  const svg=buildNatoSVG(icon,battleColor,aff,battleSelectedIcon);
+  // p159e (APP-6 doctrine): affiliation OWNS the frame colour. The palette swatch only
+  // overrides when the user has actually picked one — before, a HOSTILE unit placed with the
+  // default swatch rendered in friendly blue, which is the one thing a tracker must never do.
+  const _affCol={friendly:'#2D72D2',hostile:'#DA3633',neutral:'#3FB950',unknown:'#E8B349'};
+  const col=(window._battleColorPicked?battleColor:null)||_affCol[aff]||battleColor;
+  const svg=buildNatoSVG(icon,col,aff,battleSelectedIcon);
   const imgUrl=svgToDataUri(svg);
-  const col=battleColor;
   const echLabel=battleEchelon!=='none'?' ['+battleEchelon.toUpperCase()+']':'';
   const ent=V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(lon,lat),
@@ -13339,6 +13344,9 @@ WiresharkBridge.connect = async function() {
   // (computed-style check alone raced — card rendered before the wizard mounted).
   function onboardVisible(){
     if(localStorage.getItem('bdoc_onboard_done')!=='1')return true; // wizard not completed yet — hold
+    // p159e: never stack on ANY open modal (welcome card, pricing, battle panel, login) —
+    // the weather card was rendering on top of the welcome card on a cleared profile.
+    try{for(const id of['bdocWelcome','bdocOnboard','mo','authModal','battlePanel']){const m=document.getElementById(id);if(m&&getComputedStyle(m).display!=='none')return true}}catch(_){}
     const el=document.getElementById('bdocOnboard');
     return !!(el&&getComputedStyle(el).display!=='none');
   }
@@ -13842,7 +13850,7 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 <script src="js/mesh-globe-layer.js?v=p75"></script>
 <script src="js/bdoc-offline-store.js?v=p75"></script>
 <!-- P156e: battle plan autosave/restore + real-shape exports + .bdoc.json (needs V, battleEntities, BDOCOfflineStore) -->
-<script src="js/bdoc-plan.js?v=p156e"></script>
+<script src="js/bdoc-plan.js?v=p159e"></script>
 <script src="js/bdoc-link-manager.js?v=p156d"></script>
 <script src="js/bdoc-plugin-renderer.js?v=p155"></script>
 <script src="js/bdoc-offline-hud.js?v=p158f"></script>

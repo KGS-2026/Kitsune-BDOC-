@@ -404,7 +404,10 @@
     await restore();
     ready = true;
     lastLen = battleEntities.length;
-    if (drawnBeforeRestore) markDirty();
+    // p159e: markers placed while restore() was still awaiting IndexedDB (measured 6–10 s on
+    // slow devices) hit markDirty() while !ready and were silently never saved. Anything on the
+    // board now that restore() didn't draw is unsaved — queue a save unconditionally.
+    if (battleEntities.length > savedCount || drawnBeforeRestore) markDirty();
     setInterval(() => { if (battleEntities.length !== lastLen) { lastLen = battleEntities.length; markDirty(); } }, 4000);  // catches length=0 clears
     window.addEventListener('beforeunload', e => {
       if (!hasUnsaved()) return;
