@@ -79,6 +79,43 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Hermes — p159, on `main` @ `9d43268` (2026-10-24 night shift, Travon asleep, "full authority")
+Mission for the night: close bugs, then make BDOC *look* like the Ferrari it is
+(bar: Palantir Gotham / Anduril Lattice). Each pass ships to main with its own
+`css/bdoc-p15x.css` layer loaded LAST, so a sibling can revert one pass by
+removing one `<link>`. Verify live with `BUILD p159` / `bdoc-v159`.
+
+**p158f @ `30f0315`** — CI red for 7 pushes: GitHub = Node 20, `node --test tests/`
+needs the `tests/*.test.js` glob (fixed in `package.json` + `scripts/ci-validate.sh`).
+Fallbacks: `proxy-adsb?mil=1` (adsb.lol → adsb.fi) replaces dead `adsb-global`;
+`proxy-firms` falls through SNPP → NOAA-20 → NOAA-21 when a source returns
+header-only (UTC rollover); `proxy-status` + `outage-watch.js` use
+slack-status.com / zoomstatus.com. Mobile `#mob-ov` card now uses our proxies
+(FIRMS key is out of the page). Onboarding wizard defers until the phone gate
+closes. ONLINE badge docked inline after `#bdocThreatPill`. `css/bdoc-p158f.css`
+= 10px text floor (231 → 28 sub-10px nodes). `netlify.toml`: the `/*.md` splat
+NEVER matched — BDOC_CLAUDE.md, BDOC_HISTORY.md, IMPLEMENTATION_PLAN.md,
+ADDING_A_NEW_API_KEY.md, meshtastic_receptor.py, deno.lock were public; each is
+now 404'd explicitly and `tests/public-surface.test.js` fails the build if a new
+root-level internal file lacks a rule. Two tracked `.bak` files deleted.
+
+**p159 @ `9d43268`** — `css/bdoc-p159.css`: top bar 48 → 56px via `--tbh` (lp/rp/
+sitPanel/hud-corners/outage banner/cursorCoords follow). Live bar content measured
+**2461px on a 1600px viewport** — LOGIN, clock, NVG/FLIR were off-screen; the bar
+now collapses by width (export strip <2800, subline+build pill <2200, status strip
+<1700, CRT/NVG/FLIR <1800, link badge <1600) — nothing removed from the DOM.
+LOGIN back in flow (was `position:fixed` over NAV); duplicate SIGN IN pill removed
+(`js/auth.js` logged-out badge is empty). Single accent: every `#2D72D2` inside an
+inline `style=` in index.html → `#E8B349` (data/semantic colours untouched).
+Onboarding: no emoji, no rainbow tints, 14px radius, Inter. Cesium label fonts
+7–9px → 10–11px across `js/modules/*` (blurry on WebGL below 10px).
+
+**Open next (in order):** pricing copy still wrong (free = 10 layers, copilot free,
+live feeds); data age per entity; copilot "what changed" on load; trust-score label.
+Travon's side: run `docs/mesh-setup.sql`; rotate the FIRMS key (was in client code).
+Local QA harness: `/root/bdoc-qa/probe.py URL W H WAIT JS [png]` over Playwright
+CDP :9222 (`/root/.venvs/pw/bin/python`); competitor teardown in `/root/bdoc-qa/comp/`.
+
 ### Hermes — p158e, on `main` @ `81bcd26` (2026-10-24)
 - **Situation panel XSS closed** (list cards + detail view). `sit.title/author/region/details/intel/activity` now go through `esc()`. Static demo data today; would have been stored XSS once a `situations` table feeds it. Opus-4.8 had left the detail half uncommitted — finished, list half added.
 - **Field audit S2 fixed — paid tools no longer lock offline.** `loadProfile()` caches `{uid,tier,exp:+30d}` in `localStorage.bdoc_tier_cache` on each successful load; read ONLY when the profile fetch fails/returns null. Rejects expired, other-uid, and non-paid/unknown tiers; cleared on logout. Client-side only — grants nothing the server checks.
