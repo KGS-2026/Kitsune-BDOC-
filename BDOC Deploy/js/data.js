@@ -125,10 +125,38 @@ const Health={
     return `OK ${c.ok}/${c.active}`+(c.degraded?` · DEGRADED ${c.degraded}`:'')+(c.down?` · DOWN ${c.down}`:'')+(c.idle?` · IDLE ${c.idle}`:'');
   },
   updateLive(){
-    const h=this.sysHealth();const dot=document.getElementById('liveDot');if(!dot)return;
+    const h=this.sysHealth();const dot=document.getElementById('liveDot');
+    try{this.gridCheck()}catch(_){}
+    if(!dot)return;
     if(h==='critical'){dot.style.background='var(--rd)';dot.style.boxShadow='0 0 6px var(--rd)'}
     else if(h==='degraded'||h==='nominal'){dot.style.background='var(--yl)';dot.style.boxShadow='0 0 6px var(--yl)'}
     else{dot.style.background='var(--gn)';dot.style.boxShadow='0 0 6px var(--gn)'}
+  },
+  // p159h GRID STATE. navigator.onLine only flips when the NIC drops — a dead ISP, a
+  // powered-but-cut router, or a captive portal all look "online" to the browser while
+  // every feed fails. Travon's spec: the only visible difference between grid-up and
+  // grid-down is the app telling you feeds were cut and it went to offline mode. So we
+  // judge the grid by the feeds themselves: every exercised feed failing (and nothing
+  // succeeded in the last 90 s) = FEEDS CUT. First success afterwards = back online.
+  grid:'online',_gridEl:null,
+  gridCheck(force){
+    const ff=Object.values(this.feeds).filter(f=>f.status!=='unknown');
+    const lastOk=Math.max(0,...ff.map(f=>f.lastOk||0));
+    const recentOk=lastOk&&(Date.now()-lastOk)<90000;
+    const allBad=ff.length>0&&ff.every(f=>f.status==='down'||f.status==='degraded');
+    const off=(typeof navigator!=='undefined'&&navigator.onLine===false)||(allBad&&!recentOk);
+    const next=off?'offline':'online';
+    if(next===this.grid&&!force)return;
+    this.grid=next;this.renderGrid(lastOk);
+    if(typeof EventLog!=='undefined')EventLog.add(off?'warn':'ok',off?'FEEDS CUT — offline mode, last good data '+this.tAgo(lastOk)+' ago':'Feeds restored — live mode');
+    if(typeof af==='function')af(off?'var(--yl)':'var(--gn)',off?'⚠ ALL FEEDS CUT — OFFLINE MODE · cached data active':'✓ FEEDS RESTORED — live');
+  },
+  renderGrid(lastOk){
+    let el=this._gridEl||document.getElementById('bdocGridStrip');
+    if(!el){el=document.createElement('div');el.id='bdocGridStrip';el.setAttribute('role','status');el.style.cssText='position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:9000;font:700 10px/1 var(--m,monospace);letter-spacing:2px;padding:6px 14px;border-radius:0 0 6px 6px;background:#1a1300;color:var(--yl,#E8B349);border:1px solid var(--yl,#E8B349);border-top:0;display:none;pointer-events:none;text-transform:uppercase';document.body.appendChild(el)}
+    this._gridEl=el;
+    if(this.grid==='offline'){el.textContent='OFFLINE MODE — FEEDS CUT · LAST LIVE '+(lastOk?this.tAgo(lastOk)+' AGO':'NEVER');el.style.display='block';if(!this._gridT)this._gridT=setInterval(()=>{if(this.grid==='offline')this.renderGrid(Math.max(0,...Object.values(this.feeds).map(f=>f.lastOk||0)));},15000)}
+    else{el.style.display='none';if(this._gridT){clearInterval(this._gridT);this._gridT=null}}
   },
   tAgo(ts){if(!ts)return'never';const s=Math.floor((Date.now()-ts)/1000);if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';return Math.floor(s/3600)+'h'},
   renderDash(){
