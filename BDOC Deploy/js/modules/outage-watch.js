@@ -168,15 +168,34 @@
       .then(function (d) { if (d && d.offline === true) throw new Error('sw-offline-sentinel'); return d; });
   }
 
+  // p159i: GDELT DOC API 429s datacenter IPs and intermittently residential ones.
+  // Browser-direct first (true 24h window), then our proxy-gdelt?format=articles
+  // (GKG raw files, not rate-limited, real coordinates) — same {articles:[...]} shape.
+  // Remembers a direct failure for 10 min so we don't eat a 12 s timeout per poll.
+  var _gdeltDirectDeadUntil = 0;
+  function gdeltArticles(query, timespan, max, ms) {
+    var direct = 'https://api.gdeltproject.org/api/v2/doc/doc?query=' + encodeURIComponent(query) + '&mode=artlist&format=json&timespan=' + timespan + '&maxrecords=' + max + '&sort=datedesc';
+    var proxy = '/.netlify/functions/proxy-gdelt?format=articles&query=' + encodeURIComponent(query) + '&timespan=' + timespan + '&maxrecords=' + max;
+    var viaProxy = function () {
+      return fetchJson(proxy, 15000).then(function (d) {
+        if (!d || !Array.isArray(d.articles)) throw new Error('proxy shape');
+        d._via = 'proxy'; return d;
+      });
+    };
+    if (Date.now() < _gdeltDirectDeadUntil) return viaProxy();
+    return fetchJson(direct, ms || 8000).then(function (d) {
+      if (!d || !Array.isArray(d.articles)) throw new Error('direct shape');
+      d._via = 'direct'; return d;
+    }).catch(function () { _gdeltDirectDeadUntil = Date.now() + 600000; return viaProxy(); });
+  }
+
   async function fuseCause(w, a) {
     var cand = []; // {cause, weight, why, evidence:[{t,u}]}
     var orgWord = w.name.split('/')[0].trim(); // 'Comcast/Xfinity' → 'Comcast'
 
     var jobs = [
-      // CYBER a — GDELT: org + attack terms, last 24h (browser-direct; throttled on some IPs → best-effort)
-      fetchJson('https://api.gdeltproject.org/api/v2/doc/doc?query=' +
-        encodeURIComponent('"' + orgWord + '" (cyberattack OR ransomware OR hacked OR "denial of service" OR ddos OR breach)') +
-        '&mode=artlist&format=json&timespan=24h&maxrecords=30&sort=datedesc', 12000)
+      // CYBER a — GDELT: org + attack terms, last 24h (browser-direct → proxy-gdelt GKG fallback)
+      gdeltArticles('"' + orgWord + '" (cyberattack OR ransomware OR hacked OR "denial of service" OR ddos OR breach)', '24h', 30, 12000)
         .then(function (d) {
           if (!Array.isArray(d.articles) || !d.articles.length) return;
           var seen = {}, arts = [];
@@ -331,13 +350,11 @@
   // ── 1. news-detect poll ──
   async function pollNews() {
     state.lastNewsPoll = Date.now();
-    var q = encodeURIComponent('(outage OR "is down" OR "goes down" OR blackout OR "service disruption" OR "network down")');
-    var url = 'https://api.gdeltproject.org/api/v2/doc/doc?query=' + q + '&mode=artlist&format=json&timespan=1h&maxrecords=100&sort=datedesc';
+    var q = '(outage OR "is down" OR "goes down" OR blackout OR "service disruption" OR "network down")';
     var arts = [];
     try {
-      var r = await fetch(url, { signal: AbortSignal.timeout(12000) });
-      var d = await r.json();
-      if (Array.isArray(d.articles)) { arts = d.articles; state.newsOk = true; }
+      var d = await gdeltArticles(q, '1h', 100, 12000);
+      if (Array.isArray(d.articles)) { arts = d.articles; state.newsOk = true; state.newsVia = d._via; }
     } catch (_) { state.newsOk = false; }
     if (!arts.length) return;
 

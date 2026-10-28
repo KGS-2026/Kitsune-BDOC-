@@ -3,7 +3,7 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v159h';  // p159: Ferrari chrome pass 1 — 56px bar, single amber accent, neutral panels, onboarding redesign, 10px+ globe labels
+const SW_VERSION = 'bdoc-v159i';  // p159: Ferrari chrome pass 1 — 56px bar, single amber accent, neutral panels, onboarding redesign, 10px+ globe labels
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156g: long-press menu, copy grid / share, MGRS setting + search, no boot prompt, og-image
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156f: current flowing along grid lines + pipeline flow (cesium-init + layers-arcgis)
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156e: battle plan autosave/restore, real-shape GeoJSON/CoT export, .bdoc.json save/open
@@ -49,16 +49,16 @@ const STATIC_PRECACHE = [
   '/js/bdoc-atak.js?v=p156d',
   '/js/cesium-init.js?v=p159b',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p159',
-  '/js/modules/layers-conflict.js?v=p159',
-  '/js/modules/layers-infra.js?v=p159',
-  '/js/modules/layers-air.js?v=p159',
-  '/js/modules/layers-nuke.js?v=p159',
-  '/js/modules/nuke-sim.js?v=p159',
-  '/js/modules/layers-airfields.js?v=p159',
-  '/js/modules/net-builder.js?v=p159',
-  '/js/modules/mesh-world.js?v=p159',
-  '/js/modules/skybridge.js?v=p159',
+  '/js/modules/layers-military.js?v=p159i',
+  '/js/modules/layers-conflict.js?v=p159i',
+  '/js/modules/layers-infra.js?v=p159i',
+  '/js/modules/layers-air.js?v=p159i',
+  '/js/modules/layers-nuke.js?v=p159i',
+  '/js/modules/nuke-sim.js?v=p159i',
+  '/js/modules/layers-airfields.js?v=p159i',
+  '/js/modules/net-builder.js?v=p159i',
+  '/js/modules/mesh-world.js?v=p159i',
+  '/js/modules/skybridge.js?v=p159i',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',
