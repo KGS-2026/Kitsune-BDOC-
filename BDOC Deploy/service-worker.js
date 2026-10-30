@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v159i';  // p159: Ferrari chrome pass 1 — 56px bar, single amber accent, neutral panels, onboarding redesign, 10px+ globe labels
+const SW_VERSION = 'bdoc-v160';  // p160: LIVE WIRE owner feed — boot probe, /wire page, function bypass below
+// (prev) const SW_VERSION = 'bdoc-v159i';  // p159: Ferrari chrome pass 1 — 56px bar, single amber accent, neutral panels, onboarding redesign, 10px+ globe labels
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156g: long-press menu, copy grid / share, MGRS setting + search, no boot prompt, og-image
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156f: current flowing along grid lines + pipeline flow (cesium-init + layers-arcgis)
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156e: battle plan autosave/restore, real-shape GeoJSON/CoT export, .bdoc.json save/open
@@ -130,6 +131,11 @@ self.addEventListener('fetch', event => {
   // P156d (field audit S1): the link probe must reach the real network. No respondWith,
   // so the browser fetches it directly and a dead uplink fails instead of hitting a cache.
   if (url.origin === self.location.origin && url.pathname === '/.netlify/functions/ping') return;
+  // p160: owner-only intel feed, same bare return. The network-first path below writes every
+  // 200 to Cache Storage, which ignores no-store, and that would leave the owner's snapshot and
+  // secret Realtime topic on disk. /api/wire is the same function via the /api/* rewrite.
+  if (url.origin === self.location.origin &&
+      (url.pathname === '/.netlify/functions/wire' || url.pathname === '/api/wire')) return;
 
   // HTML / navigation — NETWORK-FIRST so a new deploy is seen immediately
   // (cache-first on index.html was why fresh deploys required 2 reloads / never showed).

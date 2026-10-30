@@ -1,0 +1,47 @@
+# BDOC LIVE WIRE collector. Installed by tools/wire/deploy.sh.
+#
+# This droplet also runs Hermes and holds all of its secrets, so the sandbox below is
+# not optional. The daemon runs as a throwaway user, can write only its state directory,
+# cannot see /root or /home, and has no reason to listen on anything.
+# Do not add MemoryDenyWriteExecute: the V8 JIT needs it off.
+
+[Unit]
+Description=BDOC LIVE WIRE collector
+After=network-online.target
+Wants=network-online.target
+# Never give up. Through election week a restart loop is better than a stopped feed.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+# Keep the JS heap inside MemoryMax, so V8 collects before the kernel kills us.
+ExecStart=/usr/bin/node --max-old-space-size=460 --disable-warning=ExperimentalWarning /opt/bdoc-wire/wire.js
+WorkingDirectory=/opt/bdoc-wire
+EnvironmentFile=/etc/bdoc-wire/env
+Restart=always
+RestartSec=3
+TimeoutStopSec=15
+
+DynamicUser=yes
+StateDirectory=bdoc-wire
+UMask=0077
+MemoryMax=600M
+CPUQuota=70%
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+
+[Install]
+WantedBy=multi-user.target

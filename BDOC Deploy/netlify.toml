@@ -222,6 +222,14 @@
   status = 404
   force = true
 
+# p160 LIVE WIRE: the phone and second-monitor page. A rewrite, not a redirect, so
+# the short URL stays in the address bar. wire.html is an empty shell: everything
+# on it comes from the owner-gated function after sign-in.
+[[redirects]]
+  from = "/wire"
+  to = "/wire.html"
+  status = 200
+
 [[redirects]]
   from = "/*.md"
   to = "/404.html"
@@ -302,3 +310,17 @@
   for = "/index.html"
   [headers.values]
     Cache-Control = "public, max-age=300, must-revalidate"
+
+# p160 LIVE WIRE page: not for search engines. Short cache so a fix lands quickly.
+# Both paths reach the same file, and /wire is the one people actually open.
+[[headers]]
+  for = "/wire.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "public, max-age=60, must-revalidate"
+
+[[headers]]
+  for = "/wire"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "public, max-age=60, must-revalidate"
