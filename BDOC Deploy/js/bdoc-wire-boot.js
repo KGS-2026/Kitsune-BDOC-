@@ -8,8 +8,8 @@
  * netlify/functions/_lib/owner.mjs. Nothing in this file is a secret, and forcing
  * the item to appear gets you a panel full of 403s.
  *
- * WHY THE TOKEN IS ATTACHED BY HAND: bdoc-auth-fetch.js looks for window.Auth,
- * which does not exist. The singleton is window.BDOC_Auth.
+ * WHY THE TOKEN IS ATTACHED BY HAND: the probe already holds the session, because
+ * it needs the user id. bdoc-auth-fetch.js leaves a header it finds alone.
  *
  * WHY THE AUTH CALLBACK IS ONE LINE: awaiting Supabase inside onAuthStateChange
  * is the documented supabase-js v2 deadlock (p157 note in js/auth.js), and

@@ -1522,10 +1522,10 @@ if(!window.Cesium){
 <script src="js/converters.js?v=p156g"></script>
 <script src="js/data.js?v=p159h"></script>
 <script src="js/auth.js?v=p159"></script>
-<!-- p157: must load AFTER auth.js (needs window.Auth.client) and BEFORE any
+<!-- p157: must load AFTER auth.js (needs window.BDOC_Auth.client) and BEFORE any
      layer module that fetches. Attaches the Supabase JWT to our own function
      calls so the server can enforce tier; see netlify/functions/_lib/guard.js. -->
-<script src="js/bdoc-auth-fetch.js?v=p158"></script>
+<script src="js/bdoc-auth-fetch.js?v=p162"></script>
 <script src="js/bdoc-wire-boot.js?v=p160" defer></script>
 <script src="js/filters.js?v=p154"></script>
 <!-- layers-military.js is lazy-loaded on first toggle of milbases (Phase 3 Turn 7) -->

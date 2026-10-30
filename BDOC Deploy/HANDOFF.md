@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
-**Last updated by Claude Code:** 2026-10-30 · build **p160** live on `main` · `SW_VERSION bdoc-v160`
+**Last updated by Claude Code:** 2026-10-30 · build **p162** · `SW_VERSION bdoc-v162`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,27 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
+
+### Claude Code — p162 auth-fetch fix (2026-10-30) — CHECKOUT WAS BROKEN FOR EVERYONE
+**This corrects §2 Y.2, which said nothing was broken.** Since p158b (`9107060`, 2026-10-23) `stripe-checkout` and `stripe-portal` require a JWT, `subscribe()` and `openPortal()` rely on this wrapper to send it, and the wrapper sent nothing. Every signed-in Subscribe click got 401 `sign in required` and Stripe was never called. `tests/payment-auth.test.js` greps each side on its own, so nothing proved the two met. Existing subscribers are unaffected: their tier is read from Supabase, not through a function.
+
+**The one-line rename alone is not safe.** Two consequences, both measured:
+- `getSession()` now sits in front of every function call. With a valid token it costs 15 µs, so there is no token cache. With an expired token and Supabase unreachable it retries for ~30 s: feeds were held back 27.7 s, and the `ping` link probe reported a healthy uplink as unreachable. So the wait is capped at 3 s, calls then go as a guest until the read settles, and `ping` never reads the session.
+- The service worker's `networkFirst` stored the request with its headers, so every signed-in GET wrote a live JWT to Cache Storage, where it survived logout. It now stores a bare URL key. **Production does this today** through Supabase's own `profiles` GET, on the "everything else" route, and p162 closes that too.
+
+`client.auth.lock` is `null` on supabase-js 2.118.0, so the "internal lock" in the p157 note in `js/auth.js` no longer exists. Keep its rule anyway: `getSession()` still waits on `initializePromise`, and a nested refresh still deadlocks on `refreshingDeferred`.
+
+**Verified:**
+- Prod, 2026-10-30: live page has `typeof window.Auth` `undefined`, `BDOC_Auth` an object, wrapper installed. Curl `stripe-checkout` and `stripe-portal` with no JWT: 401.
+- Real browser with supabase-js 2.118.0 from the production URL and SRI, real `auth.js`, `guard.wrap` and `stripe-checkout` handler; only Supabase's HTTP API and the Stripe SDK were fake. Old wrapper: subscribe 401, no Stripe call. New: 200, and the Stripe stub got the verified user id. `guard.wrap` on a paid layer: signed in 200, guest 401.
+- Signed in: token on `/.netlify/functions/*`, `/api/*`, `Request` and `URL` inputs. Guest: none. Third party: none on look-alike paths, another port, or the hop after a same-origin 302. Real `index.html` boot: 14 real third-party hosts, 0 tokens.
+- Supabase unreachable, expired token: first feeds 3.0 s (was 27.7 s), a feed 10 s later 14 ms (was 17.7 s), `ping` 12 ms (was a false failure). Token back 4.7 s after recovery. Supabase black-holed: `getSession()` still pending at 8 s, feeds 3.0 s then 10 ms, paid layer 401, free layer 200.
+- Real service worker in headless Edge with a throwaway profile (the app's browser pane cannot fetch a worker script from localhost): token reaches the server through the worker, 0 JWTs in Cache Storage before and after logout, offline copy still served. After one function GET, today's production files left 1 JWT and the one-line fix 2.
+- No function forwards the incoming `Authorization`, `/api/*` only rewrites to our own functions, Electron's proxies send fixed headers, and the two 302 functions are reached through Cesium tiles and `<img>`, not `fetch`. No `onAuthStateChange` subscriber awaits, and a test now pins that.
+- CDN: `Cache-Status` identical with and without a bearer on 4 production functions, but all were `fwd=miss; stored`, so that sample had no hit rate to lose.
+- 678 tests on Node 24. Eight reintroduced bugs each fail `tests/auth-fetch.test.js`: old name, renamed global, no cap, no stall skip, `ping` on Supabase, no origin check, JWT in cache, async auth callback.
+
+**Believed, NOT verified:** a real login against real Supabase, a real Stripe Checkout session, and Firefox or Safari (Chromium and Edge only). Right after this ships, subscribe with a real account and confirm Stripe opens.
 
 ### Claude Code — p160 LIVE WIRE (2026-10-30) — LIVE, COLLECTOR RUNNING ON THE DROPLET
 Travon's directive: "I need to know in real time what is going on... chatter and rumors about things happening on the 4th of November... there should be a live scraper... as the owner I should be able to see everything in real time."
@@ -906,7 +927,7 @@ curl -s https://kgsbdoc.netlify.app/service-worker.js \
 
 ### Y. Found while building p160 (2026-10-30)
 1. **Web Push cannot send.** `GET push-subscribe` says `sendReady:false`, and neither `VAPID_PRIVATE_KEY` nor `PUSH_SEND_KEY` is in the Netlify env. The droplet sentinel's push fan-out and every customer alert are silently dead. Telegram still reaches Travon. 1 subscriber waiting.
-2. **`bdoc-auth-fetch.js` never attaches a token.** It reads `window.Auth`, which does not exist; the singleton is `window.BDOC_Auth`. `tests/auth-fetch.test.js` hides this by defining `sandbox.Auth`. Nothing breaks today only because no function uses `guard.wrap` yet. The first paid proxy to adopt it will 401 every signed-in customer. Fix is one line, but it starts sending the JWT on every function call, so ship it on its own, not on the eve of an election.
+2. ✅ **FIXED in p162: `bdoc-auth-fetch.js` never attached a token, which also broke checkout.** See §1. **Before a paid proxy adopts `guard.wrap`:** (a) calls fired before `BDOC_Auth.client` exists go as a guest; at boot that is `proxy-firms`, `proxy-adsb` and `mesh-nodes`. (b) Tile and `<img>` loads skip `fetch`, so they carry no token. (c) A gated 200 must not be cacheable by URL. In testing the browser's HTTP cache answered a guest with a response fetched while signed in, and the worker writes every 200 to Cache Storage, so gated responses need `private, no-store` and a worker bypass like `wire`'s.
 3. **`sentinel` relay is empty.** `GET /.netlify/functions/sentinel` returns `generated:null`. Nothing POSTs to it.
 4. **`bdoc_sentinel.py` still calls the GDELT DOC API**, which 429s from the droplet, so its cyber sweep degrades silently.
 5. **LIVE WIRE source gaps.** No X, Reddit, TikTok or Facebook. X is the largest: it needs a paid API or a scraping vendor, and that is Travon's call.

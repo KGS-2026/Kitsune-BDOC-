@@ -714,8 +714,8 @@ test('the bypass is exact: other functions still go through the service worker',
 
 test('SW_VERSION is bumped with the previous line kept', () => {
   const src = fs.readFileSync(path.join(ROOT, 'service-worker.js'), 'utf8');
-  assert.match(src, /^const SW_VERSION = 'bdoc-v160';/m);
-  assert.match(src, /^\/\/ \(prev\) const SW_VERSION = 'bdoc-v159i';/m);
+  assert.match(src, /^const SW_VERSION = 'bdoc-v162';/m);
+  assert.match(src, /^\/\/ \(prev\) const SW_VERSION = 'bdoc-v160';/m);
 });
 
 // ── netlify.toml ────────────────────────────────────────────────────────────
