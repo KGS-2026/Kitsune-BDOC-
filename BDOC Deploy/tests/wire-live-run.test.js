@@ -94,6 +94,40 @@ test('the social posts that matter stay in', () => {
   assert.equal(k('National Guard trucks rolling down our street tonight', 'social').sev >= 1, true);
 });
 
+test('a rumor that merges with an official denial reads DISPUTED and cannot page', () => {
+  const { Clusterer } = require('../tools/wire/lib/cluster');
+  const { shouldPage } = require('../tools/wire/lib/alert');
+  let now = Date.parse('2026-10-30T18:00:00Z');
+  const c = new Clusterer({ now: () => now });
+  const live = { fresh: true, firstPoll: false, drill: false };
+  c.add({ ...live, id: 'a', t: now, h: 'Martial law declared in Portland tonight', sn: 'Bluesky', cls: 'social', pub: 'bsky.app', u: 'https://bsky.app/1', base: 3 });
+  now += 60000;
+  const r = c.add({ ...live, id: 'b', t: now, h: 'Martial law declared in Portland is false, DHS says', sn: 'DHS', cls: 'official', pub: 'dhs.gov', u: 'https://dhs.gov/1', base: 1, debunk: true });
+  assert.equal(r.isNew, false, 'the fixture must merge for this test to mean anything');
+  assert.equal(r.cluster.st, 'disputed');
+  assert.equal(shouldPage(r.cluster, { uptimeMs: 3600000, pagesLastHour: 0, pagesLastDay: 0 }), false);
+  const restored = new Clusterer({ now: () => now });
+  restored.restore([c.serialize(r.cluster)]);
+  assert.equal(restored.get(r.cluster.id).offDenied, true, 'survives a restart');
+});
+
+test('fake monitors are a real event, not a debunk', () => {
+  assert.equal(k('South Florida election officials warned about fake election monitors at early-voting sites').debunk, false);
+  assert.equal(k('Video of ballot burning is fake, officials say').debunk, true);
+  assert.equal(k('Fake video claims to show ballots being destroyed').debunk, true);
+});
+
+test('a court follow-up to an old shooting is not a live shooting', () => {
+  assert.ok(k('Charges dropped against man arrested in mass shooting at Ohio festival that wounded 12').sev <= 1);
+});
+
+test('a newsroom snippet saying "reports of" does not make the story a rumor', () => {
+  const r = classify({ cls: 'wire', h: 'ICE activity is surging ahead of midterms. So is voter turnout.', x: 'There are reports of agents near polling places in several states.' });
+  assert.ok(!r.cat.includes('rumor'));
+  assert.ok(classify({ cls: 'social', h: 'ICE at the polls tomorrow', x: 'There are reports of agents near polling places.' }).cat.includes('rumor'));
+  assert.ok(k('Rumors of martial law spread online ahead of the election').cat.includes('rumor'));
+});
+
 test('a witness post survives the social filter', () => {
   assert.equal(k('Protesters are blocking the bridge downtown right now', 'social').sev, 1);
 });

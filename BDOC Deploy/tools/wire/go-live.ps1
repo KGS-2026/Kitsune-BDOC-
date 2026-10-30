@@ -1,9 +1,10 @@
 # ============================================================
-# setup-secrets.ps1 — turn LIVE WIRE on (run once, by the owner)
+# go-live.ps1 — turn LIVE WIRE on (run once, by the owner)
 # ============================================================
 # WHY THIS IS A SCRIPT YOU RUN YOURSELF
-# It writes secrets into Netlify and copies the Telegram bot token to the collector.
-# Those are the owner's decisions, so they live here where you can read them first.
+# It adds secrets to Netlify, copies the Telegram bot token to the collector, and installs
+# a service on the droplet. Those are the owner's decisions, so they are all here in one
+# place where you can read them before anything happens.
 #
 # WHAT IT DOES, IN ORDER
 #   1. Generates two random secrets. They are never printed and never written to this PC.
@@ -12,11 +13,12 @@
 #   3. Writes /etc/bdoc-wire/env on the droplet (root-only, mode 600) with those secrets.
 #      The Telegram token is copied from /root/.hermes/.env on the droplet itself, so it
 #      never passes through this machine.
-#   4. Triggers a Netlify redeploy, because functions only see new env vars after a build.
-#   5. Restarts the collector out of dry mode.
+#   4. Installs the collector from origin/main with tools/wire/deploy.sh, as a sandboxed
+#      service that cannot read /root and opens no port. Hermes is not touched.
+#   5. Triggers a Netlify redeploy, because functions only see new env vars after a build.
 #
 # It needs the Netlify CLI login already on this PC and the droplet SSH key.
-# Run: pwsh -File "tools\wire\setup-secrets.ps1"
+# Run: pwsh -File "C:\Users\ARNAUTICA\bdoc-ship\BDOC Deploy\tools\wire\go-live.ps1"
 
 $ErrorActionPreference = 'Stop'
 
@@ -30,6 +32,15 @@ function New-Hex([int]$Bytes) {
   $b = [byte[]]::new($Bytes)
   [System.Security.Cryptography.RandomNumberGenerator]::Fill($b)
   -join ($b | ForEach-Object { $_.ToString('x2') })
+}
+
+function Invoke-Droplet([string]$Command, [string]$Stdin) {
+  if ($PSBoundParameters.ContainsKey('Stdin')) {
+    $Stdin | & ssh -i $SshKey -o BatchMode=yes $Droplet $Command
+  } else {
+    & ssh -i $SshKey -o BatchMode=yes $Droplet $Command
+  }
+  if ($LASTEXITCODE -ne 0) { throw "Droplet step failed (exit $LASTEXITCODE)." }
 }
 
 $cfg = Get-Content (Join-Path $env:APPDATA 'netlify\Config\config.json') -Raw | ConvertFrom-Json
@@ -56,18 +67,16 @@ $body = @(
 ) | ConvertTo-Json -Depth 6 -AsArray
 Invoke-RestMethod -Method Post -Headers $headers -ContentType 'application/json' -Uri $envUrl -Body $body | Out-Null
 
-Write-Host '2/4  Writing collector env on the droplet'
+Write-Host '2/4  Writing the collector env on the droplet'
 $pub = (Invoke-RestMethod -Uri 'https://kgsbdoc.netlify.app/.netlify/functions/config').supabase_anon_key
 $envText = "WIRE_TOPIC=$topic`nWIRE_INGEST_KEY=$ingest`nSUPABASE_URL=https://ulgxbqhbgbyxlzoyxcus.supabase.co`nSUPABASE_PUBLISHABLE_KEY=$pub`n"
-$remote = "umask 077; install -d -m 0750 /etc/bdoc-wire; { cat; grep -E '^TELEGRAM_BOT_TOKEN=' /root/.hermes/.env; echo TELEGRAM_CHAT_ID=$ChatId; } > /etc/bdoc-wire/env; chmod 600 /etc/bdoc-wire/env"
-$envText | & ssh -i $SshKey -o BatchMode=yes $Droplet $remote
-if ($LASTEXITCODE -ne 0) { throw 'Could not write the droplet env. Netlify vars are set; rerun after deleting them, or fix ssh.' }
+Invoke-Droplet "umask 077; install -d -m 0750 /etc/bdoc-wire; { cat; grep -E '^TELEGRAM_BOT_TOKEN=' /root/.hermes/.env; echo TELEGRAM_CHAT_ID=$ChatId; } > /etc/bdoc-wire/env; chmod 600 /etc/bdoc-wire/env" $envText
 
-Write-Host '3/4  Redeploying the site so functions see the new vars'
+Write-Host '3/4  Installing and starting the collector'
+Invoke-Droplet "set -e; cd /root/Kitsune-BDOC-; git fetch -q origin main; rm -rf /tmp/wire-src; mkdir /tmp/wire-src; git archive FETCH_HEAD 'BDOC Deploy/tools/wire' | tar -x -C /tmp/wire-src; bash '/tmp/wire-src/BDOC Deploy/tools/wire/deploy.sh'"
+
+Write-Host '4/4  Redeploying the site so functions see the new vars'
 Invoke-RestMethod -Method Post -Headers $headers -Uri "https://api.netlify.com/api/v1/sites/$Site/builds" | Out-Null
-
-Write-Host '4/4  Restarting the collector live'
-& ssh -i $SshKey -o BatchMode=yes $Droplet 'systemctl restart bdoc-wire; sleep 4; systemctl is-active bdoc-wire'
 
 $ingest = $null; $topic = $null; $envText = $null; $headers = $null
 Write-Host ''

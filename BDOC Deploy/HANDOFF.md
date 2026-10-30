@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
-**Last updated by Claude Code:** 2026-10-16 · build **p156g** live on `main` @ `0c1b0f3` · `SW_VERSION bdoc-v156g`
+**Last updated by Claude Code:** 2026-10-30 · build **p160** live on `main` · `SW_VERSION bdoc-v160`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,31 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
+
+### Claude Code — p160 LIVE WIRE (2026-10-30) — CODE LIVE, COLLECTOR NOT YET TURNED ON
+Travon's directive: "I need to know in real time what is going on... chatter and rumors about things happening on the 4th of November... there should be a live scraper... as the owner I should be able to see everything in real time."
+
+**Hermes: do NOT start a second collector, and do not add `WIRE_*` env vars by hand.** Travon turns this on by running `tools/wire/go-live.ps1` (read its header). It is his to run because it writes Netlify secrets, copies the Telegram token and installs a root service; the permission classifier blocked Claude Code from doing those without his approval, correctly.
+
+**What it is.** Contract: `docs/LIVE-WIRE-SPEC.md`. Runbook: `tools/wire/README.md`.
+- `tools/wire/`: always-on Node 22 collector, zero npm deps. 138 polled sources (official, wires, specialist, Google News RSS searches, Telegram public previews, status pages) + Bluesky Jetstream + Wikimedia SSE + GDELT GKG. Classifies, clusters stories, assigns a truth status: official / corroborated / reported / unverified / disputed.
+- Delivery opens NO inbound port. Supabase Realtime Broadcast on a secret topic (measured 30–114 ms, droplet to subscriber) plus a 60 s snapshot POST to `netlify/functions/wire` (Blobs) as a second, independent path.
+- Owner gate is server-side on the immutable Supabase user id (`BDOC_OWNER_IDS`), never email or tier. Fails closed. `/wire` is the phone and second-monitor page; the main app gets an owner-only WIRE item in `.tb-r`.
+- Telegram pages the catastrophic tier only (P110 doctrine). A lone social post can never page. Backlog never pages.
+- Ground rules you must keep: feed text reaches the DOM through `textContent` only, never into a Cesium `description` (InfoBox iframe is allow-scripts + allow-same-origin), and never to an LLM (prompt injection). See spec §0.
+
+**Verified:**
+- Prod (`bdoc-v160`, curl, 2026-10-30): `/wire` 200, function 401 for no token / garbage token / no ingest key / wrong key, 405 on DELETE, no CORS for a foreign origin, `no-store`, `noindex`. `tools/`, `docs/`, `tests/`, `_lib/` all 404.
+- `scripts/ci-validate.sh` on Linux Node 22: all 5 checks pass. 658 tests on Node 24 after the last fixes.
+- Realtime broadcast end to end from the droplet with the real project: 5/5 received, 30–114 ms.
+- Real browser against `tools/wire/dev-server.js`: desktop and 375 px, hostile `<script>` / `onerror` strings render as text, 0 images, all links http(s) with noopener noreferrer, 0 console errors.
+- Real collector runs (droplet dry run; 3 min on the laptop): 131/139 sources up, 0 errors, firehoses ~2,900/min each, about 22 live items in 3 min after filtering. `tests/wire-live-run.test.js` pins every real misclassification found.
+
+**Believed, NOT verified:** the signed-in owner path against real Supabase (needs Travon's login; only mocks and a local harness so far), a real Telegram page, Blobs read/write in production, the service under systemd on the droplet, and `/wire` on a physical phone. Check these right after go-live.
+
+**Pitfalls found.** `tests/wire-*` fetcher and pipeline tests passed on Node 24 but died on 22/20 because the code unrefs its timers: they hold a `keepAlive` interval now. The laptop's `%TEMP%\package.json` GIF breaks `node file.js` under Temp, so pipe scripts through stdin. Install the daemon from `git archive`, not from the laptop checkout (CRLF breaks `deploy.sh`).
+
+**Known source gaps, by design for now:** X/Twitter, Reddit (403/429 from the droplet), TikTok, Facebook. See §2 Y.
 
 ### Hermes — p159i, on `main` @ `3ed62f2` (2026-10-28 cron shift — GDELT BACK FROM THE DEAD)
 The p159f/g entry below left GDELT as "the real-time gap": `api.gdeltproject.org` DOC API 429s/times out every call from datacenter IPs (re-verified: droplet 429 after 6 s pause; prod `proxy-gdelt` → `_gdelt_status:'down'`, 0 features). Browser-direct is also CORS-blocked (no ACAO header) so the "browser-direct primary" path never worked either → news layer 0, GTA CONFLICT component 0/22, OutageWatch news-detect `newsOk:false`, fusion CYBER-a leg dead.
@@ -876,6 +901,14 @@ curl -s https://kgsbdoc.netlify.app/service-worker.js \
 ---
 
 ## 2. OPEN ITEMS — PICK UP HERE
+
+### Y. Found while building p160 (2026-10-30)
+1. **Web Push cannot send.** `GET push-subscribe` says `sendReady:false`, and neither `VAPID_PRIVATE_KEY` nor `PUSH_SEND_KEY` is in the Netlify env. The droplet sentinel's push fan-out and every customer alert are silently dead. Telegram still reaches Travon. 1 subscriber waiting.
+2. **`bdoc-auth-fetch.js` never attaches a token.** It reads `window.Auth`, which does not exist; the singleton is `window.BDOC_Auth`. `tests/auth-fetch.test.js` hides this by defining `sandbox.Auth`. Nothing breaks today only because no function uses `guard.wrap` yet. The first paid proxy to adopt it will 401 every signed-in customer. Fix is one line, but it starts sending the JWT on every function call, so ship it on its own, not on the eve of an election.
+3. **`sentinel` relay is empty.** `GET /.netlify/functions/sentinel` returns `generated:null`. Nothing POSTs to it.
+4. **`bdoc_sentinel.py` still calls the GDELT DOC API**, which 429s from the droplet, so its cyber sweep degrades silently.
+5. **LIVE WIRE source gaps.** No X, Reddit, TikTok or Facebook. X is the largest: it needs a paid API or a scraping vendor, and that is Travon's call.
+6. **LIVE WIRE next:** Bluesky `searchPosts` (works unauthenticated on `api.bsky.app`, `public.api` 403s) returns like and repost counts the firehose lacks, so the feed can show which rumors are actually spreading.
 
 ### W. Three more outside audits, 2026-10-16 (live p156e; files in Travon's Downloads)
 - `bdoc-operator-eval-2026-10-16.md` (tier-1 SMU)

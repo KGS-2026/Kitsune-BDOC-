@@ -170,7 +170,10 @@ const DRILL = new RegExp([
   '\\bactive[- ]shooter (?:training|course|class|preparedness)\\b'
 ].join('|'), 'i');
 
-const DEBUNK = words(['fact[- ]?check\\w*', 'debunk\\w*', 'hoax\\w*', 'no evidence', 'without evidence', 'fake', 'false claims?',
+// Bare "fake" is not a debunk: "DOJ warns of fake election monitors at voting sites" is a real
+// event, and the first live run stamped it DISPUTED. The claim itself has to be the fake thing.
+const DEBUNK = words(['fact[- ]?check\\w*', 'debunk\\w*', 'hoax\\w*', 'no evidence', 'without evidence', '(?:is|are|was|were) fake',
+  'fake (?:claims?|videos?|images?|photos?|posts?|letters?|news|reports?|screenshots?|stor(?:y|ies))', 'false claims?',
   'falsely', 'baseless', 'unfounded', 'not true', "isn't true", 'is false', 'are false', 'fabricated', 'doctored', 'deepfakes?']);
 
 const SPORTS_ENT = new RegExp([
@@ -188,7 +191,7 @@ const HARD_EVENT = words(['killed', 'dead', 'dies', 'died', 'deaths?', 'wounded'
   'bomb threats?', 'threats?', 'evacuat\\w+', 'hostages?', 'terror\\w*', 'lockdown', 'riots?', 'rioting']);
 
 const RETRO = new RegExp([
-  '\\b(?:anniversar(?:y|ies)|years? ago|decades? ago|years? later|years? after|months? after|retrial|sentenc\\w+|acquit\\w*|convict\\w*|pardon\\w*|remember\\w*|memorial|commemorat\\w+|flashback|looks? back|looking back|on this day|capitol riot|jan(?:\\.|uary)? 6(?:th)?)\\b',
+  '\\b(?:anniversar(?:y|ies)|years? ago|decades? ago|years? later|years? after|months? after|retrial|sentenc\\w+|acquit\\w*|convict\\w*|pardon\\w*|remember\\w*|memorial|commemorat\\w+|flashback|looks? back|looking back|on this day|capitol riot|jan(?:\\.|uary)? 6(?:th)?|charges? (?:dropped|dismissed)|plead(?:s|ed)?|plea deal)\\b',
   '\\btrial\\b',
   // A plea for calm is not a court appeal.
   '\\bappeal(?:s|ed|ing)?\\b(?! (?:for|to) )',
@@ -553,7 +556,10 @@ function classify(raw) {
   const ports = PORTS_CI.test(all) || PORTS_CS.test(all);
   if (ports) w.push('ports');
 
-  const rumor = RUMOR_LANG.test(all) && (RUMOR_CTX.test(all) || w.includes('nov4'));
+  // A newsroom's snippet says "reports of" all day. From a news class the rumor has to be the
+  // headline's subject; NPR's "ICE activity is surging" was tagged rumor by its own snippet.
+  const chatter = r.cls === 'social' || r.cls === 'osint' || r.cls === 'signal';
+  const rumor = RUMOR_LANG.test(chatter ? all : hc) && (RUMOR_CTX.test(all) || w.includes('nov4'));
   if (rumor) addCat('rumor');
 
   for (const c of CUSTOM) if (c.re.test(all)) w.push('custom:' + c.term);

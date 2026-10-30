@@ -121,6 +121,9 @@ function publisherOf(it) {
 }
 
 function statusOf(c) {
+  // An official denial is the strongest dispute there is. Without this, a rumor that merged
+  // with "reports of martial law are false" from dhs.gov would wear the word OFFICIAL.
+  if (c.offDenied) return 'disputed';
   if (c.off) return 'official';
   if (c.disputed) return 'disputed';
   if (c.pubs.size >= 2) return 'corroborated';
@@ -246,6 +249,7 @@ class Clusterer {
       off: false,
       liveOff: false,
       offStrong: false,
+      offDenied: false,     // an official source said the claim is false
       disputed: false,
       disputedLow: false,
       drill: false,
@@ -296,7 +300,8 @@ class Clusterer {
       }
     }
 
-    if (cls === 'factcheck' || (it.debunk && NEWS.has(cls))) c.disputed = true;
+    if (cls === 'official' && it.debunk) { c.offDenied = true; c.disputed = true; }
+    else if (cls === 'factcheck' || (it.debunk && NEWS.has(cls))) c.disputed = true;
     else if (it.debunk) c.disputedLow = true;
 
     if (CREDIBLE.has(cls)) {
@@ -357,7 +362,7 @@ class Clusterer {
       id: c.id, t0: c.t0, tLast: c.tLast, count: c.count,
       members: c.members.map(m => ({ t: [...m.toks], p: m.pl, b: m.pub })),
       pubs: [...c.pubs], outlets: [...c.outlets], livePubs: [...c.livePubs], strong: [...c.strong],
-      off: c.off, liveOff: c.liveOff, offStrong: c.offStrong, disputed: c.disputed, disputedLow: c.disputedLow,
+      off: c.off, liveOff: c.liveOff, offStrong: c.offStrong, offDenied: c.offDenied, disputed: c.disputed, disputedLow: c.disputedLow,
       drill: c.drill, base: c.base, anyBase: c.anyBase, top: c.top, newestT: c.newestT, fresh: c.fresh,
       paged: c.paged, st: c.st, n: c.n, sev: c.sev
     };

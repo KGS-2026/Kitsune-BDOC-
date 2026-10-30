@@ -43,12 +43,16 @@ them on Node 22 or newer before a deploy that touches `store.js`.
 
 ## Deploy
 
-From a machine with the repo. Check out the branch you mean to ship first: this copies
-what is on disk.
+**First time:** the owner runs `go-live.ps1` on the laptop. It adds the Netlify env vars,
+writes the droplet env, installs the service from `origin/main` and redeploys the site.
+Read its header first. It stops without changing anything if the env vars already exist.
+
+**Updates:** install from git on the droplet, not from a Windows checkout, whose CRLF line
+endings would break `deploy.sh`. This only fetches in the Hermes clone and never touches its
+working tree:
 
 ```bash
-rsync -a --delete tools/wire/ root@67.205.141.74:/root/bdoc-wire-src/
-ssh root@67.205.141.74 'bash /root/bdoc-wire-src/deploy.sh'
+cd /root/Kitsune-BDOC- && git fetch -q origin main && rm -rf /tmp/wire-src && mkdir /tmp/wire-src && git archive FETCH_HEAD 'BDOC Deploy/tools/wire' | tar -x -C /tmp/wire-src && bash '/tmp/wire-src/BDOC Deploy/tools/wire/deploy.sh'
 ```
 
 `deploy.sh` can be run again at any time. It installs to `/opt/bdoc-wire`, installs the
