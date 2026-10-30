@@ -82,7 +82,7 @@ here, update §1 so Hermes knows where you left off.
 ### Claude Code — p160 LIVE WIRE (2026-10-30) — CODE LIVE, COLLECTOR NOT YET TURNED ON
 Travon's directive: "I need to know in real time what is going on... chatter and rumors about things happening on the 4th of November... there should be a live scraper... as the owner I should be able to see everything in real time."
 
-**Hermes: do NOT start a second collector, and do not add `WIRE_*` env vars by hand.** Travon turns this on by running `tools/wire/go-live.ps1` (read its header). It is his to run because it writes Netlify secrets, copies the Telegram token and installs a root service; the permission classifier blocked Claude Code from doing those without his approval, correctly.
+**Hermes: do NOT start a second collector, and do not add `WIRE_*` env vars by hand.** Travon turns this on by running `tools/wire/go-live.ps1` (read its header). It is Travon's to run because it writes Netlify secrets, copies the Telegram token and installs a root service; the permission classifier blocked Claude Code from doing those without Travon's approval, correctly.
 
 **What it is.** Contract: `docs/LIVE-WIRE-SPEC.md`. Runbook: `tools/wire/README.md`.
 - `tools/wire/`: always-on Node 22 collector, zero npm deps. 138 polled sources (official, wires, specialist, Google News RSS searches, Telegram public previews, status pages) + Bluesky Jetstream + Wikimedia SSE + GDELT GKG. Classifies, clusters stories, assigns a truth status: official / corroborated / reported / unverified / disputed.
