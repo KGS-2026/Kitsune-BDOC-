@@ -128,6 +128,52 @@ test('a newsroom snippet saying "reports of" does not make the story a rumor', (
   assert.ok(k('Rumors of martial law spread online ahead of the election').cat.includes('rumor'));
 });
 
+test('reprints of one wire story are one report, not corroboration', () => {
+  const { Clusterer } = require('../tools/wire/lib/cluster');
+  let now = Date.parse('2026-10-30T18:00:00Z');
+  const c = new Clusterer({ now: () => now });
+  const paper = (id, pub, h) => c.add({
+    id, t: now, h, sn: pub, cls: 'aggregator', pub, u: 'https://' + pub + '/x', base: 1, fresh: true, firstPoll: false
+  });
+  const same = 'Three men who planned to bomb mosque jailed in Dublin';
+  let r;
+  for (const pub of ['kentonline.co.uk', 'eadt.co.uk', 'dorsetecho.co.uk', 'penarthtimes.co.uk', 'edp24.co.uk']) {
+    now += 1000;
+    r = paper(pub, pub, same);
+  }
+  assert.equal(r.cluster.st, 'reported', 'five copies of one headline is still one report');
+  assert.equal(r.cluster.n, 5, 'the outlet count stays honest');
+  now += 1000;
+  r = paper('rte', 'rte.ie', 'Three men behind plot to bomb Galway mosque jailed in Dublin');
+  assert.equal(r.isNew, false, 'the fixture must merge for this test to mean anything');
+  assert.equal(r.cluster.st, 'corroborated', 'a newsroom writing its own headline is independent');
+});
+
+test('two papers running one sev 3 wire headline cannot page', () => {
+  const { Clusterer } = require('../tools/wire/lib/cluster');
+  const { blockReason } = require('../tools/wire/lib/alert');
+  let now = Date.parse('2026-10-30T18:00:00Z');
+  const c = new Clusterer({ now: () => now });
+  const add = (id, pub, h) => c.add({
+    id, t: now, h, sn: pub, cls: 'wire', pub, u: 'https://' + pub + '/x', base: 3, fresh: true, firstPoll: false
+  });
+  const ctx = { uptimeMs: 3600000, pagesLastHour: 0, pagesLastDay: 0 };
+  add('a', 'one.example', 'President invokes Insurrection Act in Portland tonight');
+  now += 1000;
+  const r = add('b', 'two.example', 'President invokes Insurrection Act in Portland tonight');
+  assert.equal(r.isNew, false);
+  assert.notEqual(blockReason(r.cluster, ctx), null);
+  now += 1000;
+  const r2 = add('c', 'three.example', 'President invokes the Insurrection Act in Portland tonight, White House says');
+  assert.equal(r2.isNew, false, 'the fixture must merge for this test to mean anything');
+  assert.equal(blockReason(r2.cluster, ctx), null, 'independent wording clears the gate');
+});
+
+test('coup de is an idiom, coup d\'etat is not', () => {
+  assert.equal(k('Holy shit COUP DE ROSE is publicly available in 9 HOURS', 'social').sev, 0);
+  assert.ok(k("Army stages coup d'etat in the capital").cat.includes('unrest'));
+});
+
 test('a witness post survives the social filter', () => {
   assert.equal(k('Protesters are blocking the bridge downtown right now', 'social').sev, 1);
 });

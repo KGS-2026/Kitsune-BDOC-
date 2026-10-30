@@ -79,10 +79,10 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
-### Claude Code — p160 LIVE WIRE (2026-10-30) — CODE LIVE, COLLECTOR NOT YET TURNED ON
+### Claude Code — p160 LIVE WIRE (2026-10-30) — LIVE, COLLECTOR RUNNING ON THE DROPLET
 Travon's directive: "I need to know in real time what is going on... chatter and rumors about things happening on the 4th of November... there should be a live scraper... as the owner I should be able to see everything in real time."
 
-**Hermes: do NOT start a second collector, and do not add `WIRE_*` env vars by hand.** Travon turns this on by running `tools/wire/go-live.ps1` (read its header). It is Travon's to run because it writes Netlify secrets, copies the Telegram token and installs a root service; the permission classifier blocked Claude Code from doing those without Travon's approval, correctly.
+**Hermes: do NOT start a second collector.** Travon approved go-live and `tools/wire/go-live.ps1` ran 2026-10-30 19:56 UTC. `bdoc-wire.service` is live on the droplet, and `WIRE_INGEST_KEY`, `WIRE_TOPIC` and `BDOC_OWNER_IDS` are set on Netlify. Update the daemon with the one-liner in `tools/wire/README.md`, never by editing `/opt/bdoc-wire`, and never print `/etc/bdoc-wire/env`.
 
 **What it is.** Contract: `docs/LIVE-WIRE-SPEC.md`. Runbook: `tools/wire/README.md`.
 - `tools/wire/`: always-on Node 22 collector, zero npm deps. 138 polled sources (official, wires, specialist, Google News RSS searches, Telegram public previews, status pages) + Bluesky Jetstream + Wikimedia SSE + GDELT GKG. Classifies, clusters stories, assigns a truth status: official / corroborated / reported / unverified / disputed.
@@ -98,7 +98,9 @@ Travon's directive: "I need to know in real time what is going on... chatter and
 - Real browser against `tools/wire/dev-server.js`: desktop and 375 px, hostile `<script>` / `onerror` strings render as text, 0 images, all links http(s) with noopener noreferrer, 0 console errors.
 - Real collector runs (droplet dry run; 3 min on the laptop): 131/139 sources up, 0 errors, firehoses ~2,900/min each, about 22 live items in 3 min after filtering. `tests/wire-live-run.test.js` pins every real misclassification found.
 
-**Believed, NOT verified:** the signed-in owner path against real Supabase (needs Travon's login; only mocks and a local harness so far), a real Telegram page, Blobs read/write in production, the service under systemd on the droplet, and `/wire` on a physical phone. Check these right after go-live.
+- Live on the droplet after go-live: runs as an unprivileged dynamic user, 193 MB, 0 listening sockets, `/root` not visible, `hermes-gateway` still active. Subscribed to the real topic: heartbeats 82–128 ms, new items 0.5–1.3 s from collection. Snapshot POST returned the watch list (6 default terms, sources rose to 147), so production Blobs works. One real Telegram test delivered through `sendTelegram`. 0 errors, 0 dropped, 0 failed publishes.
+
+**Believed, NOT verified:** the signed-in owner read against real Supabase (needs Travon's login; only mocks and a local harness so far), and `/wire` on a physical phone.
 
 **Pitfalls found.** `tests/wire-*` fetcher and pipeline tests passed on Node 24 but died on 22/20 because the code unrefs its timers: they hold a `keepAlive` interval now. The laptop's `%TEMP%\package.json` GIF breaks `node file.js` under Temp, so pipe scripts through stdin. Install the daemon from `git archive`, not from the laptop checkout (CRLF breaks `deploy.sh`).
 

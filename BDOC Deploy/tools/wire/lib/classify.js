@@ -73,7 +73,7 @@ const IDIOMS = new RegExp('\\b(?:' + [
   'shoot(?:s|ing)? (?:hoops|a film|a movie|a video|a scene|a documentary)',
   'clay shooting', 'skeet shooting', 'trap shooting', 'sharp ?shoot\\w*',
   // coup
-  "coup de (?:grace|theatre|main|foudre)", 'coup for', 'pr coup',
+  "coup de (?!etat\\b)\\w+", 'coup for', 'pr coup',
   // blackout
   'blackout (?:curtains?|dates?|tattoos?|poetry|drunk|shades?|blinds?|period|rules?|restrictions?)',
   '(?:tv|broadcast|sports|local|streaming) blackouts?',

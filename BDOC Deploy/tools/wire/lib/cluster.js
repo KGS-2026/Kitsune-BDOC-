@@ -120,14 +120,26 @@ function publisherOf(it) {
   return domainOf(it.pub || '') || domainOf(it.u || '') || String(it.sid || it.src || '');
 }
 
+// The same words from two publishers are one report, not two. A wire story reprinted by ten
+// local papers arrived as ten publishers on the first live run ("Three men who planned to
+// bomb mosque jailed in Dublin") and read CORROBORATED. Newsrooms working independently write
+// their own headlines, so distinct wordings are what count. Sorted tokens, so reordering or a
+// dropped "the" does not make a copy look like fresh reporting.
+const wordingOf = (toks) => [...toks].sort().join(' ');
+
+function independent(c) {
+  const w = c.wordings ? c.wordings.size : 0;
+  return w ? Math.min(c.pubs.size, w) : c.pubs.size; // no wordings: restored from before this existed
+}
+
 function statusOf(c) {
   // An official denial is the strongest dispute there is. Without this, a rumor that merged
   // with "reports of martial law are false" from dhs.gov would wear the word OFFICIAL.
   if (c.offDenied) return 'disputed';
   if (c.off) return 'official';
   if (c.disputed) return 'disputed';
-  if (c.pubs.size >= 2) return 'corroborated';
-  if (c.pubs.size === 1) return 'reported';
+  if (independent(c) >= 2) return 'corroborated';
+  if (c.pubs.size >= 1) return 'reported';
   return c.disputedLow ? 'disputed' : 'unverified';
 }
 
@@ -246,6 +258,8 @@ class Clusterer {
       outlets: new Set(),   // news + official publishers, the displayed n
       livePubs: new Set(),  // news publishers seen outside a first-poll batch
       strong: new Set(),    // live publishers whose own headline claimed sev 3
+      wordings: new Set(),  // distinct news headlines, the independence check
+      strongWordings: new Set(), // same, among the live sev 3 claims
       off: false,
       liveOff: false,
       offStrong: false,
@@ -294,9 +308,13 @@ class Clusterer {
     } else if (NEWS.has(cls)) {
       c.pubs.add(pub);
       c.outlets.add(pub);
+      c.wordings.add(wordingOf(toks));
       if (live) {
         c.livePubs.add(pub);
-        if (base >= 3) c.strong.add(pub);
+        if (base >= 3) {
+          c.strong.add(pub);
+          c.strongWordings.add(wordingOf(toks));
+        }
       }
     }
 
@@ -362,6 +380,7 @@ class Clusterer {
       id: c.id, t0: c.t0, tLast: c.tLast, count: c.count,
       members: c.members.map(m => ({ t: [...m.toks], p: m.pl, b: m.pub })),
       pubs: [...c.pubs], outlets: [...c.outlets], livePubs: [...c.livePubs], strong: [...c.strong],
+      wordings: [...c.wordings], strongWordings: [...c.strongWordings],
       off: c.off, liveOff: c.liveOff, offStrong: c.offStrong, offDenied: c.offDenied, disputed: c.disputed, disputedLow: c.disputedLow,
       drill: c.drill, base: c.base, anyBase: c.anyBase, top: c.top, newestT: c.newestT, fresh: c.fresh,
       paged: c.paged, st: c.st, n: c.n, sev: c.sev
@@ -375,7 +394,8 @@ class Clusterer {
       if (!s || !s.id || !Array.isArray(s.members) || now - s.tLast > this.windowMs) continue;
       const c = Object.assign({}, s, {
         members: s.members.map(m => ({ toks: new Set(m.t), pl: m.p || { m: [], r: [] }, pub: m.b })),
-        pubs: new Set(s.pubs), outlets: new Set(s.outlets), livePubs: new Set(s.livePubs), strong: new Set(s.strong)
+        pubs: new Set(s.pubs), outlets: new Set(s.outlets), livePubs: new Set(s.livePubs), strong: new Set(s.strong),
+        wordings: new Set(s.wordings || []), strongWordings: new Set(s.strongWordings || [])
       });
       this.stories.set(c.id, c);
       for (const m of c.members) this._index(c, m.toks);

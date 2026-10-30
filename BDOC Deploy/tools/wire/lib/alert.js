@@ -53,6 +53,8 @@ function blockReason(c, ctx) {
   } else {
     if (!c.livePubs || c.livePubs.size < 2) return 'corroboration rests on first-poll items';
     if (!c.strong || c.strong.size < 2) return 'fewer than two outlets claim it';
+    // Two papers running one wire story are one source. See independent() in cluster.js.
+    if (c.strongWordings && c.strongWordings.size < 2) return 'only one wording, likely syndicated';
   }
   if (!(ctx.uptimeMs > MIN_UPTIME_MS)) return 'daemon up under 5 min';
   if (c.paged) return 'already paged';
