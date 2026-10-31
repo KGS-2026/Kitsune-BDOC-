@@ -246,6 +246,24 @@ function createServer() {
     600000
   ));
 
+  // ── Public client config ──────────────────────────────────────────────────────
+  // Nothing served this, so the SPA fallback answered with index.html, Supabase never
+  // initialized, and the sign-in form could not work. Stale copy after 30 days offline.
+  app.get('/.netlify/functions/config', proxyHandler(
+    () => 'https://kgsbdoc.netlify.app/.netlify/functions/config',
+    () => 'site_config',
+    30 * 86400000
+  ));
+
+  // A function with no local version must say so. The SPA fallback below would answer 200
+  // with a page of HTML, and every layer would then fail trying to parse it.
+  app.all('/.netlify/functions/*', (_, res) => res.status(503).json({ error: 'Offline', offline: true }));
+
+  // Bundled CDN files. Scripts load with crossorigin, so they need this header for SRI.
+  app.use('/vendor', express.static(path.join(__dirname, 'vendor'), {
+    setHeaders: (res) => res.setHeader('Access-Control-Allow-Origin', '*')
+  }));
+
   // ── Serve static BDOC files ───────────────────────────────────────────────────
   app.use(express.static(STATIC_DIR, {
     setHeaders: (res, filePath) => {

@@ -79,6 +79,16 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Claude Code — desktop 8.2.0 (2026-10-31) — THE DOWNLOAD WAS AN AUGUST BUILD THAT COULD NOT WORK OFFLINE
+The only GitHub release was `v8.0.0` (2026-08-10), so no fix since reached a download. Its bundled mode had no `config` route, so Supabase never started and sign-in could not work. Worse: Cesium and every library came from CDNs, so with no internet there was no globe at all.
+- `tools/desktop/vendor.js` copies pinned CDN files to `electron/vendor` (gitignored, run before electron-builder, added to `desktop-release.yml`). Offline, `main.js` redirects CDN urls there, so SRI still passes and `index.html` is unchanged. Cesium's NaturalEarthII is added as a bottom imagery layer.
+- `server.js` got `config` and a 503 for unknown functions (the SPA fallback was answering them with HTML). `setWindowOpenHandler` replaces the removed `new-window` event. `will-navigate` was blocking Google sign-in and sending Stripe nowhere: Supabase and Google now stay in the window, and anything else https opens in the system browser. BDOC menu has Switch to Offline / Live Mode.
+- Offline unlock: `~/.bdoc/unlock`, or a file named `bdoc-unlock` beside the exe, loads `/?dev=local`, which `Auth.checkDevKey` already honours on localhost. Deliberately not shipped in the release. Customers get recon offline, and paid-tier offline for them is still open.
+
+**Verified** on this laptop with the packaged exe, DNS blocked for everything but localhost: Cesium 1.146, globe renders (frame captured), `offlineMap` true, tier enterprise. Online: loads the live site, `BDOC_Auth.client` present. 704 tests.
+**Not verified:** a real password or Google sign-in inside the app, the exe on a second machine, a physical power cut. Offline imagery is world-scale only, no street detail. Offline data is whatever was cached.
+Electron is still 31 (the 14 KEV CVEs in §2 stand); not touched days before an election.
+
 ### Claude Code — p162 auth-fetch fix (2026-10-30) — CHECKOUT WAS BROKEN FOR EVERYONE
 **This corrects §2 Y.2, which said nothing was broken.** Since p158b (`9107060`, 2026-10-23) `stripe-checkout` and `stripe-portal` require a JWT, `subscribe()` and `openPortal()` rely on this wrapper to send it, and the wrapper sent nothing. Every signed-in Subscribe click got 401 `sign in required` and Stripe was never called. `tests/payment-auth.test.js` greps each side on its own, so nothing proved the two met. Existing subscribers are unaffected: their tier is read from Supabase, not through a function.
 

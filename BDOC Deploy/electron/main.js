@@ -58,6 +58,44 @@ function startLocalServer() {
   });
 }
 
+// ── Offline bundle ───────────────────────────────────────────────────────────
+// Maps a CDN url to its copy in electron/vendor (see tools/desktop/vendor.js).
+function vendorPath(raw) {
+  const u = new URL(raw);
+  const m = /\/cesium\/1\.146\.0\/(.+)$/.exec(u.pathname) || /\/cesium@1\.146\.0\/Build\/Cesium\/(.+)$/.exec(u.pathname);
+  if (m) return '/vendor/cesium/' + m[1];
+  if (u.hostname === 'fonts.googleapis.com') return null; // system fonts are fine offline
+  return '/vendor/files/' + path.posix.basename(u.pathname);
+}
+
+// A bottom layer of Cesium's built-in world imagery. Every online basemap fails without a
+// network, and this is what stops the globe from being black when they do.
+function addOfflineMap() {
+  mainWindow?.webContents.executeJavaScript(`(function wait(n){
+    if (typeof V === 'undefined' || !V || typeof Cesium === 'undefined') { if (n < 240) setTimeout(() => wait(n + 1), 500); return; }
+    if (window.__bdocOfflineMap) return;
+    window.__bdocOfflineMap = true;
+    Cesium.TileMapServiceImageryProvider.fromUrl('https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Assets/Textures/NaturalEarthII')
+      .then(p => V.imageryLayers.addImageryProvider(p, 0)).catch(e => console.warn('[offline map]', e));
+  })(0)`).catch(() => {});
+}
+
+// ~/.bdoc/unlock on a machine opens every layer in offline mode. The cloud account cannot be
+// checked without a network, and being locked out of paid tools in a grid-down is the failure
+// this app exists to prevent. Auth.checkDevKey already honours this on localhost. A file named
+// bdoc-unlock beside the portable exe does the same, so a USB copy works on a spare laptop.
+function offlineUrl() {
+  const beside = process.env.PORTABLE_EXECUTABLE_DIR || path.dirname(process.execPath);
+  const unlocked = [path.join(os.homedir(), '.bdoc', 'unlock'), path.join(beside, 'bdoc-unlock')].some(f => fs.existsSync(f));
+  return `http://localhost:${LOCAL_PORT}/${unlocked ? '?dev=local' : ''}`;
+}
+
+function setMode(mode) {
+  runMode = mode;
+  mainWindow.setTitle(mode === 'live' ? 'KGS BDOC — LIVE (auto-updating)' : 'KGS BDOC — OFFLINE (bundled build)');
+  mainWindow.loadURL(mode === 'live' ? LIVE_URL : offlineUrl());
+}
+
 // ── Create main window ────────────────────────────────────────────────────────
 async function createWindow() {
   if (process.env.BDOC_FORCE_OFFLINE !== '1' && await liveReachable()) runMode = 'live';
@@ -80,41 +118,32 @@ async function createWindow() {
     }
   });
 
-  // Override Netlify Function paths to use local server
-  // The app's /.netlify/functions/* calls get redirected to localhost:9080
-  // (offline mode only — live mode uses the real Netlify functions)
-  if (runMode === 'offline') {
-    mainWindow.webContents.session.webRequest.onBeforeRequest(
-      { urls: ['*://*/*/.netlify/functions/*', '*://*/api/*'] },
-      (details, callback) => {
-        const url = new URL(details.url);
-        if (url.hostname === 'localhost') return callback({});
-        const localUrl = `http://localhost:${LOCAL_PORT}${url.pathname}${url.search}`;
-        callback({ redirectURL: localUrl });
-      }
-    );
-  }
+  // CDN files come from the bundle whenever the app runs offline, so the globe still starts
+  // with no internet. Live mode passes everything through untouched.
+  mainWindow.webContents.session.webRequest.onBeforeRequest(
+    { urls: ['https://cdnjs.cloudflare.com/*', 'https://cdn.jsdelivr.net/*', 'https://unpkg.com/*', 'https://fonts.googleapis.com/*'] },
+    (details, callback) => {
+      if (runMode !== 'offline') return callback({});
+      const local = vendorPath(details.url);
+      callback(local ? { redirectURL: `http://localhost:${LOCAL_PORT}${local}` } : { cancel: true });
+    }
+  );
 
-  const appUrl = runMode === 'live' ? LIVE_URL : `http://localhost:${LOCAL_PORT}`;
-  mainWindow.setTitle(runMode === 'live' ? 'KGS BDOC — LIVE (auto-updating)' : 'KGS BDOC — OFFLINE (bundled build)');
-  mainWindow.loadURL(appUrl);
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:/i.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
+  mainWindow.webContents.on('did-finish-load', () => { if (runMode === 'offline') addOfflineMap(); });
   // Live site unreachable mid-load (Wi-Fi drop, grid-down) → fall back to the bundled copy
   mainWindow.webContents.on('did-fail-load', (_e, code, _desc, url, isMainFrame) => {
-    if (isMainFrame && runMode === 'live' && code !== -3) {
-      runMode = 'offline';
-      mainWindow.setTitle('KGS BDOC — OFFLINE (bundled build)');
-      mainWindow.loadURL(`http://localhost:${LOCAL_PORT}`);
-    }
+    if (isMainFrame && runMode === 'live' && code !== -3) setMode('offline');
   });
+  setMode(runMode);
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
     mainWindow.focus();
-  });
-
-  mainWindow.webContents.on('new-window', (event, url) => {
-    event.preventDefault();
-    shell.openExternal(url);
   });
 
   mainWindow.on('closed', () => { mainWindow = null; });
@@ -128,7 +157,9 @@ function buildMenu() {
       submenu: [
         { label: 'Check for Desktop Update…', click: () => shell.openExternal(RELEASES_URL) },
         { label: 'Running Mode', click: () => dialog.showMessageBox({ title: 'BDOC mode', message: runMode === 'live' ? 'LIVE — loading kgsbdoc.netlify.app. Web fixes arrive automatically.' : 'OFFLINE — bundled build ' + app.getVersion() + '. Reconnect and restart to load the live version.', type: 'info' }) },
-        { label: 'About KGS BDOC', click: () => dialog.showMessageBox({ title: 'KGS BDOC', message: 'KGS BDOC v8.0\nKitsune Global Solutions LLC\nOffline tactical intelligence platform', type: 'info' }) },
+        { label: 'Switch to Offline Mode', click: () => setMode('offline') },
+        { label: 'Switch to Live Mode', click: () => setMode('live') },
+        { label: 'About KGS BDOC', click: () => dialog.showMessageBox({ title: 'KGS BDOC', message: 'KGS BDOC v' + app.getVersion() + '\nKitsune Global Solutions LLC\nOffline tactical intelligence platform', type: 'info' }) },
         { type: 'separator' },
         { label: 'Clear Cache & Reload', accelerator: 'CmdOrCtrl+Shift+R', click: () => {
           if (mainWindow) mainWindow.webContents.executeJavaScript(`
@@ -253,8 +284,13 @@ app.on('before-quit', () => {
 // Security: prevent navigation to external URLs
 app.on('web-contents-created', (_, contents) => {
   contents.on('will-navigate', (event, url) => {
-    if (!url.startsWith(`http://localhost:${LOCAL_PORT}`) && !url.startsWith(LIVE_URL)) {
-      event.preventDefault();
-    }
+    if (url.startsWith(`http://localhost:${LOCAL_PORT}`) || url.startsWith(LIVE_URL)) return;
+    // Sign-in and billing leave the app and come back. The old filter blocked both, so
+    // Google sign-in, Subscribe and the billing portal silently did nothing here.
+    let host = '';
+    try { host = new URL(url).hostname; } catch (_) { /* not navigable */ }
+    if (/(^|\.)(supabase\.co|accounts\.google\.com)$/.test(host)) return;
+    event.preventDefault();
+    if (/^https:/i.test(url)) shell.openExternal(url);
   });
 });
