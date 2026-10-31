@@ -8,7 +8,8 @@
  *    load is the fastest way to get permanently denied. Arming is user-initiated
  *    (BDOCPush.enable()) or resumed silently if already granted.
  *  - Re-registers the subscription on every boot when permission is granted, so
- *    a store wipe or a rotated endpoint self-heals.
+ *    a store wipe or a rotated endpoint self-heals, and a subscription bound to
+ *    a retired VAPID key is swapped for one on the current key.
  *  - Data-gates every response: the BDOC service worker returns {offline:true}
  *    with HTTP 200 on failed fetches, so status checks alone are not enough.
  */
@@ -38,6 +39,15 @@
     try { localStorage.setItem(LS, JSON.stringify(o)); } catch (_) {}
   }
 
+  // The key this subscription was created with, in the server's encoding.
+  // '' when there is no subscription or the browser does not expose it.
+  function keyOf(sub) {
+    var k = sub && sub.options && sub.options.applicationServerKey;
+    if (!k) return '';
+    return btoa(String.fromCharCode.apply(null, new Uint8Array(k)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
   async function serverKey() {
     var r = await fetch(EP, { cache: 'no-store' });
     var j = await r.json();
@@ -50,6 +60,19 @@
     var cfg = await serverKey();
     var reg = await navigator.serviceWorker.ready;
     var sub = await reg.pushManager.getSubscription();
+    var mine = keyOf(sub);
+    if (mine && mine !== cfg.publicKey) {
+      // The server changed keys. Push services refuse anything signed for this
+      // subscription with the new key, and subscribe() throws while it exists,
+      // so swap it. Permission is already granted, so this never prompts.
+      var old = sub.endpoint;
+      await sub.unsubscribe();
+      sub = null;
+      await fetch(EP, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unsubscribe: true, endpoint: old })
+      }).catch(function () {});
+    }
     if (!sub) {
       sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
@@ -57,6 +80,8 @@
       });
     }
     var body = { subscription: sub.toJSON ? sub.toJSON() : sub };
+    var vapid = keyOf(sub);
+    if (vapid) body.vapid = vapid;
     if (tier) body.tier = tier;
     if (label) body.label = label;
     var pr = await fetch(EP, {
@@ -116,7 +141,7 @@
       if (Notification.permission !== 'granted') return;
       var st = state();
       if (!st.enabled) return;
-      try { await register(st.tier, st.label); } catch (_) { /* stay quiet on boot */ }
+      try { await register(st.tier, st.label); refreshUI(); } catch (_) { /* stay quiet on boot */ }
     }
   };
 

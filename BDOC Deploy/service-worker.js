@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v160';  // p160: LIVE WIRE owner feed — boot probe, /wire page, function bypass below
+const SW_VERSION = 'bdoc-v161';  // p161: Web Push re-keys a subscription bound to a retired VAPID key
+// (prev) const SW_VERSION = 'bdoc-v160';  // p160: LIVE WIRE owner feed — boot probe, /wire page, function bypass below
 // (prev) const SW_VERSION = 'bdoc-v159i';  // p159: Ferrari chrome pass 1 — 56px bar, single amber accent, neutral panels, onboarding redesign, 10px+ globe labels
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156g: long-press menu, copy grid / share, MGRS setting + search, no boot prompt, og-image
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156f: current flowing along grid lines + pipeline flow (cesium-init + layers-arcgis)
@@ -29,7 +30,7 @@ const STATIC_PRECACHE = [
   // Grid-down core: these MUST be on disk or offline mode cannot start.
   '/css/bdoc-glass.css?v=p75',
   '/js/bdoc-glass-guard.js?v=p75',
-  '/js/bdoc-push.js?v=p140',
+  '/js/bdoc-push.js?v=p161',
   '/js/bdoc-offline-store.js?v=p75',
   '/js/bdoc-plan.js?v=p159e',
   '/js/vendor/hls.min.js?v=1.5.17',
@@ -346,9 +347,15 @@ self.addEventListener('pushsubscriptionchange', event => {
           body: JSON.stringify({ unsubscribe: true, endpoint: old.endpoint })
         });
       }
+      // Same report bdoc-push.js sends: without it the server reads this as a
+      // subscription on the p140 key and drops it at the next send.
+      const key = nu.options && nu.options.applicationServerKey;
+      const vapid = key
+        ? btoa(String.fromCharCode(...new Uint8Array(key))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+        : undefined;
       await fetch('/.netlify/functions/push-subscribe', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription: nu.toJSON ? nu.toJSON() : nu })
+        body: JSON.stringify({ subscription: nu.toJSON ? nu.toJSON() : nu, vapid })
       });
     } catch (_) {}
   })());
