@@ -66,6 +66,7 @@ jobs:
         run: npm ci
 
       - name: Smoke test before building a 115 MB installer
+        shell: bash   # npm test's *.test.js glob needs a real shell, and the Windows default has none
         run: npm test
         continue-on-error: false
 
