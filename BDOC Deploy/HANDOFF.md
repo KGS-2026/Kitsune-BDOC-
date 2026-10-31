@@ -98,7 +98,7 @@ here, update §1 so Hermes knows where you left off.
 - CDN: `Cache-Status` identical with and without a bearer on 4 production functions, but all were `fwd=miss; stored`, so that sample had no hit rate to lose.
 - 678 tests on Node 24. Eight reintroduced bugs each fail `tests/auth-fetch.test.js`: old name, renamed global, no cap, no stall skip, `ping` on Supabase, no origin check, JWT in cache, async auth callback.
 
-**Believed, NOT verified:** a real login against real Supabase, a real Stripe Checkout session, and Firefox or Safari (Chromium and Edge only). Right after this ships, subscribe with a real account and confirm Stripe opens.
+**Verified after shipping:** Travon's real signed-in Subscribe click opened Stripe Checkout on production, 2026-10-30. **Not verified:** Firefox or Safari (Chromium and Edge only), and a completed payment through the webhook.
 
 ### Claude Code — p160 LIVE WIRE (2026-10-30) — LIVE, COLLECTOR RUNNING ON THE DROPLET
 Travon's directive: "I need to know in real time what is going on... chatter and rumors about things happening on the 4th of November... there should be a live scraper... as the owner I should be able to see everything in real time."
