@@ -174,6 +174,58 @@ test('coup de is an idiom, coup d\'etat is not', () => {
   assert.ok(k("Army stages coup d'etat in the capital").cat.includes('unrest'));
 });
 
+// The collector crashed at its 460 MB heap limit after 2.5 hours on 2026-10-30. A kept guid or
+// url was a V8 slice of the feed body, so each one held the whole body alive. Item counts
+// stayed inside their caps the whole time, which is why only a heap measurement catches this.
+function heapGrowth(run) {
+  const v8 = require('node:v8');
+  const vm = require('node:vm');
+  v8.setFlagsFromString('--expose-gc');
+  const gc = vm.runInNewContext('gc');
+  const used = () => { gc(); gc(); return process.memoryUsage().heapUsed / 1048576; };
+  const before = used();
+  const kept = run();
+  const grew = used() - before;
+  assert.ok(kept.length > 0, 'the test must actually keep something');
+  return grew;
+}
+
+test('keeping a parsed guid and url does not keep the feed body', () => {
+  const src = { id: 't', name: 'T', cls: 'wire', kind: 'rss', url: 'https://example.com/f', every: 60 };
+  const body = (i) => '<rss><channel>' +
+    `<item><title>Headline ${i}</title><link>https://example.com/story/${i}</link><guid>guid-number-${i}-abcdefghijkl</guid>` +
+    '<pubDate>Fri, 30 Oct 2026 12:00:00 GMT</pubDate></item>' +
+    `<item><title>filler ${i}</title><guid>filler</guid></item>`.repeat(18000) + '</channel></rss>';
+  const grew = heapGrowth(() => {
+    const kept = [];
+    for (let i = 0; i < 60; i++) {
+      const [it] = parseBy('rss', body(i), src, { official: {} });
+      kept.push(it.guid, it.u, it.h);
+    }
+    return kept;
+  });
+  assert.ok(grew < 15, `heap grew ${Math.round(grew)} MB across 60 one-megabyte polls`);
+});
+
+test('keeping a GDELT row does not keep the decompressed file', () => {
+  const { rowsFrom } = require('../tools/wire/lib/gdelt');
+  const row = (i) => {
+    const c = new Array(27).fill('');
+    c[0] = 'rec-' + i; c[1] = '20261030180000'; c[3] = 'example.com'; c[4] = 'https://example.com/a/' + i;
+    c[26] = `<PAGE_TITLE>Protest number ${i} blocks the bridge downtown</PAGE_TITLE>`;
+    return c.join('\t');
+  };
+  const grew = heapGrowth(() => {
+    const kept = [];
+    for (let f = 0; f < 12; f++) {
+      const csv = row(f) + '\n' + 'x'.repeat(5 * 1048576) + f;
+      kept.push(...rowsFrom(csv, () => true, false).raws);
+    }
+    return kept;
+  });
+  assert.ok(grew < 15, `heap grew ${Math.round(grew)} MB across 12 five-megabyte files`);
+});
+
 test('a witness post survives the social filter', () => {
   assert.equal(k('Protesters are blocking the bridge downtown right now', 'social').sev, 1);
 });

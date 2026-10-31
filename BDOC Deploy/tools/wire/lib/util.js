@@ -186,4 +186,22 @@ function log(level, msg, obj) {
   process.stdout.write(line + '\n');
 }
 
-module.exports = { sha16, clamp, decodeEntities, stripTags, cleanText, canonUrl, safeUrl, domainOf, log };
+// V8 stores a substring as a pointer into its parent, so one short guid or url can hold a
+// whole feed body, or a 20 MB GDELT file, in memory for as long as that string is kept. On
+// the first live run this leaked about 2 MB a minute and crashed the collector at its heap
+// limit after 2.5 hours, with every item count still inside its cap. So whatever outlives a
+// poll gets its own copy. A Buffer round trip, because the usual string tricks can hand back
+// a rope or slice that still points at the parent.
+function own(s) {
+  return typeof s === 'string' ? Buffer.from(s, 'utf8').toString('utf8') : s;
+}
+
+const RAW_STRINGS = ['guid', 'h', 'x', 'u', 'sn', 'pub'];
+
+function ownItem(it) {
+  for (const k of RAW_STRINGS) if (typeof it[k] === 'string') it[k] = own(it[k]);
+  if (it.geo && typeof it.geo.p === 'string') it.geo.p = own(it.geo.p);
+  return it;
+}
+
+module.exports = { sha16, clamp, decodeEntities, stripTags, cleanText, canonUrl, safeUrl, domainOf, log, own, ownItem };

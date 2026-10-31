@@ -27,7 +27,7 @@
 const zlib = require('zlib');
 const { promisify } = require('util');
 const { UA } = require('./sources');
-const { cleanText, domainOf, log, safeUrl } = require('./util');
+const { cleanText, domainOf, log, ownItem, safeUrl } = require('./util');
 
 const inflateRaw = promisify(zlib.inflateRaw);
 
@@ -153,7 +153,7 @@ function rowsFrom(csv, prefilter, first) {
       // thing in both systems, and it is the only one anything here reads.
       if (loc.cc === 'US') raw.geo.cc = 'US';
     }
-    out.push(raw);
+    out.push(ownItem(raw)); // the worst leak of all: these slices pin the whole decompressed file
   }
   return { raws: out, total, hits };
 }

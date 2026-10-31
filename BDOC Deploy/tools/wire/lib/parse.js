@@ -29,7 +29,7 @@
 
 'use strict';
 
-const { sha16, decodeEntities, cleanText, safeUrl, domainOf } = require('./util');
+const { sha16, decodeEntities, cleanText, safeUrl, domainOf, ownItem } = require('./util');
 
 const H_MAX = 240;
 const X_MAX = 280;
@@ -914,7 +914,8 @@ const PARSERS = new Map([
 function parseBy(kind, body, source, ctx) {
   const parser = PARSERS.get(kind);
   if (!parser) throw new Error('unknown kind: ' + kind);
-  return parser(body == null ? '' : String(body), source || {}, ctx).filter(Boolean).slice(0, MAX_ITEMS);
+  // Every parser's output passes here, so this one line keeps the feed body collectable.
+  return parser(body == null ? '' : String(body), source || {}, ctx).filter(Boolean).slice(0, MAX_ITEMS).map(ownItem);
 }
 
 module.exports = { parseBy, KINDS: [...PARSERS.keys()] };

@@ -123,6 +123,8 @@ Travon's directive: "I need to know in real time what is going on... chatter and
 
 **Believed, NOT verified:** the signed-in owner read against real Supabase (needs Travon's login; only mocks and a local harness so far), and `/wire` on a physical phone.
 
+**Memory leak, fixed in p160c.** The collector hit its 460 MB V8 heap limit and core-dumped at 22:36 UTC, 2.5 hours after go-live; systemd had it back about 40 s later with no data lost. V8 stores a substring as a pointer into its parent, so a kept `guid` or `u` pinned the whole feed body, and a GDELT row pinned the whole decompressed file, while every item count stayed inside its cap. Measured with the real parser: +283 MB per 300 1-MB polls before, +2 MB after. Anything that outlives a poll now goes through `ownItem()` in `lib/util.js`, applied in `parseBy` and `gdelt.rowsFrom`. `tests/wire-live-run.test.js` measures the heap directly and fails at 58 MB without the fix. New parsers must return through `parseBy`.
+
 **Pitfalls found.** `tests/wire-*` fetcher and pipeline tests passed on Node 24 but died on 22/20 because the code unrefs its timers: they hold a `keepAlive` interval now. The laptop's `%TEMP%\package.json` GIF breaks `node file.js` under Temp, so pipe scripts through stdin. Install the daemon from `git archive`, not from the laptop checkout (CRLF breaks `deploy.sh`).
 
 **Known source gaps, by design for now:** X/Twitter, Reddit (403/429 from the droplet), TikTok, Facebook. See §2 Y.
