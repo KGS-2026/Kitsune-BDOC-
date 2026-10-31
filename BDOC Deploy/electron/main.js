@@ -6,6 +6,7 @@
 const { app, BrowserWindow, Menu, shell, dialog, ipcMain, Tray, nativeImage, Notification, powerMonitor } = require('electron');
 const netSock = require('net');
 const tools = require('./tools');
+const lights = require('./lights');
 const path  = require('path');
 const http  = require('http');
 const https = require('https');
@@ -198,6 +199,7 @@ function raise(title, body) {
 function tripped(reason) {
   trip = { reason, at: new Date().toLocaleTimeString() };
   raise('GRID-DOWN MODE', `${reason} at ${trip.at}. Running on the offline build.`);
+  lights.strobe(lights.RED, 30000);
   if (runMode === 'live') setMode('offline');
 }
 
@@ -211,6 +213,7 @@ async function checkWorld() {
     trip = null;
     // Deliberately no automatic jump back: a flapping link must not reload the app under you.
     raise('INTERNET BACK', `Lost at ${was.at}. Use BDOC > Switch to Live Mode when ready.`);
+    lights.strobe(lights.GREEN, 5000);
   }
 }
 
