@@ -127,7 +127,7 @@ Travon's directive: "I need to know in real time what is going on... chatter and
 
 **Known source gaps, by design for now:** X/Twitter, Reddit (403/429 from the droplet), TikTok, Facebook. See §2 Y.
 
-**CORRECTION, 2026-10-30: §2 Y.2 below is wrong to say nothing breaks today.** `stripe-checkout` and `stripe-portal` have required a JWT since p158b (`9107060`, 2026-10-23), and the `window.Auth` bug means the browser never sends one, so every signed-in Subscribe click and billing-portal open gets a 401 in production. Curl with no token confirms the 401. The fix is commit `858a187` on local branch `claude/auth-fetch-singleton` (worktree `C:\Users\ARNAUTICA\bdoc-auth-fetch`), not pushed, waiting on Travon's decision. Do not treat this as low priority.
+**CORRECTION, 2026-10-30: this session first logged the `window.Auth` bug as harmless. It was not.** `stripe-checkout` and `stripe-portal` have required a JWT since p158b (`9107060`, 2026-10-23), and the `window.Auth` bug means the browser never sends one, so every signed-in Subscribe click and billing-portal open gets a 401 in production. Curl with no token confirms the 401. Fixed in p162, shipped the same day on Travon's OK. See the p162 entry above.
 
 ### Hermes — p159i, on `main` @ `3ed62f2` (2026-10-28 cron shift — GDELT BACK FROM THE DEAD)
 The p159f/g entry below left GDELT as "the real-time gap": `api.gdeltproject.org` DOC API 429s/times out every call from datacenter IPs (re-verified: droplet 429 after 6 s pause; prod `proxy-gdelt` → `_gdelt_status:'down'`, 0 features). Browser-direct is also CORS-blocked (no ACAO header) so the "browser-direct primary" path never worked either → news layer 0, GTA CONFLICT component 0/22, OutageWatch news-detect `newsOk:false`, fusion CYBER-a leg dead.
