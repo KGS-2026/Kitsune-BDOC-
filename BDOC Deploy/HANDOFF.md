@@ -98,7 +98,7 @@ here, update §1 so Hermes knows where you left off.
 - CDN: `Cache-Status` identical with and without a bearer on 4 production functions, but all were `fwd=miss; stored`, so that sample had no hit rate to lose.
 - 678 tests on Node 24. Eight reintroduced bugs each fail `tests/auth-fetch.test.js`: old name, renamed global, no cap, no stall skip, `ping` on Supabase, no origin check, JWT in cache, async auth callback.
 
-**Believed, NOT verified:** a real login against real Supabase, a real Stripe Checkout session, a completed payment through the webhook, and Firefox or Safari (Chromium and Edge only). Commit `35c8db1` said a real Subscribe had been confirmed; that was an accidental button click, Travon retracted it, and no real Subscribe has been tested yet. Subscribe with a real account and confirm Stripe opens.
+**Verified after shipping:** Travon's screenshot, 2026-10-30: a real signed-in Subscribe opened `checkout.stripe.com` for BDOC Operator at $9.99/month, no test-mode label, account `foxunit101.tb@gmail.com`. (Commit `35c8db1` claimed this earlier from an accidental button click; the screenshot is the real evidence.) **Not verified:** a completed payment through the webhook and tier upgrade, and Firefox or Safari.
 
 ### Claude Code — p160 LIVE WIRE (2026-10-30) — LIVE, COLLECTOR RUNNING ON THE DROPLET
 Travon's directive: "I need to know in real time what is going on... chatter and rumors about things happening on the 4th of November... there should be a live scraper... as the owner I should be able to see everything in real time."
@@ -121,7 +121,7 @@ Travon's directive: "I need to know in real time what is going on... chatter and
 
 - Live on the droplet after go-live: runs as an unprivileged dynamic user, 193 MB, 0 listening sockets, `/root` not visible, `hermes-gateway` still active. Subscribed to the real topic: heartbeats 82–128 ms, new items 0.5–1.3 s from collection. Snapshot POST returned the watch list (6 default terms, sources rose to 147), so production Blobs works. One real Telegram test delivered through `sendTelegram`. 0 errors, 0 dropped, 0 failed publishes.
 
-**Believed, NOT verified:** the signed-in owner read against real Supabase (needs Travon's login; only mocks and a local harness so far), and `/wire` on a physical phone.
+**Confirmed by Travon, 2026-10-30:** opened `/wire` signed in and it works. **Not verified:** `/wire` on a physical phone.
 
 **Memory leak, fixed in p160c.** The collector hit its 460 MB V8 heap limit and core-dumped at 22:36 UTC, 2.5 hours after go-live; systemd had it back about 40 s later with no data lost. V8 stores a substring as a pointer into its parent, so a kept `guid` or `u` pinned the whole feed body, and a GDELT row pinned the whole decompressed file, while every item count stayed inside its cap. Measured with the real parser: +283 MB per 300 1-MB polls before, +2 MB after. Anything that outlives a poll now goes through `ownItem()` in `lib/util.js`, applied in `parseBy` and `gdelt.rowsFrom`. `tests/wire-live-run.test.js` measures the heap directly and fails at 58 MB without the fix. On the droplet after the fix: RSS 162–184 MB across a 40-minute watch with 0 restarts and 0 errors, against 375 MB at 96 minutes before it. Watch a full day before calling it closed. New parsers must return through `parseBy`.
 
