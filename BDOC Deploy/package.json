@@ -1,6 +1,6 @@
 {
   "name": "kgs-bdoc",
-  "version": "8.2.2",
+  "version": "8.3.0",
   "homepage": "https://kgsbdoc.netlify.app",
   "private": true,
   "description": "KGS BDOC — Military-grade geospatial intelligence platform. Offline-capable desktop app.",

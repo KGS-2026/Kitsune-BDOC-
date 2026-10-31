@@ -5,6 +5,7 @@
 
 const { app, BrowserWindow, Menu, shell, dialog, ipcMain, Tray, nativeImage, Notification, powerMonitor } = require('electron');
 const netSock = require('net');
+const tools = require('./tools');
 const path  = require('path');
 const http  = require('http');
 const https = require('https');
@@ -85,10 +86,40 @@ function addOfflineMap() {
 // checked without a network, and being locked out of paid tools in a grid-down is the failure
 // this app exists to prevent. Auth.checkDevKey already honours this on localhost. A file named
 // bdoc-unlock beside the portable exe does the same, so a USB copy works on a spare laptop.
-function offlineUrl() {
+function isUnlocked() {
   const beside = process.env.PORTABLE_EXECUTABLE_DIR || path.dirname(process.execPath);
-  const unlocked = [path.join(os.homedir(), '.bdoc', 'unlock'), path.join(beside, 'bdoc-unlock')].some(f => fs.existsSync(f));
-  return `http://localhost:${LOCAL_PORT}/${unlocked ? '?dev=local' : ''}`;
+  return [path.join(os.homedir(), '.bdoc', 'unlock'), path.join(beside, 'bdoc-unlock')].some(f => fs.existsSync(f));
+}
+
+function offlineUrl() {
+  return `http://localhost:${LOCAL_PORT}/${isUnlocked() ? '?dev=local' : ''}`;
+}
+
+// ── Tools and offline AI ─────────────────────────────────────────────────────
+// A separate window, never the main one. The main window shows feed text and in live mode a
+// whole remote site, so a script injected there must not be able to reach laptop tools.
+const TOOLS_URL = `http://localhost:${LOCAL_PORT}/electron/tools.html`;
+let toolsWin = null;
+
+function toolsOnly(fn) {
+  return (e, ...args) => {
+    if (e.senderFrame.url.split('#')[0] !== TOOLS_URL) throw new Error('not allowed');
+    return fn(...args);
+  };
+}
+ipcMain.handle('tools:list', toolsOnly(() => tools.list()));
+ipcMain.handle('tools:run', toolsOnly((id, input) => tools.run(String(id), input)));
+ipcMain.handle('tools:ensure-ai', toolsOnly(() => tools.ensureOllama()));
+
+function openTools() {
+  if (toolsWin) { toolsWin.focus(); return; }
+  toolsWin = new BrowserWindow({
+    width: 1200, height: 800, minWidth: 800, minHeight: 500, title: 'BDOC Tools and Offline AI', backgroundColor: '#0E1116',
+    webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, preload: path.join(__dirname, 'tools-preload.js') }
+  });
+  toolsWin.setMenu(null);
+  toolsWin.loadURL(TOOLS_URL);
+  toolsWin.on('closed', () => { toolsWin = null; });
 }
 
 function setMode(mode) {
@@ -269,6 +300,7 @@ function buildMenu() {
       submenu: [
         { label: 'Check for Desktop Update…', click: () => shell.openExternal(RELEASES_URL) },
         { label: 'Running Mode', click: () => dialog.showMessageBox({ title: 'BDOC mode', message: runMode === 'live' ? 'LIVE — loading kgsbdoc.netlify.app. Web fixes arrive automatically.' : 'OFFLINE — bundled build ' + app.getVersion() + '. Reconnect and restart to load the live version.', type: 'info' }) },
+        ...(isUnlocked() ? [{ label: 'Tools and Offline AI', accelerator: 'CmdOrCtrl+Shift+T', click: openTools }] : []),
         { label: 'Switch to Offline Mode', click: () => setMode('offline') },
         { label: 'Switch to Live Mode', click: () => setMode('live') },
         { label: 'About KGS BDOC', click: () => dialog.showMessageBox({ title: 'KGS BDOC', message: 'KGS BDOC v' + app.getVersion() + '\nKitsune Global Solutions LLC\nOffline tactical intelligence platform', type: 'info' }) },
@@ -375,6 +407,7 @@ app.whenReady().then(() => {
   setTimeout(() => {
     buildMenu();
     createWindow().then(startTripwire);
+    if (process.env.BDOC_OPEN_TOOLS === '1' && isUnlocked()) openTools();
   }, 800); // Give server time to start
 });
 
