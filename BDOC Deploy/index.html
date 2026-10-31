@@ -2471,7 +2471,7 @@ function captureScreen(){
 }
 // ═══ DESKTOP APP DOWNLOAD ═══
 // Detects OS, links to the matching installer on GitHub Releases. Hidden inside Electron.
-const BDOC_RELEASE_BASE='https://github.com/KGS-2026/Kitsune-BDOC-/releases/latest/download';
+const BDOC_RELEASE_BASE='https://github.com/KGS-2026/BDOC-Releases/releases/latest/download';
 // P154 (Travon bug #22): the link was hard-coded to v8.0.0 file names, so every new
 // desktop build needed a web deploy to become downloadable (and a rename broke it).
 // Now it asks GitHub for the LATEST release and picks the right asset for this OS.
@@ -2491,7 +2491,7 @@ let _bdocLatestRelease=null;
 async function bdocLatestRelease(){
   if(_bdocLatestRelease!==null)return _bdocLatestRelease;
   try{
-    const r=await fetch('https://api.github.com/repos/KGS-2026/Kitsune-BDOC-/releases/latest',
+    const r=await fetch('https://api.github.com/repos/KGS-2026/BDOC-Releases/releases/latest',
       {headers:{Accept:'application/vnd.github+json'},signal:AbortSignal.timeout(6000)});
     _bdocLatestRelease=r.ok?await r.json():false;
   }catch(_){_bdocLatestRelease=false}
@@ -2528,7 +2528,7 @@ async function bdocCheckDesktopUpdate(){
     `You are running v${esc(have)}. The app loads the live site while you are online, `+
     `so you already have current data — but the OFFLINE bundle only refreshes when you `+
     `reinstall. Update before you need it.<br>`+
-    `<a href="https://github.com/KGS-2026/Kitsune-BDOC-/releases/latest" target="_blank" `+
+    `<a href="https://github.com/KGS-2026/BDOC-Releases/releases/latest" target="_blank" `+
     `style="color:var(--kf)">Download v${esc(tag)}</a>`);}catch(_){}
 }
 // Run once a little after boot so it never competes with the globe for bandwidth.
@@ -2538,7 +2538,7 @@ async function downloadDesktop(){
   const p=(navigator.userAgentData&&navigator.userAgentData.platform||navigator.platform||'').toLowerCase();
   const ua=navigator.userAgent.toLowerCase();
   const os=(p.includes('win')||ua.includes('windows'))?'win':(p.includes('mac')||ua.includes('mac os'))?'mac':ua.includes('linux')?'linux':'win';
-  const releases='https://github.com/KGS-2026/Kitsune-BDOC-/releases/latest';
+  const releases='https://github.com/KGS-2026/BDOC-Releases/releases/latest';
   const win=window.open('about:blank','_blank'); // opened inside the click so it isn't popup-blocked
   let url=releases,label='Opening the release page',ver='latest';
   try{

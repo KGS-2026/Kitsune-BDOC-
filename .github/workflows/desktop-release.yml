@@ -99,6 +99,9 @@ jobs:
       - name: Attach to release
         uses: softprops/action-gh-release@v2
         with:
+          # This repo is private, and customers download with no GitHub login.
+          repository: KGS-2026/BDOC-Releases
+          token: ${{ secrets.RELEASES_TOKEN }}
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           name: BDOC Desktop ${{ github.event.inputs.tag || github.ref_name }}
           body: |

@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v163';  // p161 + p162 together: Web Push re-keys a subscription on a retired VAPID key, and function calls carry the JWT
+const SW_VERSION = 'bdoc-v164';  // desktop downloads moved to the public BDOC-Releases repo
+// (prev) const SW_VERSION = 'bdoc-v163';  // p161 + p162 together: Web Push re-keys a subscription on a retired VAPID key, and function calls carry the JWT
 // (prev) const SW_VERSION = 'bdoc-v162';  // p162: bdoc-auth-fetch reads window.BDOC_Auth, so function calls finally carry the JWT; networkFirst keeps it out of Cache Storage
 // (prev) const SW_VERSION = 'bdoc-v160';  // p160: LIVE WIRE owner feed — boot probe, /wire page, function bypass below
 // (prev) const SW_VERSION = 'bdoc-v159i';  // p159: Ferrari chrome pass 1 — 56px bar, single amber accent, neutral panels, onboarding redesign, 10px+ globe labels

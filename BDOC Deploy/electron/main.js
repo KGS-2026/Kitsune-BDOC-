@@ -28,7 +28,7 @@ const LOCAL_PORT = 9080;
 // (always current, real Netlify functions, service worker caches it for later
 // grid-down use). Otherwise fall back to the bundled copy + local API server.
 const LIVE_URL = 'https://kgsbdoc.netlify.app/';
-const RELEASES_URL = 'https://github.com/KGS-2026/Kitsune-BDOC-/releases/latest';
+const RELEASES_URL = 'https://github.com/KGS-2026/BDOC-Releases/releases/latest';
 let runMode = 'offline';
 function liveReachable(timeoutMs = 4000) {
   return new Promise(resolve => {
