@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
-**Last updated by Claude Code:** 2026-10-30 · builds **p161 + p162** on `main` · `SW_VERSION bdoc-v163`
+**Last updated by Claude Code:** 2026-10-31 · build **p163** on `main` · `SW_VERSION bdoc-v164`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,16 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
+
+### Claude Code — p163 Incident Archive (2026-10-31) — IRAN WAS NOT A THEATER, AND WAR ROOM KEPT ONLY 3 HOURS
+Travon: "I have no idea what is going on in Iran." Measured on prod: 6 Iran events of 179 worldwide. The US/Israel-Iran war has run since 2026-02-28, and `WAR_THEATERS` had no Iran entry.
+- **New layer `incidents`** (`js/modules/layers-incidents.js`): every located GDELT root 18/19/20 event since 2026-02-28, in `data/incidents/*.json`, drawn in one PointPrimitiveCollection (167,381 worldwide, 23,744 Iran/Gulf). Same plan tiers as `warlive`.
+- **Backfill:** `node tools/incidents/backfill.js <cache>` then `node tools/incidents/build.js <cache> data/incidents`. Cache is on the laptop at `C:\Users\ARNAUTICA\bdoc-incident-cache`. Resumable. Repo gained 24 MB.
+- **Live top-up:** `incidents-tick.mjs` (scheduled, 15 min, looks back 24 h) writes Blobs; `incidents-recent.mjs` serves them. Split because scheduled functions have no URL. Blobs keep serving 45 days, so **rebuild the shards at least monthly**.
+- War Room: Iran theater + FIRMS box; `proxy-newsgeo` gained Iran/Hormuz Google News searches and Gulf gazetteer places.
+- Pitfall: the SW is cache-first for local files, so shards are fetched with `?v=<index.generated>`. A plain URL would never update.
+- A dot is a cluster of reports at one place on one day, NOT a confirmed strike. Do not market the number as a strike count. Vetted counts need ACLED (commercial licence) or UCDP (token). Neither is wired.
+- Believed, not verified: droplet not checked (classifier blocked read-only SSH). Static Iran markers in `layers-conflict.js` are still stale.
 
 ### Claude Code — desktop 8.2.0 (2026-10-31) — THE DOWNLOAD WAS AN AUGUST BUILD THAT COULD NOT WORK OFFLINE
 The only GitHub release was `v8.0.0` (2026-08-10), so no fix since reached a download. Its bundled mode had no `config` route, so Supabase never started and sign-in could not work. Worse: Cesium and every library came from CDNs, so with no internet there was no globe at all.

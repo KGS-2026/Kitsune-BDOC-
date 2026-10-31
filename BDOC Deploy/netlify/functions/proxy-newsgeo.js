@@ -38,7 +38,10 @@ const FEEDS = [
   { id: 'skynews',    name: 'Sky News',     url: 'https://feeds.skynews.com/feeds/rss/world.xml', weight: 2 },
   { id: 'aljazeera',  name: 'Al Jazeera',   url: 'https://www.aljazeera.com/xml/rss/all.xml', weight: 3 },
   { id: 'dw',         name: 'DW',           url: 'https://rss.dw.com/rdf/rss-en-world', weight: 2 },
-  { id: 'nypost',     name: 'NY Post',      url: 'https://nypost.com/world-news/feed/', weight: 1 }
+  { id: 'nypost',     name: 'NY Post',      url: 'https://nypost.com/world-news/feed/', weight: 1 },
+  // World desks run a handful of Iran stories at most, so search the active theater directly.
+  { id: 'gn-iran',    name: 'Google News: Iran',   url: 'https://news.google.com/rss/search?q=iran+strike+OR+attack+OR+missile+when:1d&hl=en-US&gl=US&ceid=US:en', weight: 2 },
+  { id: 'gn-hormuz',  name: 'Google News: Hormuz', url: 'https://news.google.com/rss/search?q=%22strait+of+hormuz%22+OR+%22persian+gulf%22+tanker+when:1d&hl=en-US&gl=US&ceid=US:en', weight: 2 }
 ];
 
 // ── Gazetteer. lon, lat, precision-radius in metres. ─────────
@@ -62,6 +65,14 @@ const GAZ = {
   'homs':[36.72,34.73,15000],'latakia':[35.79,35.52,15000],
   'tehran':[51.39,35.69,20000],'isfahan':[51.68,32.65,15000],'natanz':[51.72,33.72,10000],
   'fordow':[50.99,34.88,8000],'bandar abbas':[56.28,27.19,12000],
+  'bushehr':[50.84,28.97,12000],'kharg island':[50.32,29.23,8000],'qom':[50.88,34.64,12000],
+  'tabriz':[46.29,38.08,15000],'shiraz':[52.54,29.59,15000],'mashhad':[59.61,36.30,15000],
+  'ahvaz':[48.67,31.32,15000],'kermanshah':[47.07,34.31,15000],'chabahar':[60.64,25.29,10000],
+  'asaluyeh':[52.61,27.48,10000],'south pars':[52.60,27.50,20000],'qeshm':[55.90,26.85,20000],
+  'hormuz':[56.25,26.57,60000],'gulf of oman':[58.50,24.50,150000],'persian gulf':[51.50,27.00,250000],
+  'doha':[51.53,25.29,12000],'dubai':[55.30,25.20,15000],'abu dhabi':[54.37,24.45,15000],
+  'manama':[50.59,26.23,10000],'kuwait city':[47.98,29.38,12000],'riyadh':[46.72,24.71,18000],
+  'muscat':[58.41,23.59,12000],
   'baghdad':[44.36,33.31,18000],'erbil':[44.01,36.19,12000],'mosul':[43.12,36.34,12000],
   'sanaa':[44.21,15.35,15000],'hodeidah':[42.95,14.80,12000],'aden':[45.04,12.79,12000],
   'red sea':[38.00,20.00,300000],'bab el-mandeb':[43.35,12.58,60000],

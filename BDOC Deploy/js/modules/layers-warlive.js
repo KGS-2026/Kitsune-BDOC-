@@ -18,6 +18,8 @@
 
 // Active theaters: anchor point + AOI bbox [W,S,E,N] + GDELT match regex
 window.WAR_THEATERS = [
+  { id: 'iran', name: 'IRAN / GULF / HORMUZ', lat: 30.0, lon: 53.0, bbox: [44, 23, 63.5, 40],
+    rx: /iran|tehran|irgc|hormuz|persian gulf|gulf of oman|bandar abbas|isfahan|natanz|fordow|bushehr|kharg|khamenei|araghchi/i },
   { id: 'ukraine', name: 'UKRAINE THEATER', lat: 48.5, lon: 35.5, bbox: [22, 44, 41, 53],
     rx: /ukrain|kyiv|kharkiv|donetsk|luhansk|zaporizh|kherson|crimea|bakhmut|avdiivka|kursk|russia.*(strike|drone|missile|offensiv)|shahed/i },
   { id: 'gaza', name: 'GAZA / ISRAEL / LEBANON', lat: 31.9, lon: 35.0, bbox: [34, 29.3, 36.7, 34.7],
@@ -70,11 +72,11 @@ window.loadWarLive = async function () {
           Object.assign(trends, c.trends); WAR_THEATERS.forEach(z => applyTrend(z.id)); return;
         }
       } catch (_) {}
-      const tq = { ukraine: '(ukraine OR kyiv OR kharkiv)', gaza: '(gaza OR israel OR hezbollah)', sudan: '(sudan OR khartoum OR darfur)', redsea: '(yemen OR houthi OR "red sea")', myanmar: '(myanmar OR burma)', sahel: '(mali OR niger OR "burkina faso")' };
+      const tq = { iran: '(iran OR tehran OR hormuz)', ukraine: '(ukraine OR kyiv OR kharkiv)', gaza: '(gaza OR israel OR hezbollah)', sudan: '(sudan OR khartoum OR darfur)', redsea: '(yemen OR houthi OR "red sea")', myanmar: '(myanmar OR burma)', sahel: '(mali OR niger OR "burkina faso")' };
       // TERTIARY source (p103): Wikipedia pageviews REST API — CORS *, no IP throttle,
       // works from datacenter AND residential. Public attention on the conflict article
       // is a proven escalation proxy (spikes on major offensives). Daily granularity.
-      const WIKI = { ukraine: 'Russian_invasion_of_Ukraine', gaza: 'Gaza_war', sudan: 'Sudanese_civil_war_(2023–present)', redsea: 'Red_Sea_crisis', myanmar: 'Myanmar_civil_war_(2021–present)', sahel: 'Insurgency_in_the_Sahel' };
+      const WIKI = { iran: '2026_Iran_war', ukraine: 'Russian_invasion_of_Ukraine', gaza: 'Gaza_war', sudan: 'Sudanese_civil_war_(2023–present)', redsea: 'Red_Sea_crisis', myanmar: 'Myanmar_civil_war_(2021–present)', sahel: 'Insurgency_in_the_Sahel' };
       const mkTrend = (delta, src) => ({ delta, src,
         badge: delta > 0.15 ? '<span style="color:#DA3633;font-weight:700">▲ ESCALATING +' + Math.round(delta * 100) + '%</span>'
              : delta < -0.15 ? '<span style="color:#3FB950;font-weight:700">▼ DE-ESCALATING ' + Math.round(delta * 100) + '%</span>'
