@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
-**Last updated by Claude Code:** 2026-10-30 · build **p162** · `SW_VERSION bdoc-v162`
+**Last updated by Claude Code:** 2026-10-30 · builds **p161 + p162** on `main` · `SW_VERSION bdoc-v163`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -99,6 +99,32 @@ here, update §1 so Hermes knows where you left off.
 - 678 tests on Node 24. Eight reintroduced bugs each fail `tests/auth-fetch.test.js`: old name, renamed global, no cap, no stall skip, `ping` on Supabase, no origin check, JWT in cache, async auth callback.
 
 **Verified after shipping:** Travon's screenshot, 2026-10-30: a real signed-in Subscribe opened `checkout.stripe.com` for BDOC Operator at $9.99/month, no test-mode label, account `foxunit101.tb@gmail.com`. (Commit `35c8db1` claimed this earlier from an accidental button click; the screenshot is the real evidence.) **Not verified:** a completed payment through the webhook and tier upgrade, and Firefox or Safari.
+### Claude Code — p161 Web Push activation (2026-10-30) — CODE LIVE, PUSH NOT YET TURNED ON
+§2 Y.1: `sendReady:false`, neither key on Netlify, so the sentinel's push fan-out has never reached anyone. Telegram still reaches Travon.
+
+**Hermes: do NOT add `VAPID_PRIVATE_KEY` or `PUSH_SEND_KEY` by hand, and do not reuse the p140 key.** Travon turns this on by running `tools/push/activate.ps1` (read its header), then `activate.ps1 -TestPush` with a real device armed. It is Travon's to run because it creates a key and writes secrets (§0 rule 6).
+
+**The p140 private key.** Not in git or Netlify. `~/.hermes/cron/output/c92a63f73955/2026-09-30_17-49-19.md` line 55 shows a long token labelled `VAPID_PRIVATE_KEY`, and that job delivers to Telegram, so it very likely survives in both places. NOT proven: the value was masked on read and never tested against the public key. A wider scan of the droplet was stopped by the permission classifier as credential exploration, and testing that one token means handling the secret, so neither was done. Decision: a new keypair either way. The old key has been through a chat and an LLM, and replacing it will never again be this cheap, with one subscriber. It stops mattering once the new key is live. Whether to delete that report and message is Travon's call.
+
+**What changed.**
+- `push-subscribe.mjs`: the public key is derived from `VAPID_PRIVATE_KEY`, so a mismatched pair cannot exist and a future rotation is env-only. `sendReady` now also needs `PUSH_SEND_KEY` (it used to say true with a gate that refused everyone). `GET` splits `count` (reachable) from `stale` (bound to a retired key).
+- `push-send.mjs`: `dryRun` now really signs and encrypts. Before, it signed nothing, and `setVapidDetails` only checks lengths, so a wrong key passed it. Stale subscriptions are skipped and counted, never deleted: deleting on a key mismatch would let one wrong env value wipe every subscriber on the next page. The same reason 401/403 is not pruned.
+- `bdoc-push.js`: `register()` reused any existing subscription, so a key change left a device dead forever while it re-posted that subscription on every boot. It now compares keys and swaps silently (permission is already granted, so no prompt), and reports `vapid`, as does the SW on `pushsubscriptionchange`.
+- The sentinel needed no code change. `PUSH_SEND_KEY` goes in `/root/.hermes/.env`: it is a `no_agent` cron job, Hermes re-reads `.env` before every run, and `_sanitize_subprocess_env` lets the name through, so nothing restarts.
+
+**The one existing subscriber** cannot receive anything signed by the new key. It shows as `stale` until that device opens BDOC, then re-keys by itself. Whose device it is was not determined. If it never opens BDOC, it stays `stale`, harmless.
+
+**Verified:**
+- `node --test`: 685 pass, Node 24. `scripts/ci-validate.sh` on Linux Node 22: all 5 checks pass.
+- Real functions + real `web-push` 3.6.7 against a strict fake push service, Node 24 and 22, 18 checks: signature, `aud`, `exp` and `sub` verified, payload decrypted, dry run reaches no service, and the real `bdoc-push.js` on an old-key phone re-keys and then receives a real push. Controls: a forged signature gets 401, a wrong key gets 403 and is reported, not pruned.
+- Real FCM with a throwaway key from the script's own generator, junk endpoint: 410 (accepted). The same request with a corrupted signature: 403 `invalid JWT provided`. So 410 really does mean the signature was checked.
+- `activate.ps1` run whole with Netlify, SSH and the deploy stubbed, 19 checks: every stop condition, droplet before Netlify, neither secret ever printed, the private key never goes to the droplet, `-TestPush` sends nothing without a yes.
+- Its generator: 3,000 throwaway keys derive correctly with Node, 12 of them with a leading zero byte. Its droplet commands run through real PowerShell and SSH against a `/tmp` file with dummy values: fixes a missing trailing newline, replaces instead of duplicating, keeps mode 600, leaves no `\r`.
+- Real Chromium 152 exposes `PushSubscription.options.applicationServerKey`.
+
+**Believed, NOT verified:** the Netlify env POST and redeploy (same shape as `go-live.ps1`, which worked, but stubbed here), Node 18 (22 and 24 only), the first real send from a Netlify function, re-key on a physical phone (iOS Safari especially), and the sentinel's own Python push block, which only runs on a catastrophic page. Check `sendReady`, the dry run and the test push right after activation.
+
+**Pitfalls found.** `tests/wire-function.test.js` hard-pinned `bdoc-v160`, so any SW bump failed it; it now pins the kept `(prev)` line. A `data:` module is cached by URL, so a stub whose source never changes is shared between test loads. Git Bash mangles `openssl -subj /CN=...`; set `MSYS_NO_PATHCONV=1`.
 
 ### Claude Code — p160 LIVE WIRE (2026-10-30) — LIVE, COLLECTOR RUNNING ON THE DROPLET
 Travon's directive: "I need to know in real time what is going on... chatter and rumors about things happening on the 4th of November... there should be a live scraper... as the owner I should be able to see everything in real time."
@@ -930,7 +956,7 @@ curl -s https://kgsbdoc.netlify.app/service-worker.js \
 ## 2. OPEN ITEMS — PICK UP HERE
 
 ### Y. Found while building p160 (2026-10-30)
-1. **Web Push cannot send.** `GET push-subscribe` says `sendReady:false`, and neither `VAPID_PRIVATE_KEY` nor `PUSH_SEND_KEY` is in the Netlify env. The droplet sentinel's push fan-out and every customer alert are silently dead. Telegram still reaches Travon. 1 subscriber waiting.
+1. **Web Push is ready and waiting on Travon (p161, see §1).** Run `tools/push/activate.ps1`, then `activate.ps1 -TestPush` with a real device armed. Done when `sendReady` is true, the dry run passes and the test notification appears on the device. Until then the sentinel's push fan-out and every customer alert stay silently dead. Telegram still reaches Travon.
 2. ✅ **FIXED in p162: `bdoc-auth-fetch.js` never attached a token, which also broke checkout.** See §1. **Before a paid proxy adopts `guard.wrap`:** (a) calls fired before `BDOC_Auth.client` exists go as a guest; at boot that is `proxy-firms`, `proxy-adsb` and `mesh-nodes`. (b) Tile and `<img>` loads skip `fetch`, so they carry no token. (c) A gated 200 must not be cacheable by URL. In testing the browser's HTTP cache answered a guest with a response fetched while signed in, and the worker writes every 200 to Cache Storage, so gated responses need `private, no-store` and a worker bypass like `wire`'s.
 3. **`sentinel` relay is empty.** `GET /.netlify/functions/sentinel` returns `generated:null`. Nothing POSTs to it.
 4. **`bdoc_sentinel.py` still calls the GDELT DOC API**, which 429s from the droplet, so its cyber sweep degrades silently.

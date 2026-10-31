@@ -12,17 +12,41 @@
 // precedent; do not port this back to exports.handler.
 //
 // Endpoints:
-//   GET  /.netlify/functions/push-subscribe              -> { publicKey, count }
-//   POST /.netlify/functions/push-subscribe  {subscription, tier?, label?}
+//   GET  /.netlify/functions/push-subscribe              -> { publicKey, count, stale, sendReady }
+//   POST /.netlify/functions/push-subscribe  {subscription, vapid?, tier?, label?}
 //   POST /.netlify/functions/push-subscribe  {unsubscribe:true, endpoint}
 
+import { createECDH } from 'node:crypto';
 import { getStore } from '@netlify/blobs';
 
 export const STORE = 'bdoc-push';
 
-// p140 VAPID keypair. The public half is public by definition — the browser
-// ships it in every subscribe call. Only VAPID_PRIVATE_KEY lives in env.
-export const VAPID_PUBLIC = 'BPWhkfr5e-I2RFVf7t12MvhnIRXaPu4-XZNlqUVVRVlSOctwVYq2JXhzDrAgMcIOO_rDsBSarEjhwYvS1h7JSwo';
+// p140 public key. Its private half never reached Netlify, so nothing was ever
+// sent with it. Subscriptions from before p161 are bound to it and carry no
+// `vapid` field; once a new key is set, naming those is all this is for.
+const P140_PUBLIC = 'BPWhkfr5e-I2RFVf7t12MvhnIRXaPu4-XZNlqUVVRVlSOctwVYq2JXhzDrAgMcIOO_rDsBSarEjhwYvS1h7JSwo';
+
+// The public key is derived, never configured. Two values set apart can drift,
+// and a mismatched pair passes every check here and then fails at the push
+// service on the first real alert. Only VAPID_PRIVATE_KEY lives in env.
+function derivePublic(priv) {
+  if (!/^[A-Za-z0-9_-]{43}$/.test(priv || '')) return null;
+  try {
+    const ecdh = createECDH('prime256v1');
+    ecdh.setPrivateKey(Buffer.from(priv, 'base64url'));
+    return ecdh.getPublicKey('base64url');
+  } catch (_) { return null; }
+}
+
+// Null means nothing can be signed. VAPID_PUBLIC is set either way, because a
+// browser can arm push before the server half is configured.
+export const SIGNING_PUBLIC = derivePublic(process.env.VAPID_PRIVATE_KEY);
+export const VAPID_PUBLIC = SIGNING_PUBLIC || P140_PUBLIC;
+
+// A subscription is bound to the key that created it, and push services refuse
+// anything signed with another. It cannot receive again until the device
+// re-keys, which bdoc-push.js does silently on its next open.
+export const isStale = (rec) => (rec.vapid || P140_PUBLIC) !== VAPID_PUBLIC;
 
 const HEADERS = {
   'Content-Type': 'application/json',
@@ -101,23 +125,26 @@ export default async (req) => {
       }
     }
 
-    let count = 0, storeErr = null;
+    let count = 0, stale = 0, storeErr = null;
     try {
       const st = store();
       const keys = await readIndex(st);
       // Read each back: the index is the roster, but a record can still be
       // gone. A count that overstates reach is the same class of lie as a
       // stale map that looks live.
-      const live = await Promise.all(keys.map(async k => {
-        try { return !!(await st.get(k, { type: 'json', consistency: 'strong' })); }
-        catch (_) { return false; }
+      const recs = await Promise.all(keys.map(async k => {
+        try { return await st.get(k, { type: 'json', consistency: 'strong' }); }
+        catch (_) { return null; }
       }));
-      count = live.filter(Boolean).length;
+      const held = recs.filter(Boolean);
+      stale = held.filter(isStale).length;
+      count = held.length - stale;
     } catch (e) { storeErr = String(e && e.message).slice(0, 140); }
     return J({
       publicKey: VAPID_PUBLIC,
       count,
-      sendReady: !!process.env.VAPID_PRIVATE_KEY,
+      stale,
+      sendReady: !!(SIGNING_PUBLIC && process.env.PUSH_SEND_KEY),
       storeErr
     });
   }
@@ -155,6 +182,9 @@ export default async (req) => {
   const sub = body.subscription;
   const rec = {
     subscription: { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } },
+    // Reported by the device, not assumed from VAPID_PUBLIC: a device still on
+    // old code re-posts its old subscription on every boot.
+    vapid: body.vapid ? String(body.vapid).slice(0, 100) : undefined,
     tier: body.tier || 'recon',
     label: String(body.label || '').slice(0, 80),
     ua: (req.headers.get('user-agent') || '').slice(0, 160),
