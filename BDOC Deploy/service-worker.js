@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v160';  // p160: LIVE WIRE owner feed — boot probe, /wire page, function bypass below
+const SW_VERSION = 'bdoc-v162';  // p162: bdoc-auth-fetch reads window.BDOC_Auth, so function calls finally carry the JWT; networkFirst keeps it out of Cache Storage
+// (prev) const SW_VERSION = 'bdoc-v160';  // p160: LIVE WIRE owner feed — boot probe, /wire page, function bypass below
 // (prev) const SW_VERSION = 'bdoc-v159i';  // p159: Ferrari chrome pass 1 — 56px bar, single amber accent, neutral panels, onboarding redesign, 10px+ globe labels
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156g: long-press menu, copy grid / share, MGRS setting + search, no boot prompt, og-image
 // (prev) const SW_VERSION = 'bdoc-v158';  // p156f: current flowing along grid lines + pipeline flow (cesium-init + layers-arcgis)
@@ -44,7 +45,7 @@ const STATIC_PRECACHE = [
   '/js/converters.js?v=p156g',
   '/js/data.js?v=p159h',
   '/js/auth.js?v=p159',
-  '/js/bdoc-auth-fetch.js?v=p158',
+  '/js/bdoc-auth-fetch.js?v=p162',
   '/js/filters.js?v=p154',
   '/js/kitsune-ai.js?v=p93',
   '/js/bdoc-atak.js?v=p156d',
@@ -228,7 +229,10 @@ async function networkFirst(request, cacheName, timeoutMs) {
     const response = await fetch(request, { signal: AbortSignal.timeout(timeoutMs || 8000) });
     if (response.ok) {
       const cache = await caches.open(cacheName);
-      cache.put(request, response.clone());
+      // p162: Cache Storage keeps the request's headers on disk, readable through
+      // cache.keys(), so a signed-in call would leave a live JWT there past logout.
+      // A bare URL key stores the same bytes and still answers caches.match(request).
+      cache.put(request.headers.has('Authorization') ? request.url : request, response.clone());
     }
     return response;
   } catch (e) {

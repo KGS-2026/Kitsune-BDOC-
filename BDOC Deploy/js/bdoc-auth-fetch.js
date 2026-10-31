@@ -14,9 +14,23 @@
  *   - the local bridge on 127.0.0.1:9876 (its own separate pairing token)
  * It is never attached to USGS, NOAA, OpenSky, Cesium Ion, or any other host.
  * Getting this wrong would leak a session token to third parties, so the origin
- * check is deliberately strict and runs before anything else.
+ * check is deliberately strict and runs before anything else. It also keeps
+ * supabase-js out of its own way: the client's token refresh comes through this
+ * wrapper, and a foreign URL never reaches getSession().
  *
- * Load order: AFTER js/auth.js (needs window.Auth.client), BEFORE any layer
+ * p162 — WHY THE WAIT FOR A TOKEN IS BOUNDED: until p162 this file read a global
+ * that never existed, so it attached nothing and stripe-checkout 401ed every
+ * customer. Fixing that put getSession() in front of every function call. With a
+ * valid token that is a 15 µs storage read, but with an expired one it retries the
+ * refresh for ~30 s while Supabase is unreachable. Unbounded, that held every feed
+ * back 28 s and failed the link probe on a healthy uplink (measured, supabase-js
+ * 2.118.0). So a stall costs one TOKEN_WAIT_MS, then calls go out as a guest until
+ * it settles: the free map stays up, and guard.js still fails closed on paid layers.
+ *
+ * Every function fetch now calls getSession(), so never await one inside an
+ * onAuthStateChange callback (p157 note in js/auth.js).
+ *
+ * Load order: AFTER js/auth.js (needs window.BDOC_Auth.client), BEFORE any layer
  * module that fetches.
  */
 (function () {
@@ -27,6 +41,9 @@
 
   var nativeFetch = window.fetch.bind(window);
   var FN_PATH = /^\/(?:\.netlify\/functions|api)\//;
+  var LINK_PROBE = '/.netlify/functions/ping';
+  var TOKEN_WAIT_MS = 3000;     // callers' own timeouts start at 5 s
+  var sessionStalled = false;   // a getSession() outlived TOKEN_WAIT_MS and is still running
 
   function parseUrl(input) {
     try {
@@ -53,13 +70,25 @@
   }
 
   async function currentToken() {
+    var timer;
     try {
-      var c = window.Auth && window.Auth.client;
-      if (!c || !c.auth) return null;
+      var c = window.BDOC_Auth && window.BDOC_Auth.client;
+      if (!c || !c.auth || sessionStalled) return null;
       // getSession() refreshes the token if it is close to expiry.
-      var res = await c.auth.getSession();
-      return (res && res.data && res.data.session && res.data.session.access_token) || null;
+      var read = c.auth.getSession();
+      var res = await Promise.race([read, new Promise(function (done) {
+        timer = setTimeout(done, TOKEN_WAIT_MS);
+      })]);
+      if (!res) {
+        if (!sessionStalled) console.warn('[auth-fetch] session read stalled, calling functions as a guest');
+        sessionStalled = true;
+        var settled = function () { sessionStalled = false; };
+        read.then(settled, settled);
+        return null;
+      }
+      return (res.data && res.data.session && res.data.session.access_token) || null;
     } catch (_) { return null; }
+    finally { clearTimeout(timer); }
   }
 
   window.fetch = async function (input, init) {
@@ -74,8 +103,9 @@
       return nativeFetch(input, Object.assign({}, init || {}, { headers: bh }));
     }
 
-    // Anything that is not our own function endpoint goes through untouched.
-    if (!isOurFunction(u)) return nativeFetch(input, init);
+    // Anything that is not our own function endpoint goes through untouched, and so
+    // does the link probe: it has to measure the uplink, not Supabase.
+    if (!isOurFunction(u) || u.pathname === LINK_PROBE) return nativeFetch(input, init);
 
     var token = await currentToken();
     if (!token) return nativeFetch(input, init);   // guest: guard allows recon layers
