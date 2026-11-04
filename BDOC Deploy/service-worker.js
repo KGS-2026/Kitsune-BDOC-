@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v164';  // p163: incident archive layer, Iran theater in War Room
+const SW_VERSION = 'bdoc-v165';  // p164: Causal Fusion v2 — official-statuspage cyber leg, upstream-cascade, incident-archive kinetic leg, corroboration, fusion-weighted GTA INFRA
+// (prev) const SW_VERSION = 'bdoc-v164';  // p163: incident archive layer, Iran theater in War Room
 // (prev) const SW_VERSION = 'bdoc-v163';  // p161 + p162 together: Web Push re-keys a subscription on a retired VAPID key, and function calls carry the JWT
 // (prev) const SW_VERSION = 'bdoc-v162';  // p162: bdoc-auth-fetch reads window.BDOC_Auth, so function calls finally carry the JWT; networkFirst keeps it out of Cache Storage
 // (prev) const SW_VERSION = 'bdoc-v160';  // p160: LIVE WIRE owner feed — boot probe, /wire page, function bypass below
@@ -53,16 +54,16 @@ const STATIC_PRECACHE = [
   '/js/bdoc-atak.js?v=p156d',
   '/js/cesium-init.js?v=p159b',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p163',
-  '/js/modules/layers-conflict.js?v=p163',
-  '/js/modules/layers-infra.js?v=p163',
-  '/js/modules/layers-air.js?v=p163',
-  '/js/modules/layers-nuke.js?v=p163',
-  '/js/modules/nuke-sim.js?v=p163',
-  '/js/modules/layers-airfields.js?v=p163',
-  '/js/modules/net-builder.js?v=p163',
-  '/js/modules/mesh-world.js?v=p163',
-  '/js/modules/skybridge.js?v=p163',
+  '/js/modules/layers-military.js?v=p164',
+  '/js/modules/layers-conflict.js?v=p164',
+  '/js/modules/layers-infra.js?v=p164',
+  '/js/modules/layers-air.js?v=p164',
+  '/js/modules/layers-nuke.js?v=p164',
+  '/js/modules/nuke-sim.js?v=p164',
+  '/js/modules/layers-airfields.js?v=p164',
+  '/js/modules/net-builder.js?v=p164',
+  '/js/modules/mesh-world.js?v=p164',
+  '/js/modules/skybridge.js?v=p164',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',
