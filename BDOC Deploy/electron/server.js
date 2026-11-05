@@ -255,6 +255,21 @@ function createServer() {
     30 * 86400000
   ));
 
+  // ── p168p: AOI Watch + Cam Wall proxies — run the Netlify handlers in-process ──
+  // Both are multi-source whitelists, so a single upstream URL (proxyHandler) does not fit.
+  // proxy-mecams reads YOUTUBE_API_KEY / WINDY_API_KEY from the desktop process env (optional).
+  for (const fn of ['proxy-watch', 'proxy-mecams']) {
+    app.get('/.netlify/functions/' + fn, async (req, res) => {
+      try {
+        const r = await require(path.join(__dirname, '..', 'netlify', 'functions', fn + '.js'))
+          .handler({ httpMethod: 'GET', queryStringParameters: req.query, headers: {} });
+        res.status(r.statusCode).set(r.headers || {}).send(r.body);
+      } catch (e) {
+        res.status(503).json({ error: 'Offline', offline: true });
+      }
+    });
+  }
+
   // A function with no local version must say so. The SPA fallback below would answer 200
   // with a page of HTML, and every layer would then fail trying to parse it.
   app.all('/.netlify/functions/*', (_, res) => res.status(503).json({ error: 'Offline', offline: true }));

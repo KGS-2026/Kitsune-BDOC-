@@ -20,8 +20,9 @@ exports.handler = async (event) => {
   // area: four comma-separated floats — lon1,lat1,lon2,lat2
   const areaRaw = params.area || '-180,-90,180,90';
   const area = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?,-?\d+(\.\d+)?,-?\d+(\.\d+)?$/.test(areaRaw) ? areaRaw : '-180,-90,180,90';
-  // days: integer 1-10
-  const days = Math.min(Math.max(parseInt(params.days, 10) || 1, 1), 10);
+  // days: integer 1-5. p168p: was 1-10, but FIRMS answers 400 "Invalid day range. Expects [1..5]"
+  // above 5 (checked 2026-11-05 against the area API).
+  const days = Math.min(Math.max(parseInt(params.days, 10) || 1, 1), 5);
 
   const build = (src) => mode === 'country'
     ? `https://firms.modaps.eosdis.nasa.gov/api/country/csv/${key}/${src}/${country}/${days}`

@@ -645,6 +645,8 @@ if('serviceWorker' in navigator){
 <div class="ly" data-layer="conf" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:var(--rd)"></div><span class="ly-n">Active Conflicts</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="incidents" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#ff6b35"></div><span class="ly-n" style="color:#ff6b6b;font-weight:600">Incident Archive (since Feb 28)</span><span class="ly-tg" style="color:#ff6b6b;background:rgba(218,54,51,0.12)">ALL EVENTS</span></div>
 <div class="ly" data-layer="warlive" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#DA3633"></div><span class="ly-n" style="color:#ff6b6b;font-weight:600">⚡ War Room (Live 24h)</span><span class="ly-tg" style="color:#ff6b6b;background:rgba(218,54,51,0.12)">REAL-TIME</span></div>
+<div class="ly" data-layer="aoiwatch" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:var(--rd)"></div><span class="ly-n" title="Two live watch zones (Natanz / Pickaxe Mountain and Strait of Hormuz / Qeshm): thermal, seismic, internet, military air, imagery, satellite passes, news">AOI Watch: Natanz + Hormuz</span><span class="ly-tg tg-l">2 ZONES</span></div>
+<div class="ly" data-layer="camwall" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#00ccaa"></div><span class="ly-n" title="Live video wall: city streams and 24/7 news channels from Israel, Jordan and Iran, plus Windy webcams on the globe">Cam Wall: Middle East</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="territory" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#ff3344"></div><span class="ly-n">Territory Control</span><span class="ly-tg tg-l">LIVE</span></div>
 </div>
 <div class="lg-title lg-collapse collapsed" onclick="togCat(this)">MILITARY <span class="lg-arrow">&#9660;</span></div>
@@ -1677,7 +1679,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p168b',            // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p168p',            // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
@@ -3496,7 +3498,7 @@ const milAC=[],allAC=[],feed=[];
 // Phase 8C (2026-05-05): every layer defaults to OFF — clean canvas on first load
 // Phase 22: added internet/landings/chokepoints here so markLockedLayers() can zero them on logout
 // (they were previously set lazily; 'key in layers' was false so markLockedLayers skipped them)
-const layers={forcetrack:false,air:false,eq:false,fire:false,conf:false,warlive:false,incidents:false,gpsjam:false,cable:false,sat:false,territory:false,imint:false,weather:false,clouds:false,temp:false,hurricanes:false,alerts:false,wind:false,forecastradar:false,lightning:false,airquality:false,vessels:false,cyber:false,outages:false,downdetect:false,webcams:false,radio:false,deforest:false,sentinel:false,news:false,headlines:false,spaceweather:false,mesh:false,community:false,floods:false,tsunamis:false,volcanoes:false,nucranges:false,borders:false,hillshade:false,popdensity:false,alliances:false,powerplants:false,gridinfra:false,substations:false,pipelines:false,metar:false,dartbuoys:false,fireperims:false,oilgas:false,sanctions:false,embassies:false,wireshark:false,vegetation:false,econintel:false,milbases:false,milairfields:false,nukes:false,darkships:false,ioc:false,internet:false,landings:false,chokepoints:false,deflock:false,celltowers:false,fallout:false,meshworld:false,skybridge:false};
+const layers={forcetrack:false,air:false,eq:false,fire:false,conf:false,warlive:false,incidents:false,aoiwatch:false,camwall:false,gpsjam:false,cable:false,sat:false,territory:false,imint:false,weather:false,clouds:false,temp:false,hurricanes:false,alerts:false,wind:false,forecastradar:false,lightning:false,airquality:false,vessels:false,cyber:false,outages:false,downdetect:false,webcams:false,radio:false,deforest:false,sentinel:false,news:false,headlines:false,spaceweather:false,mesh:false,community:false,floods:false,tsunamis:false,volcanoes:false,nucranges:false,borders:false,hillshade:false,popdensity:false,alliances:false,powerplants:false,gridinfra:false,substations:false,pipelines:false,metar:false,dartbuoys:false,fireperims:false,oilgas:false,sanctions:false,embassies:false,wireshark:false,vegetation:false,econintel:false,milbases:false,milairfields:false,nukes:false,darkships:false,ioc:false,internet:false,landings:false,chokepoints:false,deflock:false,celltowers:false,fallout:false,meshworld:false,skybridge:false};
 let eqEnts=[],fireEnts=[],confEnts=[],warliveEnts=[],airEnts=[],milEnts=[],cableEnts=[],satEnts=[],territoryEnts=[],imintEnts=[],newsEnts=[],headlineEnts=[],spwxEnts=[],meshEnts=new Set(),communityEnts=[],floodEnts=[],tsunamiEnts=[],volcanoEnts=[],nucRangeEnts=[],allianceEnts=[],powerplantEnts=[],gridinfraEnts=[],substationEnts=[],pipelineEnts=[],metarEnts=[],dartEnts=[],fireperimEnts=[],oilgasEnts=[],sanctionEnts=[],embassyEnts=[],wiresharkEnts=[],vegEnts=[],darkshipEnts=[],iocEnts=[],falloutEnts=[];
 // XSS sanitizer — escapes HTML in any API-sourced string before injection into innerHTML/description
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -3568,6 +3570,9 @@ function togLy(el){
   if(ly==='conf'){if(layers.conf){if(confEnts.length===0){BDOC.layerLoadFx.start('conf');BDOC.LazyLoader.load('layers-conflict').then(()=>{if(window.loadConflicts)window.loadConflicts();BDOC.layerLoadFx.done('conf',true)}).catch(e=>{console.warn('[lazy layers-conflict]',e);BDOC.layerLoadFx.done('conf',false)})}else{confEnts.forEach(e=>e.show=true)}}else{confEnts.forEach(e=>e.show=false)}}
   // P80: WAR ROOM — live 24h conflict fusion (GDELT reporting + FIRMS thermal in war-zone AOIs)
   if(ly==='gpsjam'){if(layers.gpsjam){BDOC.layerLoadFx.start('gpsjam');BDOC.LazyLoader.load('layers-gpsjam').then(()=>window.loadGpsJam?window.loadGpsJam():null).then(()=>BDOC.layerLoadFx.done('gpsjam',true)).catch(e=>{console.warn('[lazy layers-gpsjam]',e);BDOC.layerLoadFx.done('gpsjam',false)})}else if(window.unloadGpsJam){window.unloadGpsJam()}}
+  // p168p: AOI Watch (Natanz + Hormuz) and Cam Wall (Middle East), ported from the stale OneDrive copy
+  if(ly==='aoiwatch'){if(layers.aoiwatch){BDOC.layerLoadFx.start('aoiwatch');BDOC.LazyLoader.load('aoi-watch').then(()=>{const Z=window.AOIZoneWatch;if(Z&&layers.aoiwatch)Z.start();BDOC.layerLoadFx.done('aoiwatch',!!Z)}).catch(e=>{console.warn('[lazy aoi-watch]',e);BDOC.layerLoadFx.done('aoiwatch',false)})}else if(window.AOIZoneWatch){window.AOIZoneWatch.stop()}}
+  if(ly==='camwall'){if(layers.camwall){BDOC.layerLoadFx.start('camwall');BDOC.LazyLoader.load('cam-wall').then(()=>{const W=window.CamWall;if(W&&layers.camwall)W.start();BDOC.layerLoadFx.done('camwall',!!W)}).catch(e=>{console.warn('[lazy cam-wall]',e);BDOC.layerLoadFx.done('camwall',false)})}else if(window.CamWall){window.CamWall.stop()}}
   if(ly==='incidents'){if(layers.incidents){BDOC.layerLoadFx.start('incidents');BDOC.LazyLoader.load('layers-incidents').then(()=>window.loadIncidents?window.loadIncidents():null).then(()=>BDOC.layerLoadFx.done('incidents',true)).catch(e=>{console.warn('[lazy layers-incidents]',e);BDOC.layerLoadFx.done('incidents',false)})}else if(window.unloadIncidents){window.unloadIncidents()}}
   if(ly==='warlive'){if(layers.warlive){try{localStorage.setItem('bdoc_warlive_auto','1')}catch(_){}BDOC.layerLoadFx.start('warlive');BDOC.LazyLoader.load('layers-warlive').then(()=>window.loadWarLive?window.loadWarLive():null).then(()=>BDOC.layerLoadFx.done('warlive',warliveEnts.length>0)).catch(e=>{console.warn('[lazy layers-warlive]',e);BDOC.layerLoadFx.done('warlive',false)})}else{try{localStorage.setItem('bdoc_warlive_auto','0')}catch(_){}warliveEnts.forEach(e=>V.entities.remove(e));warliveEnts=[];if(window.loadWarLive&&window.loadWarLive._interval){clearInterval(window.loadWarLive._interval);window.loadWarLive._interval=null}}}
   if(ly==='cable'){if(layers.cable&&cableEnts.length===0){BDOC.layerLoadFx.start('cable');BDOC.LazyLoader.loadMany(['motion-model','layers-air']).then(()=>{if(window.loadCables)window.loadCables();BDOC.layerLoadFx.done('cable',true)}).catch(e=>{console.warn('[lazy layers-air]',e);BDOC.layerLoadFx.done('cable',false)})}cableEnts.forEach(e=>e.show=layers.cable)}
@@ -11229,7 +11234,7 @@ async function loadAlliances(){
   try{
     const geoUrl='https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_110m_admin_0_countries.geojson';
     const ds=await Cesium.GeoJsonDataSource.load(geoUrl,{stroke:Cesium.Color.WHITE.withAlpha(0.05),fill:Cesium.Color.TRANSPARENT,strokeWidth:0.5,clampToGround:true});
-    let shown=0;
+    let shown=0;const unused=[];
     ds.entities.values.forEach(ent=>{
       if(!ent.polygon)return;
       const p=ent.properties;
@@ -11246,8 +11251,10 @@ async function loadAlliances(){
         ent.description='<div style="font-family:monospace;padding:12px;background:#0d1117;color:#c8ccd6;border-left:3px solid '+info.color+'"><b style="color:'+info.color+';font-size:12px">'+DOMPurify.sanitize(info.label)+' MEMBER</b><br><br><b>'+DOMPurify.sanitize(name)+'</b></div>';
         ent.show=true;
         shown++;
-      }else{ent.show=false;}
+      }else{unused.push(ent);}
     });
+    // p168p: drop non-members instead of hiding them. See loadSanctions() (Antarctica render crash).
+    unused.forEach(e=>ds.entities.remove(e));
     _allianceDS=ds;
     await V.dataSources.add(ds);
     af('#0055A4','Alliance Maps: '+shown+' countries colored (NATO / CSTO / BRICS+ / Five Eyes / AUKUS / Quad)');us(1);
@@ -11280,7 +11287,7 @@ async function loadSanctions(){
   try{
     const geoUrl='https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_110m_admin_0_countries.geojson';
     const ds=await Cesium.GeoJsonDataSource.load(geoUrl,{stroke:Cesium.Color.WHITE.withAlpha(0.05),fill:Cesium.Color.TRANSPARENT,strokeWidth:0.5,clampToGround:true});
-    let shown=0;
+    let shown=0;const unused=[];
     ds.entities.values.forEach(ent=>{
       if(!ent.polygon)return;
       const p=ent.properties;
@@ -11296,8 +11303,14 @@ async function loadSanctions(){
         ent.description='<div style="font-family:monospace;padding:12px;background:#0d1117;color:#c8ccd6;border-left:3px solid '+info.color+'"><b style="color:'+info.color+'">SANCTIONS PROGRAM</b><br><br>'+DOMPurify.sanitize(info.label)+'<br><span style="font-size:9px;color:#888">Sources: OFAC SDN, UN Security Council, EU Sanctions Map</span></div>';
         ent.show=true;
         shown++;
-      }else{ent.show=false;}
+      }else{unused.push(ent);}
     });
+    // p168p: drop unmatched countries instead of hiding them. Hidden entities still sit in Cesium's
+    // ground-clamped batches (~271 invisible polygons built on every toggle). On Cesium 1.104 the hidden
+    // Antarctica (wider than 180° lon) got a NaN bounding box there → "Rendering has stopped" (found
+    // 2026-11-03 in the stale-copy session). On 1.146 that crash does not reproduce (5 Nov 2026), so this
+    // is a cleanup and a guard if a Cesium change brings it back.
+    unused.forEach(e=>ds.entities.remove(e));
     _sanctionDS=ds;
     await V.dataSources.add(ds);
     af('#DA3633','Sanctions: '+shown+' countries highlighted (OFAC/UNSC/EU programs)');us(1);
