@@ -79,7 +79,8 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
-### Claude Code — p171 European open data: Meteoalarm warnings, Copernicus EMS activations, GWIS fire danger forecast (2026-11-05) — BRANCH `claude/eu-data` (stacked on p170 → p169), NOT LIVE UNTIL TRAVON SAYS
+### Claude Code — p171 European open data: Meteoalarm warnings, Copernicus EMS activations, GWIS fire danger forecast (2026-11-05) — LIVE on `main` @ `38065da`
+**Live check 5 Nov ~20:48Z (p169 + p170 + p171 together, on Travon's "Ship all three"):** fast-forward push `dade4c6..38065da` at 20:46:55Z; Netlify served SW `bdoc-v173` and LazyLoader `p171` by 20:47:39Z. Production functions: proxy-eu warnings 558 warnings, 0 of 39 feeds failed, 5.0 s; proxy-eu cems 42 activations; proxy-signals hf / squawk / sdr all 200; proxy-mecams 200. On the live page in Chrome: service worker in control, all five toggles present (euwarn, cems, firedanger, signals, camwall), the eu-feeds, signals and cam-wall modules load (`EUFeeds` warnings/cems/fireDanger, `SignalsWatch`, `CamWall`), fire danger days run Today to Wed 11, warnings read 558 in 17 countries, 0 console errors. Still Travon's call: tiers (all five are analyst+), `WINDY_API_KEY` / `YOUTUBE_API_KEY` in Netlify for Cam Wall, and the Day/Night cycle dimming overlays on the night side.
 Travon asked for free European data ("weather, earthquakes... grab as much information as possible"). Three toggles in ENVIRONMENT, one lazy module `js/modules/eu-feeds.js` (`EUFeeds`, `EU_FEEDS_CFG`), one proxy `netlify/functions/proxy-eu.js`. All three are analyst+ by omission from the operator list (Travon to decide; for county EMs the fire danger forecast is an obvious Operator candidate).
 - **EU Weather Warnings (Meteoalarm)**, `euwarn`, `source=warnings`. Licence **CC BY 4.0**, stated on feeds.meteoalarm.org itself.
   - Reads all 39 country Atom feeds in parallel (7 s each), cached 10 min. Live: about 5 s, 153 KB.
@@ -112,7 +113,7 @@ Travon asked for free European data ("weather, earthquakes... grab as much infor
 
 **Not verified:** the function on Netlify (39 parallel fetches from Netlify's network), production, a red warning (none were up), the fire map in daylight on a real GPU.
 
-### Claude Code — p170 Signals layer: HF conditions, emergency squawks, public shortwave receivers (2026-11-05) — BRANCH `claude/sigint` (stacked on p169), NOT LIVE UNTIL TRAVON SAYS
+### Claude Code — p170 Signals layer: HF conditions, emergency squawks, public shortwave receivers (2026-11-05) — LIVE on `main` @ `38065da` (shipped with p171)
 Travon: "signals intelligence ... that's the one thing we haven't done yet". The SIGINT group's "SOON" placeholder is now a real toggle, **"Signals: squawks, HF, receivers"** (analyst+ by omission from the operator list, like Cam Wall; Travon to decide). Public data only: transponder broadcasts, receivers their owners publish, public-domain NOAA. Nothing decodes or records private communications.
 - **Server** `netlify/functions/proxy-signals.js`, three sources:
   - `hf`: NOAA SWPC `noaa-scales.json`. R (radio blackout), S (solar radiation storm), G (geomagnetic storm) now, plus the 3-day probabilities. 10 min cache.
@@ -140,7 +141,7 @@ Travon: "signals intelligence ... that's the one thing we haven't done yet". The
 
 **Not verified:** a live 7500 / 7700 (only a 7600 was up), actually listening on a receiver (the tab open was stubbed), the function on Netlify, production.
 
-### Claude Code — p169 Cam Wall: regions, stationary cams only, one live player, anomaly log (2026-11-05) — BRANCH `claude/camwall-regions`, NOT LIVE UNTIL TRAVON SAYS
+### Claude Code — p169 Cam Wall: regions, stationary cams only, one live player, anomaly log (2026-11-05) — LIVE on `main` @ `38065da` (shipped with p171)
 Travon asked for a region picker, stationary city cameras instead of news channels (copyright), less lag, and a way to log an impact or flash seen on a camera and plot it.
 - **Regions** (header dropdown, flies the globe there): Middle East, Ukraine & Russia, Taiwan Strait, Korean Peninsula. Each has its own Windy boxes and curated cams; tile picks are remembered per region.
 - **Sources** (`proxy-mecams.js`, rewritten): news channels and open YouTube search are gone. On 5 Nov the "live cam" searches for Kyiv, Tehran, Tel Aviv and Beirut returned mostly aggregator channels restreaming other people's cameras (Intel Cams, TVL Trzcianka, InquizeX, Source Global, MiddleEastLive247): that is the copyright risk, more than an official news embed. Now: `CAMS`, 16 stationary cameras streamed by whoever runs them (Taipei / Taoyuan / Kaohsiung city tourism offices, EarthCam, the Western Wall's own channel, KT GiGAeyes, Seoul skyline-cam channels), each checked through YouTube oEmbed (200 ok, 401 embedding off, 404 gone), cached 1 h; plus Windy per region when `WINDY_API_KEY` is set. With `YOUTUBE_API_KEY` the function finds a camera's current live video by channel + title, so restarted 24/7 streams keep working (one search per channel per 6 h, about 2,000 units/day). **Ukraine and Iran have no operator-run cams** (Ukraine asked owners to switch street cameras off; the St Petersburg cam found has embedding off): Windy is the only clean source there, and the tiles say so.
