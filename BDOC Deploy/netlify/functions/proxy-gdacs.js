@@ -33,8 +33,14 @@ exports.handler = async (event) => {
         signal: AbortSignal.timeout(12000),
         headers: { 'Accept': 'application/json', 'User-Agent': 'KitsuneGlobal/BDOC-8.0' }
       });
-      if (res.ok) break;
+      if (res.ok || res.status === 404) break;
       if (attempt === 0) await new Promise(r => setTimeout(r, 1200));
+    }
+    // p163s: GDACS answers "no events of this type in the window" with a 404 problem+json
+    // (confirmed 2026-11-05: TS and VO 404, EQ 200, same window). That is an empty result,
+    // not an outage. Passing it on as 502 painted the Tsunamis layer as broken on quiet weeks.
+    if (res.status === 404 && /problem\+json/i.test(res.headers.get('content-type') || '')) {
+      return { statusCode: 200, headers, body: JSON.stringify({ type: 'FeatureCollection', features: [] }) };
     }
     if (!res.ok) throw new Error(`GDACS ${res.status}`);
     let data = await res.text();

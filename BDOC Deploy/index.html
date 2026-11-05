@@ -1668,7 +1668,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p163',              // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p163s',             // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
@@ -4553,7 +4553,8 @@ const WxClouds={
         console.warn('[BDOC Clouds] RainViewer infrared empty — falling back to NOAA GOES IR');
         try{
           const goesLayer=V.imageryLayers.addImageryProvider(new Cesium.UrlTemplateImageryProvider({
-            url:'https://realearth.ssec.wisc.edu/api/image?products=globalcomp_ir&x={x}&y={y}&z={z}',
+            // p163s: SSEC renamed the product; globalcomp_ir now 404s on every tile, globalir is the global IR mosaic.
+            url:'https://realearth.ssec.wisc.edu/api/image?products=globalir&x={x}&y={y}&z={z}',
             maximumLevel:6,minimumLevel:0,credit:'NOAA GOES (SSEC)'
           }));
           goesLayer.alpha=this.opacity;goesLayer.brightness=1.4;goesLayer._isBDOCWeather=true;
@@ -4607,22 +4608,23 @@ function loadCloudLayer(){WxClouds.load()}
 function loadTempLayer(){
   if(!V)return;
   removeWeatherLayer('_tempLayer');
-  // Tomorrow.io surface temperature tiles — real air temperature, not IR cloud-top
+  // p163s: OpenWeatherMap temp_new tiles (same proxy the Wind layer already uses). Tomorrow.io
+  // tiles were 429 on every request: one map view is ~30-90 tiles, the free key allows 25/hour,
+  // and the per-minute ts in the URL meant no two viewers ever shared a CDN-cached tile.
   try{
-    const now=new Date().toISOString().replace(/:\d{2}\.\d+Z/,':00Z');
     _wxLayers._tempLayer=V.imageryLayers.addImageryProvider(
       new Cesium.UrlTemplateImageryProvider({
-        url:`/api/proxy-tomorrow?mode=tile&layer=temperature&z={z}&x={x}&y={y}&ts=${encodeURIComponent(now)}`,
+        url:`/api/proxy-owm?layer=temp_new&z={z}&x={x}&y={y}`,
         maximumLevel:12,
-        minimumLevel:2,
-        credit:'Tomorrow.io'
+        minimumLevel:1,
+        credit:'OpenWeatherMap'
       })
     );
     _wxLayers._tempLayer.alpha=0.6;
     _wxLayers._tempLayer.brightness=1.2;
     _wxLayers._tempLayer._isBDOCWeather=true;
-    af('var(--bl)','Surface temperature: Tomorrow.io thermal overlay active');
-    EventLog.add('info','Temperature layer active — Tomorrow.io');
+    af('var(--bl)','Surface temperature: OpenWeatherMap overlay active');
+    EventLog.add('info','Temperature layer active — OpenWeatherMap tiles');
   }catch(e){console.error('[Weather] Temperature load failed:',e);af('var(--yl)','Temperature: failed — '+esc(e.message))}
 }
 // ═══ HURRICANE / TROPICAL STORM TRACKER ═══
@@ -13864,7 +13866,7 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 </script>
 <script src="js/bdoc-glass-guard.js?v=p75"></script>
 <script src="js/bdoc-push.js?v=p161"></script>
-<script src="js/mesh-globe-layer.js?v=p75"></script>
+<script src="js/mesh-globe-layer.js?v=p163s"></script>
 <script src="js/bdoc-offline-store.js?v=p75"></script>
 <!-- P156e: battle plan autosave/restore + real-shape exports + .bdoc.json (needs V, battleEntities, BDOCOfflineStore) -->
 <script src="js/bdoc-plan.js?v=p159e"></script>

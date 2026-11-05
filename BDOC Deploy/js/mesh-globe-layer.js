@@ -16,14 +16,31 @@ const meshGlobeLayer = {
     if (!this.viewer) { console.warn('[Mesh Globe] Cesium viewer (V) not ready; retrying in 2s'); setTimeout(() => this.init(), 2000); return; }
     console.log('[Mesh Globe] init');
     await this.fetchAndRender();
+    if (this.notProvisioned) return;
     this.refreshHandle = setInterval(() => { this.fetchAndRender().catch(e => console.error('[Mesh Globe]', e)); }, this.refreshInterval);
   },
 
   async fetchAndRender() {
     let result;
+    // p163s: every open tab polled every 30 s, even in the background and even when the
+    // backend table does not exist, at a cost of 120 function calls per tab per hour.
+    if (typeof document !== 'undefined' && document.hidden) return;
     try {
       const res = await fetch('/.netlify/functions/mesh-nodes');
-      if (!res.ok) { console.debug('[Mesh Globe] mesh-nodes HTTP', res.status); return; }
+      if (!res.ok) {
+        console.debug('[Mesh Globe] mesh-nodes HTTP', res.status);
+        // 503 {status:'not_provisioned'} = mesh_nodes table missing (docs/mesh-setup.sql). It will not
+        // fix itself during this visit, so stop polling until the next page load.
+        if (res.status === 503) {
+          let body = null; try { body = await res.json(); } catch (_) {}
+          if (body && body.status === 'not_provisioned') {
+            this.notProvisioned = true;
+            if (this.refreshHandle) { clearInterval(this.refreshHandle); this.refreshHandle = null; }
+            console.info('[Mesh Globe] mesh backend not provisioned; polling stopped');
+          }
+        }
+        return;
+      }
       result = await res.json();
     } catch (err) { console.debug('[Mesh Globe] fetch failed:', err.message); return; }
     if (!result || !Array.isArray(result.nodes)) return;

@@ -196,7 +196,9 @@ async function loadTerritoryControl(){
   }
   let geojson=null;let usedDate='';
   for(const dt of dates){
-    const url=`https://raw.githubusercontent.com/cyterat/deepstate-map-data/main/data/deepstatemap_data_${dt}.geojson`;
+    // p163s: the repo names files deepstatemap_data_YYYYMMDD.geojson (no dashes). The dashed
+    // name 404'd on every date, so the layer always fell back to the static outline.
+    const url=`https://raw.githubusercontent.com/cyterat/deepstate-map-data/main/data/deepstatemap_data_${dt.replace(/-/g,'')}.geojson`;
     try{
       const res=await fetch(url);
       if(res.ok){geojson=await res.json();usedDate=dt;break}
