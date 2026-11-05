@@ -368,8 +368,12 @@ const BDOC_Auth={
       el.innerHTML='';
     }
   },
-  canAccess(feature){
-    const map={
+  // p172: the tier table lives on the object so canAccess() and minTier() read the same
+  // lists. The paywall, the locked-layer hover badge, the command palette and the preset
+  // message ask minTier() which plan unlocks a layer instead of always saying Operator
+  // (Analyst-only layers such as Signals told Recon users to buy a plan that still left
+  // them locked).
+  TIERS:{
       // p69 conversion fix: 'alerts' (NWS warnings) + 'fire' (wildfire) added to recon —
       // NEAR ME/emergency preset armed 1 of 6 layers for guests (fired blanks for exactly
       // the users it must convert). Public-safety basics are table stakes; floods/hurricanes/
@@ -379,12 +383,21 @@ const BDOC_Auth={
       // silently locked for paying operator-tier users:
       //   cyber, floods, tsunamis, volcanoes, nucranges, hillshade, popdensity,
       //   borders, embassies, wireshark, econintel, darkships
-      operator:['eq','conf','cable','news','spaceweather','community','headlines','mesh','milbases','nukes','milairfields','air','gpsjam','fire','sat','weather','clouds','temp','hurricanes','alerts','wind','forecastradar','lightning','airquality','vessels','outages','downdetect','forcetrack','territory','landings','chokepoints','celltowers','deflock','internet','radio','webcams','deforest','sentinel','imint','alliances','powerplants','oilgas','sanctions','vegetation','cyber','floods','tsunamis','volcanoes','nucranges','hillshade','popdensity','borders','embassies','wireshark','econintel','darkships','ioc','google3d','fallout','hazardbio','gridinfra','substations','pipelines','metar','dartbuoys','fireperims','warlive','incidents','meshworld','netbuilder','skybridge'],
+      // p172: 'firedanger' (GWIS 7-day fire danger forecast) added on Travon's call, for
+      // county emergency managers. Signals, Cam Wall, AOI Watch, EU warnings and CEMS stay Analyst.
+      operator:['eq','conf','cable','news','spaceweather','community','headlines','mesh','milbases','nukes','milairfields','air','gpsjam','fire','firedanger','sat','weather','clouds','temp','hurricanes','alerts','wind','forecastradar','lightning','airquality','vessels','outages','downdetect','forcetrack','territory','landings','chokepoints','celltowers','deflock','internet','radio','webcams','deforest','sentinel','imint','alliances','powerplants','oilgas','sanctions','vegetation','cyber','floods','tsunamis','volcanoes','nucranges','hillshade','popdensity','borders','embassies','wireshark','econintel','darkships','ioc','google3d','fallout','hazardbio','gridinfra','substations','pipelines','metar','dartbuoys','fireperims','warlive','incidents','meshworld','netbuilder','skybridge'],
       analyst:['*'],
       enterprise:['*']
-    };
+  },
+  canAccess(feature){
+    const map=this.TIERS;
     const allowed=map[this.tier]||map.recon;
     return allowed[0]==='*'||allowed.includes(feature);
+  },
+  // Lowest plan that unlocks `feature`: 'recon', 'operator' or 'analyst'.
+  minTier(feature){
+    for(const t of ['recon','operator','analyst']){const l=this.TIERS[t];if(l[0]==='*'||l.includes(feature))return t}
+    return 'analyst';
   },
   async subscribe(tierName,annual){
     // hermes/overnight-2026-06-09: route through stripe-checkout function so the user's
@@ -475,11 +488,13 @@ const BDOC_Auth={
       const ly=el.dataset.layer;
       if(ly&&!this.canAccess(ly)){
         el.classList.add('locked');
+        el.dataset.tier=this.minTier(ly); // p172: hover badge + palette name the right plan
         el.classList.remove('on');
         if(layers&&ly in layers)layers[ly]=false;
         const sw=el.querySelector('.sw');if(sw)sw.style.pointerEvents='none';
       }else{
         el.classList.remove('locked');
+        delete el.dataset.tier;
         const sw=el.querySelector('.sw');if(sw)sw.style.pointerEvents='';
       }
     });

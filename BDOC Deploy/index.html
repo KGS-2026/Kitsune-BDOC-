@@ -198,7 +198,7 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p154">
+<link rel="stylesheet" href="css/bdoc.css?v=p172">
 <link rel="stylesheet" href="css/bdoc-glass.css?v=p75">
 <link rel="stylesheet" href="css/bdoc-p154.css?v=p154">
 <link rel="stylesheet" href="css/bdoc-p158f.css?v=p158f">
@@ -1562,7 +1562,7 @@ if(!window.Cesium){
 <script src="js/modules/icon-factory.js?v=p116"></script>
 <script src="js/converters.js?v=p156g"></script>
 <script src="js/data.js?v=p159h"></script>
-<script src="js/auth.js?v=p167"></script>
+<script src="js/auth.js?v=p172"></script>
 <!-- p157: must load AFTER auth.js (needs window.BDOC_Auth.client) and BEFORE any
      layer module that fetches. Attaches the Supabase JWT to our own function
      calls so the server can enforce tier; see netlify/functions/_lib/guard.js. -->
@@ -2358,7 +2358,7 @@ const History={
 const Replay={
   active:false,playing:false,timer:null,idx:0,
   open(){
-    if(!BDOC_Auth.canAccess('replay')){showMo();return}
+    if(!BDOC_Auth.canAccess('replay')){showMo('replay');return}
     if(History.aircraft.length<2){msg('sy','<b>REPLAY UNAVAILABLE</b><br>Need at least 2 aircraft snapshots. Buffer currently has '+History.aircraft.length+'. Data accumulates every 60s.');return}
     this.active=true;this.idx=History.aircraft.length-1;
     document.getElementById('replay-bar').classList.add('show');
@@ -2602,7 +2602,7 @@ async function downloadDesktop(){
 try{if(navigator.userAgent.includes('Electron')){const el=document.getElementById('dlDesktopItem');if(el)el.style.display='none';}}catch(_){}
 // ═══ PDF BRIEF GENERATION ═══
 function genPDF(){
-  if(!BDOC_Auth.canAccess('pdf')){showMo();return}
+  if(!BDOC_Auth.canAccess('pdf')){showMo('pdf');return}
   const ts=new Date().toISOString(),h=Health.sysHealth();
   const{jsPDF}=window.jspdf||{};
   if(!jsPDF){
@@ -2818,7 +2818,7 @@ function bdocPickUseCase(useCase){
 }
 // Spotlight tour steps — selector → highlight target, body text, position card
 const _BDOC_TOUR=[
-  {sel:'.lp',title:'STEP 1 — INTEL LAYERS',body:'Left panel: <b>50+ live intelligence layers</b>. Categories collapse with the arrow heads. Toggle any layer on/off — locked layers (🔒) require Operator tier.',side:'right'},
+  {sel:'.lp',title:'STEP 1 — INTEL LAYERS',body:'Left panel: <b>50+ live intelligence layers</b>. Categories collapse with the arrow heads. Toggle any layer on/off — locked layers (🔒) need Operator or Analyst; hover one to see which.',side:'right'},
   {sel:'#bdocBuildPill',title:'STEP 2 — BUILD VERSION',body:'Click this pill anytime to see the changelog. Use it to verify the latest deploy is live in your browser.',side:'bottom'},
   {sel:'.menu-bar',title:'STEP 3 — FILE / EXPORT',body:'Export KML, GeoJSON, screenshots, and intel briefs from the File menu. Generate full PDF intel reports for sharing.',side:'bottom'},
   {sel:'#rp',title:'STEP 4 — AI COPILOT',body:'Right panel: type queries like <b>"iran"</b>, <b>"satellites"</b>, <b>"force tracker"</b>, <b>"anomalies"</b>, <b>"export brief"</b>. Press Ctrl+Shift+A to toggle.',side:'left'},
@@ -2908,7 +2908,7 @@ BDOC.cmdk={
       const name=el.querySelector('.ly-n')?.textContent||ly;
       const isOn=el.classList.contains('on');
       const isLocked=el.classList.contains('locked');
-      cmds.push({label:(isOn?'Disable: ':'Enable: ')+name.replace(/\\s+/g,' ').trim(),sub:isLocked?'🔒 Operator $9.99/mo':'Toggle layer: '+ly,sec:'LAYER',color:isLocked?'#E8B339':'#C4C9D0',fn:()=>{if(isLocked){if(typeof showMo==='function')showMo(ly)}else{togLy(el)}}});
+      cmds.push({label:(isOn?'Disable: ':'Enable: ')+name.replace(/\\s+/g,' ').trim(),sub:isLocked?(el.dataset.tier==='analyst'?'🔒 Analyst $29.99/mo':'🔒 Operator $9.99/mo'):'Toggle layer: '+ly,sec:'LAYER',color:isLocked?'#E8B339':'#C4C9D0',fn:()=>{if(isLocked){if(typeof showMo==='function')showMo(ly)}else{togLy(el)}}});
     });
     // System actions
     cmds.push({label:'Open Health Dashboard',sub:'Ctrl+Shift+H · Feed monitoring',sec:'SYSTEM',color:'#3FB950',fn:()=>{if(typeof Health!=='undefined'&&Health.togDash)Health.togDash()}});
@@ -3472,12 +3472,12 @@ function bdocApplyPreset(name){
       return;
     }
     const wanted=_BDOC_PRESETS[name];if(!wanted)return;
-    let on=0,lockedN=0;
+    let on=0,lockedN=0,lockedA=0;
     const queue=[];
     wanted.forEach(layer=>{
       const el=document.querySelector(`.ly[data-layer="${layer}"]`);
       if(!el)return;
-      if(el.classList.contains('locked')){lockedN++;return} // p69: don't fire paywall modals mid-preset — count and upsell once
+      if(el.classList.contains('locked')){lockedN++;if(el.dataset.tier==='analyst')lockedA++;return} // p172: count Analyst-only apart. p69: don't fire paywall modals mid-preset — count and upsell once
       if(!el.classList.contains('on'))queue.push(el);
     });
     // p98: STAGGER preset toggles 500ms apart instead of firing all in one tick.
@@ -3487,7 +3487,7 @@ function bdocApplyPreset(name){
     // layers, vs 826 / 29 when toggled solo). Staggering keeps every fetch alive.
     queue.forEach((el,i)=>setTimeout(()=>{try{togLy(el)}catch(_){}} ,i*900));
     on=queue.length;
-    af('var(--kf)',`Preset "${name}" applied — ${on} new layer${on===1?'':'s'} activated`+(lockedN?` · ${lockedN} more with Operator ($9.99/mo)`:''));
+    af('var(--kf)',`Preset "${name}" applied — ${on} new layer${on===1?'':'s'} activated`+(lockedN?' · '+[lockedN-lockedA?`${lockedN-lockedA} more with Operator ($9.99/mo)`:'',lockedA?`${lockedA} more with Analyst ($29.99/mo)`:''].filter(Boolean).join(', '):''));
     if(typeof EventLog!=='undefined')EventLog.add('info',`Quick-start preset: ${name} (${on} new layers)`);
     // Phase 6: preset usage analytics
     try{if(typeof plausible==='function')plausible('Preset Applied',{props:{preset:name,layers_activated:on,tier:(typeof BDOC_Auth!=='undefined'?BDOC_Auth.tier:'recon')}});}catch(_){}
@@ -3661,8 +3661,11 @@ function showMo(triggerLayer){
     replay:'analyst',pdf:'analyst',imint:'analyst',
     // default: operator
   };
-  const lName = triggerLayer ? (LAYER_NAMES[triggerLayer] || triggerLayer.replace(/-/g,' ').toUpperCase()) : null;
-  const requiredTier = triggerLayer ? (LAYER_TIER[triggerLayer] || 'operator') : 'operator';
+  // p172: unnamed layers take their name from the toggle, and the plan comes from
+  // BDOC_Auth.minTier() (the same lists canAccess() uses) instead of assuming Operator.
+  const lyEl = triggerLayer ? document.querySelector('.ly[data-layer="'+CSS.escape(triggerLayer)+'"] .ly-n') : null;
+  const lName = triggerLayer ? (LAYER_NAMES[triggerLayer] || (lyEl&&lyEl.textContent.trim()) || triggerLayer.replace(/-/g,' ').toUpperCase()) : null;
+  const requiredTier = triggerLayer ? (LAYER_TIER[triggerLayer] || (typeof BDOC_Auth!=='undefined'&&typeof BDOC_Auth.minTier==='function'&&BDOC_Auth.minTier(triggerLayer)==='analyst'?'analyst':'operator')) : 'operator';
   const tierPrice = { operator:'$9.99/mo', analyst:'$29.99/mo' };
   const tierLabel = { operator:'OPERATOR', analyst:'ANALYST' };
 

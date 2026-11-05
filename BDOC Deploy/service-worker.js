@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v173';  // p171: European open data: Meteoalarm warnings (39 countries), Copernicus EMS activations, GWIS fire danger forecast (7 days, worldwide)
+const SW_VERSION = 'bdoc-v174';  // p172: fire danger forecast opens to Operator; locked layers name the plan that unlocks them (Analyst-only layers no longer say Operator)
+// (prev) const SW_VERSION = 'bdoc-v173';  // p171: European open data: Meteoalarm warnings (39 countries), Copernicus EMS activations, GWIS fire danger forecast (7 days, worldwide)
 // (prev) const SW_VERSION = 'bdoc-v172';  // p170: Signals layer (SIGINT group): HF radio conditions (NOAA scales), emergency squawks 7500/7600/7700 worldwide, public KiwiSDR receivers + listen
 // (prev) const SW_VERSION = 'bdoc-v171';  // p169: Cam Wall regions (Middle East, Ukraine & Russia, Taiwan Strait, Korea), stationary cams only (no news / restreams), one live player, operator anomaly log
 // (prev) const SW_VERSION = 'bdoc-v170p';  // p168p: stale-copy port — AOI Watch (Natanz + Hormuz), Cam Wall (Middle East), Pickaxe + Qeshm markers, Sanctions/Alliances drop hidden countries, FIRMS days ≤ 5
@@ -49,7 +50,7 @@ const STATIC_PRECACHE = [
   '/js/vendor/hls.min.js?v=1.5.17',
   '/js/bdoc-link-manager.js?v=p156d',
   '/js/bdoc-offline-hud.js?v=p158f',
-  '/css/bdoc.css?v=p154',
+  '/css/bdoc.css?v=p172',
   '/css/bdoc-p154.css?v=p154',
   '/css/bdoc-p158f.css?v=p158f',
   '/css/bdoc-p159.css?v=p159',
@@ -57,7 +58,7 @@ const STATIC_PRECACHE = [
   '/js/telemetry.js?v=p59',
   '/js/converters.js?v=p156g',
   '/js/data.js?v=p159h',
-  '/js/auth.js?v=p167',
+  '/js/auth.js?v=p172',
   '/js/bdoc-auth-fetch.js?v=p162',
   '/js/filters.js?v=p154',
   '/js/kitsune-ai.js?v=p93',

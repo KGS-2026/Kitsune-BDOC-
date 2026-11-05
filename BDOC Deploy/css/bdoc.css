@@ -281,6 +281,8 @@ body:has(#sitPanel.sp-open) .lp-reopen{display:none!important}
 .ly.locked .ly-n::after{content:' \1F512';font-size:9px;color:var(--warn)}
 .ly.locked:hover{background:var(--ylG)!important;border-color:var(--ylG)!important}
 .ly.locked:hover::after{content:'\21D2 Operator $9.99/mo';position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:9px;color:var(--warn);letter-spacing:0.08em;font-family:var(--m);font-weight:600;background:var(--ylG);border:1px solid var(--bdr);padding:2px 6px;border-radius:var(--r);pointer-events:none;text-transform:uppercase}
+/* p172: Analyst-only layers (BDOC_Auth.markLockedLayers sets data-tier) name the plan that unlocks them */
+.ly.locked[data-tier="analyst"]:hover::after{content:'\21D2 Analyst $29.99/mo'}
 /* Phase 4A.2 (2026-05-04): loading-state pulse so user gets feedback while lazy-loaded layer fetches data */
 .ly.loading{position:relative;overflow:hidden}
 .ly.loading::before{content:'';position:absolute;top:0;left:-30%;width:30%;height:100%;background:rgba(255,255,255,0.18);pointer-events:none}
