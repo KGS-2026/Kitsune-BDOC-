@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v172';  // p170: Signals layer (SIGINT group): HF radio conditions (NOAA scales), emergency squawks 7500/7600/7700 worldwide, public KiwiSDR receivers + listen
+const SW_VERSION = 'bdoc-v173';  // p171: European open data: Meteoalarm warnings (39 countries), Copernicus EMS activations, GWIS fire danger forecast (7 days, worldwide)
+// (prev) const SW_VERSION = 'bdoc-v172';  // p170: Signals layer (SIGINT group): HF radio conditions (NOAA scales), emergency squawks 7500/7600/7700 worldwide, public KiwiSDR receivers + listen
 // (prev) const SW_VERSION = 'bdoc-v171';  // p169: Cam Wall regions (Middle East, Ukraine & Russia, Taiwan Strait, Korea), stationary cams only (no news / restreams), one live player, operator anomaly log
 // (prev) const SW_VERSION = 'bdoc-v170p';  // p168p: stale-copy port — AOI Watch (Natanz + Hormuz), Cam Wall (Middle East), Pickaxe + Qeshm markers, Sanctions/Alliances drop hidden countries, FIRMS days ≤ 5
 // (prev) const SW_VERSION = 'bdoc-v170';  // p168b: county brief names feeds that did not answer, so NORMAL never reads as all clear
@@ -63,16 +64,16 @@ const STATIC_PRECACHE = [
   '/js/bdoc-atak.js?v=p156d',
   '/js/cesium-init.js?v=p163i',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p170',
-  '/js/modules/layers-conflict.js?v=p170',
-  '/js/modules/layers-infra.js?v=p170',
-  '/js/modules/layers-air.js?v=p170',
-  '/js/modules/layers-nuke.js?v=p170',
-  '/js/modules/nuke-sim.js?v=p170',
-  '/js/modules/layers-airfields.js?v=p170',
-  '/js/modules/net-builder.js?v=p170',
-  '/js/modules/mesh-world.js?v=p170',
-  '/js/modules/skybridge.js?v=p170',
+  '/js/modules/layers-military.js?v=p171',
+  '/js/modules/layers-conflict.js?v=p171',
+  '/js/modules/layers-infra.js?v=p171',
+  '/js/modules/layers-air.js?v=p171',
+  '/js/modules/layers-nuke.js?v=p171',
+  '/js/modules/nuke-sim.js?v=p171',
+  '/js/modules/layers-airfields.js?v=p171',
+  '/js/modules/net-builder.js?v=p171',
+  '/js/modules/mesh-world.js?v=p171',
+  '/js/modules/skybridge.js?v=p171',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',

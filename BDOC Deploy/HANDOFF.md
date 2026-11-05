@@ -79,6 +79,39 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Claude Code — p171 European open data: Meteoalarm warnings, Copernicus EMS activations, GWIS fire danger forecast (2026-11-05) — BRANCH `claude/eu-data` (stacked on p170 → p169), NOT LIVE UNTIL TRAVON SAYS
+Travon asked for free European data ("weather, earthquakes... grab as much information as possible"). Three toggles in ENVIRONMENT, one lazy module `js/modules/eu-feeds.js` (`EUFeeds`, `EU_FEEDS_CFG`), one proxy `netlify/functions/proxy-eu.js`. All three are analyst+ by omission from the operator list (Travon to decide; for county EMs the fire danger forecast is an obvious Operator candidate).
+- **EU Weather Warnings (Meteoalarm)**, `euwarn`, `source=warnings`. Licence **CC BY 4.0**, stated on feeds.meteoalarm.org itself.
+  - Reads all 39 country Atom feeds in parallel (7 s each), cached 10 min. Live: about 5 s, 153 KB.
+  - The Atom feeds hold only warnings at yellow or above that are in effect or coming. The JSON API (`/api/v1/warnings/feeds-<country>`) also keeps expired and all-clear items and is far bigger (Israel 5 MB, ~10 s), too slow for the 10 s function limit.
+  - Parsing keeps yellow/orange/red and drops cancelled, expired and second-language copies. Outlines are cut to ~80 points.
+  - Only some services send outlines (Ukraine, Israel, Norway, Estonia, Sweden, Slovenia, Switzerland, UK). Germany, France, Spain, Poland and Italy send region codes only, so every country with warnings also gets a badge (`DE 254`) whose popup lists them all with links to meteoalarm.org.
+  - A country whose feed fails is named in the summary line; it is never counted as calm. All 39 failing → 502.
+- **Copernicus EMS Activations**, `cems`, `source=cems`. "© European Union, Copernicus Emergency Management Service", free with credit.
+  - Satellite damage / flood mapping activations worldwide: the last 120 days plus any still open. Public keyless API `rapidmapping.emergency.copernicus.eu/backend/dashboard-api/public-activations-info/`, cached 30 min.
+  - **CEMS times have no zone and are UTC** (checked against the activation page, "16:03 (UTC)"); the proxy appends Z, otherwise a non-UTC server would shift them.
+  - Popup links to `mapping.emergency.copernicus.eu/activations/<EMSR code>/`, the canonical page (the rapidmapping host redirects there).
+- **Fire Danger Forecast (GWIS)**, `firedanger`. **CC BY 4.0** (GWIS and EFFIS data-licence pages).
+  - Worldwide Fire Weather Index from ECMWF forecasts, WMS `maps.effis.emergency.copernicus.eu/gwis`, layer `ecmwf.fwi`, `time=YYYY-MM-DD`. CORS is open, so the browser loads it directly with no proxy. `enablePickFeatures:false`, so map clicks never fire GetFeatureInfo.
+  - Panel (bottom left, a top sheet on phones) with Today + 6 days and GWIS's own legend image: Low < 11.2 … Very extreme > 70. The colours are not re-drawn by hand.
+  - EFFIS's own `mf010.fwi` covers Europe only, hence GWIS.
+  - **The globe's Day/Night cycle dims every overlay on the night side** (lighting multiplies imagery: pale green read 51,81,62 lit vs 181,255,255 unlit). The panel says to switch off Day/Night cycle in Settings to read the colours at full strength. The same applies to the existing weather overlays.
+- **Rejected:** EURDEP radiation (JRC): data stay under each provider's copyright and need prior written agreement for other uses. EFFIS burnt areas: empty this time of year. EMSC: already in `proxy-watch`. GDACS floods: already a layer.
+- `sources.html`: MeteoAlarm, Copernicus EMS and GWIS/EFFIS rows. `electron/server.js` runs `proxy-eu` in-process. Modules `p171`, SW `bdoc-v173`. CSP (report-only) already allows https images and connections.
+
+**Verified:** 813 tests (8 new in `tests/eu-feeds-p171.test.js`), CI script passes. Both proxy sources against the live feeds: 558 warnings in 17 of 39 countries (6 orange: Corsica / Gard rain-flood), 26 with outlines, no country failing; 42 CEMS activations (newest EMSR935, Valencia floods). In Chromium on this branch:
+  - all three toggles lazy-load the module at `p171`; 26 outlines + 17 badges, 42 activation pins, fire layer with 7 day buttons;
+  - fire map: Europe tiles return 200 with the right layer and date; switching the day re-requests tiles with the new date (129 tiles for +3 d);
+  - tile pixels are real classes (Europe 62 % coloured, mostly Low; Australia orange/red), and the overlay changes globe pixels;
+  - screenshot with Day/Night off: Low over most of Europe, moderate to high over Iberia, higher over North Africa;
+  - popups: Germany badge (254: low temperature 224, fog 30), Gulf of Finland wind outline, EMSR935 with UTC times matching Copernicus's page;
+  - hostile warning text injected through `draw()` is escaped and a `javascript:` link becomes `#`;
+  - × and the toggles remove imagery, pins, panel and timers, and layers come back on cleanly;
+  - 1440 px: panel clear of the left sidebar and threat box. 375 px: full-width sheet, 44 px buttons, no horizontal scroll;
+  - legend image loads; proxy-eu calls 200.
+
+**Not verified:** the function on Netlify (39 parallel fetches from Netlify's network), production, a red warning (none were up), the fire map in daylight on a real GPU.
+
 ### Claude Code — p170 Signals layer: HF conditions, emergency squawks, public shortwave receivers (2026-11-05) — BRANCH `claude/sigint` (stacked on p169), NOT LIVE UNTIL TRAVON SAYS
 Travon: "signals intelligence ... that's the one thing we haven't done yet". The SIGINT group's "SOON" placeholder is now a real toggle, **"Signals: squawks, HF, receivers"** (analyst+ by omission from the operator list, like Cam Wall; Travon to decide). Public data only: transponder broadcasts, receivers their owners publish, public-domain NOAA. Nothing decodes or records private communications.
 - **Server** `netlify/functions/proxy-signals.js`, three sources:

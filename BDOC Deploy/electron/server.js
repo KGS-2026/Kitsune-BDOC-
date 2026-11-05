@@ -259,7 +259,8 @@ function createServer() {
   // Both are multi-source whitelists, so a single upstream URL (proxyHandler) does not fit.
   // proxy-mecams reads YOUTUBE_API_KEY / WINDY_API_KEY from the desktop process env (optional).
   // p170: proxy-signals (Signals layer: NOAA scales, emergency squawks, KiwiSDR list) is keyless.
-  for (const fn of ['proxy-watch', 'proxy-mecams', 'proxy-signals']) {
+  // p171: proxy-eu (Meteoalarm warnings, Copernicus EMS activations) is keyless.
+  for (const fn of ['proxy-watch', 'proxy-mecams', 'proxy-signals', 'proxy-eu']) {
     app.get('/.netlify/functions/' + fn, async (req, res) => {
       try {
         const r = await require(path.join(__dirname, '..', 'netlify', 'functions', fn + '.js'))
