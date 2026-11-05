@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v167';  // p166: local-bridge off switch, NOAA forecast rain, Sentinel-2 2016 (CC BY), Sources & Licenses page
+const SW_VERSION = 'bdoc-v168';  // p167: GPS jamming layer (gps-interference-tick, every 15 min)
+// (prev) const SW_VERSION = 'bdoc-v167';  // p166: local-bridge off switch, NOAA forecast rain, Sentinel-2 2016 (CC BY), Sources & Licenses page
 // (prev) const SW_VERSION = 'bdoc-v166';  // p165: watch zones reach your phone with BDOC closed (zone-alerts-tick, every 5 min)
 // (prev) const SW_VERSION = 'bdoc-v164s';  // p163s: layer sweep fixes — DeepState front line, cloud IR, OWM temperature, GDACS empty results, mesh polling
 // (prev) const SW_VERSION = 'bdoc-v164i';  // p163i: iPad fix — Safari shims for Cesium 1.146, iPadOS gets the mobile GPU tier
@@ -50,7 +51,7 @@ const STATIC_PRECACHE = [
   '/js/telemetry.js?v=p59',
   '/js/converters.js?v=p156g',
   '/js/data.js?v=p159h',
-  '/js/auth.js?v=p163',
+  '/js/auth.js?v=p167',
   '/js/bdoc-auth-fetch.js?v=p162',
   '/js/filters.js?v=p154',
   '/js/kitsune-ai.js?v=p93',

@@ -79,7 +79,16 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
-### Claude Code — p166 battle-plan quick wins (2026-11-05) — BRANCH `claude/plan-quick-wins`, NOT LIVE UNTIL TRAVON SAYS
+### Claude Code — p167 GPS jamming layer (2026-11-05) — BRANCH `claude/gps-interference`, NOT LIVE UNTIL TRAVON SAYS
+Battle plan Phase 2. Military menu > "GPS Jamming (24h)", Operator tier (`js/auth.js`; Travon may want it free).
+- `gps-interference-tick.mjs` (scheduled, 15 min) samples 8 of 32 regions per run from adsb.lol, so each region once an hour, 32 calls/hour, 1.5 s apart. adsb.lol rate-limits bursts (~20 quick calls got "rate limit exceeded", a 200 with a text body); the tick stops at the first one. Counts per 1° cell go to Blobs `gps-interference` / `h-YYYYMMDDHH`. `gps-interference.mjs` serves the last 24 h (CDN 10 min). `js/modules/layers-gpsjam.js` draws one Primitive of rectangles + a panel; click a cell for a card.
+- **Rule, tuned on live data 5 Nov** (`_lib/gps-interference.js`, 13 tests): degraded = `gpsOkBefore`, NIC < 7 or NACp < 8. Counted only for ADS-B v1+ aircraft, own broadcast **or MLAT**, category A2–A6 (no category: only at 15,000 ft+). Pitfalls found: light aircraft (A1, uncertified GPS) made Western Europe read 11 % jammed; filtering by SIL instead dropped the real jammed airliners, because jammed jets fall back to MLAT and some Airbus types report SIL 0. Final rule on live data: Kaliningrad 17 %, Gulf of Finland 15 %, Levant 6 %, Western Europe 0.6 %, US 0–0.8 %.
+- Bands as gpsjam.org (< 2 % / 2–10 % / > 10 %); a cell needs 20 reports in 24 h. Reports, not distinct aircraft: one jet seen in several hourly samples counts each time.
+- After deploy the layer reads "Collecting" and fills over 24 h. adsb.lol's live-API licence is still unclear (licensing list).
+
+**Verified:** 752 tests, CI. One real tick against adsb.lol (8 regions, 1,713 aircraft, 0 errors) → real endpoint body; in Chromium on this branch: 301 cells drawn (red over the Baltic: Gotland, Saaremaa, eastern Poland, Lithuania), panel, fly-to, off cleans up, empty state. **Not verified:** the Netlify scheduler and Blobs in production, and a real 24 h of samples.
+
+### Claude Code — p166 battle-plan quick wins (2026-11-05) — LIVE on `main` @ `8927123`
 Items from the 5 Nov battle plan (Phase 0 and 1) that needed no account or key.
 - **Local bridge off switch** (`js/bdoc-plugin-renderer.js`): P155 saved `bdoc_local_ipc` forever, so one try of Wireshark Live meant every later visit polled `127.0.0.1:9876` every 15 s. Now, on the web, polling runs only while Wireshark Live, the local mesh layer or Network Builder LIVE is on (`enable(who)` / `release(who)`); the old flag is deleted on load. The desktop app still polls from the start. `tests/local-bridge.test.js`.
 - **Forecast radar → NOAA WPC** (`WxForecast` in `index.html`): Tomorrow.io's free key (25 calls/h) could never serve 7 frames of tiles. Now 8 six-hour frames out to 48 h from `mapservices.weather.noaa.gov .../precip/wpc_qpf/MapServer` layers 13–20: public domain, no key, CORS on. Lower 48 only. Row renamed "Forecast Rain (48h, US)".
