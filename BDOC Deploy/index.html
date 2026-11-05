@@ -1499,6 +1499,32 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.3/jspdf.umd.min.js" integrity="sha384-GwHhSt8QjC7J+v0zZ0Flfho/T76YHEcCL9w4rvjTIUHauh6gWJeBSIi3vWXxNhtA" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js" integrity="sha384-e6V1JVpc+kVNTxT0gEOla7yL4c92Romsw7itPoipfzHbEjzUwPhTv6oeVDMHHzqT" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <!-- REMOVED: P135 — milsymbol lazy-loaded on military layer enable (763KB early-load → 0B for recon-only users) -->
+<script>
+// P163i (iPad): Cesium 1.146 runs `x instanceof OffscreenCanvas` and Object.hasOwn() while
+// building the globe. Safari before 16.4 (older iPads stuck on iPadOS 15/16) has neither, so
+// `new Cesium.Viewer` threw "Can't find variable: OffscreenCanvas" and the globe never came up.
+// AbortSignal.timeout (Safari 16.0+) is used ~60 times by the layer loaders. Each shim only
+// fills a gap; browsers that already have the feature are untouched.
+(function(){
+  try{
+    if(typeof window.OffscreenCanvas==='undefined'){
+      // Never constructible: nothing in BDOC or its libraries feature-detects it, Cesium only
+      // uses it on the right side of instanceof, which this makes return false.
+      window.OffscreenCanvas=function OffscreenCanvas(){throw new TypeError('OffscreenCanvas is not supported')};
+    }
+    if(!Object.hasOwn){
+      Object.defineProperty(Object,'hasOwn',{configurable:true,writable:true,value:function(o,k){return Object.prototype.hasOwnProperty.call(Object(o),k)}});
+    }
+    if(window.AbortSignal&&window.AbortController&&typeof AbortSignal.timeout!=='function'){
+      AbortSignal.timeout=function(ms){
+        var c=new AbortController();
+        setTimeout(function(){try{c.abort(new DOMException('signal timed out','TimeoutError'))}catch(_){c.abort()}},ms);
+        return c.signal;
+      };
+    }
+  }catch(e){console.warn('[BDOC] Safari compatibility shims:',e)}
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Cesium.js" integrity="sha384-1lWK5deN/B+lLaUw4lk6xKp/L19ii/98SZLk6K8YthDskgvc+GbdixLzbCnSS2Wn" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 // P154 ("randomly not loading"): a single CDN hiccup on Cesium.js left a dead page —
@@ -13322,7 +13348,7 @@ WiresharkBridge.connect = async function() {
 })();
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
-<script src="js/cesium-init.js?v=p159b"></script>
+<script src="js/cesium-init.js?v=p163i"></script>
 <script src="js/deeplink.js?v=p115"></script>
 <!-- P119: Section 508 / WCAG 2.1 AA remediation pass. Runtime-labels the 40+ layer
      switches, panels, buttons and the live intel feed; adds h1, skip link, focus

@@ -289,7 +289,12 @@ s.skyAtmosphere.show=true;
     const renderer = (gl && (gl.getExtension('WEBGL_debug_renderer_info') || {UNMASKED_RENDERER_WEBGL: null})) || {};
     const rStr = (renderer.UNMASKED_RENDERER_WEBGL ? gl.getParameter(renderer.UNMASKED_RENDERER_WEBGL) : '') || '';
     // Tier detection: Tier 3 = discrete GPU / Apple Silicon, Tier 1 = mobile/integrated
-    const isMobile = /android|iphone|ipad|mobile/i.test(navigator.userAgent);
+    // P163i: iPadOS Safari sends a Mac desktop user agent ("Macintosh"), so /ipad/ never
+    // matched and every iPad got Tier 3 — 2x retina, 400-tile cache, sibling preloading on
+    // top of 4x MSAA — which runs past Safari's per-tab memory limit and kills the page.
+    // A "Mac" with a multi-touch screen is an iPad.
+    const isIPadOS = /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
+    const isMobile = /android|iphone|ipad|mobile/i.test(navigator.userAgent) || isIPadOS;
     const isLowGPU = /Mali-G[0-9]{2}[^0-9]|Mali-T|PowerVR|SGX|Adreno [0-9]{3}[^0-9]/i.test(rStr) || isMobile;
     const isHighGPU = /NVIDIA|Radeon RX|GeForce|Intel Iris|Apple M[0-9]/i.test(rStr) || (!isMobile && !isLowGPU);
     const tier = isHighGPU ? 3 : (isLowGPU ? 1 : 2);
@@ -414,7 +419,8 @@ try{
 const SZ=(function(){
   try{
     var mem=navigator.deviceMemory||4;
-    var mobile=/android|iphone|ipad|mobile/i.test(navigator.userAgent);
+    // P163i: iPadOS reports as a Mac; a Mac with a multi-touch screen is an iPad.
+    var mobile=/android|iphone|ipad|mobile/i.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
     if(mobile||mem<=2)return 512;
     if(mem<=4)return 1024;
     return 2048;
