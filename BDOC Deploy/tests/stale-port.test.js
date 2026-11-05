@@ -69,44 +69,7 @@ test('proxy-watch ripe: country code is sanitized, far and abandoned probes are 
   });
 });
 
-test('proxy-mecams without keys: status is booleans only, YouTube and Windy are not called', async () => {
-  const saved = { y: process.env.YOUTUBE_API_KEY, w: process.env.WINDY_API_KEY };
-  delete process.env.YOUTUBE_API_KEY; delete process.env.WINDY_API_KEY;
-  try {
-    const m = fresh(FN('proxy-mecams.js'));
-    await withFetch(() => ({}), async (calls) => {
-      assert.deepStrictEqual(JSON.parse((await call(m, { source: 'status' })).body).youtube, false);
-      const yt = JSON.parse((await call(m, { source: 'yt', city: 'tehran' })).body);
-      const wd = JSON.parse((await call(m, { source: 'windy' })).body);
-      assert.strictEqual(yt.configured, false);
-      assert.strictEqual(wd.configured, false);
-      assert.strictEqual(calls.length, 0);
-    });
-  } finally {
-    if (saved.y !== undefined) process.env.YOUTUBE_API_KEY = saved.y;
-    if (saved.w !== undefined) process.env.WINDY_API_KEY = saved.w;
-  }
-});
-
-test('proxy-mecams with a key: whitelisted city queries only, the key never reaches the client', async () => {
-  const saved = process.env.YOUTUBE_API_KEY;
-  process.env.YOUTUBE_API_KEY = 'TESTKEY123';
-  try {
-    const m = fresh(FN('proxy-mecams.js'));
-    await withFetch(() => ({ body: { items: [{ id: { videoId: 'abcdefghijk' }, snippet: { title: 'Tel Aviv &amp; beach', channelTitle: 'Cam' } }] } }), async (calls) => {
-      const r = await call(m, { source: 'yt', city: 'javascript:alert(1)' });
-      const q = new URL(calls[0].url).searchParams.get('q');
-      assert.match(q, /^Tel Aviv live cam/, 'unknown city falls back to Tel Aviv');
-      assert.doesNotMatch(r.body, /TESTKEY123/);
-      assert.strictEqual(JSON.parse(r.body).videos[0].title, 'Tel Aviv & beach');
-      assert.match(r.headers['Netlify-CDN-Cache-Control'], /s-maxage=\d+/, 'shared CDN cache protects the quota');
-      const bad = await call(m, { source: 'ytch', ch: 'UC-someone-else' });
-      assert.strictEqual(bad.statusCode, 400);
-    });
-  } finally {
-    if (saved === undefined) delete process.env.YOUTUBE_API_KEY; else process.env.YOUTUBE_API_KEY = saved;
-  }
-});
+// p169 replaced proxy-mecams' YouTube search and news-channel sources; their tests are in camwall-p169.test.js.
 
 test('proxy-mecams windy: inactive cams and cams without coordinates are dropped', async () => {
   const saved = process.env.WINDY_API_KEY;
@@ -115,7 +78,7 @@ test('proxy-mecams windy: inactive cams and cams without coordinates are dropped
     const m = fresh(FN('proxy-mecams.js'));
     const cam = (id, extra) => Object.assign({ webcamId: id, title: 'c' + id, status: 'active', location: { latitude: 32, longitude: 35 }, player: { day: 'https://webcams.windy.com/x' } }, extra);
     await withFetch(() => ({ body: { total: 3, webcams: [cam(1), cam(2, { status: 'inactive' }), cam(3, { location: {} })] } }), async (calls) => {
-      const r = JSON.parse((await call(m, { source: 'windy' })).body);
+      const r = JSON.parse((await call(m, { source: 'windy', region: 'me' })).body);
       assert.deepStrictEqual(r.webcams.map(w => w.id), ['1']);
       assert.ok(calls.every(c => c.opts.headers['x-windy-api-key'] === 'WKEY'), 'key goes in a header, not the URL');
       assert.ok(calls.every(c => !c.url.includes('WKEY')));

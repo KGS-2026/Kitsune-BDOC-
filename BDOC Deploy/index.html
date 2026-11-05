@@ -646,7 +646,7 @@ if('serviceWorker' in navigator){
 <div class="ly" data-layer="incidents" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#ff6b35"></div><span class="ly-n" style="color:#ff6b6b;font-weight:600">Incident Archive (since Feb 28)</span><span class="ly-tg" style="color:#ff6b6b;background:rgba(218,54,51,0.12)">ALL EVENTS</span></div>
 <div class="ly" data-layer="warlive" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#DA3633"></div><span class="ly-n" style="color:#ff6b6b;font-weight:600">⚡ War Room (Live 24h)</span><span class="ly-tg" style="color:#ff6b6b;background:rgba(218,54,51,0.12)">REAL-TIME</span></div>
 <div class="ly" data-layer="aoiwatch" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:var(--rd)"></div><span class="ly-n" title="Two live watch zones (Natanz / Pickaxe Mountain and Strait of Hormuz / Qeshm): thermal, seismic, internet, military air, imagery, satellite passes, news">AOI Watch: Natanz + Hormuz</span><span class="ly-tg tg-l">2 ZONES</span></div>
-<div class="ly" data-layer="camwall" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#00ccaa"></div><span class="ly-n" title="Live video wall: city streams and 24/7 news channels from Israel, Jordan and Iran, plus Windy webcams on the globe">Cam Wall: Middle East</span><span class="ly-tg tg-l">LIVE</span></div>
+<div class="ly" data-layer="camwall" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#00ccaa"></div><span class="ly-n" title="Stationary city cameras by region (Middle East, Ukraine &amp; Russia, Taiwan Strait, Korea), streamed by their owners, plus Windy webcams. Log anomalies you see on a camera and pin them on the globe.">Cam Wall: city cams</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="territory" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#ff3344"></div><span class="ly-n">Territory Control</span><span class="ly-tg tg-l">LIVE</span></div>
 </div>
 <div class="lg-title lg-collapse collapsed" onclick="togCat(this)">MILITARY <span class="lg-arrow">&#9660;</span></div>
@@ -1679,7 +1679,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p168p',            // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p169',            // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
