@@ -503,6 +503,7 @@ if('serviceWorker' in navigator){
 <div class="menu-drop" id="toolsMenu">
 <div class="menu-drop-item" onclick="ctxAction('measure');closeMenus()"><span>Measure Distance</span><span class="mdi-key">M</span></div>
 <div class="menu-drop-item" onclick="ctxAction('quickarrow');closeMenus()"><span>Draw Arrow</span></div>
+<div class="menu-drop-item" onclick="ctxAction('countybrief');closeMenus()"><span>🏛 County Brief</span><span class="mdi-key">pick a spot</span></div>
 <div class="menu-drop-item" onclick="enterBattleMode();closeMenus()"><span>Battle Tracker</span></div>
 <div class="menu-drop-item" onclick="openNetBuilder();closeMenus()"><span>🖧 Network Builder</span><span class="mdi-key">Packet Tracer</span></div>
 <div class="menu-drop-item" onclick="toggleMeshWorld();closeMenus()"><span>📡 Meshtastic World + Relay Route</span></div>
@@ -610,6 +611,7 @@ if('serviceWorker' in navigator){
 <div class="lg-title">QUICK START</div>
 <div style="padding:0 4px 4px 4px">
   <button class="bm-btn" onclick="bdocNearMe()" style="width:100%;font-size:9.5px;padding:8px;text-align:center;letter-spacing:0.14em;border-color:rgba(63,185,80,0.45);color:#3FB950;font-weight:700">&#9678; NEAR ME</button>
+  <button class="bm-btn" onclick="bdocMyCounty()" title="Warnings, rivers, storms, fire, quakes and shelters for your county, with a printable SITREP" style="width:100%;font-size:9.5px;padding:8px;margin-top:4px;text-align:center;letter-spacing:0.14em;border-color:rgba(232,179,57,0.45);color:#E8B339;font-weight:700">&#9638; MY COUNTY BRIEF</button>
 </div>
 <div class="preset-list" style="display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:0 4px 8px 4px">
   <button class="bm-btn" onclick="bdocApplyPreset('conflict')" style="font-size:9px;padding:6px;text-align:left">Conflicts</button>
@@ -1236,6 +1238,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <div class="ctx-item" onclick="ctxAction('measure')">📏 Measure Distance</div>
 <div class="ctx-item" onclick="ctxAction('watchlist_loc')" id="ctx-watchlist-loc" style="color:#F2C14E">⭐ Add Location To Watchlist</div>
 <div class="ctx-item" onclick="ctxAction('weather')" style="color:#5FD3FF">🌦 Weather Forecast</div>
+<div class="ctx-item" onclick="ctxAction('countybrief')" style="color:#E8B339">🏛 County Brief</div>
 <div class="ctx-item" onclick="ctxAction('screenshot')">📸 Capture Screenshot</div>
 <div class="ctx-sep"></div>
 <!-- Quick markup (always visible) -->
@@ -1674,7 +1677,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p166',             // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p168',             // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
@@ -3387,6 +3390,18 @@ function bdocNearMe(){
     if(typeof EventLog!=='undefined')EventLog.add('info','NEAR ME: home AOI set, emergency preset armed');
     try{AOIWatch.start(la,lo)}catch(_){}
   },err=>{af('var(--rd)','Position denied \u2014 enable location or search your city instead')},{timeout:12000,maximumAge:600000});
+}
+// p168: COUNTY BRIEF — every hazard feed framed to one U.S. county, plus a printable SITREP.
+function bdocCountyBrief(lat,lon){
+  BDOC.LazyLoader.load('county-brief').then(()=>window.openCountyBrief(lat,lon)).catch(e=>{console.warn('[lazy county-brief]',e);af('var(--rd)','County brief failed to load')});
+}
+// MY COUNTY BRIEF: where you are now; if location is off, the home spot NEAR ME saved; else pick on the map.
+function bdocMyCounty(){
+  const fallback=()=>{let h=null;try{h=JSON.parse(localStorage.getItem('bdoc_home_aoi')||'null')}catch(_){}
+    if(h&&Number.isFinite(h.lat)&&Number.isFinite(h.lon))bdocCountyBrief(h.lat,h.lon);else armMapPick('countybrief','COUNTY BRIEF: location is off, so pick a spot in your county')};
+  if(!navigator.geolocation){fallback();return}
+  af('var(--kf)','Finding your county…');
+  navigator.geolocation.getCurrentPosition(p=>bdocCountyBrief(p.coords.latitude,p.coords.longitude),fallback,{timeout:10000,maximumAge:600000});
 }
 // ═══════════════════════════════════════════
 // P69: AOI WATCH — geofenced hazard alerting on the home AOI
@@ -8923,7 +8938,7 @@ function ctxAction(action){
   hideCtxMenu();
   if(action==='undo'){if(window.BDOCUndo)BDOCUndo.undo();return}
   if(!_savedPos){
-    const labels={measure:'MEASURE: first point',quickarrow:'ARROW: start point',comment:'NOTE: where should it go?',report:'INTEL REPORT: location',tag:'TAG: location',watchzone:'WATCH ZONE: centre',watchlist_loc:'WATCHLIST: location',weather:'WEATHER: location',whatshere:"WHAT'S NEARBY: location"};
+    const labels={measure:'MEASURE: first point',quickarrow:'ARROW: start point',comment:'NOTE: where should it go?',report:'INTEL REPORT: location',tag:'TAG: location',watchzone:'WATCH ZONE: centre',watchlist_loc:'WATCHLIST: location',weather:'WEATHER: location',countybrief:'COUNTY BRIEF: pick a spot in the county',whatshere:"WHAT'S NEARBY: location"};
     if(labels[action])armMapPick(action,labels[action]);
     return;
   }
@@ -9113,6 +9128,9 @@ function ctxAction(action){
       break;
     case 'weather':
       fetchNWSForecast(lat,lon);
+      break;
+    case 'countybrief':   // p168: one-click county view for emergency managers
+      bdocCountyBrief(lat,lon);
       break;
     // ═══ QUICK MARKUP (always available) ═══
     case 'comment':

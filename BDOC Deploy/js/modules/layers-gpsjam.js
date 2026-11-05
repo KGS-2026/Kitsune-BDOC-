@@ -115,8 +115,9 @@
   window.loadGpsJam = async function () {
     if (!st.panel) {
       const el = st.panel = document.createElement('div');
-      const place = window.innerWidth >= 900 ? 'left:220px;top:96px;' : 'left:16px;bottom:64px;';
-      el.style.cssText = 'position:fixed;' + place + 'width:min(300px,calc(100vw - 32px));max-height:60vh;overflow:auto;z-index:900;padding:10px 12px;background:rgba(10,14,20,.94);border:1px solid #E8B33966;font:10px "JetBrains Mono",monospace;color:#c8ccd6';
+      // p168: on desktop, under the top-bar menus (100) and the map menu (200) so they open over it.
+      const place = window.innerWidth >= 900 ? 'left:220px;top:96px;z-index:60;' : 'left:16px;bottom:64px;z-index:900;';
+      el.style.cssText = 'position:fixed;' + place + 'width:min(300px,calc(100vw - 32px));max-height:60vh;overflow:auto;padding:10px 12px;background:rgba(10,14,20,.94);border:1px solid #E8B33966;font:10px "JetBrains Mono",monospace;color:#c8ccd6';
       document.body.appendChild(el);
     }
     st.panel.style.display = 'block';

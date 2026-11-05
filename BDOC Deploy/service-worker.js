@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v168';  // p167: GPS jamming layer (gps-interference-tick, every 15 min)
+const SW_VERSION = 'bdoc-v169';  // p168: county brief for emergency managers (county-brief function, printable SITREP)
+// (prev) const SW_VERSION = 'bdoc-v168';  // p167: GPS jamming layer (gps-interference-tick, every 15 min)
 // (prev) const SW_VERSION = 'bdoc-v167';  // p166: local-bridge off switch, NOAA forecast rain, Sentinel-2 2016 (CC BY), Sources & Licenses page
 // (prev) const SW_VERSION = 'bdoc-v166';  // p165: watch zones reach your phone with BDOC closed (zone-alerts-tick, every 5 min)
 // (prev) const SW_VERSION = 'bdoc-v164s';  // p163s: layer sweep fixes — DeepState front line, cloud IR, OWM temperature, GDACS empty results, mesh polling
@@ -58,16 +59,16 @@ const STATIC_PRECACHE = [
   '/js/bdoc-atak.js?v=p156d',
   '/js/cesium-init.js?v=p163i',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p166',
-  '/js/modules/layers-conflict.js?v=p166',
-  '/js/modules/layers-infra.js?v=p166',
-  '/js/modules/layers-air.js?v=p166',
-  '/js/modules/layers-nuke.js?v=p166',
-  '/js/modules/nuke-sim.js?v=p166',
-  '/js/modules/layers-airfields.js?v=p166',
-  '/js/modules/net-builder.js?v=p166',
-  '/js/modules/mesh-world.js?v=p166',
-  '/js/modules/skybridge.js?v=p166',
+  '/js/modules/layers-military.js?v=p168',
+  '/js/modules/layers-conflict.js?v=p168',
+  '/js/modules/layers-infra.js?v=p168',
+  '/js/modules/layers-air.js?v=p168',
+  '/js/modules/layers-nuke.js?v=p168',
+  '/js/modules/nuke-sim.js?v=p168',
+  '/js/modules/layers-airfields.js?v=p168',
+  '/js/modules/net-builder.js?v=p168',
+  '/js/modules/mesh-world.js?v=p168',
+  '/js/modules/skybridge.js?v=p168',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',
