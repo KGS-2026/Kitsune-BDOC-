@@ -679,7 +679,7 @@ if('serviceWorker' in navigator){
 <div class="ly" data-layer="alerts" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#ff2222"></div><span class="ly-n">Severe Weather Alerts</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="wind" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#88ccff"></div><span class="ly-n">Wind Speed</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="metar" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#3FB950"></div><span class="ly-n">METAR Stations (Live Obs)</span><span class="ly-tg tg-l">NOAA</span></div>
-<div class="ly" data-layer="forecastradar" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#00cc00"></div><span class="ly-n">Forecast Radar (6hr)</span><span class="ly-tg tg-l">LIVE</span></div>
+<div class="ly" data-layer="forecastradar" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#00cc00"></div><span class="ly-n" title="NOAA forecast rainfall, next 48 hours in 6-hour steps. Lower 48 states.">Forecast Rain (48h, US)</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="lightning" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#ffff00"></div><span class="ly-n">Lightning</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="airquality" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#00cc00"></div><span class="ly-n">Air Quality (AQI)</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="floods" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#E8B349"></div><span class="ly-n">Floods (GDACS)</span><span class="ly-tg tg-l">LIVE</span></div>
@@ -1011,7 +1011,7 @@ Continue with Google
 <span id="authLogout" style="display:none;cursor:pointer;text-decoration:underline" onclick="BDOC_Auth.logout()">SIGN OUT</span>
 </div>
 <div style="text-align:center;margin-top:12px;font-size:9px;color:var(--t3);line-height:1.6">
-By signing up you agree to our <a href="/terms.html" target="_blank" style="color:var(--t2)">Terms</a> and <a href="/privacy.html" target="_blank" style="color:var(--t2)">Privacy Policy</a>.<br>
+By signing up you agree to our <a href="/terms.html" target="_blank" style="color:var(--t2)">Terms</a> and <a href="/privacy.html" target="_blank" style="color:var(--t2)">Privacy Policy</a>. Data credits: <a href="/sources.html" target="_blank" style="color:var(--t2)">Sources &amp; Licenses</a>.<br>
 Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subject=BDOC%20Bug%20Report" style="color:var(--t2)">support@kitsuneglobalsolutions.com</a>
 </div>
 </div>
@@ -1499,7 +1499,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
     <button onclick="dismissBdocWelcome(true)" style="flex:1;background:#E8B349;color:#fff;border:none;padding:11px 16px;border-radius:4px;font-family:var(--m);font-size:10px;font-weight:700;letter-spacing:1.5px;cursor:pointer">START EXPLORING</button>
     <button onclick="dismissBdocWelcome(false)" style="flex:0 0 auto;background:transparent;color:#7a8194;border:1px solid rgba(255,255,255,0.06);padding:11px 16px;border-radius:4px;font-family:var(--m);font-size:9px;letter-spacing:1px;cursor:pointer">Show again next time</button>
   </div>
-  <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04);font-size:8px;color:#4a5068;letter-spacing:1px;text-align:center">© Kitsune Global Solutions LLC · SDVOSB · CAGE 174S8</div>
+  <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04);font-size:8px;color:#4a5068;letter-spacing:1px;text-align:center">© Kitsune Global Solutions LLC · SDVOSB · CAGE 174S8 · <a href="/sources.html" target="_blank" rel="noopener" style="color:#6a7290">Sources &amp; Licenses</a></div>
 </div>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.3/jspdf.umd.min.js" integrity="sha384-GwHhSt8QjC7J+v0zZ0Flfho/T76YHEcCL9w4rvjTIUHauh6gWJeBSIi3vWXxNhtA" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js" integrity="sha384-e6V1JVpc+kVNTxT0gEOla7yL4c92Romsw7itPoipfzHbEjzUwPhTv6oeVDMHHzqT" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -1673,7 +1673,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p165',             // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p166',             // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
@@ -3581,7 +3581,7 @@ function togLy(el){
   if(ly==='spaceweather'){if(layers.spaceweather)loadSpaceWeather();else{spwxEnts.forEach(e=>V.entities.remove(e));spwxEnts=[];document.getElementById('spwxV').textContent='--'}}
   if(ly==='skybridge'){if(layers.skybridge){BDOC.layerLoadFx.start('skybridge');BDOC.LazyLoader.load('skybridge').then(()=>window.Skybridge.enable()).then(()=>BDOC.layerLoadFx.done('skybridge',true)).catch(e=>{console.warn('[lazy skybridge]',e);BDOC.layerLoadFx.done('skybridge',false);af('var(--rd)','Skybridge failed to load')})}else if(window.Skybridge)Skybridge.disable()}
   if(ly==='meshworld'){if(layers.meshworld){BDOC.layerLoadFx.start('meshworld');BDOC.LazyLoader.load('mesh-world').then(()=>window.MeshWorld.enable()).then(()=>BDOC.layerLoadFx.done('meshworld',!!(window.MeshWorld&&MeshWorld.data))).catch(e=>{console.warn('[lazy mesh-world]',e);BDOC.layerLoadFx.done('meshworld',false);af('var(--rd)','Meshtastic World failed to load')})}else if(window.MeshWorld)MeshWorld.disable()}
-  if(ly==='mesh'){if(layers.mesh){try{window.pluginRenderer&&pluginRenderer.enable()}catch(_){}_meshRetries=0;connectMeshtastic()}else{disconnectMeshtastic();meshEnts.forEach(e=>V.entities.remove(e));meshEnts.clear();_meshNodes.clear();document.getElementById('meshV').textContent='--'}}
+  if(ly==='mesh'){if(layers.mesh){try{window.pluginRenderer&&pluginRenderer.enable('mesh')}catch(_){}_meshRetries=0;connectMeshtastic()}else{try{window.pluginRenderer&&pluginRenderer.release('mesh')}catch(_){}disconnectMeshtastic();meshEnts.forEach(e=>V.entities.remove(e));meshEnts.clear();_meshNodes.clear();document.getElementById('meshV').textContent='--'}}
   if(ly==='community'){if(layers.community){loadCommunityReports();showCommunityHint()}else{communityEnts.forEach(e=>V.entities.remove(e));communityEnts=[];_communityListenerOff=true}}
   if(ly==='floods'){if(layers.floods)loadFloods();else{floodEnts.forEach(e=>V.entities.remove(e));floodEnts=[]}}
   if(ly==='tsunamis'){if(layers.tsunamis)loadTsunamis();else{tsunamiEnts.forEach(e=>V.entities.remove(e));tsunamiEnts=[]}}
@@ -5119,34 +5119,36 @@ async function fetchNWSForecast(lat,lon){
     }
   }
 }
-// ═══ FORECAST RADAR (Tomorrow.io 6-hour precipitation forecast) ═══
+// ═══ FORECAST RADAR (NOAA WPC precipitation forecast, 6-hour steps) ═══
+// p166: was Tomorrow.io. Its free key allows 25 calls an hour and one view of 7 frames
+// needs hundreds of tiles, so the layer was 429 on every load. NOAA's Weather Prediction
+// Center publishes forecast rainfall per 6-hour block: US government data, no key, no
+// published rate limit, and the server sends CORS. Lower 48 only, so outside it the
+// layer is simply empty. Layer ids 13-20 are the 00-06 ... 42-48 h blocks of the
+// latest WPC issuance (mapservices.weather.noaa.gov .../precip/wpc_qpf/MapServer).
+const WPC_QPF='https://mapservices.weather.noaa.gov/vector/rest/services/precip/wpc_qpf/MapServer/export';
 const WxForecast={
   frames:[],current:0,playing:false,interval:null,
   async load(){
     if(!V)return;this.destroy();
     try{
-      // Build 6 hourly timestamps from now → +6h
-      const now=new Date();
-      const timestamps=[];
-      for(let i=0;i<=6;i++){
-        const t=new Date(now.getTime()+i*3600000);
-        t.setMinutes(0,0,0);
-        timestamps.push(t.toISOString().replace(/\.\d+Z/,'Z'));
-      }
-      timestamps.forEach((ts,i)=>{
+      const usBox=Cesium.Rectangle.fromDegrees(-132,18,-59,56);
+      for(let i=0;i<8;i++){
         const layer=V.imageryLayers.addImageryProvider(
           new Cesium.UrlTemplateImageryProvider({
-            url:`/api/proxy-tomorrow?mode=tile&layer=precipitationIntensity&z={z}&x={x}&y={y}&ts=${encodeURIComponent(ts)}`,
-            maximumLevel:12,minimumLevel:2,credit:'Tomorrow.io Forecast'
+            url:WPC_QPF+'?bbox={westDegrees},{southDegrees},{eastDegrees},{northDegrees}&bboxSR=4326&imageSR=4326&size=256,256&format=png32&transparent=true&layers=show:'+(13+i)+'&f=image',
+            tilingScheme:new Cesium.GeographicTilingScheme(),
+            rectangle:usBox,maximumLevel:8,
+            credit:'NOAA WPC precipitation forecast'
           })
         );
-        layer.alpha=0;layer.brightness=1.3;layer._isBDOCWeather=true;
-        this.frames.push({time:ts,label:'+'+(i)+'h',layer:layer});
-      });
+        layer.alpha=0;layer._isBDOCWeather=true;
+        this.frames.push({label:'+'+(i*6)+'–'+(i*6+6)+'h',layer:layer});
+      }
       this.current=0;
       this.frames[0].layer.alpha=0.7;
-      af('var(--gn)',`Forecast radar: ${this.frames.length} frames (now → +6h) via Tomorrow.io`);
-      EventLog.add('info',`Forecast radar: ${this.frames.length} hourly frames — Tomorrow.io`);
+      af('var(--gn)','Forecast rain: next 48 h in 6-hour steps (NOAA, lower 48 states)');
+      EventLog.add('info',`Forecast radar: ${this.frames.length} six-hour frames — NOAA WPC`);
       this.play();
     }catch(e){console.error('[Forecast] Load failed:',e);af('var(--yl)','Forecast radar: failed — '+esc(e.message))}
   },
@@ -7188,11 +7190,15 @@ function loadSentinelLayer(){
   if(!V)return;
   removeWeatherLayer('_sentinelLayer');
   // ESA Sentinel-2 cloudless mosaic (free, no API key)
+  // p166 licensing: EOX's 2018-and-later mosaics (we used 2021) are CC BY-NC-SA, and EOX's
+  // FAQ says paid and freemium apps need a commercial license for them. The 2016 mosaic is
+  // CC BY 4.0, usable in a commercial app with this exact credit (from EOX's WMTS
+  // capabilities). Going back to 2021+ means buying EOX's license first.
   _wxLayers._sentinelLayer=V.imageryLayers.addImageryProvider(
     new Cesium.UrlTemplateImageryProvider({
-      url:'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2021_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg',
+      url:'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg',
       maximumLevel:14,minimumLevel:2,
-      credit:'Sentinel-2 Cloudless 2021 by EOX / ESA Copernicus'
+      credit:new Cesium.Credit('<a href="https://cloudless.eox.at" target="_blank" rel="noopener">EOxCloudless</a> by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2016), <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>',true)
     })
   );
   _wxLayers._sentinelLayer.alpha=1.0;_wxLayers._sentinelLayer.brightness=1.05;_wxLayers._sentinelLayer.contrast=1.1;
@@ -11632,7 +11638,7 @@ togLy = function(el) {
   if (ly==='nukes'){el.classList.toggle('on');layers.nukes=el.classList.contains('on');if(layers.nukes){if(typeof nukeEnts==='undefined'||nukeEnts.length===0){BDOC.layerLoadFx.start('nukes');BDOC.LazyLoader.load('layers-nuke').then(()=>{if(window.loadNukeSites)window.loadNukeSites();BDOC.layerLoadFx.done('nukes',true)}).catch(e=>{console.warn('[lazy layers-nuke]',e);BDOC.layerLoadFx.done('nukes',false)})}else{nukeEnts.forEach(e=>e.show=true)}}else{_bSafe(()=>nukeEnts.forEach(e=>e.show=false))}return}
   if (ly==='deflock'){el.classList.toggle('on');layers.deflock=el.classList.contains('on');if(layers.deflock)loadDeflock();else{if(V)deflockEnts.forEach(e=>{try{V.entities.remove(e)}catch(x){}});deflockEnts=[]}return}
   if (ly==='celltowers'){el.classList.toggle('on');layers.celltowers=el.classList.contains('on');if(layers.celltowers)loadCellTowers();else{if(V)cellTowerEnts.forEach(e=>{try{V.entities.remove(e)}catch(x){}});cellTowerEnts=[]}return}
-  if (ly==='wireshark'){el.classList.toggle('on');layers.wireshark=el.classList.contains('on');if(layers.wireshark){try{window.pluginRenderer&&pluginRenderer.enable()}catch(_){}WiresharkBridge._wsRetries=0;WiresharkBridge.connect()}else WiresharkBridge.disconnect();return}
+  if (ly==='wireshark'){el.classList.toggle('on');layers.wireshark=el.classList.contains('on');if(layers.wireshark){try{window.pluginRenderer&&pluginRenderer.enable('wireshark')}catch(_){}WiresharkBridge._wsRetries=0;WiresharkBridge.connect()}else{try{window.pluginRenderer&&pluginRenderer.release('wireshark')}catch(_){}WiresharkBridge.disconnect()}return}
   if (ly==='ioc'){el.classList.toggle('on');layers.ioc=el.classList.contains('on');if(layers.ioc){BDOC.layerLoadFx.start('ioc');loadIOCLayer();}else{iocEnts.forEach(e=>{try{V.entities.remove(e)}catch(x){}});iocEnts=[];}return}
   if (ly==='fallout'){el.classList.toggle('on');layers.fallout=el.classList.contains('on');if(layers.fallout){if(!_falloutDS){BDOC.layerLoadFx.start('fallout');loadFalloutShelters();}else{_falloutDS.show=true;}}else{if(_falloutDS)_falloutDS.show=false;}return}
   if (ly==='hazardbio'){el.classList.toggle('on');layers.hazardbio=el.classList.contains('on');
@@ -13878,7 +13884,7 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 <!-- P156e: battle plan autosave/restore + real-shape exports + .bdoc.json (needs V, battleEntities, BDOCOfflineStore) -->
 <script src="js/bdoc-plan.js?v=p159e"></script>
 <script src="js/bdoc-link-manager.js?v=p156d"></script>
-<script src="js/bdoc-plugin-renderer.js?v=p155"></script>
+<script src="js/bdoc-plugin-renderer.js?v=p166"></script>
 <script src="js/bdoc-offline-hud.js?v=p158f"></script>
 </body>
 </html>

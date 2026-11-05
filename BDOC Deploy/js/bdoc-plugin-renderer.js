@@ -29,19 +29,37 @@ const pluginRenderer = {
   },
 
   // P155: Chrome 141+ shows a "Local network access" permission prompt the first time a
-  // website fetches 127.0.0.1. Polling at page load put that prompt in front of EVERY visitor.
-  // Now the poll starts only after the user turns on something local (Wireshark Live, the local
-  // Meshtastic layer, Network Builder LIVE) — remembered per browser — or inside the desktop app.
-  _optedIn() {
-    try { return /Electron/i.test(navigator.userAgent) || localStorage.getItem('bdoc_local_ipc') === '1'; } catch (e) { return false; }
+  // website fetches 127.0.0.1. Polling at page load put that prompt in front of EVERY visitor,
+  // so the poll waited for the user to turn on something local.
+  // P166: P155 remembered that choice forever, so one try of Wireshark Live meant every later
+  // visit polled 127.0.0.1:9876 every 15 s with no way to stop it. Now, on the web, the poll
+  // runs only while something local is ON (Wireshark Live, the local Meshtastic layer, Network
+  // Builder LIVE). Turning the last one off stops it. Those features call enable() again when a
+  // shared link or a reload turns them back on. The desktop app still polls from the start.
+  _users: new Set(),
+  _isDesktop() {
+    try { return /Electron/i.test(navigator.userAgent); } catch (e) { return false; }
   },
-  enable() {
-    try { localStorage.setItem('bdoc_local_ipc', '1'); } catch (e) {}
+  enable(who) {
+    this._users.add(who || 'local');
     if (!this.pollHandle && !this._starting) { this.failures = 0; this._starting = true; this._start().finally(() => { this._starting = false; }); }
   },
+  release(who) {
+    this._users.delete(who || 'local');
+    if (this._users.size || this._isDesktop()) return;
+    this._stop();
+    console.log('[Plugin Renderer] local IPC stopped (no local layer on)');
+  },
+  _stop() {
+    if (this.pollHandle) { clearInterval(this.pollHandle); this.pollHandle = null; }
+    this.online = false;
+    this.clearAll();
+  },
   async init() {
+    // Old opt-in flag from P155. Nothing reads it now.
+    try { localStorage.removeItem('bdoc_local_ipc'); } catch (e) {}
     if (!this.viewer) { setTimeout(() => this.init(), 2000); return; }
-    if (!this._optedIn()) { console.log('[Plugin Renderer] local IPC idle until a local layer is turned on'); return; }
+    if (!this._isDesktop()) { console.log('[Plugin Renderer] local IPC idle until a local layer is turned on'); return; }
     if (!this._starting) { this._starting = true; this._start().finally(() => { this._starting = false; }); }
   },
   async _start() {
@@ -51,6 +69,8 @@ const pluginRenderer = {
       this.online = !!s;
       console.log('[Plugin Renderer] IPC', this.online ? 'connected' : 'not detected');
     } catch (e) { console.log('[Plugin Renderer] IPC not detected (local apps not running)'); }
+    // Everything local was turned off while the status check was in flight.
+    if (!this._users.size && !this._isDesktop()) return;
     this.pollHandle = setInterval(() => this.poll(), this.pollInterval);
   },
 
@@ -69,6 +89,7 @@ const pluginRenderer = {
       .filter(([, l]) => l.enabled)
       .map(([name, l]) => this._json(l.path).then(r => [name, r]));
     const results = await Promise.all(jobs);
+    if (!this.pollHandle) return; // stopped while this poll was in flight
 
     const anyOk = results.some(([, r]) => r && Array.isArray(r.nodes));
     if (!anyOk) {

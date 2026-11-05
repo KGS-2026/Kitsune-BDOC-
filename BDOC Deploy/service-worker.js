@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v166';  // p165: watch zones reach your phone with BDOC closed (zone-alerts-tick, every 5 min)
+const SW_VERSION = 'bdoc-v167';  // p166: local-bridge off switch, NOAA forecast rain, Sentinel-2 2016 (CC BY), Sources & Licenses page
+// (prev) const SW_VERSION = 'bdoc-v166';  // p165: watch zones reach your phone with BDOC closed (zone-alerts-tick, every 5 min)
 // (prev) const SW_VERSION = 'bdoc-v164s';  // p163s: layer sweep fixes — DeepState front line, cloud IR, OWM temperature, GDACS empty results, mesh polling
 // (prev) const SW_VERSION = 'bdoc-v164i';  // p163i: iPad fix — Safari shims for Cesium 1.146, iPadOS gets the mobile GPU tier
 // (prev) const SW_VERSION = 'bdoc-v164';  // p163: incident archive layer, Iran theater in War Room
@@ -56,16 +57,16 @@ const STATIC_PRECACHE = [
   '/js/bdoc-atak.js?v=p156d',
   '/js/cesium-init.js?v=p163i',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p165',
-  '/js/modules/layers-conflict.js?v=p165',
-  '/js/modules/layers-infra.js?v=p165',
-  '/js/modules/layers-air.js?v=p165',
-  '/js/modules/layers-nuke.js?v=p165',
-  '/js/modules/nuke-sim.js?v=p165',
-  '/js/modules/layers-airfields.js?v=p165',
-  '/js/modules/net-builder.js?v=p165',
-  '/js/modules/mesh-world.js?v=p165',
-  '/js/modules/skybridge.js?v=p165',
+  '/js/modules/layers-military.js?v=p166',
+  '/js/modules/layers-conflict.js?v=p166',
+  '/js/modules/layers-infra.js?v=p166',
+  '/js/modules/layers-air.js?v=p166',
+  '/js/modules/layers-nuke.js?v=p166',
+  '/js/modules/nuke-sim.js?v=p166',
+  '/js/modules/layers-airfields.js?v=p166',
+  '/js/modules/net-builder.js?v=p166',
+  '/js/modules/mesh-world.js?v=p166',
+  '/js/modules/skybridge.js?v=p166',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',

@@ -269,8 +269,8 @@ function ago(t){const s=Date.now()/1000-t;return s<90?Math.max(0,Math.round(s))+
 
 // ── API ─────────────────────────────────────────────────────
 Object.assign(SB,{
-  async enable(){if(!window.V)return;SB.on=true;renderPanel();try{window.pluginRenderer&&pluginRenderer.enable()}catch(_){}if(!SB._restored){SB._restored=true;await restore();}clearTimeout(SB.timer);poll();},
-  disable(fromPanel){SB.on=false;clearTimeout(SB.timer);renderPanel();
+  async enable(){if(!window.V)return;SB.on=true;renderPanel();try{window.pluginRenderer&&pluginRenderer.enable('skybridge')}catch(_){}if(!SB._restored){SB._restored=true;await restore();}clearTimeout(SB.timer);poll();},
+  disable(fromPanel){SB.on=false;clearTimeout(SB.timer);try{window.pluginRenderer&&pluginRenderer.release('skybridge')}catch(_){}renderPanel();
     if(fromPanel){const row=document.querySelector('.ly[data-layer="skybridge"]');if(row&&row.classList.contains('on')){row.classList.remove('on');try{layers.skybridge=false}catch(_){}}}},
   toggle(k,on){SB.show[k]=on;if(k==='raster')SB.rasters.forEach(r=>{if(r.layer)r.layer.show=on;});else if(SB.warnings)SB.warnings.ents.forEach(e=>e.show=on);kick();},
   setStyle(s){SB.style=s;SB.rasters.forEach(r=>drawRaster(r.obj));if(SB.warnings)drawWarnings(SB.warnings.obj);renderPanel();kick();},
