@@ -258,7 +258,8 @@ function createServer() {
   // ── p168p: AOI Watch + Cam Wall proxies — run the Netlify handlers in-process ──
   // Both are multi-source whitelists, so a single upstream URL (proxyHandler) does not fit.
   // proxy-mecams reads YOUTUBE_API_KEY / WINDY_API_KEY from the desktop process env (optional).
-  for (const fn of ['proxy-watch', 'proxy-mecams']) {
+  // p170: proxy-signals (Signals layer: NOAA scales, emergency squawks, KiwiSDR list) is keyless.
+  for (const fn of ['proxy-watch', 'proxy-mecams', 'proxy-signals']) {
     app.get('/.netlify/functions/' + fn, async (req, res) => {
       try {
         const r = await require(path.join(__dirname, '..', 'netlify', 'functions', fn + '.js'))

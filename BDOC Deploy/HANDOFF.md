@@ -79,6 +79,34 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Claude Code — p170 Signals layer: HF conditions, emergency squawks, public shortwave receivers (2026-11-05) — BRANCH `claude/sigint` (stacked on p169), NOT LIVE UNTIL TRAVON SAYS
+Travon: "signals intelligence ... that's the one thing we haven't done yet". The SIGINT group's "SOON" placeholder is now a real toggle, **"Signals: squawks, HF, receivers"** (analyst+ by omission from the operator list, like Cam Wall; Travon to decide). Public data only: transponder broadcasts, receivers their owners publish, public-domain NOAA. Nothing decodes or records private communications.
+- **Server** `netlify/functions/proxy-signals.js`, three sources:
+  - `hf`: NOAA SWPC `noaa-scales.json`. R (radio blackout), S (solar radiation storm), G (geomagnetic storm) now, plus the 3-day probabilities. 10 min cache.
+  - `squawk`: aircraft squawking 7500 / 7600 / 7700 anywhere, from adsb.lol `/v2/sqk/<code>`, with adsb.fi as a per-code fallback. Deduped by hex, control characters stripped, 7500 first. 30 s cache. If both sources fail for every code it returns a 502, so a feed outage never reads as "none right now".
+  - `sdr`: public KiwiSDR receivers. kiwisdr.com/public is behind a CAPTCHA, so it reads the hourly copy published for map makers at `http://rx.linkfanel.net/kiwisdr_com.js` (a JS assignment). **Parsed with JSON.parse only (trailing commas stripped), never evaluated**; a test feeds it code and checks it is refused. Only active entries with GPS and a plain `http(s)://host[:port]` URL are kept. 6 h cache.
+  - Source lookup uses hasOwnProperty, so `constructor` and friends get a 400.
+- **Client** `js/modules/signals.js` (`SignalsWatch`, `SIGNALS_CFG`; name-clash test passes). Panel at bottom right: draggable, minimizable, a full-width top sheet on phones. It has three sections:
+  - HF conditions, in plain words.
+  - Squawks: rows fly to and select the aircraft; the popup links to globe.adsb.lol. Each new aircraft raises an alert-feed line and an EventLog entry, once per aircraft per 2 h.
+  - **LISTEN**: six presets (HFGCS 8992 / 11175, The Buzzer 4625, Shannon VOLMET 5505, New York VOLMET 6604, WWV 10000). It opens the receiver nearest the middle of the view that covers the frequency and has a free slot, tuned there (`<url>/?f=8992usb`), in a new tab with `noopener`.
+  - About 840 receiver pins; the popup shows antenna, band, users, SNR, OPEN and tune links for every preset in band.
+  - Squawks refresh every minute and HF every 10 min, both paused while the tab is hidden. Off removes every pin, timer and the panel.
+- **Escaping:** `af()` puts its text into innerHTML unescaped (`rf()` in index.html), so the squawk alert text goes through `esc()` first. A test feeds `<img src=x>` as a callsign. Receiver names and locations come from strangers and are always escaped; links go through `safeUrl`.
+- `sources.html`: KiwiSDR / rx.linkfanel.net row added; NOAA, adsb.lol (ODbL noted) and adsb.fi rows now mention Signals. Desktop: `electron/server.js` runs `proxy-signals` in-process next to proxy-watch / proxy-mecams. Modules `p170`, SW `bdoc-v172`.
+- **Licensing:** the receiver list carries no stated licence. BDOC shows where receivers are and links to each owner's page; it never relays audio. adsb.lol's live-API licence is still unclear and adsb.fi is on the licensing list (§ p166), same as the Air layer.
+
+**Verified:** 805 tests (11 new in `tests/signals-p170.test.js`), CI script passes. Desktop route called through `createServer()` with a recording stand-in for express (express is not installed on this laptop): hf 200 from NOAA, unknown source 400, registered before the offline catch-all. All three sources against the real upstreams through the local dev server: NOAA R0/S0/G0 with the outlook, one real 7600 (a C172 near Rockford IL, NORDO) that later cleared and was removed on the next refresh, 843 receivers (783 with a free slot, 837 covering 8992 kHz). In Chromium on this branch:
+  - the toggle lazy-loads the module at `p170`; the panel draws; 843 pins plus the squawk pin; the alert fired once;
+  - a test aircraft injected in the page: row click selects it, the popup has the adsb.lol link, and fly-to lands exactly (frames pumped by hand, hidden pane);
+  - LISTEN (`window.open` stubbed) chose the nearest free in-band receiver and built `?f=10000am` with `noopener`;
+  - preset and minimize survive a reload; the layer comes back from the shared URL;
+  - × turns the layer off and removes all pins and timers;
+  - 1440 px: panel 16 px clear of the right sidebar. 375 px: full-width sheet, no horizontal scroll, 44 px buttons;
+  - every proxy-signals call returned 200.
+
+**Not verified:** a live 7500 / 7700 (only a 7600 was up), actually listening on a receiver (the tab open was stubbed), the function on Netlify, production.
+
 ### Claude Code — p169 Cam Wall: regions, stationary cams only, one live player, anomaly log (2026-11-05) — BRANCH `claude/camwall-regions`, NOT LIVE UNTIL TRAVON SAYS
 Travon asked for a region picker, stationary city cameras instead of news channels (copyright), less lag, and a way to log an impact or flash seen on a camera and plot it.
 - **Regions** (header dropdown, flies the globe there): Middle East, Ukraine & Russia, Taiwan Strait, Korean Peninsula. Each has its own Windy boxes and curated cams; tile picks are remembered per region.
