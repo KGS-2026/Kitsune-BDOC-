@@ -24,6 +24,11 @@
   const FLOOD = { 4: ['#B37FEB', 'major flood'], 3: ['#DA3633', 'moderate flood'], 2: ['#E8B339', 'minor flood'], 1: ['#D29922', 'action stage'] };
   const FLOOD_WORDS = { major: 'major flood', moderate: 'moderate flood', minor: 'minor flood', action: 'action stage', no_flooding: 'below flood stage' };
   const SEV_COLOR = { Extreme: '#B37FEB', Severe: '#DA3633', Moderate: '#E8B339', Minor: '#58A6FF', Unknown: '#8b949e' };
+  // Same words as SOURCE_NAMES in netlify/functions/_lib/county-brief.js.
+  const SOURCE_NAMES = {
+    nws_alerts: 'NWS warnings', nwps_gauges: 'river gauges', nhc_storms: 'NHC storms', nasa_firms: 'NASA fire detections',
+    usgs_quakes: 'USGS earthquakes', fema_shelters: 'FEMA shelters', nws_forecast: 'NWS forecast'
+  };
 
   const st = window.BDOCCountyBrief = { data: null, ds: null, panel: null, ctrl: null, spot: null };
   const E = (v) => esc(String(v == null ? '' : v));
@@ -161,13 +166,19 @@
     const fc = !b.forecast || !b.forecast.length ? '' :
       b.forecast.map(f => '<div style="display:flex;gap:8px;margin:2px 0"><span style="min-width:96px;color:#8b949e">' + E(f.name) + '</span><span>' + E(f.short) + (f.temp !== null ? ', ' + E(f.temp) + '°' + E(f.unit) : '') + '</span></div>').join('');
 
-    const failed = Object.keys(b.sources || {}).filter(k => b.sources[k] !== 'ok');
+    const failed = Object.keys(b.sources || {}).filter(k => b.sources[k] !== 'ok').map(k => SOURCE_NAMES[k] || k);
+    // The level comes from the feeds that answered, so a missing one can only hide a reason
+    // to raise it. Never let NORMAL read as "nothing is happening" when a feed is missing.
+    const note = failed.length && b.level.level === 'NORMAL' ? 'Nothing active in the feeds that answered.' : lv.note;
+    const notChecked = failed.length
+      ? '<div style="color:#D29922;font-size:10px;margin-top:4px"><b>Not checked:</b> ' + E(failed.join(', ')) + (b.level.level !== 'SEVERE' ? '. The level may be higher. Refresh in a minute.' : '.') + '</div>'
+      : '';
     el.innerHTML = head('COUNTY BRIEF') +
       '<div style="font-size:15px;font-weight:700;color:#e6edf3">' + E(c.name) + ', ' + E(c.state) + '</div>' +
       '<div style="color:#6e7681;font-size:9px;margin-bottom:8px">FIPS ' + E(c.geoid) + ' · as of ' + E(hhmm(b.asOf)) + '</div>' +
       '<div style="border:1px solid ' + lv.color + ';background:' + lv.color + '1f;padding:7px 9px">' +
         '<div style="color:' + lv.color + ';font-weight:700;letter-spacing:2px;font-size:13px">' + E(b.level.level) + '</div>' +
-        '<div style="color:#c8ccd6;font-size:10px">' + lv.note + '</div>' +
+        '<div style="color:#c8ccd6;font-size:10px">' + note + '</div>' + notChecked +
         (b.level.reasons.length ? '<ul style="margin:5px 0 0 16px;padding:0">' + b.level.reasons.map(r => '<li>' + E(r) + '</li>').join('') + '</ul>' : '') +
       '</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:9px">' +
@@ -180,7 +191,7 @@
       section('EARTHQUAKES · USGS 24 H', ok('usgs_quakes'), quakes) +
       section('SHELTERS · FEMA', ok('fema_shelters'), shelters) +
       section('FORECAST · NWS, COUNTY CENTRE', ok('nws_forecast') && !!fc, fc) +
-      (failed.length ? '<div style="margin-top:9px;color:#D29922;font-size:9px">' + failed.length + ' source' + (failed.length === 1 ? '' : 's') + ' did not answer: ' + E(failed.join(', ')) + '. Missing data is shown as missing, never as all clear.</div>' : '') +
+      (failed.length ? '<div style="margin-top:9px;color:#D29922;font-size:9px">' + failed.length + ' source' + (failed.length === 1 ? '' : 's') + ' did not answer (' + E(failed.join(', ')) + '). Missing data is shown as missing, never as all clear.</div>' : '') +
       '<div style="margin-top:9px;color:#4a5068;font-size:9px;line-height:1.4">U.S. government data: NWS, NOAA, NHC, NASA, USGS, FEMA, Census. Updates every 2 minutes at most. Verify before acting.</div>';
     wireClose(el);
     el.querySelector('[data-b="print"]').onclick = () => printSitrep(b);

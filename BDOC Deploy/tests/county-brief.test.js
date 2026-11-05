@@ -332,7 +332,38 @@ test('a failed source is shown as not available, never as all clear', async () =
   const panel = sb.html.panel.innerHTML;
   assert.strictEqual((panel.match(/Not available right now/g) || []).length, 3, 'warnings, fire and forecast');
   assert.doesNotMatch(panel, /No NWS warnings/, 'a failed warnings feed must not read as "no warnings"');
-  assert.match(panel, /3 sources did not answer: nws_alerts, nasa_firms, nws_forecast/);
+  assert.match(panel, /3 sources did not answer \(NWS warnings, NASA fire detections, NWS forecast\)/);
+  // 5 Nov, live: a slow NOAA gauge feed made Hillsborough read NORMAL, "nothing active".
+  assert.doesNotMatch(panel, /Nothing active in the feeds BDOC checks/);
+  assert.match(panel, /Nothing active in the feeds that answered\./);
+  assert.match(panel, /<b>Not checked:<\/b> NWS warnings, NASA fire detections, NWS forecast\. The level may be higher\./);
+});
+
+test('the level badge: plain NORMAL when every feed answered, no "may be higher" when already SEVERE', async () => {
+  const all = { nws_alerts: 'ok', nwps_gauges: 'ok', nhc_storms: 'ok', nasa_firms: 'ok', usgs_quakes: 'ok', fema_shelters: 'ok', nws_forecast: 'ok' };
+  const base = { county, asOf: iso(NOW), alerts: [], gauges: { reporting: 2, flooding: [] }, storms: [], fires: { count: 0, maxFrp: 0 }, quakes: [], shelters: [], forecast: [], sitrep: [] };
+  let sb = clientSandbox({ ...base, sources: all, level: { level: 'NORMAL', reasons: [] } });
+  await sb.open(27.7, -82.5);
+  assert.match(sb.html.panel.innerHTML, /Nothing active in the feeds BDOC checks\./);
+  assert.doesNotMatch(sb.html.panel.innerHTML, /Not checked/);
+  sb = clientSandbox({ ...base, gauges: undefined, sources: { ...all, nwps_gauges: 'failed' }, level: { level: 'SEVERE', reasons: ['Flood Warning'] } });
+  await sb.open(27.7, -82.5);
+  assert.match(sb.html.panel.innerHTML, /<b>Not checked:<\/b> river gauges\.<\/div>/);
+  assert.doesNotMatch(sb.html.panel.innerHTML, /may be higher/);
+});
+
+test('SITREP says which feeds were not checked and that the level may be higher', () => {
+  const b = { county, alerts: [], gauges: undefined, storms: [], quakes: [], fires: { count: 0, maxFrp: 0 }, shelters: [], forecast: [],
+    sources: { nws_alerts: 'ok', nwps_gauges: 'failed', nhc_storms: 'ok', nasa_firms: 'ok', usgs_quakes: 'ok', fema_shelters: 'ok', nws_forecast: 'ok' } };
+  b.level = lib.levelOf(b);
+  assert.strictEqual(lib.sitrep(b, NOW)[2], 'NOT CHECKED: river gauges did not answer, so the level may be higher.');
+  b.sources.nwps_gauges = 'ok';
+  assert.strictEqual(lib.sitrep(b, NOW)[2], '', 'no line when everything answered');
+  b.sources.fema_shelters = 'failed';
+  b.level = { level: 'SEVERE', reasons: ['Flood Warning'] };
+  assert.strictEqual(lib.sitrep(b, NOW)[2], 'NOT CHECKED: FEMA shelters did not answer.');
+  // The panel uses the same words.
+  for (const [k, v] of Object.entries(lib.SOURCE_NAMES)) assert.ok(CLIENT_SRC.includes(k + ": '" + v + "'"), 'client names ' + k + ' as ' + v);
 });
 
 test('floating panels open under the top-bar menus and the map menu on desktop', () => {

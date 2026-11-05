@@ -250,12 +250,23 @@ function levelOf(b) {
 
 const hhmm = (iso) => { const t = Date.parse(iso); return Number.isFinite(t) ? new Date(t).toISOString().slice(0, 16).replace('T', ' ') + 'Z' : ''; };
 
+// Feeds that did not answer, in words. The level is worked out from the ones that did,
+// so a missing feed can only hide a reason to raise it (5 Nov: a slow NOAA gauge feed
+// turned Hillsborough's ELEVATED into NORMAL for one call).
+const SOURCE_NAMES = {
+  nws_alerts: 'NWS warnings', nwps_gauges: 'river gauges', nhc_storms: 'NHC storms', nasa_firms: 'NASA fire detections',
+  usgs_quakes: 'USGS earthquakes', fema_shelters: 'FEMA shelters', nws_forecast: 'NWS forecast'
+};
+const missingOf = (sources) => Object.keys(sources || {}).filter(k => sources[k] !== 'ok').map(k => SOURCE_NAMES[k] || k);
+
 // Plain-text SITREP: what the coordinator reads out at the morning brief.
 function sitrep(b, now) {
   const L = [];
   const c = b.county;
+  const missing = missingOf(b.sources);
   L.push('SITREP: ' + c.name + ', ' + c.state + ' (FIPS ' + c.geoid + ')');
   L.push('As of ' + hhmm(new Date(now).toISOString()) + ' · Overall: ' + b.level.level + (b.level.reasons.length ? ' (' + b.level.reasons.join('; ') + ')' : ''));
+  if (missing.length) L.push('NOT CHECKED: ' + missing.join(', ') + ' did not answer' + (b.level.level !== 'SEVERE' ? ', so the level may be higher.' : '.'));
   L.push('');
   L.push('1. WEATHER WARNINGS (NWS)');
   if (!b.alerts) L.push('   Not available.');
@@ -291,6 +302,6 @@ function sitrep(b, now) {
 }
 
 module.exports = {
-  STATE_BY_FIPS, FLOOD_WORDS, floodWords, km, inRings, countyFrom, nwsZone, inCounty,
+  STATE_BY_FIPS, FLOOD_WORDS, SOURCE_NAMES, floodWords, missingOf, km, inRings, countyFrom, nwsZone, inCounty,
   riversOf, alertsOf, forecastOf, gaugesOf, floodRank, quakesOf, firesOf, stormsNear, sheltersOf, levelOf, sitrep
 };

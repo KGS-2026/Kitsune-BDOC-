@@ -79,7 +79,13 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
-### Claude Code — p168 County Brief for emergency managers (2026-11-05) — BRANCH `claude/county-view`, NOT LIVE UNTIL TRAVON SAYS
+### Claude Code — p168b County Brief: a missing feed never reads as all clear (2026-11-05) — BRANCH `claude/county-view`, NOT LIVE UNTIL TRAVON SAYS
+Found on the live check of p168: one Hillsborough call had NOAA gauges time out (over 5.5 s from Netlify; 1–2.4 s from here, and the next three calls were fine), so the level came from six feeds and read NORMAL, "Nothing active in the feeds BDOC checks", where it was really ELEVATED (Alafia River at action stage). Now, when a feed did not answer, the badge says "Nothing active in the feeds that answered", adds "Not checked: river gauges. The level may be higher." (no "may be higher" when already SEVERE), and the SITREP gets a `NOT CHECKED:` line under the overall level. Feed names in words (`SOURCE_NAMES` in `_lib/county-brief.js`, same words in the panel, tested). Module `p168b`, SW `bdoc-v170`.
+
+**Verified:** 778 tests, CI; in Chromium on this branch with the real Hillsborough body and gauges marked failed: badge, footer and printed SITREP as above, 0 page errors.
+
+### Claude Code — p168 County Brief for emergency managers (2026-11-05) — LIVE on `main` @ `a1c08de`
+**Live check 5 Nov 16:04Z:** Seminole FL SEVERE in 2.5 s, Norton KS NORMAL, London 404, bad input 400; on the real page the module loads at `p168`, the panel and county line draw, the Tools menu opens over the panel, 0 page errors.
 Battle plan Phase 2, for the one government buyer BDOC sells to: county EM coordinators. One click gives everything BDOC knows about one U.S. county, with a one-page SITREP for the morning brief. **No tier gate: free for everyone** (Travon to decide).
 - **Where:** Quick Start > "MY COUNTY BRIEF" (location, else the NEAR ME home spot, else pick on the map), map / long-press menu > "County Brief", Tools > County Brief (arms a map pick).
 - **Server** `county-brief.mjs` (sync, `?lat=&lon=`, CDN 120 s per spot rounded to 3 decimals): Census TIGERweb finds the county and its line, then in parallel NWS alerts for the county zone (`FLC057`), the NWS forecast at the county centre, NOAA NWPS gauges, NHC storms within 1,500 km, NASA FIRMS 24 h through our own `proxy-firms` (no key in this function), USGS 24 h, and FEMA open shelters. Every feed is cut to the county line (holes and islands count). Each source reports ok / failed; a failed one shows "Not available", never "none". 404 outside the U.S. Rules in `_lib/county-brief.js` (pure, `tests/county-brief.test.js`, 24 tests).
