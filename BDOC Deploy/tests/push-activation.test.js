@@ -85,12 +85,13 @@ async function load(t, env, { store = fakeStore(), webpush = fakeWebpush(), p140
   const lib = dataUrl('export default new Proxy({}, { get: (_, k) => globalThis.__pushLib[k] });');
   const sub = SUBSCRIBE_SRC
     .replace("from '@netlify/blobs'", `from ${JSON.stringify(blobs)}`)
+    .replace("from './_lib/zone-alerts.js'", `from ${JSON.stringify(require('url').pathToFileURL(path.join(FN, '_lib', 'zone-alerts.js')).href)}`)
     .replace(P140, p140) + `\n// load ${++loads}`;
   const subUrl = dataUrl(sub);
   const send = SEND_SRC
     .replace("from 'web-push'", `from ${JSON.stringify(lib)}`)
     .replace("from './push-subscribe.mjs'", `from ${JSON.stringify(subUrl)}`);
-  assert.ok(!/from '[^n]/.test(send) && !/from '@/.test(sub), 'imports changed, update this test');
+  assert.ok(!/from '[^n]/.test(send) && !/from '[@.]/.test(sub), 'imports changed, update this test');
   return {
     subscribe: await import(subUrl),
     send: await import(dataUrl(send)),
@@ -311,14 +312,29 @@ function device({ existingKey, endpoint = 'https://push/old', serverKey, withOpt
 }
 
 const flat = (x) => JSON.parse(JSON.stringify(x));
+// p165: every registration carries the device's watch zones and alert choices.
+const NO_ZONES = { zones: [], prefs: { level: 'serious', quake: true, weather: true, fire: true } };
 
 test('same key: the subscription is kept and its key is reported', async () => {
   const k = newKey();
   const d = device({ existingKey: k.pub, serverKey: k.pub });
   await d.api._resume();
   assert.deepEqual(flat(d.log), [{
-    register: { subscription: { endpoint: 'https://push/old', keys: { p256dh: 'p', auth: 'a' } }, vapid: k.pub }
+    register: { subscription: { endpoint: 'https://push/old', keys: { p256dh: 'p', auth: 'a' } }, vapid: k.pub, ...NO_ZONES }
   }]);
+});
+
+test('p165: registration carries the watch zones, and covers() follows the alert choices', async () => {
+  const k = newKey();
+  const d = device({ existingKey: k.pub, serverKey: k.pub });
+  d.sandbox.localStorage.v.bdoc_watch_zones = JSON.stringify([{ id: 'wz1', name: 'Home', lat: 34.05, lon: -118.24, radKm: 50, ts: 1 }]);
+  await d.api._resume();
+  assert.deepEqual(flat(d.log[0].register.zones), [{ id: 'wz1', name: 'Home', lat: 34.05, lon: -118.24, radKm: 50 }]);
+  assert.equal(d.api.status().zones, 1);
+  assert.equal(d.api.covers('SEISMIC'), true);
+  assert.equal(d.api.covers('KINETIC'), false, 'the server does not watch War Room events, so the tab keeps notifying');
+  d.api.setPrefs({ quake: false });
+  assert.equal(d.api.covers('SEISMIC'), false);
 });
 
 test('key changed: the device swaps silently, in the only order a browser allows', async () => {
@@ -329,7 +345,7 @@ test('key changed: the device swaps silently, in the only order a browser allows
     { unsubscribeDevice: 'https://push/old' },
     { unsubscribeServer: 'https://push/old' },
     { subscribe: k.pub },
-    { register: { subscription: { endpoint: 'https://push/fresh', keys: { p256dh: 'p', auth: 'a' } }, vapid: k.pub } }
+    { register: { subscription: { endpoint: 'https://push/fresh', keys: { p256dh: 'p', auth: 'a' } }, vapid: k.pub, ...NO_ZONES } }
   ]);
 });
 
@@ -405,4 +421,14 @@ test('the page and the service worker ask for the same bdoc-push.js', () => {
   const inHtml = html.match(/js\/bdoc-push\.js\?v=([\w.-]+)/)[1];
   const inSw = sw.match(/js\/bdoc-push\.js\?v=([\w.-]+)/)[1];
   assert.equal(inHtml, inSw);
+});
+
+// p165: tapping a watch-zone alert while BDOC is open calls BDOC.DeepLink.restore()
+// (js/deeplink.js). The share-link writer in index.html used to replace the whole
+// object, which deleted restore() and left the globe where it was.
+test('p165: no script replaces BDOC.DeepLink, so restore() survives for alert taps', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  assert.doesNotMatch(html, /BDOC\.DeepLink\s*=\s*\{/, 'index.html must add to BDOC.DeepLink, not replace it');
+  assert.match(fs.readFileSync(path.join(ROOT, 'js', 'deeplink.js'), 'utf8'), /restore: restore/);
+  assert.match(CLIENT_SRC, /BDOC\.DeepLink\.restore\(\)/);
 });

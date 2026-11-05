@@ -18,6 +18,30 @@
 
   var EP = '/.netlify/functions/push-subscribe';
   var LS = 'bdoc_push_state';
+  // p165: watch zones ride along with the subscription so the server can check
+  // them with BDOC closed. localStorage is the source of truth, because the
+  // watch-zones module is lazy and may not be loaded yet.
+  var LS_ZONES = 'bdoc_watch_zones';
+  var LS_PREFS = 'bdoc_push_prefs';
+  var DEFAULT_PREFS = { level: 'serious', quake: true, weather: true, fire: true };
+
+  function zones() {
+    try {
+      var z = JSON.parse(localStorage.getItem(LS_ZONES) || '[]');
+      if (!Array.isArray(z)) return [];
+      return z.slice(0, 10).map(function (x) {
+        return { id: x.id, name: x.name, lat: x.lat, lon: x.lon, radKm: x.radKm };
+      });
+    } catch (_) { return []; }
+  }
+
+  function prefs() {
+    var p = {};
+    try { p = JSON.parse(localStorage.getItem(LS_PREFS) || '{}') || {}; } catch (_) {}
+    var out = {};
+    Object.keys(DEFAULT_PREFS).forEach(function (k) { out[k] = (k in p) ? p[k] : DEFAULT_PREFS[k]; });
+    return out;
+  }
 
   function urlB64ToUint8(base64) {
     var pad = '='.repeat((4 - base64.length % 4) % 4);
@@ -84,15 +108,19 @@
     if (vapid) body.vapid = vapid;
     if (tier) body.tier = tier;
     if (label) body.label = label;
+    body.zones = zones();
+    body.prefs = prefs();
     var pr = await fetch(EP, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
     var pj = await pr.json();
     if (!pj || pj.offline || !pj.ok) throw new Error((pj && pj.error) || 'subscribe rejected');
-    setState({ enabled: true, endpoint: sub.endpoint, at: Date.now(), sendReady: !!cfg.sendReady });
-    return { ok: true, endpoint: sub.endpoint, sendReady: !!cfg.sendReady };
+    setState({ enabled: true, endpoint: sub.endpoint, at: Date.now(), sendReady: !!cfg.sendReady, zones: body.zones.length });
+    return { ok: true, endpoint: sub.endpoint, sendReady: !!cfg.sendReady, zones: body.zones.length };
   }
+
+  var _syncTimer = null;
 
   var API = {
     supported: supported,
@@ -104,8 +132,40 @@
         permission: ('Notification' in window) ? Notification.permission : 'unsupported',
         enabled: !!st.enabled,
         endpoint: st.endpoint || null,
-        sendReady: !!st.sendReady
+        sendReady: !!st.sendReady,
+        zones: st.zones || 0
       };
+    },
+
+    // True when the server will deliver watch-zone alerts of this class to this
+    // device, so the open tab should not raise a second OS notification for it.
+    covers: function (cls) {
+      var st = API.status();
+      if (!st.enabled || !st.sendReady || st.permission !== 'granted') return false;
+      var p = prefs();
+      return (cls === 'SEISMIC' && p.quake) || (cls === 'WEATHER' && p.weather) || (cls === 'FIRE' && p.fire);
+    },
+
+    prefs: prefs,
+
+    setPrefs: function (patch) {
+      var p = prefs();
+      Object.keys(patch || {}).forEach(function (k) { if (k in DEFAULT_PREFS) p[k] = patch[k]; });
+      try { localStorage.setItem(LS_PREFS, JSON.stringify(p)); } catch (_) {}
+      API.syncZones();
+      return p;
+    },
+
+    // Called whenever zones or prefs change. Silent: never prompts, and does
+    // nothing unless this device already armed push.
+    syncZones: function () {
+      if (_syncTimer) clearTimeout(_syncTimer);
+      _syncTimer = setTimeout(function () {
+        _syncTimer = null;
+        var st = state();
+        if (!supported() || !st.enabled || Notification.permission !== 'granted') return;
+        register(st.tier, st.label).then(refreshUI).catch(function () {});
+      }, 1200);
     },
 
     // User-initiated. Prompts for permission, then subscribes.
@@ -152,6 +212,8 @@
     navigator.serviceWorker.addEventListener('message', function (e) {
       if (e.data && e.data.type === 'PUSH_NAV' && e.data.url) {
         try { history.replaceState(null, '', e.data.url); } catch (_) {}
+        // A watch-zone alert carries a camera hash: fly the open tab to the event.
+        try { if (/#v=1&c=/.test(e.data.url) && window.BDOC && BDOC.DeepLink) BDOC.DeepLink.restore(); } catch (_) {}
         try { window.dispatchEvent(new CustomEvent('bdoc-push-nav', { detail: e.data })); } catch (_) {}
       }
     });
@@ -176,17 +238,25 @@
       return;
     }
     if (el) { el.checked = st.enabled && st.permission === 'granted'; el.disabled = false; }
+    var p = prefs();
+    var lv = document.getElementById('setPushLevel'); if (lv) lv.value = p.level;
+    var q = document.getElementById('setPushQuake'); if (q) q.checked = !!p.quake;
+    var w = document.getElementById('setPushWx'); if (w) w.checked = !!p.weather;
+    var f = document.getElementById('setPushFire'); if (f) f.checked = !!p.fire;
+    var nz = zones().length;
     if (st.permission === 'denied') {
       if (el) el.disabled = true;
       say('Blocked in browser settings — re-allow notifications for this site to enable.', '#DA3633');
     } else if (st.enabled) {
       // Be honest when the server half is not configured: the user is
       // subscribed but nothing can actually be sent to them yet.
-      say(st.sendReady ? 'Armed. Critical outage/crisis alerts will reach this device.'
-                       : 'Subscribed — server signing key not yet configured, so no alerts will send.',
+      say(!st.sendReady ? 'Subscribed — server signing key not yet configured, so no alerts will send.'
+          : nz ? 'Armed. Alerts for your ' + nz + ' watch zone' + (nz === 1 ? '' : 's') + ' and critical crises reach this device, even with BDOC closed.'
+          : 'Armed for critical crises. Add a watch zone to get alerts for a place you care about.',
           st.sendReady ? '#3FB950' : '#E8B349');
     } else {
-      say('Off. Turn on to get critical alerts with BDOC closed.');
+      say(nz ? 'Off. Turn on to get alerts for your ' + nz + ' watch zone' + (nz === 1 ? '' : 's') + ' with BDOC closed.'
+             : 'Off. Turn on to get critical alerts with BDOC closed.');
     }
   }
 

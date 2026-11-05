@@ -34,6 +34,14 @@
 
   function save() {
     try { localStorage.setItem(LS_ZONES, JSON.stringify(WZ.zones)); } catch (_) {}
+    // p165: if this device armed push, the server re-reads the zones and keeps
+    // watching them with BDOC closed (netlify/functions/zone-alerts-tick.mjs).
+    try { if (window.BDOCPush && BDOCPush.syncZones) BDOCPush.syncZones(); } catch (_) {}
+  }
+  // The server pushes these classes itself when push is armed; a second OS
+  // notification from the open tab would only duplicate it.
+  function serverCovers(cls) {
+    try { return !!(window.BDOCPush && BDOCPush.covers && BDOCPush.covers(cls)); } catch (_) { return false; }
   }
   function saveSeen() {
     try {
@@ -95,7 +103,7 @@
     var color = sev === 'crit' ? 'var(--rd)' : AMBER;
     try { af(color, '⌖ WATCH ZONE [' + z.name + '] ' + cls + ': ' + title); } catch (_) {}
     try { if (typeof EventLog !== 'undefined') EventLog.add(sev === 'crit' ? 'alert' : 'warn', 'WATCH ZONE ' + z.name + ' — ' + cls + ': ' + title + (detail ? ' — ' + detail : '')); } catch (_) {}
-    try { if ('Notification' in window && Notification.permission === 'granted') new Notification('BDOC WATCH ZONE: ' + z.name, { body: cls + ': ' + title + (detail ? '\n' + detail : ''), icon: '/android-chrome-192x192.png', tag: id }); } catch (_) {}
+    try { if ('Notification' in window && Notification.permission === 'granted' && !serverCovers(cls)) new Notification('BDOC WATCH ZONE: ' + z.name, { body: cls + ': ' + title + (detail ? '\n' + detail : ''), icon: '/android-chrome-192x192.png', tag: id }); } catch (_) {}
     // pulsing marker at the event location
     try {
       if (typeof V !== 'undefined' && elat != null && elon != null) {
@@ -188,7 +196,7 @@
         var sev = (fresh.length >= 10 || maxFrp >= 50) ? 'crit' : 'warn';
         try { af(sev === 'crit' ? 'var(--rd)' : AMBER, '⌖ WATCH ZONE [' + z.name + '] FIRE: ' + fresh.length + ' new VIIRS detection(s), max FRP ' + maxFrp.toFixed(0) + ' MW'); } catch (_) {}
         try { if (typeof EventLog !== 'undefined') EventLog.add(sev === 'crit' ? 'alert' : 'warn', 'WATCH ZONE ' + z.name + ' — FIRE: ' + fresh.length + ' new detections'); } catch (_) {}
-        try { if ('Notification' in window && Notification.permission === 'granted') new Notification('BDOC WATCH ZONE: ' + z.name, { body: 'FIRE: ' + fresh.length + ' new thermal detections (VIIRS)', icon: '/android-chrome-192x192.png', tag: aggId }); } catch (_) {}
+        try { if ('Notification' in window && Notification.permission === 'granted' && !serverCovers('FIRE')) new Notification('BDOC WATCH ZONE: ' + z.name, { body: 'FIRE: ' + fresh.length + ' new thermal detections (VIIRS)', icon: '/android-chrome-192x192.png', tag: aggId }); } catch (_) {}
         try {
           if (typeof V !== 'undefined') {
             if (!WZ._hitEnts[z.id]) WZ._hitEnts[z.id] = [];
@@ -259,6 +267,34 @@
     }
   }
 
+  // Arming a zone is the moment someone says "tell me about this place", so ask
+  // once for phone alerts. Never re-asks after a no, and never turns push back on
+  // for someone who switched it off in Settings.
+  function offerPhoneAlerts(z) {
+    var P = window.BDOCPush;
+    var perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+    if (P && P.supported && P.supported()) {
+      var st = P.status();
+      if (st.enabled) {
+        try { af(AMBER, '⌖ "' + z.name + '" will reach your phone even with BDOC closed'); } catch (_) {}
+        return;
+      }
+      if (perm === 'default') {
+        P.enable().then(function () {
+          try { if (P._refreshUI) P._refreshUI(); } catch (_) {}
+          try { af(AMBER, '⌖ Phone alerts on. "' + z.name + '" will reach this device even with BDOC closed'); } catch (_) {}
+        }).catch(function () {});
+        return;
+      }
+      if (perm === 'granted') {
+        try { af('var(--t2)', '⌖ To get "' + z.name + '" alerts with BDOC closed, turn on Push alerts in Settings'); } catch (_) {}
+      }
+      return;
+    }
+    // No Web Push here (e.g. iPhone Safari before Add to Home Screen): in-tab alerts only.
+    try { if (perm === 'default') Notification.requestPermission(); } catch (_) {}
+  }
+
   // ── public API ────────────────────────────────────────────────
   WZ.add = function (lat, lon, radKm, name) {
     radKm = Math.min(Math.max(radKm || 100, 5), 500);
@@ -270,7 +306,7 @@
     WZ.zones.push(z); save(); plotZone(z);
     try { af(AMBER, '⌖ WATCH ZONE ARMED — "' + z.name + '" · ' + radKm + ' km radius · seismic/weather/fire/kinetic/outage sweep every 5 min'); } catch (_) {}
     try { if (typeof EventLog !== 'undefined') EventLog.add('info', 'WATCH ZONE armed: ' + z.name + ' (' + radKm + ' km)'); } catch (_) {}
-    try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch (_) {}
+    offerPhoneAlerts(z);
     ensureTimer();
     setTimeout(function () { poll(); }, 1500); // baseline sweep — current hazards alert once
     try { if (typeof plausible === 'function') plausible('Watch Zone Armed', { props: { radius_km: radKm } }); } catch (_) {}

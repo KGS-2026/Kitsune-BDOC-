@@ -79,6 +79,18 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Claude Code — p165 watch zones reach the phone (2026-11-05) — BRANCH `claude/phone-alerts`, NOT LIVE UNTIL TRAVON SAYS
+Watch zones were checked only by an open tab, so a quake or tornado warning near home reached nobody whose BDOC was closed. Roadmap step 2.1 ("palantir for the people": the person, not the agency).
+- **Client:** `bdoc-push.js` sends the device's zones (max 10) and alert choices with its push registration, and re-sends them, debounced, whenever a zone or choice changes (`BDOCPush.syncZones`, called from `watch-zones.js save()`). Settings > Alerts gained level (serious / everything) and quake / weather / fire switches. Adding the first zone offers push. The open tab skips its own OS notification for a class the server already covers, so nobody gets two.
+- **Server:** `push-subscribe.mjs` stores `zones` + `prefs` on the record (cleaned by `_lib/zone-alerts.js`). New scheduled `zone-alerts-tick.mjs` (every 5 min): USGS 2.5_day once, NWS `alerts/active?point=` per US zone, FIRMS per zone through our own `proxy-firms` (the key stays there). Per-device `seen_<key>` blob dedupes, fires re-alert after a cooldown, max 3 pushes per device per tick (the third becomes "N more alerts"). 404/410 prunes the device; other failures retry next tick. Rules live in `_lib/zone-alerts.js` (pure, 23 tests in `tests/zone-alerts.test.js`).
+- **Tapping an alert** opens or flies BDOC to `#v=1&c=lon,lat,h`. Pitfall found: the P111 share-link writer in `index.html` replaced the whole `BDOC.DeepLink` object, so `restore()` from `js/deeplink.js` was gone. It now merges (`Object.assign`), with a test.
+- `privacy.html` now says what is stored (push address, browser type, zone centre/radius/name) and that turning push off deletes it. **Travon to review the wording.**
+- Needs push turned on (`sendReady`). The tick logs `skipped: VAPID_PRIVATE_KEY missing` otherwise. No tier gate yet: every armed device gets 10 zones. Outages are not in v1 (Sentinel feed on Netlify is empty). iPhone needs Add to Home Screen for any push.
+
+**Verified:** 734 tests; CI passes; live feed shapes (USGS, an NWS Flood Warning, FIRMS via the live proxy); headless Chromium on this branch with the real SW and modules (zone sync on boot/add/change/remove, status line, `covers()`, alert tap flies the open tab, cold open lands on the spot, SW `bdoc-v166`).
+**Not verified:** a real push reaching a real phone, and the Netlify scheduler running the tick. After deploy: arm push on a phone, add a zone, watch the function log for `[zone-alerts]`.
+Also this session, already live: p163i iPad fix (`87637f7`) and p163s five broken layers (`5e784b4`). The commit messages have the detail. Pre-existing, not fixed: the Plausible script `pa-E-tvb2Sx_aDQGdqkqF1Lh.js` is 404, so visits are probably not counted; `mesh-nodes` is 503 on live.
+
 ### Claude Code — p163 Incident Archive (2026-10-31) — IRAN WAS NOT A THEATER, AND WAR ROOM KEPT ONLY 3 HOURS
 Travon: "I have no idea what is going on in Iran." Measured on prod: 6 Iran events of 179 worldwide. The US/Israel-Iran war has run since 2026-02-28, and `WAR_THEATERS` had no Iran entry.
 - **New layer `incidents`** (`js/modules/layers-incidents.js`): every located GDELT root 18/19/20 event since 2026-02-28, in `data/incidents/*.json`, drawn in one PointPrimitiveCollection (167,381 worldwide, 23,744 Iran/Gulf). Same plan tiers as `warlive`.

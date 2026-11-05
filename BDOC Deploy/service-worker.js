@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v164s';  // p163s: layer sweep fixes — DeepState front line, cloud IR, OWM temperature, GDACS empty results, mesh polling
+const SW_VERSION = 'bdoc-v166';  // p165: watch zones reach your phone with BDOC closed (zone-alerts-tick, every 5 min)
+// (prev) const SW_VERSION = 'bdoc-v164s';  // p163s: layer sweep fixes — DeepState front line, cloud IR, OWM temperature, GDACS empty results, mesh polling
 // (prev) const SW_VERSION = 'bdoc-v164i';  // p163i: iPad fix — Safari shims for Cesium 1.146, iPadOS gets the mobile GPU tier
 // (prev) const SW_VERSION = 'bdoc-v164';  // p163: incident archive layer, Iran theater in War Room
 // (prev) const SW_VERSION = 'bdoc-v163';  // p161 + p162 together: Web Push re-keys a subscription on a retired VAPID key, and function calls carry the JWT
@@ -34,7 +35,7 @@ const STATIC_PRECACHE = [
   // Grid-down core: these MUST be on disk or offline mode cannot start.
   '/css/bdoc-glass.css?v=p75',
   '/js/bdoc-glass-guard.js?v=p75',
-  '/js/bdoc-push.js?v=p161',
+  '/js/bdoc-push.js?v=p165',
   '/js/bdoc-offline-store.js?v=p75',
   '/js/bdoc-plan.js?v=p159e',
   '/js/vendor/hls.min.js?v=1.5.17',
@@ -55,16 +56,16 @@ const STATIC_PRECACHE = [
   '/js/bdoc-atak.js?v=p156d',
   '/js/cesium-init.js?v=p163i',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p163s',
-  '/js/modules/layers-conflict.js?v=p163s',
-  '/js/modules/layers-infra.js?v=p163s',
-  '/js/modules/layers-air.js?v=p163s',
-  '/js/modules/layers-nuke.js?v=p163s',
-  '/js/modules/nuke-sim.js?v=p163s',
-  '/js/modules/layers-airfields.js?v=p163s',
-  '/js/modules/net-builder.js?v=p163s',
-  '/js/modules/mesh-world.js?v=p163s',
-  '/js/modules/skybridge.js?v=p163s',
+  '/js/modules/layers-military.js?v=p165',
+  '/js/modules/layers-conflict.js?v=p165',
+  '/js/modules/layers-infra.js?v=p165',
+  '/js/modules/layers-air.js?v=p165',
+  '/js/modules/layers-nuke.js?v=p165',
+  '/js/modules/nuke-sim.js?v=p165',
+  '/js/modules/layers-airfields.js?v=p165',
+  '/js/modules/net-builder.js?v=p165',
+  '/js/modules/mesh-world.js?v=p165',
+  '/js/modules/skybridge.js?v=p165',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',

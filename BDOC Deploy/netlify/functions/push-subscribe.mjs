@@ -12,12 +12,17 @@
 // precedent; do not port this back to exports.handler.
 //
 // Endpoints:
-//   GET  /.netlify/functions/push-subscribe              -> { publicKey, count, stale, sendReady }
-//   POST /.netlify/functions/push-subscribe  {subscription, vapid?, tier?, label?}
+//   GET  /.netlify/functions/push-subscribe              -> { publicKey, count, stale, zoned, sendReady }
+//   POST /.netlify/functions/push-subscribe  {subscription, vapid?, tier?, label?, zones?, prefs?}
 //   POST /.netlify/functions/push-subscribe  {unsubscribe:true, endpoint}
+//
+// p165: `zones` are the device's watch zones (center + radius, max 10) and `prefs`
+// its alert choices. zone-alerts-tick.mjs checks them every 5 minutes. They are
+// tied to the push address only, never to an account, and unsubscribing deletes them.
 
 import { createECDH } from 'node:crypto';
 import { getStore } from '@netlify/blobs';
+import zoneLib from './_lib/zone-alerts.js';
 
 export const STORE = 'bdoc-push';
 
@@ -125,7 +130,7 @@ export default async (req) => {
       }
     }
 
-    let count = 0, stale = 0, storeErr = null;
+    let count = 0, stale = 0, zoned = 0, storeErr = null;
     try {
       const st = store();
       const keys = await readIndex(st);
@@ -139,11 +144,13 @@ export default async (req) => {
       const held = recs.filter(Boolean);
       stale = held.filter(isStale).length;
       count = held.length - stale;
+      zoned = held.filter(r => !isStale(r) && Array.isArray(r.zones) && r.zones.length).length;
     } catch (e) { storeErr = String(e && e.message).slice(0, 140); }
     return J({
       publicKey: VAPID_PUBLIC,
       count,
       stale,
+      zoned,
       sendReady: !!(SIGNING_PUBLIC && process.env.PUSH_SEND_KEY),
       storeErr
     });
@@ -175,6 +182,7 @@ export default async (req) => {
   if (body.unsubscribe) {
     const k = keyFor(body.endpoint);
     try { await st.delete(k); } catch (_) {}
+    try { await st.delete('seen_' + k); } catch (_) {}
     await indexRemove(st, k);
     return J({ ok: true, unsubscribed: true });
   }
@@ -190,6 +198,11 @@ export default async (req) => {
     ua: (req.headers.get('user-agent') || '').slice(0, 160),
     created: new Date().toISOString()
   };
+  const zones = zoneLib.cleanZones(body.zones);
+  if (zones.length) {
+    rec.zones = zones;
+    rec.prefs = zoneLib.cleanPrefs(body.prefs);
+  }
 
   const k = keyFor(sub.endpoint);
   try { await st.setJSON(k, rec); }
