@@ -103,11 +103,13 @@ test('upgrade screen picks the Analyst card for Analyst-only layers (run in a st
 });
 
 test('versions: auth.js and bdoc.css bumped together in the page and the service worker', () => {
-  assert.match(SW, /^const SW_VERSION = 'bdoc-v174';  \/\/ p172:/m);
+  // p172 introduced bdoc-v174; later bumps keep it as a "(prev)" line, so match it unanchored.
+  assert.match(SW, /const SW_VERSION = 'bdoc-v174';  \/\/ p172:/);
   assert.match(SW, /^\/\/ \(prev\) const SW_VERSION = 'bdoc-v173';/m);
   const av = HTML.match(/<script src="js\/auth\.js\?v=(\w+)"><\/script>/)[1];
   const cv = HTML.match(/href="css\/bdoc\.css\?v=(\w+)"/)[1];
-  assert.equal(av, 'p172'); assert.equal(cv, 'p172');
+  const num = v => Number(String(v).replace(/^p/, '').replace(/\D.*$/, ''));
+  assert.ok(num(av) >= 172, `auth.js ?v=${av}`); assert.ok(num(cv) >= 172, `bdoc.css ?v=${cv}`);
   assert.ok(SW.includes(`'/js/auth.js?v=${av}',`)); assert.ok(SW.includes(`'/css/bdoc.css?v=${cv}',`));
   assert.ok(!SW.includes("'/js/auth.js?v=p167',") && !SW.includes("'/css/bdoc.css?v=p154',"));
 });

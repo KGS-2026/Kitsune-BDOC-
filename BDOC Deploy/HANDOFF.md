@@ -79,6 +79,20 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Claude Code — p173 Helicopters drawn as jets; info box under the compass; Undo button over the panel (2026-11-06) — BRANCH `claude/heli-infobox-undo` (stacked on p172), NOT LIVE UNTIL TRAVON SAYS
+Three fixes from Travon's screenshots.
+- **Helicopter shown as a jet:** KR07, a PZL W-3 Sokol (type `W3`), drew as a jet with "NARROW-BODY JET" on its card. `js/modules/layers-air.js`:
+  - Added 8 codes to the rotorcraft list (`W3 B105 FREL S55 S58 H2 KA25 WG30`).
+  - The description fallback now also matches PZL-Świdnik / Sokol / W-3, MBB, Bo 105, BK 117, Alouette, Dauphin, Gazelle, Super Puma, Ecureuil, Kaman, Guimbal / Cabri, Dhruv, NH90, Westland and "Aerospatiale SA/AS-3xx".
+  - Fixed `LEONARDO AW\b`, which never matched "LEONARDO AW169".
+  - Left out on purpose: plain "PZL", because PZL-Mielec builds planes (M28, Wilga), and `SW4`, which clashes with the Swearingen Merlin.
+- **Info box under the compass:** with the AI panel collapsed or closed, the compass parks top-right (`#nav-widget.nw-parked`, scale 0.62, 0.9 on hover) right over the Cesium info box's close button, so it could not be closed. `css/bdoc.css` now moves the box left of the parked compass: `right:150px` when collapsed, `108px` when closed (`body:has(...)`). That leaves a 12px gap from the hovered compass, measured in the dev server; the close button is the top element in all three panel states.
+- **Undo over the panel:** the button sat at the bottom-left of the map, where the Fire Danger and Cam Wall panels open. With the KITSUNE / INTEL panel (`#sitPanel`) open, the old `.lp` stays `.shut` underneath, so `body:has(.lp.shut)` moved the button to `left:18px`, on top of the MAP STYLE buttons. `css/bdoc-p154.css` now:
+  - puts it under the coordinate bar (`left: var(--lw)+14px; top: var(--tbh)+46px`), where nothing else sits;
+  - makes it red like BATTLE TRACKER (`#B42B28`, `#DA3633` on hover);
+  - on phones (≤767px) puts it bottom-left at `12px`, because `--lw` stays 248px there and pushed it off the right edge.
+- SW `bdoc-v175`; LazyLoader and all module entries `p173`; `bdoc.css` and `bdoc-p154.css` at `?v=p173`. `tests/air-heli-ui-p173.test.js` (7 tests); the p172 version test no longer pins numbers that later bumps move.
+
 ### Claude Code — p172 Fire danger forecast opens to Operator; locked layers name the plan that unlocks them (2026-11-05) — BRANCH `claude/firedanger-operator`, NOT LIVE UNTIL TRAVON SAYS
 Travon's tier call ("Fire danger to Operator"): `firedanger` joins the Operator list in `js/auth.js`, for county emergency managers. Signals, Cam Wall, AOI Watch, EU warnings and CEMS stay Analyst.
 - **Fixed on the way:** every locked-layer surface said "Operator $9.99/mo", so the Analyst-only layers (all five above) told Recon users to buy a plan that still left them locked. The hover badge, command palette, preset message, onboarding tour and upgrade screen now name the right plan.

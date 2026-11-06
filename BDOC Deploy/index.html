@@ -198,9 +198,9 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p172">
+<link rel="stylesheet" href="css/bdoc.css?v=p173">
 <link rel="stylesheet" href="css/bdoc-glass.css?v=p75">
-<link rel="stylesheet" href="css/bdoc-p154.css?v=p154">
+<link rel="stylesheet" href="css/bdoc-p154.css?v=p173">
 <link rel="stylesheet" href="css/bdoc-p158f.css?v=p158f">
 <link rel="stylesheet" href="css/bdoc-p159.css?v=p159">
 <link rel="stylesheet" href="css/bdoc-p159d.css?v=p159d">
@@ -1682,7 +1682,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p171',            // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p173',            // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>

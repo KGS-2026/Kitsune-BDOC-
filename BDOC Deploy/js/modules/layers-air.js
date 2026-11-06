@@ -197,6 +197,9 @@ const AC_TYPE_TABLE = {
 
 // P154: rotorcraft designators the p152 table missed (live ADS-B audit, Travon bug #3)
 ['AH1','UH1Y','BK17','H53S','G2CA','EN48','KMAX','H269','MD60','MD52','ALO2','ALO3','A169','A189','AW09','B47G','B47J','EC30','EC45','EC35','EC55','H500','H269','S300','S330','HU30','CABR','R22','R44','R66','MH6','AH6','OH58','H58','TH57','H57','H72','UH72','LAMA','SA34','SA41','SA42','SA65','AS3B','AS65','MI14','MI28','MI34','MI35','KA27','KA29','KA60','KA62','Z9','Z10','Z19','Z20','HAL4','ALH','LCH','LUH','T129','A129','NH90','V22','MV22','CV22','V280','AW60','AW69','B609'].forEach(c=>{AC_TYPE_TABLE[c]='heli';});
+// p173: more rotorcraft the table missed. W3 (PZL W-3 Sokol, Polish military) drew as a jet
+// with "NARROW-BODY JET" on its card (Travon, KR07 over Germany, 6 Nov 2026).
+['W3','B105','FREL','S55','S58','H2','KA25','WG30'].forEach(c=>{AC_TYPE_TABLE[c]='heli';});
 // Resolve the silhouette family from the WHOLE ADS-B record, not just the text.
 // Priority: emitter category (A7 = rotorcraft, B6 = UAV — set by the transponder
 // itself), then the exact ICAO type code `t`, then the free-text description.
@@ -236,7 +239,7 @@ function classifyAircraftType(desc){
   if(/\bKC-?\d+\b|\bMRTT\b|\bVOYAGER\b|\bSTRATOTANKER\b|\bPEGASUS\b|\bEXTENDER\b|\bIL-?78\b|\bTANKER\b/.test(d))return 'tanker';
   if(/\bMIG-?\d+\b|\bFULCRUM\b|\bFLANKER\b|\bFOXBAT\b|\bFOXHOUND\b|\bFROGFOOT\b|\bSU-?\d+\b/.test(d))return 'mig';
   if(/\bF-?\d{1,3}[A-Z]?\b|\bF\/A-?\d+[A-Z]?\b|\bRAFALE\b|\bTYPHOON\b|\bGRIPEN\b|\bHORNET\b|\bTOMCAT\b|\bEAGLE\b|\bRAPTOR\b|\bLIGHTNING\b|\bA-?10\b|\bAV-?8\b|\bHARRIER\b/.test(d))return 'fighter';
-  if(/\bHELICOPTERS?\b|\bHELI\b|\bROTOR(CRAFT)?\b|\bSIKORSKY\b|\bEUROCOPTER\b|\bAGUSTA|\bLEONARDO AW\b|\bROBINSON R-?\d|\bBELL (\d{3}|UH|AH|OH|TH)|\bMIL MI-?\d|\bKAMOV\b|\bKA-?\d{2}\b|\bSCHWEIZER\b|\bENSTROM\b|\bHUGHES (269|369|500)|\bMD (500|520|530|600|900|902)\b|\bUH-?\d|\bAH-?\d{1,2}\b|\bCH-?\d{2}\b|\bMH-?\d{1,2}\b|\bHH-?\d{2}\b|\bOH-?58\b|\bBLACK ?HAWK\b|\bCHINOOK\b|\bAPACHE\b|\bOSPREY\b|\bV-?22\b/.test(d))return 'heli';
+  if(/\bHELICOPTERS?\b|\bHELI\b|\bROTOR(CRAFT)?\b|\bSIKORSKY\b|\bEUROCOPTER\b|\bAGUSTA|\bLEONARDO AW-?\d|\bPZL[- ]SWIDNIK\b|\bSWIDNIK\b|\bSOKOL\b|\bW-?3A?\b|\bANAKONDA\b|\bMBB\b|\bBO-?105\b|\bBK-?117\b|\bALOUETTE\b|\bDAUPHIN\b|\bGAZELLE\b|\bSUPER PUMA\b|\bECUREUIL\b|\bKAMAN\b|\bGUIMBAL\b|\bCABRI\b|\bDHRUV\b|\bNH-?90\b|\bWESTLAND\b|\bAEROSPATIALE (SA|AS)-?3\d{2}|\bROBINSON R-?\d|\bBELL (\d{3}|UH|AH|OH|TH)|\bMIL MI-?\d|\bKAMOV\b|\bKA-?\d{2}\b|\bSCHWEIZER\b|\bENSTROM\b|\bHUGHES (269|369|500)|\bMD (500|520|530|600|900|902)\b|\bUH-?\d|\bAH-?\d{1,2}\b|\bCH-?\d{2}\b|\bMH-?\d{1,2}\b|\bHH-?\d{2}\b|\bOH-?58\b|\bBLACK ?HAWK\b|\bCHINOOK\b|\bAPACHE\b|\bOSPREY\b|\bV-?22\b/.test(d))return 'heli';
   if(/\bTURBOPROP\b|\bPROP\b|\bPISTON\b|\bCESSNA\b|\bPIPER\b|\bBEECH\b/.test(d))return 'prop';
   if(/\bGULFSTREAM\b|\bLEARJET\b|\bCITATION\b|\bCHALLENGER\b|\bGLOBAL EXPRESS\b|\bDASSAULT FALCON\b|\bPHENOM\b|\bHAWKER\b/.test(d))return 'bizjet';
   if(/\bA3[4-8]\d\b|\bB7[4-8]\d\b|\bWIDE-?BODY\b|\bMD-?11\b|\bDC-?10\b/.test(d))return 'wide';

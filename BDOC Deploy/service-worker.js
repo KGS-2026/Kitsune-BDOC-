@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v174';  // p172: fire danger forecast opens to Operator; locked layers name the plan that unlocks them (Analyst-only layers no longer say Operator)
+const SW_VERSION = 'bdoc-v175';  // p173: helicopters no longer drawn as jets (W3 + 7 more codes, wider name match); info box moves clear of the parked compass; Undo button moves under the coordinate bar, red
+// (prev) const SW_VERSION = 'bdoc-v174';  // p172: fire danger forecast opens to Operator; locked layers name the plan that unlocks them (Analyst-only layers no longer say Operator)
 // (prev) const SW_VERSION = 'bdoc-v173';  // p171: European open data: Meteoalarm warnings (39 countries), Copernicus EMS activations, GWIS fire danger forecast (7 days, worldwide)
 // (prev) const SW_VERSION = 'bdoc-v172';  // p170: Signals layer (SIGINT group): HF radio conditions (NOAA scales), emergency squawks 7500/7600/7700 worldwide, public KiwiSDR receivers + listen
 // (prev) const SW_VERSION = 'bdoc-v171';  // p169: Cam Wall regions (Middle East, Ukraine & Russia, Taiwan Strait, Korea), stationary cams only (no news / restreams), one live player, operator anomaly log
@@ -50,8 +51,8 @@ const STATIC_PRECACHE = [
   '/js/vendor/hls.min.js?v=1.5.17',
   '/js/bdoc-link-manager.js?v=p156d',
   '/js/bdoc-offline-hud.js?v=p158f',
-  '/css/bdoc.css?v=p172',
-  '/css/bdoc-p154.css?v=p154',
+  '/css/bdoc.css?v=p173',
+  '/css/bdoc-p154.css?v=p173',
   '/css/bdoc-p158f.css?v=p158f',
   '/css/bdoc-p159.css?v=p159',
   '/css/bdoc-p159d.css?v=p159d',
@@ -65,16 +66,16 @@ const STATIC_PRECACHE = [
   '/js/bdoc-atak.js?v=p156d',
   '/js/cesium-init.js?v=p163i',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p171',
-  '/js/modules/layers-conflict.js?v=p171',
-  '/js/modules/layers-infra.js?v=p171',
-  '/js/modules/layers-air.js?v=p171',
-  '/js/modules/layers-nuke.js?v=p171',
-  '/js/modules/nuke-sim.js?v=p171',
-  '/js/modules/layers-airfields.js?v=p171',
-  '/js/modules/net-builder.js?v=p171',
-  '/js/modules/mesh-world.js?v=p171',
-  '/js/modules/skybridge.js?v=p171',
+  '/js/modules/layers-military.js?v=p173',
+  '/js/modules/layers-conflict.js?v=p173',
+  '/js/modules/layers-infra.js?v=p173',
+  '/js/modules/layers-air.js?v=p173',
+  '/js/modules/layers-nuke.js?v=p173',
+  '/js/modules/nuke-sim.js?v=p173',
+  '/js/modules/layers-airfields.js?v=p173',
+  '/js/modules/net-builder.js?v=p173',
+  '/js/modules/mesh-world.js?v=p173',
+  '/js/modules/skybridge.js?v=p173',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',

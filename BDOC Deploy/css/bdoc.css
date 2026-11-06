@@ -382,6 +382,11 @@ body.battle-mode #cesiumContainer{cursor:crosshair}
 .cesium-infoBox{transition:right .3s;max-width:400px !important;border-radius:4px !important;border:1px solid rgba(255,255,255,0.15) !important;box-shadow:0 8px 32px rgba(0,0,0,0.6) !important;overflow:hidden !important}
 body.ai-open .cesium-infoBox{right:390px !important}
 body:not(.ai-open) .cesium-infoBox{right:50px !important}
+/* p173: with the AI panel collapsed or closed the compass parks top-right (#nav-widget.nw-parked,
+   58px wide, ~85px on hover) right over the info box's close button, so the box could not be closed.
+   Move the box left of the parked compass, hover size included (Travon, 6 Nov 2026). */
+body:has(#nav-widget.nw-parked.rp-mini) .cesium-infoBox{right:150px !important}
+body:has(#nav-widget.nw-parked.rp-closed) .cesium-infoBox{right:108px !important}
 /* Phase 12 Strike R2 (2026-05-05): Cesium entity popup — token-routed */
 .cesium-infoBox-title{background:var(--bg-surface-1) !important;color:var(--text-primary) !important;font-family:var(--m) !important;font-size:11px !important;font-weight:600 !important;letter-spacing:0.08em !important;padding:10px 14px !important;border-bottom:1px solid var(--border) !important;text-transform:uppercase !important}
 .cesium-infoBox-iframe{background:var(--bg-surface-1) !important}
