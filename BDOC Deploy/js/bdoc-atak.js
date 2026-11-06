@@ -44,7 +44,9 @@ const COT_TYPES = {
  * not-well-formed, and ATAK/WinTAK dropped it without telling the operator.
  */
 function xmlEsc(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+  // p175: XML 1.0 forbids most control characters even as references, and one in a label or note from a
+  // shared plan file would make the whole .cot.xml unreadable to ATAK / WinTAK, so they are dropped
+  return String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
 }
 
 /**

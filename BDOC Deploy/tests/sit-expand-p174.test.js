@@ -66,6 +66,9 @@ test('the expanded panel sits beside the INTEL panel and above other floating co
 });
 
 test('service worker bumped for p174', () => {
-  assert.match(SW, /^const SW_VERSION = 'bdoc-v176';  \/\/ p174:/m);
+  // unanchored: still true once a later phase moves this line to "(prev)"
+  assert.match(SW, /const SW_VERSION = 'bdoc-v176';  \/\/ p174:/);
   assert.match(SW, /^\/\/ \(prev\) const SW_VERSION = 'bdoc-v175';  \/\/ p173:/m);
+  const cur = Number(/^const SW_VERSION = 'bdoc-v(\d+)/m.exec(SW)[1]);
+  assert.ok(cur >= 176, `SW_VERSION v${cur}`);
 });

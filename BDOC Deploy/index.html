@@ -200,7 +200,7 @@ if('serviceWorker' in navigator){
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
 <link rel="stylesheet" href="css/bdoc.css?v=p173">
 <link rel="stylesheet" href="css/bdoc-glass.css?v=p75">
-<link rel="stylesheet" href="css/bdoc-p154.css?v=p173">
+<link rel="stylesheet" href="css/bdoc-p154.css?v=p175">
 <link rel="stylesheet" href="css/bdoc-p158f.css?v=p158f">
 <link rel="stylesheet" href="css/bdoc-p159.css?v=p159">
 <link rel="stylesheet" href="css/bdoc-p159d.css?v=p159d">
@@ -1173,39 +1173,67 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <div class="bp-section" style="display:flex;align-items:center;gap:8px">
 <span style="font-size:8px;color:var(--t3);letter-spacing:1px">COLOR</span>
 <div style="display:flex;gap:3px" id="bp-colors">
-<div class="bp-color active" data-color="#2D72D2" style="background:#E8B349" onclick="setBattleColor(this)" title="Blue (Friendly)"></div>
+<div class="bp-color active" data-color="#2D72D2" style="background:#2D72D2" onclick="setBattleColor(this)" title="Blue (Friendly)"></div>
 <div class="bp-color" data-color="#c4504a" style="background:#c4504a" onclick="setBattleColor(this)" title="Red (Hostile)"></div>
 <div class="bp-color" data-color="#4a8a5a" style="background:#4a8a5a" onclick="setBattleColor(this)" title="Green (Neutral)"></div>
 <div class="bp-color" data-color="#c4933f" style="background:#c4933f" onclick="setBattleColor(this)" title="Yellow (Unknown)"></div>
 <div class="bp-color" data-color="#9b6abf" style="background:#9b6abf" onclick="setBattleColor(this)" title="Purple (Civil)"></div>
 <div class="bp-color" data-color="#ffffff" style="background:#ffffff" onclick="setBattleColor(this)" title="White"></div>
 </div>
-<span style="font-size:8px;color:var(--t3);letter-spacing:1px;margin-left:8px">SIDE</span>
-<select id="bp-affiliation" style="background:#0a0e14;border:1px solid var(--bdr);color:var(--t2);font-family:var(--m);font-size:9px;padding:2px 4px;border-radius:2px" onchange="refreshIconGrid(this.value)">
-<option value="friendly">FRIENDLY</option>
+<span class="bp-sym-note" id="bp-color-note">for shapes, lines &amp; notes. Units always use their standard side colour.</span>
+</div>
+<!-- p175 UNIT SYMBOL: MIL-STD-2525C / APP-6 identity, status, size and amplifiers (js/modules/battle-symbols.js) -->
+<div class="bp-section bp-sym" id="bp-sym">
+<div class="bp-sym-prev" id="bp-sym-prev" title="The unit the UNIT tool will place. Click the map to place it."><img id="bp-sym-img" alt="Selected unit symbol"></div>
+<div class="bp-sym-grid">
+<label>SIDE<select id="bp-affiliation" onchange="refreshIconGrid(this.value)">
+<option value="friendly">FRIEND</option>
 <option value="hostile">HOSTILE</option>
 <option value="neutral">NEUTRAL</option>
 <option value="unknown">UNKNOWN</option>
-</select>
-<span style="font-size:8px;color:var(--t3);letter-spacing:1px;margin-left:8px">SIZE</span>
-<select id="bp-echelon" style="background:#0a0e14;border:1px solid var(--bdr);color:var(--t2);font-family:var(--m);font-size:9px;padding:2px 4px;border-radius:2px" onchange="setEchelon(this.value)">
+<option value="afriend">ASSUMED FRIEND</option>
+<option value="suspect">SUSPECT</option>
+<option value="pending">PENDING</option>
+</select></label>
+<label>STATUS<select id="bp-cond" onchange="bpSymChanged()">
+<option value="present">PRESENT</option>
+<option value="planned">PLANNED (dashed)</option>
+<option value="capable">FULLY CAPABLE</option>
+<option value="damaged">DAMAGED</option>
+<option value="destroyed">DESTROYED</option>
+<option value="full">FULL TO CAPACITY</option>
+</select></label>
+<label>SIZE<select id="bp-echelon" onchange="setEchelon(this.value)">
 <option value="none">NONE</option>
-<option value="team">TEAM (●)</option>
-<option value="squad">SQUAD (●●)</option>
-<option value="section">SECTION (●●●)</option>
-<option value="platoon">PLATOON (|||)</option>
+<option value="team">TEAM / CREW (Ø)</option>
+<option value="squad">SQUAD (●)</option>
+<option value="section">SECTION (●●)</option>
+<option value="platoon">PLATOON (●●●)</option>
 <option value="company">COMPANY (|)</option>
-<option value="battalion">BATTALION (II)</option>
-<option value="regiment">REGIMENT (III)</option>
+<option value="battalion">BATTALION (||)</option>
+<option value="regiment">REGIMENT (|||)</option>
 <option value="brigade">BRIGADE (X)</option>
 <option value="division">DIVISION (XX)</option>
 <option value="corps">CORPS (XXX)</option>
 <option value="army">ARMY (XXXX)</option>
-</select>
+<option value="armygroup">ARMY GROUP (XXXXX)</option>
+</select></label>
+<label>STRENGTH<select id="bp-strength" onchange="bpSymChanged()">
+<option value="">—</option>
+<option value="+">REINFORCED (+)</option>
+<option value="-">REDUCED (−)</option>
+<option value="±">REINFORCED &amp; REDUCED (±)</option>
+</select></label>
+<label>DESIGNATION<input id="bp-desig" maxlength="21" placeholder="e.g. A/2-7 CAV" autocomplete="off" spellcheck="false" oninput="bpSymChanged()"></label>
+<label>HIGHER UNIT<input id="bp-higher" maxlength="21" placeholder="e.g. 1 BCT" autocomplete="off" spellcheck="false" oninput="bpSymChanged()"></label>
+<div class="bp-sym-flags"><label title="Headquarters: adds the staff below the frame"><input type="checkbox" id="bp-hq" onchange="bpSymChanged()">HQ</label><label title="Task force: adds the bracket over the size mark"><input type="checkbox" id="bp-tf" onchange="bpSymChanged()">TASK FORCE</label><label title="Feint / dummy: adds the dashed chevron over the frame"><input type="checkbox" id="bp-feint" onchange="bpSymChanged()">DUMMY</label></div>
+<label class="bp-sym-adv" title="Paste a 15-character MIL-STD-2525C SIDC from another system to place that symbol. Pasting sets SIDE, STATUS, SIZE and HQ / TASK FORCE / DUMMY to match the code; change them afterwards to adjust it. Picking a library symbol, or clearing the box, goes back to the library.">CUSTOM SIDC<input id="bp-sidc-in" maxlength="15" placeholder="optional, e.g. SFGPUCFHE------" autocomplete="off" spellcheck="false" oninput="bpSidcInput(this)"></label>
 </div>
-<!-- NATO APP-6D SYMBOL LIBRARY -->
+<div class="bp-sym-code" id="bp-sym-code"></div>
+</div>
+<!-- UNIT SYMBOL LIBRARY -->
 <div class="bp-section">
-<div style="font-size:8px;color:var(--t3);letter-spacing:1px;margin-bottom:4px">NATO APP-6D SYMBOLS <span style="color:var(--t4)" id="bp-icon-count"></span></div>
+<div style="font-size:8px;color:var(--t3);letter-spacing:1px;margin-bottom:4px"><span id="bp-lib-title">UNIT SYMBOLS · MIL-STD-2525C / APP-6</span> <span style="color:var(--t4)" id="bp-icon-count"></span></div>
 <div style="display:flex;gap:2px;flex-wrap:wrap;margin-bottom:4px" id="bp-cat-filters">
 <button class="bp-tool bp-cat-btn active" data-cat="all" onclick="filterBattleIcons('all',this)" style="font-size:7px;padding:1px 5px">ALL</button>
 <button class="bp-tool bp-cat-btn" data-cat="ground" onclick="filterBattleIcons('ground',this)" style="font-size:7px;padding:1px 5px">GROUND</button>
@@ -1229,6 +1257,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <div class="ctx-entity-name" id="ctx-entity-name"></div>
 <div class="ctx-item danger" onclick="ctxAction('delete')" id="ctx-delete-item">✕ Delete This Marker</div>
 <div class="ctx-item" onclick="ctxAction('editnote')" id="ctx-editnote-item" style="display:none">✎ Edit Note</div>
+<div class="ctx-item" onclick="ctxAction('editunit')" id="ctx-editunit-item" style="display:none;color:#9CC4FF">✪ Edit Unit Symbol</div>
 <div class="ctx-item" onclick="ctxAction('recolor')" id="ctx-recolor-item" style="display:none">🎨 Change Color</div>
 <div class="ctx-item" onclick="ctxAction('fillsolid')" id="ctx-fillsolid-item" style="display:none">◼ Fill Solid / Thick Line</div>
 <div class="ctx-item" onclick="ctxAction('watchlist')" style="color:#F2C14E">⭐ Add This To Watchlist</div>
@@ -1576,7 +1605,7 @@ if(!window.Cesium){
 <!-- layers-air.js is lazy-loaded on first toggle of air/forcetrack/sat/cable (Phase 3 Turn 8) -->
 <!-- layers-conflict.js is lazy-loaded on first toggle of conf/territory (Phase 3 Turn 3) -->
 <script src="js/kitsune-ai.js?v=p93"></script>
-<script src="js/bdoc-atak.js?v=p156d"></script>
+<script src="js/bdoc-atak.js?v=p175"></script>
 <script>
 // ╔═══════════════════════════════════════════════════════╗
 // ║  KGS BDOC v7.0                                          ║
@@ -1682,7 +1711,7 @@ window.addEventListener('error',ev=>{
 window.BDOC = window.BDOC || {};
 BDOC.LazyLoader = {
   _basePath: 'js/modules/',     // change here if folder layout shifts
-  _version: 'p173',            // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
+  _version: 'p175',            // MUST bump on ANY js/modules/* change. MUST ALSO MATCH the ?v= on every
                                  // /js/modules/* entry in service-worker.js PRECACHE, or the SW
                                  // serves a stale copy / misses entirely. p149 = aircraft silhouettes.
   _cache: Object.create(null),  // name → Promise<true>
@@ -7898,7 +7927,9 @@ let battleMode=false;
 window.BDOCUndo=(function(){
   const stack=[];
   const _ents=x=>Array.isArray(x)?x.flat(Infinity).filter(Boolean):(x?[x]:[]);
-  const _alive=r=>{if(r.custom)return !r.dead;return _ents(r.ref).some(e=>{try{return V.entities.contains(e)}catch(_){return false}})};
+  const _live=ref=>_ents(ref).some(e=>{try{return V.entities.contains(e)}catch(_){return false}});
+  // p175: a custom record that names an entity (Unit edit) dies with it, e.g. after CLEAR
+  const _alive=r=>{if(r.custom)return !r.dead&&(!r.ref||_live(r.ref));return _live(r.ref)};
   const _rm=ref=>_ents(ref).forEach(e=>{try{V.entities.remove(e)}catch(_){}});
   function _label(ref){
     const e=_ents(ref)[0];if(!e)return 'marker';
@@ -8042,7 +8073,8 @@ const BATTLE_ICONS={
   // ═══ NAVAL UNITS ═══
   naval:{label:'Surface Vessel',symbol:'⚓',frame:'diamond',cat:'naval'},
   carrier:{label:'Aircraft Carrier',symbol:'CV',frame:'diamond',cat:'naval'},
-  destroyer:{label:'Destroyer / Frigate',symbol:'DD',frame:'diamond',cat:'naval'},
+  destroyer:{label:'Destroyer',symbol:'DD',frame:'diamond',cat:'naval'},
+  frigate:{label:'Frigate / Corvette',symbol:'FF',frame:'diamond',cat:'naval'},
   submarine:{label:'Submarine',symbol:'SUB',frame:'diamond',cat:'naval'},
   ssbn:{label:'Nuclear Sub / SSBN',symbol:'SSN',frame:'diamond',cat:'naval'},
   amphibious:{label:'Amphibious Assault',symbol:'LP',frame:'diamond',cat:'naval'},
@@ -8084,9 +8116,13 @@ const BATTLE_ICONS={
 
 // NATO APP-6D SYMBOL RENDERER — proper military iconography with drawn SVG paths
 // Echelon size markers: ● team, ●● squad, ●●● section, | platoon, || company, ||| battalion, X regiment, XX brigade/division, XXX corps, XXXX army
+// p175: FALLBACK only. Real units now come from js/modules/battle-symbols.js (milsymbol, MIL-STD-2525C);
+// this hand-drawn renderer is used when that library cannot load (offline before it was ever cached).
+// Echelon marks fixed to MIL-STD-2525C (they were one step off, so a brigade read XX = division):
+// team Ø, squad ●, section ●●, platoon ●●●, company |, battalion ||, regiment |||, brigade X, division XX, corps XXX, army XXXX.
 let battleEchelon='none';
-function setEchelon(val){battleEchelon=val;populateBattleIcons(_battleIconFilter||'all')}
-const ECHELON_MARKS={none:'',team:'\u25CF',squad:'\u25CF\u25CF',section:'\u25CF\u25CF\u25CF',platoon:'|',company:'||',battalion:'|||',regiment:'X',brigade:'XX',division:'XXX',corps:'XXXX',army:'XXXXX'};
+function setEchelon(val){battleEchelon=val;populateBattleIcons(_battleIconFilter||'all');bpSymChanged()}
+const ECHELON_MARKS={none:'',team:'\u00D8',squad:'\u25CF',section:'\u25CF\u25CF',platoon:'\u25CF\u25CF\u25CF',company:'|',battalion:'||',regiment:'|||',brigade:'X',division:'XX',corps:'XXX',army:'XXXX',armygroup:'XXXXX'};
 
 function buildNatoSVG(icon,color,affiliation,key){
   const sz=64;const half=sz/2;
@@ -8178,13 +8214,25 @@ function populateBattleIcons(cat){
   const aff=document.getElementById('bp-affiliation');
   const affVal=aff?aff.value:'friendly';
   const entries=Object.entries(BATTLE_ICONS).filter(([k,v])=>cat==='all'||v.cat===cat);
+  // p175: standard symbols (milsymbol) for every catalogued unit; infra / status markers and the
+  // offline fallback keep the hand-drawn icons, and say so in their tooltip.
+  const S=_bpSym(),std=S&&S.hasMs();
   iconsEl.innerHTML=entries.map(([k,v])=>{
-    const svg=buildNatoSVG(v,battleColor,affVal,k);
-    const imgUri=svgToDataUri(svg);
-    return `<div class="bt-icon${k===battleSelectedIcon?' active':''}" data-type="${k}" data-cat="${v.cat}" onclick="selectBattleIcon('${k}')" title="${v.label} [${(v.cat||'').toUpperCase()}]"><img src="${imgUri}" width="28" height="28" style="vertical-align:middle"> <span>${v.label}</span></div>`;
+    const c=std&&S.CATALOG[k];
+    let img=null;
+    if(c){const r=S.render(S.buildSIDC({key:k,aff:affVal,ech:c.ech||battleEchelon}),{size:22,additionalInformation:c.text&&c.text.additionalInformation});
+      if(r){const sc=Math.min(1,30/r.height,44/r.width);img=`<img src="${r.uri}" width="${Math.round(r.width*sc)}" height="${Math.round(r.height*sc)}" alt="" style="vertical-align:middle">`}}
+    if(!img)img=`<img src="${svgToDataUri(buildNatoSVG(v,battleColor,_BP_AFF_LEGACY[affVal]||affVal,k))}" width="28" height="28" alt="" style="vertical-align:middle">`;
+    const cat0=S&&S.CATALOG[k];
+    const label=(cat0&&cat0.label)||v.label;
+    const tip=label+' ['+(v.cat||'').toUpperCase()+']'+(cat0?(std?' — MIL-STD-2525C '+S.buildSIDC({key:k,aff:affVal}).slice(0,10):' — simple icon until the standard symbols load'):' — map marker (not a standard unit symbol)');
+    return `<div class="bt-icon${k===battleSelectedIcon?' active':''}" data-type="${k}" data-cat="${v.cat}" onclick="selectBattleIcon('${k}')" title="${esc(tip)}">${img} <span>${esc(label)}</span></div>`;
   }).join('');
   const countEl=document.getElementById('bp-icon-count');
   if(countEl)countEl.textContent=`(${entries.length} of ${Object.keys(BATTLE_ICONS).length})`;
+  const tEl=document.getElementById('bp-lib-title');
+  if(tEl)tEl.textContent=std?'UNIT SYMBOLS · MIL-STD-2525C / APP-6':(window._bpSymFailed?'UNIT SYMBOLS · simple icons (standard symbols need one online visit)':'UNIT SYMBOLS · loading standard symbols…');
+  bpSymChanged();
 }
 function filterBattleIcons(cat,btn){
   populateBattleIcons(cat);
@@ -8229,8 +8277,11 @@ function enterBattleMode(){
   populateBattleIcons('all');
   window._bpNoAutoCompact=true;setBattleTool('unit');window._bpNoAutoCompact=false;
   toggleBattlePanelCompact(false);
-  af('var(--bl)','BATTLE TRACKER activated — '+Object.keys(BATTLE_ICONS).length+' NATO APP-6D symbols available. Select a tool and click the map.');
-  EventLog.add('info','Battle Tracking Mode engaged — '+Object.keys(BATTLE_ICONS).length+' symbols loaded');
+  // p175: start loading the standard symbol set (milsymbol + battle-symbols.js); the grid and the
+  // preview redraw with real MIL-STD-2525C symbols as soon as it is ready
+  _bpSymLoad();
+  af('var(--bl)','BATTLE TRACKER activated — '+Object.keys(BATTLE_ICONS).length+' unit types and markers. Units use MIL-STD-2525C / APP-6 symbols. Select a tool and click the map.');
+  EventLog.add('info','Battle Tracking Mode engaged — '+Object.keys(BATTLE_ICONS).length+' unit types and markers');
 }
 function exitBattleMode(){
   battleMode=false;
@@ -8292,6 +8343,9 @@ function setBattleTool(tool){
   // P154: the full tool panel covered the middle of the map, so draw clicks landed on
   // buttons instead of the globe. Picking a tool collapses it to a slim strip.
   if(!window._bpNoAutoCompact)toggleBattlePanelCompact(true);
+  // p175: with the UNIT tool the collapsed strip keeps the unit symbol row (side, size, designation …)
+  // so the next unit can be set up without reopening the whole panel
+  const _bpp=document.getElementById('battlePanel');if(_bpp)_bpp.classList.toggle('bp-unit',tool==='unit');
 }
 function toggleBattlePanelCompact(force){
   const bp=document.getElementById('battlePanel');if(!bp)return;
@@ -8314,11 +8368,306 @@ function refreshIconGrid(affiliation){
 }
 function selectBattleIcon(type){
   battleSelectedIcon=type;
+  // p175: picking from the library means that symbol, so a pasted CUSTOM SIDC (hidden in the collapsed panel) goes
+  const ci=document.getElementById('bp-sidc-in');if(ci&&ci.value){ci.value='';ci._bpSynced='';ci.classList.remove('bad')}
   document.querySelectorAll('.bt-icon').forEach(b=>b.classList.remove('active'));
   const el=document.querySelector(`.bt-icon[data-type="${type}"]`);
   if(el)el.classList.add('active');
   setBattleTool('unit');
+  bpSymChanged();
 }
+
+// ═══ p175 UNIT SYMBOLS — MIL-STD-2525C / APP-6 via js/modules/battle-symbols.js (milsymbol) ═══
+// The UNIT tool builds a 15-character SIDC from SIDE / STATUS / SIZE / STRENGTH / HQ / TASK FORCE /
+// DUMMY (or a pasted CUSTOM SIDC), draws it with milsymbol, and stores the SIDC and its fields in
+// battleMeta so the plan file, the edit dialog and the TAK export all read the same symbol.
+// Without the library (offline before it was ever cached) the hand-drawn buildNatoSVG icons stay.
+const _BP_AFF_COL={friendly:'#2D72D2',hostile:'#DA3633',neutral:'#3FB950',unknown:'#E8B349',afriend:'#2D72D2',suspect:'#DA3633',pending:'#E8B349'};
+const _BP_AFF_LEGACY={afriend:'friendly',suspect:'hostile',pending:'unknown'};
+// SIDC -> TAK CoT type when battle-symbols.js is not loaded (an offline restore). Same rule as BDOCSym.cotType:
+// exercise sides map to their real-world side, an unknown battle dimension (X / Z) to X.
+const _BP_COT_AFF={F:'f',H:'h',N:'n',U:'u',A:'a',S:'s',P:'p',J:'j',K:'k',G:'p',W:'u',M:'a',D:'f',L:'n'};
+function _bpSidcCoT(s){s=String(s||'');if(!/^S[PUAFNSHGWMDLJKO][PAGSUFXZ][APCDXF][A-Z0-9-]{6}[A-Z0-9*-]{5}$/.test(s))return null;
+  return ['a',Object.prototype.hasOwnProperty.call(_BP_COT_AFF,s[1])?_BP_COT_AFF[s[1]]:'u',(s[2]==='Z'||s[2]==='X')?'X':s[2]].concat(s.slice(4,10).split('-')[0].split('')).join('-')}
+function _bpSym(){return window.BDOCSym||null}
+const _BP_MARKER_CATS=new Set(['infra','status']);   // library entries with no standard symbol (bridge, objective, LZ …)
+const _BP_LEGACY_LABELS={'destroyer / frigate':'destroyer'};   // labels renamed in p175, for units saved before it
+function _bpOwn(o,k){return typeof k==='string'&&Object.prototype.hasOwnProperty.call(o,k)}
+let _bpSymLoading=null,_bpSymLastTry=0,_bpSymWatch=null;
+function _bpSymLoad(){
+  if(_bpSymLoading)return _bpSymLoading;
+  _bpSymLastTry=Date.now();
+  const wasFailed=!!window._bpSymFailed;
+  _bpSymLoading=BDOC.LazyLoader.load('battle-symbols')
+    .then(()=>window.BDOCSym.ensure(15000))
+    .then(ok=>{
+      window._bpSymFailed=!ok;
+      if(ok)_bpSymReady(wasFailed);
+      else{if(!wasFailed)af('var(--yl)','Standard military symbols could not load (offline?) — the UNIT tool is using simple icons until they can.');_bpSymArmRetry()}
+      return ok})
+    .catch(e=>{console.warn('[battle-symbols]',e);window._bpSymFailed=true;_bpSymArmRetry();return false})
+    .finally(()=>{_bpSymLoading=null;try{if(battleMode)populateBattleIcons(_battleIconFilter||'all')}catch(_){}});
+  return _bpSymLoading;
+}
+// after a failed load: try again when the connection comes back, and notice a copy of the library
+// that arrives late (a timed-out script can still run). Stops once the symbols are ready.
+function _bpSymArmRetry(){
+  if(_bpSymWatch)return;
+  const onOnline=()=>{if(battleMode&&window._bpSymFailed)_bpSymLoad()};
+  window.addEventListener('online',onOnline);
+  let n=0;
+  const iv=setInterval(()=>{const S=_bpSym();
+    if(n++<40&&window._bpSymFailed&&S&&S.hasMs()){window._bpSymFailed=false;_bpSymReady(true);try{if(battleMode)populateBattleIcons(_battleIconFilter||'all')}catch(_){}}
+    if(n>=40)clearInterval(iv)},3000);
+  _bpSymWatch={stop(){clearInterval(iv);window.removeEventListener('online',onOnline);_bpSymWatch=null}};
+}
+// symbols ready: units the UNIT tool drew with simple icons while they were missing (catalogued type,
+// no SIDC) get their standard symbol now, so their TAK type is right too
+function _bpSymReady(wasFailed){
+  if(_bpSymWatch)_bpSymWatch.stop();
+  const S=_bpSym();if(!S||!S.hasMs())return;
+  let n=0;
+  for(const x of battleEntities){
+    if(!x||Array.isArray(x)||!x.billboard)continue;
+    const m=battleMeta.get(x);
+    if(!m||m.type!=='unit'||m.sidc||m.customSidc||!_bpOwn(S.CATALOG,m.iconKey))continue;
+    try{if(V.entities.contains(x)){_bpApplyUnit(x,_bpStateFromMeta(m));n++}}catch(e){console.warn('[battle-symbols] upgrade',e)}
+  }
+  if(n){af('var(--bl)',n+' unit'+(n===1?'':'s')+' drawn with simple icons now use'+(n===1?'s':'')+' the standard symbol');try{EventLog.add('info','Standard symbols loaded: '+n+' fallback unit symbol'+(n===1?'':'s')+' redrawn')}catch(_){}}
+  else if(wasFailed)af('var(--bl)','Standard military symbols loaded');
+}
+// the PLACED time a popup shows, so an edit / redraw / note does not reset it
+function _bpPlacedOf(ent){try{const pm=String(ent&&ent.description&&ent.description.getValue(V.clock.currentTime)||'').match(/PLACED:<\/b> (\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)/);return pm?pm[1]:null}catch(_){return null}}
+function _bpIsMarker(st,vis){return !vis.std&&!st.custom&&_bpOwn(BATTLE_ICONS,st.key)&&_BP_MARKER_CATS.has(BATTLE_ICONS[st.key].cat)}
+function _bpEl(id){return document.getElementById(id)}
+function bpSymState(){
+  const S=_bpSym(),g=_bpEl,val=(id,d)=>{const e=g(id);return e?e.value:d},chk=id=>!!(g(id)&&g(id).checked);
+  const clean=(s,n)=>S?S.cleanText(s,n):String(s||'').toUpperCase().replace(/[^A-Z0-9 .,:;/()#+\-*_]/g,'').trim().slice(0,n);
+  const raw=String(val('bp-sidc-in','')).trim().toUpperCase();
+  return {key:battleSelectedIcon,aff:val('bp-affiliation','friendly'),cond:val('bp-cond','present'),ech:battleEchelon||'none',
+    strength:val('bp-strength',''),hq:chk('bp-hq'),tf:chk('bp-tf'),feint:chk('bp-feint'),
+    designation:clean(val('bp-desig',''),21),higher:clean(val('bp-higher',''),21),
+    custom:(S&&S.isUsableSIDC(raw))?raw:'',customRaw:raw};
+}
+// st → {std, sidc, uri, w, h, label (type name), col}
+function _bpUnitVisual(st){
+  const S=_bpSym();
+  const icon=BATTLE_ICONS[st.key]||BATTLE_ICONS.infantry;
+  const c=S&&!st.custom&&S.CATALOG[st.key];
+  const label=st.custom?'Custom symbol':((c&&c.label)||icon.label);
+  const affCol=_BP_AFF_COL[st.aff]||'#E8B349';
+  if(S&&S.hasMs()&&(c||st.custom)){
+    // standard identity colours only: a swatch picked for a polygon must never turn a hostile unit blue
+    const ech=(c&&c.ech&&st.ech==='none')?c.ech:st.ech;
+    const sidc=S.buildSIDC({key:st.custom?null:st.key,base:st.custom||undefined,aff:st.aff,cond:st.cond,ech,hq:st.hq||undefined,tf:st.tf,feint:st.feint});
+    const r=S.render(sidc,{size:60,reinforcedReduced:st.strength,additionalInformation:(c&&c.text&&c.text.additionalInformation)||''});
+    // p = what the drawn code says (a fighter has no echelon; the HQ type always has its staff)
+    if(r)return {std:true,valid:r.valid,sidc,p:S.parseSIDC(sidc),unit:S.sidcKind(sidc)==='unit',uri:r.uri,w:Math.round(r.width/2),h:Math.round(r.height/2),below:Math.round((r.below||0)/2),label,col:affCol};
+  }
+  // fallback icon: the old p159e rule (swatch only when explicitly picked) still applies
+  const col=(window._battleColorPicked?battleColor:null)||affCol;
+  const prev=battleEchelon;battleEchelon=st.ech;
+  let svg;try{svg=buildNatoSVG(icon,col,_BP_AFF_LEGACY[st.aff]||st.aff,st.key)}finally{battleEchelon=prev}
+  return {std:false,valid:true,sidc:'',uri:svgToDataUri(svg),w:48,h:48,below:24,label,col};
+}
+// label sits just under the drawn symbol (an HQ's anchor is the foot of its staff)
+function _bpLabelOffset(vis){return new Cesium.Cartesian2(0,(vis.below!=null?vis.below:Math.round(vis.h/2))+4)}
+function _bpAffName(aff){const S=_bpSym(),a=S&&S.AFF_BY_V[aff];return a?a.name:String(aff||'').toUpperCase()}
+function _bpEchName(ech){const S=_bpSym(),e=S&&S.ECH_BY_V[ech];return e?e.name:String(ech||'none').toUpperCase()}
+function _bpCondName(cond){const S=_bpSym(),c=S&&S.COND_BY_V[cond];return c?c.name:String(cond||'present').toUpperCase()}
+// map label: designation (+ higher unit) on top, the plain-English type underneath
+function _bpUnitLabel(st,vis){
+  const ech=vis.p?vis.p.ech:(_bpIsMarker(st,vis)?'none':st.ech);
+  const type=vis.label.toUpperCase()+(ech&&ech!=='none'&&!st.designation?' ['+ech.toUpperCase()+']':'');
+  const top=[st.designation,st.higher].filter(Boolean).join(' / ');
+  return top?top+'\n'+type:type;
+}
+function _bpUnitMeta(st,vis,comment){
+  const S=_bpSym();
+  // record what was drawn, so the edit dialog, the plan file and the popup agree with the symbol
+  if(vis.p)st=Object.assign({},st,{ech:vis.p.ech,hq:vis.p.hq,tf:vis.p.tf,feint:vis.p.feint});
+  // strength (field F) belongs to units: an aircraft, ship or vehicle does not carry it
+  if(vis.std&&vis.unit===false)st=Object.assign({},st,{strength:''});
+  // a map marker has no standard symbol, so no size, HQ, task force, dummy or strength either
+  const marker=_bpIsMarker(st,vis);
+  if(marker)st=Object.assign({},st,{ech:'none',hq:false,tf:false,feint:false,strength:''});
+  const R=(k,v)=>v?`<b style="color:#4a5068">${k}:</b> ${esc(v)}<br>`:'';
+  const mods=[st.hq?'HEADQUARTERS':'',st.tf?'TASK FORCE':'',st.feint?'FEINT / DUMMY':''].filter(Boolean).join(', ');
+  const cot=vis.sidc&&S?S.cotType(vis.sidc):'';
+  const strength={'+':'REINFORCED','-':'REDUCED','±':'REINFORCED & REDUCED'}[st.strength]||'';
+  const extras=R('AFFILIATION',_bpAffName(st.aff))+R('STATUS',_bpCondName(st.cond))+R('ECHELON',st.ech&&st.ech!=='none'?_bpEchName(st.ech):'')+
+    R('MODIFIERS',mods)+R('STRENGTH',strength)+R('DESIGNATION',st.designation)+R('HIGHER UNIT',st.higher)+
+    (vis.sidc?R('SIDC',vis.sidc)+R('TAK TYPE',cot)+'<span style="color:#4a5068;font-size:9px">Symbol: MIL-STD-2525C / APP-6 (milsymbol)</span>':(marker?'<span style="color:#4a5068;font-size:9px">Map marker — not a standard unit symbol</span>':'<span style="color:#4a5068;font-size:9px">Simple icon — standard symbols were not available when this was placed</span>'));
+  const typeU=vis.label.toUpperCase();
+  return {label:st.designation||(_bpAffName(st.aff)+' '+vis.label),comment:comment||'',type:'unit',color:vis.col,
+    popupTitle:st.designation?st.designation+' — '+typeU:typeU+(st.ech&&st.ech!=='none'?' ['+st.ech.toUpperCase()+']':''),
+    popupSubtitle:_bpAffName(st.aff),popupExtras:extras,
+    iconKey:st.key,sidc:vis.sidc||'',customSidc:st.custom||'',aff:st.aff,cond:st.cond,ech:st.ech||'none',strength:st.strength||'',
+    hq:!!st.hq,tf:!!st.tf,feint:!!st.feint,designation:st.designation||'',higher:st.higher||''};
+}
+// live preview + SIDC readout in the panel
+function bpSymChanged(){
+  try{
+    const img=_bpEl('bp-sym-img'),code=_bpEl('bp-sym-code');if(!img)return;
+    const S=_bpSym(),st=bpSymState(),vis=_bpUnitVisual(st);
+    img.src=vis.uri;const sc=Math.min(1,56/vis.h,96/vis.w);img.width=Math.round(vis.w*sc);img.height=Math.round(vis.h*sc);
+    const inp=_bpEl('bp-sidc-in');if(inp)inp.classList.toggle('bad',!!st.customRaw&&!st.custom);
+    if(code){
+      if(st.customRaw&&!st.custom)code.innerHTML='<span class="bad">CUSTOM SIDC '+esc((S&&S.hasMs()&&S.sidcProblem(st.customRaw))||'needs the standard symbol set, which is not loaded (offline?)')+'. Clear it to use the library.</span>';
+      else if(vis.std)code.innerHTML=`<b>${esc(vis.label.toUpperCase())}</b> · SIDC <span class="mono" title="Symbol Identification Code">${esc(vis.sidc)}</span> · TAK <span class="mono">${esc(S.cotType(vis.sidc)||'')}</span>${vis.valid?'':' · <span class="bad">not in the symbol set — check the code</span>'}`;
+      else code.innerHTML=`<b>${esc(vis.label.toUpperCase())}</b> · ${window._bpSymFailed?'simple icon (standard symbols unavailable offline)':(BATTLE_ICONS[st.key]&&!(S&&S.CATALOG[st.key])?'map marker (not a standard unit symbol)':'loading standard symbols…')}`;
+    }
+  }catch(e){console.warn('[bpSymChanged]',e)}
+}
+// a pasted SIDC sets the controls to match it, so the placed symbol is the code that was pasted
+// (controls changed afterwards still adjust it). get(name) returns the control for aff / cond /
+// ech / hq / tf / feint.
+function _bpSyncFromSidc(p,get){
+  if(!p)return;
+  for(const k of ['aff','cond','ech']){const e=get(k);if(e&&[...e.options].some(o=>o.value===p[k]))e.value=p[k]}
+  for(const k of ['hq','tf','feint']){const e=get(k);if(e)e.checked=!!p[k]}
+}
+function bpSidcInput(el){
+  const S=_bpSym(),raw=String(el&&el.value||'').trim().toUpperCase();
+  if(S&&S.isUsableSIDC(raw)&&raw!==el._bpSynced){
+    el._bpSynced=raw;
+    _bpSyncFromSidc(S.parseSIDC(raw),k=>_bpEl({aff:'bp-affiliation',cond:'bp-cond',ech:'bp-echelon',hq:'bp-hq',tf:'bp-tf',feint:'bp-feint'}[k]));
+    const ech=_bpEl('bp-echelon');if(ech)battleEchelon=ech.value;
+    populateBattleIcons(_battleIconFilter||'all');   // side may have changed; also refreshes the preview
+    return;
+  }
+  if(!S||!S.isUsableSIDC(raw))el._bpSynced='';
+  bpSymChanged();
+}
+// ═══ EDIT UNIT (right-click → Edit Unit Symbol) ═══
+function _bpLegacyUnitState(m){
+  // units placed before p175 stored only "FRIENDLY Infantry" + popup HTML; recover what we can
+  const st={key:'infantry',aff:'friendly',cond:'present',ech:'none',strength:'',hq:false,tf:false,feint:false,designation:'',higher:'',custom:'',customRaw:''};
+  const lbl=String(m&&m.label||'');const w=lbl.split(' ')[0].toLowerCase();
+  if(_bpOwn(_BP_AFF_COL,w)){st.aff=w;const rest=lbl.slice(w.length).trim().toLowerCase();
+    if(_bpOwn(_BP_LEGACY_LABELS,rest))st.key=_BP_LEGACY_LABELS[rest];
+    else for(const k of Object.keys(BATTLE_ICONS))if(BATTLE_ICONS[k].label.toLowerCase()===rest){st.key=k;break}}
+  const e=String(m&&m.popupExtras||'').match(/ECHELON:<\/b>\s*([A-Z]+)/);if(e&&_bpOwn(ECHELON_MARKS,e[1].toLowerCase()))st.ech=e[1].toLowerCase();
+  return st;
+}
+function _bpStateFromMeta(m){
+  const S=_bpSym();
+  if(!m||!(m.sidc||m.iconKey))return _bpLegacyUnitState(m);
+  const p=S&&S.isSIDC(m.sidc)?S.parseSIDC(m.sidc):null;
+  // a SIDC with no library key (another tool's file, or a custom code) is kept as a custom base. One whose
+  // side the controls cannot show stays in customRaw, so the editor says why and will not save it as is.
+  const keyOk=_bpOwn(BATTLE_ICONS,m.iconKey);
+  const c0=S&&S.isSIDC(m.customSidc)?m.customSidc:((S&&!keyOk&&S.isSIDC(m.sidc))?m.sidc:'');
+  const custom=S&&S.isUsableSIDC(c0)?c0:'';
+  const clean=s=>S?S.cleanText(s,21):'';
+  const flag=k=>typeof m[k]==='boolean'?m[k]:!!(p&&p[k]);   // another tool's file may carry only the SIDC
+  return {key:keyOk?m.iconKey:'infantry',aff:_bpOwn(_BP_AFF_COL,m.aff)?m.aff:(p&&_bpOwn(_BP_AFF_COL,p.aff)?p.aff:'friendly'),
+    cond:(S&&_bpOwn(S.COND_BY_V,m.cond))?m.cond:(p?p.cond:'present'),ech:_bpOwn(ECHELON_MARKS,m.ech)?m.ech:(p?p.ech:'none'),
+    strength:/^[+\-±]$/.test(typeof m.strength==='string'?m.strength:'')?m.strength:'',hq:flag('hq'),tf:flag('tf'),feint:flag('feint'),
+    designation:clean(m.designation),higher:clean(m.higher),custom,customRaw:c0};
+}
+function _bpApplyUnit(ent,st){
+  const m=battleMeta.get(ent)||{};
+  const vis=_bpUnitVisual(st);
+  ent.billboard.image=vis.uri;ent.billboard.width=vis.w;ent.billboard.height=vis.h;
+  if(ent.label){
+    ent.label.text=_bpUnitLabel(st,vis);ent.label.fillColor=_readable(vis.col);
+    ent.label.pixelOffset=_bpLabelOffset(vis);
+    ent.label.pixelOffsetScaleByDistance=new Cesium.NearFarScalar(5e4,1.4,5e6,0.4);
+    ent.label.heightReference=Cesium.HeightReference.CLAMP_TO_GROUND;
+  }
+  const nm=_bpUnitMeta(st,vis,m.comment);
+  // an edit / redraw is not a new placement: keep the PLACED time the popup already shows
+  const placed=_bpPlacedOf(ent);
+  attachMeta(ent,Object.assign(m,nm));
+  ent.description=buildEntityPopup({title:nm.popupTitle,subtitle:nm.popupSubtitle,lat:null,lon:null,comment:nm.comment,color:vis.col,extras:nm.popupExtras,positionText:getEntityPosition(ent),placed});
+  try{window.BDOCPlan&&BDOCPlan.markDirty()}catch(_){}
+  try{V.scene.requestRender()}catch(_){}
+  return vis;
+}
+// undo for an edit: BDOCUndo keeps no state, so snapshot what _bpApplyUnit changes
+function _bpSnapUnit(ent){
+  const t=V.clock.currentTime,g=p=>{try{return p&&typeof p.getValue==='function'?p.getValue(t):p}catch(_){return undefined}};
+  const m=battleMeta.get(ent);
+  return {image:g(ent.billboard.image),w:g(ent.billboard.width),h:g(ent.billboard.height),
+    text:ent.label?g(ent.label.text):undefined,fill:ent.label?g(ent.label.fillColor):undefined,off:ent.label?g(ent.label.pixelOffset):undefined,
+    desc:g(ent.description),meta:m?Object.assign({},m):null};
+}
+function _bpRestoreUnit(ent,s){
+  if(!ent||!s||!V.entities.contains(ent))return;
+  // notes are not on the undo stack: one written after the edit stays, and so does the PLACED time
+  const live=battleMeta.get(ent),note=live?live.comment:undefined,placed=_bpPlacedOf(ent);
+  ent.billboard.image=s.image;ent.billboard.width=s.w;ent.billboard.height=s.h;
+  if(ent.label){if(s.text!==undefined)ent.label.text=s.text;if(s.fill)ent.label.fillColor=s.fill;if(s.off)ent.label.pixelOffset=s.off}
+  if(s.meta){const m=battleMeta.get(ent);if(m){for(const k of Object.keys(m))delete m[k];Object.assign(m,s.meta)}else attachMeta(ent,s.meta)}
+  const rm=battleMeta.get(ent);
+  if(rm&&note!==undefined)rm.comment=note;
+  if(rm&&(rm.popupTitle||rm.label))ent.description=buildEntityPopup({title:rm.popupTitle||rm.label,subtitle:rm.popupSubtitle||'',lat:null,lon:null,comment:rm.comment||'',color:rm.color||'#E8B349',extras:rm.popupExtras||'',positionText:getEntityPosition(ent),placed});
+  else if(s.desc!==undefined)ent.description=s.desc;
+  try{window.BDOCPlan&&BDOCPlan.markDirty()}catch(_){}
+  try{V.scene.requestRender()}catch(_){}
+}
+function openUnitEditor(ent){
+  if(!ent||!ent.billboard)return;
+  const S=_bpSym();
+  if(!S||!S.hasMs()){_bpSymLoad().then(ok=>{if(ok)openUnitEditor(ent);else af('var(--yl)','Standard symbols are not available offline yet — the unit can be edited once they load.')});return}
+  closeUnitEditor();
+  const st=_bpStateFromMeta(battleMeta.get(ent));
+  const opt=(list,cur,f)=>list.map(o=>`<option value="${esc(o.v)}"${o.v===cur?' selected':''}>${esc(f?f(o):o.name)}</option>`).join('');
+  const cats={ground:'GROUND',support:'SUPPORT',air:'AIR',naval:'NAVAL',cyber:'CYBER / INFO'};
+  const typeOpts=Object.keys(cats).map(cat=>`<optgroup label="${cats[cat]}">`+Object.entries(S.CATALOG).filter(([k,c])=>c.cat===cat).map(([k,c])=>`<option value="${esc(k)}"${k===st.key?' selected':''}>${esc(c.label)}</option>`).join('')+'</optgroup>').join('')
+    // bridge, objective, LZ … stay what they are (they have no standard symbol, so they keep the simple icon)
+    +'<optgroup label="MAP MARKERS (no standard symbol)">'+Object.entries(BATTLE_ICONS).filter(([k])=>!_bpOwn(S.CATALOG,k)).map(([k,v])=>`<option value="${esc(k)}"${k===st.key?' selected':''}>${esc(v.label)}</option>`).join('')+'</optgroup>';
+  const d=document.createElement('div');d.id='bdocUnitEdit';d.setAttribute('role','dialog');d.setAttribute('aria-label','Edit unit symbol');
+  d.innerHTML=`<div class="ue-h"><b>EDIT UNIT SYMBOL</b><button class="ue-x" title="Cancel (Esc)" aria-label="Cancel">✕</button></div>
+  <div class="ue-b"><div class="bp-sym-prev"><img id="ue-img" alt="Unit symbol preview"></div>
+  <div class="bp-sym-grid">
+  <label class="ue-wide">TYPE<select id="ue-key">${typeOpts}</select></label>
+  <label>SIDE<select id="ue-aff">${opt(S.AFFILIATIONS,st.aff)}</select></label>
+  <label>STATUS<select id="ue-cond">${opt(S.CONDITIONS,st.cond)}</select></label>
+  <label>SIZE<select id="ue-ech">${opt(S.ECHELONS,st.ech,e=>e.name+(e.mark?' ('+e.mark+')':''))}</select></label>
+  <label>STRENGTH<select id="ue-strength">${opt(S.STRENGTH,st.strength)}</select></label>
+  <label>DESIGNATION<input id="ue-desig" maxlength="21" value="${esc(st.designation)}" autocomplete="off" spellcheck="false"></label>
+  <label>HIGHER UNIT<input id="ue-higher" maxlength="21" value="${esc(st.higher)}" autocomplete="off" spellcheck="false"></label>
+  <div class="bp-sym-flags"><label><input type="checkbox" id="ue-hq"${st.hq?' checked':''}>HQ</label><label><input type="checkbox" id="ue-tf"${st.tf?' checked':''}>TASK FORCE</label><label><input type="checkbox" id="ue-feint"${st.feint?' checked':''}>DUMMY</label></div>
+  <label class="bp-sym-adv">CUSTOM SIDC<input id="ue-sidc" maxlength="15" value="${esc(st.customRaw||st.custom)}" placeholder="optional" autocomplete="off" spellcheck="false"></label>
+  </div></div><div class="bp-sym-code" id="ue-code"></div>
+  <div class="ue-f"><button class="bp-tool" id="ue-cancel">CANCEL</button><button class="bp-tool ue-save" id="ue-save">SAVE</button></div>`;
+  document.body.appendChild(d);
+  const g=id=>d.querySelector('#'+id);
+  const read=()=>{const raw=g('ue-sidc').value.trim().toUpperCase();return {key:g('ue-key').value,aff:g('ue-aff').value,cond:g('ue-cond').value,ech:g('ue-ech').value,strength:g('ue-strength').value,
+    hq:g('ue-hq').checked,tf:g('ue-tf').checked,feint:g('ue-feint').checked,designation:S.cleanText(g('ue-desig').value,21),higher:S.cleanText(g('ue-higher').value,21),custom:S.isUsableSIDC(raw)?raw:'',customRaw:raw}};
+  const upd=()=>{const s=read(),v=_bpUnitVisual(s);const im=g('ue-img');im.src=v.uri;const sc=Math.min(1,64/v.h,110/v.w);im.width=Math.round(v.w*sc);im.height=Math.round(v.h*sc);
+    g('ue-sidc').classList.toggle('bad',!!s.customRaw&&!s.custom);g('ue-save').disabled=!!s.customRaw&&!s.custom;
+    g('ue-code').innerHTML=s.customRaw&&!s.custom?'<span class="bad">CUSTOM SIDC '+esc(S.sidcProblem(s.customRaw)||'')+'.</span>':`SIDC <span class="mono">${esc(v.sidc)}</span> · TAK <span class="mono">${esc(S.cotType(v.sidc)||'')}</span>${v.valid?'':' · <span class="bad">not in the symbol set</span>'}`};
+  g('ue-sidc')._bpSynced=st.customRaw||st.custom;
+  d.addEventListener('input',e=>{const t=e&&e.target;
+    if(t&&t.id==='ue-sidc'){const raw=t.value.trim().toUpperCase();
+      if(S.isUsableSIDC(raw)&&raw!==t._bpSynced){t._bpSynced=raw;_bpSyncFromSidc(S.parseSIDC(raw),k=>g('ue-'+k))}else if(!S.isUsableSIDC(raw))t._bpSynced=''}
+    upd()});
+  d.addEventListener('change',upd);
+  g('ue-save').onclick=()=>{const s=read();if(s.customRaw&&!s.custom)return;
+    if(!V.entities.contains(ent)){closeUnitEditor();af('var(--t3)','That unit is no longer on the map');return}
+    const snap=_bpSnapUnit(ent);const v=_bpApplyUnit(ent,s);closeUnitEditor();
+    // the record names the unit, so deleting or clearing it also retires this undo step
+    try{BDOCUndo.record(ent,'Unit edit',{undo:()=>_bpRestoreUnit(ent,snap)})}catch(_){}af('var(--bl)','Unit updated: '+esc(s.designation||v.label)+(v.sidc?' ('+esc(v.sidc)+')':''));try{EventLog.add('info','Unit symbol edited → '+(v.sidc||v.label))}catch(_){}};
+  g('ue-cancel').onclick=closeUnitEditor;d.querySelector('.ue-x').onclick=closeUnitEditor;
+  d._esc=e=>{if(e.key==='Escape')closeUnitEditor()};document.addEventListener('keydown',d._esc);
+  upd();setTimeout(()=>{try{g('ue-desig').focus()}catch(_){}},30);
+}
+function closeUnitEditor(){const d=document.getElementById('bdocUnitEdit');if(!d)return;if(d._esc)document.removeEventListener('keydown',d._esc);d.remove()}
+// OPEN FILE (js/bdoc-plan.js importDoc) → redraw imported units from their SIDC with the same
+// renderer, so the picture in someone else's file cannot disagree with its SIDC / TAK type, and the
+// popup (which DOMPurify stripped of its EDIT NOTE buttons) is rebuilt from cleaned fields.
+window.addEventListener('bdoc:plan-imported',e=>{
+  const ents=((e&&e.detail&&e.detail.entities)||[]).filter(x=>{const m=x&&battleMeta.get(x);return m&&m.type==='unit'&&m.sidc&&x.billboard});
+  if(!ents.length)return;
+  _bpSymLoad().then(ok=>{
+    const S=_bpSym();if(!ok||!S||!S.hasMs())return;   // offline: keep the file's own picture
+    let n=0;for(const x of ents){try{if(V.entities.contains(x)&&S.isUsableSIDC(battleMeta.get(x).sidc)){_bpApplyUnit(x,_bpStateFromMeta(battleMeta.get(x)));n++}}catch(err){console.warn('[plan import] unit redraw',err)}}
+    if(n)EventLog.add('info','Opened plan: '+n+' unit symbol'+(n===1?'':'s')+' redrawn from their SIDC');
+  });
+});
 // P154: Cesium silently DISABLES outlines on ground-clamped polygons/ellipses
 // ("Entity geometry outlines are unsupported on terrain"). Zones, circles, buildings
 // and — worst — bullseye/range rings (transparent fill + outline only) therefore drew
@@ -8456,32 +8805,38 @@ function addTempVertex(lat,lon){
 // ═══ PLACE UNIT (NATO APP-6) ═══
 function placeBattleUnit(lat,lon){
   if(!V||!battleMode)return;
-  const icon=BATTLE_ICONS[battleSelectedIcon];
-  if(!icon)return;
-  const aff=document.getElementById('bp-affiliation').value;
-  // p159e (APP-6 doctrine): affiliation OWNS the frame colour. The palette swatch only
-  // overrides when the user has actually picked one — before, a HOSTILE unit placed with the
-  // default swatch rendered in friendly blue, which is the one thing a tracker must never do.
-  const _affCol={friendly:'#2D72D2',hostile:'#DA3633',neutral:'#3FB950',unknown:'#E8B349'};
-  const col=(window._battleColorPicked?battleColor:null)||_affCol[aff]||battleColor;
-  const svg=buildNatoSVG(icon,col,aff,battleSelectedIcon);
-  const imgUrl=svgToDataUri(svg);
-  const echLabel=battleEchelon!=='none'?' ['+battleEchelon.toUpperCase()+']':'';
+  // p175: stays synchronous (tools/qa/ww3.js counts entities right after the call). The symbol is
+  // a MIL-STD-2525C SIDC drawn by milsymbol when the library is ready, else the hand-drawn icon.
+  const st=bpSymState(),S=_bpSym();
+  if(st.customRaw){
+    // a pasted code can only be drawn by the standard symbol set; offline it would come out as the
+    // selected library icon with the wrong TAK type, so say so instead
+    if(!S||!S.hasMs()){af('var(--yl)','A CUSTOM SIDC needs the standard symbol set, which is not loaded (offline?). Clear the box to place a library unit with a simple icon.');try{_bpSymLoad()}catch(_){}return}
+    if(!st.custom){af('var(--rd)','CUSTOM SIDC '+esc(S.sidcProblem(st.customRaw)||'is not valid')+'. Fix it or clear it to use the library.');return}
+  }
+  // symbols failed earlier: try again in the background (at most every 30 s); this unit uses the simple icon
+  if(window._bpSymFailed&&!_bpSymLoading&&Date.now()-_bpSymLastTry>30000)setTimeout(()=>{try{_bpSymLoad()}catch(_){}},0);
+  if(!st.custom&&!BATTLE_ICONS[st.key])return;
+  // p159e (APP-6 doctrine): affiliation OWNS the colour. p175: standard symbols always take the
+  // standard identity colours; the colour swatches are for shapes, lines and notes.
+  const vis=_bpUnitVisual(st);
+  const meta=_bpUnitMeta(st,vis,'');
   const ent=V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(lon,lat),
-    billboard:{image:imgUrl,width:48,height:48,scaleByDistance:new Cesium.NearFarScalar(5e4,1.4,5e6,0.4),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
-    label:{text:icon.label.toUpperCase()+echLabel,font:'bold 11px JetBrains Mono',fillColor:_readable(col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,pixelOffset:new Cesium.Cartesian2(0,28),scaleByDistance:new Cesium.NearFarScalar(1e5,1,4e6,0.3),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},
-    description:buildEntityPopup({title:icon.label.toUpperCase()+echLabel,subtitle:aff.toUpperCase(),lat,lon,comment:'',color:col,extras:`<b style="color:#4a5068">AFFILIATION:</b> ${aff.toUpperCase()}<br><b style="color:#4a5068">ECHELON:</b> ${(battleEchelon||'none').toUpperCase()}<br><b style="color:#4a5068">FRAME:</b> NATO APP-6D ${icon.frame.toUpperCase()}`})
+    // the SVG is padded so the symbol's anchor (frame centre, or the foot of an HQ staff) is the
+    // image centre: CENTER origin then puts that point on the click at every zoom
+    billboard:{image:vis.uri,width:vis.w,height:vis.h,scaleByDistance:new Cesium.NearFarScalar(5e4,1.4,5e6,0.4),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
+    label:{text:_bpUnitLabel(st,vis),font:'bold 11px JetBrains Mono',fillColor:_readable(vis.col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+      pixelOffset:_bpLabelOffset(vis),pixelOffsetScaleByDistance:new Cesium.NearFarScalar(5e4,1.4,5e6,0.4),
+      scaleByDistance:new Cesium.NearFarScalar(1e5,1,4e6,0.3),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},
+    description:buildEntityPopup({title:meta.popupTitle,subtitle:meta.popupSubtitle,lat,lon,comment:'',color:vis.col,extras:meta.popupExtras})
   });
-  // Persist SALT/symbology fields in meta so editEntityNote() can rebuild the
-  // popup WITHOUT wiping them (fixes Task 5a: note edit destroyed affiliation/
-  // echelon/frame). title/subtitle/extras are re-passed on every rebuild.
-  attachMeta(ent,{label:`${aff.toUpperCase()} ${icon.label}`,comment:'',type:'unit',color:col,
-    popupTitle:icon.label.toUpperCase()+echLabel,
-    popupSubtitle:aff.toUpperCase(),
-    popupExtras:`<b style="color:#4a5068">AFFILIATION:</b> ${aff.toUpperCase()}<br><b style="color:#4a5068">ECHELON:</b> ${(battleEchelon||'none').toUpperCase()}<br><b style="color:#4a5068">FRAME:</b> NATO APP-6D ${icon.frame.toUpperCase()}`});
+  // Persist SALT/symbology fields in meta so editEntityNote() can rebuild the popup WITHOUT wiping
+  // them (Task 5a). p175: flat strings / booleans only (sidc, aff, cond, ech, hq, tf, feint,
+  // designation, higher …): bdoc-plan's OPEN FILE sanitizer drops object-valued meta keys.
+  attachMeta(ent,meta);
   battleEntities.push(ent);
-  EventLog.add('info',`${aff.toUpperCase()} ${icon.label} placed at ${lat.toFixed(3)}, ${lon.toFixed(3)}`);
+  EventLog.add('info',`${meta.label} placed at ${lat.toFixed(3)}, ${lon.toFixed(3)}`+(vis.sidc?' ('+vis.sidc+')':''));
 }
 
 // ═══ DRAW POLYGON ═══
@@ -8907,6 +9262,19 @@ function exportBattlePlanCoT(){
   if(typeof buildCoT!=='function'){af('var(--rd)','CoT module not loaded — refresh page');return}
   // Map a marker's meta → CoT type code key understood by COT_TYPES.
   const pickCoT=(meta)=>{
+    // p175: a unit with a MIL-STD-2525C SIDC exports its exact CoT type (a-h-A-M-F-F for a hostile
+    // fighter, a-f-G-U-C-I for friendly infantry …), so ATAK / WinTAK / iTAK draw the same symbol.
+    // The label rules below stay for tactical markers, notes and units placed before p175.
+    // Pure string mapping, so it also works if battle-symbols.js never loaded (offline restore).
+    if(meta.sidc||meta.customSidc){
+      const s=String(meta.sidc||meta.customSidc);
+      const ct=window.BDOCSym?BDOCSym.cotType(s):_bpSidcCoT(s);
+      if(ct)return ct;
+    }
+    // p175 units drawn with the simple fallback icon have no SIDC but keep their side in meta.aff
+    // (their label may be a designation like "A/2-7 CAV", which says nothing about side)
+    const _affKey={friendly:'friendly_ground',afriend:'friendly_ground',hostile:'hostile_ground',suspect:'hostile_ground',neutral:'neutral_ground',unknown:'unknown_ground',pending:'unknown_ground'};
+    if(meta.type==='unit'&&typeof meta.aff==='string'&&Object.prototype.hasOwnProperty.call(_affKey,meta.aff))return _affKey[meta.aff];
     const t=(meta.type||'').toLowerCase();
     const lbl=(meta.label||'').toLowerCase();
     if(t==='casevac'||lbl.includes('casevac'))return 'casevac';
@@ -8914,10 +9282,11 @@ function exportBattlePlanCoT(){
     if(lbl.includes('rally'))return 'rally';
     if(lbl.includes('fob'))return 'fob';
     if(lbl.includes('lz'))return 'lz';
-    // ATTACK objective / enemy = hostile; affiliation prefixes from NATO unit placement
-    if(lbl.startsWith('hostile')||lbl.includes('enemy')||lbl.includes('attack'))return 'hostile_ground';
+    // ENEMY marker / ATTACK objective = hostile; affiliation prefixes from unit placement. p175: 'attack'
+    // only for tactical markers: a FRIENDLY "Attack Helicopter" or "Jammer / EW Attack" exported as hostile.
+    if(lbl.startsWith('hostile')||lbl.startsWith('suspect')||lbl.includes('enemy')||(t==='tactical'&&lbl.includes('attack')))return 'hostile_ground';
     if(lbl.startsWith('neutral'))return 'neutral_ground';
-    if(lbl.startsWith('unknown'))return 'unknown_ground';
+    if(lbl.startsWith('unknown')||lbl.startsWith('pending'))return 'unknown_ground';
     // DEFEND / friendly / observe / move default to friendly ground
     return 'friendly_ground';
   };
@@ -8993,8 +9362,13 @@ function showCtxMenu(x,y,lat,lon,entity){
   }
   const editItem=document.getElementById('ctx-editnote-item');
   if(editItem)editItem.style.display=(entity&&battleMeta.has(entity))?'flex':'none';
+  // p175: units get "Edit Unit Symbol" (side, status, size, HQ, designation …). Change Color is hidden
+  // for them: it only ever recoloured the label, and colour on a unit means side.
+  const _um=entity&&battleMeta.get(entity),_isUnit=!!(_um&&_um.type==='unit'&&entity.billboard&&window.BDOCUndo&&BDOCUndo.owns(entity));
+  const editUnitItem=document.getElementById('ctx-editunit-item');
+  if(editUnitItem)editUnitItem.style.display=_isUnit?'flex':'none';
   const recolorItem=document.getElementById('ctx-recolor-item');
-  if(recolorItem)recolorItem.style.display=(entity&&window.BDOCUndo&&BDOCUndo.owns(entity))?'flex':'none';
+  if(recolorItem)recolorItem.style.display=(entity&&!_isUnit&&window.BDOCUndo&&BDOCUndo.owns(entity))?'flex':'none';
   const fillItem=document.getElementById('ctx-fillsolid-item');
   if(fillItem)fillItem.style.display=(entity&&(entity.polygon||entity.polyline||entity.ellipse))?'flex':'none';
   const undoItem=document.getElementById('ctx-undo-item');
@@ -9331,6 +9705,9 @@ function ctxAction(action){
         editEntityNote();
       }
       break;
+    case 'editunit':
+      if(_savedEntity)openUnitEditor(_savedEntity);
+      break;
     case 'report':
       if(_savedPos&&_savedPos.lat!=null&&_savedPos.lon!=null){
         submitCommunityReport(_savedPos.lat,_savedPos.lon);
@@ -9507,7 +9884,8 @@ function editEntityNote(){
     comment:newNote,
     color:col,
     extras:(m&&m.popupExtras)||'',
-    positionText:getEntityPosition(V.selectedEntity)
+    positionText:getEntityPosition(V.selectedEntity),
+    placed:_bpPlacedOf(V.selectedEntity)   // p175: a note is not a new placement
   });
   af('var(--bl)',newNote?'Note updated: "'+esc(newNote.substring(0,40))+'"':'Note cleared');
 }
@@ -9532,7 +9910,7 @@ function buildEntityPopup(opts){
     <b style="color:${col}">${title}</b>${subtitle}<br><br>
     ${comment?'<div style="color:#c8ccd6;font-size:12px;line-height:1.5;padding:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:2px;margin:0 0 8px;white-space:pre-wrap">'+esc(comment)+'</div>':'<div style="color:#4a5068;font-size:10px;font-style:italic;margin-bottom:8px">No note — click EDIT NOTE to add one</div>'}
     ${posText?'<b style="color:#4a5068">POSITION:</b> '+posText+'<br>':''}
-    <b style="color:#4a5068">PLACED:</b> ${new Date().toISOString().slice(0,19)}Z<br>
+    <b style="color:#4a5068">PLACED:</b> ${(typeof opts.placed==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/.test(opts.placed))?opts.placed:new Date().toISOString().slice(0,19)+'Z'}<br>
     ${extras?extras+'<br>':''}
     <br><button onclick="window.parent.editEntityNote()" style="padding:4px 12px;background:#0a0e14;color:#E8B349;border:1px solid rgba(232,179,73,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;letter-spacing:.5px;margin-right:4px">EDIT NOTE</button><button onclick="window.parent.removeBattleEntity()" style="padding:4px 12px;background:#0a0e14;color:#c4504a;border:1px solid rgba(196,80,74,0.3);border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;letter-spacing:.5px">REMOVE</button>
   </div>`;
@@ -14014,7 +14392,7 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 <script src="js/mesh-globe-layer.js?v=p163s"></script>
 <script src="js/bdoc-offline-store.js?v=p75"></script>
 <!-- P156e: battle plan autosave/restore + real-shape exports + .bdoc.json (needs V, battleEntities, BDOCOfflineStore) -->
-<script src="js/bdoc-plan.js?v=p159e"></script>
+<script src="js/bdoc-plan.js?v=p175"></script>
 <script src="js/bdoc-link-manager.js?v=p156d"></script>
 <script src="js/bdoc-plugin-renderer.js?v=p166"></script>
 <script src="js/bdoc-offline-hud.js?v=p158f"></script>

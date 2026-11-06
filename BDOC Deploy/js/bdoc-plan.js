@@ -32,6 +32,15 @@
     rectangle: ['coordinates', 'material', 'outline', 'outlineColor', 'outlineWidth', 'height', 'heightReference', 'extrudedHeight', 'rotation', 'stRotation', 'fill', 'zIndex', 'show'],
   };
   const MATS = ['PolylineDashMaterialProperty', 'PolylineGlowMaterialProperty', 'PolylineArrowMaterialProperty', 'PolylineOutlineMaterialProperty', 'ImageMaterialProperty'];
+  // p175: same shape as BDOCSym.isSIDC (js/modules/battle-symbols.js), kept here so this file needs no module
+  const SIDC_RE = /^(?:[SI][PUAFNSHGWMDLJKO][PAGSUFXZ]|O[PUAFNSHGWMDLJKO][VLOIPGR]|E[PUAFNSHGWMDLJKO][INOF])[APCDXF][A-Z0-9-]{6}[A-Z0-9*-]{2}[A-Z0-9*-]{2}[A-Z0-9*-]$/;
+  const COT_AFF = { F: 'f', H: 'h', N: 'n', U: 'u', A: 'a', S: 's', P: 'p', J: 'j', K: 'k', G: 'p', W: 'u', M: 'a', D: 'f', L: 'n' };   // = BDOCSym.cotType
+  function sidcCoT(s) {   // a-<identity>-<dimension>-<function…>, the type ATAK / WinTAK / iTAK draw from
+    if (window.BDOCSym && typeof BDOCSym.cotType === 'function') return BDOCSym.cotType(s);
+    if (!SIDC_RE.test(s || '') || s[0] !== 'S') return null;
+    const a = Object.prototype.hasOwnProperty.call(COT_AFF, s[1]) ? COT_AFF[s[1]] : 'u';
+    return ['a', a, (s[2] === 'Z' || s[2] === 'X') ? 'X' : s[2]].concat(s.slice(4, 10).split('-')[0].split('')).join('-');
+  }
 
   const hasV = () => typeof V !== 'undefined' && V && V.entities;
   const tNow = () => (hasV() && V.clock) ? V.clock.currentTime : Cesium.JulianDate.now();
@@ -128,6 +137,19 @@
       if ('popupExtras' in out.meta) out.meta.popupExtras = clean(out.meta.popupExtras || '');
       if ('color' in out.meta) out.meta.color = hex(out.meta.color);
       for (const k of Object.keys(out.meta)) if (typeof out.meta[k] === 'object' && out.meta[k] !== null) delete out.meta[k];
+      // p175 unit symbols: a SIDC must be a real 15-character MIL-STD-2525C code (it picks the TAK type
+      // and redraws the symbol); unit text keeps to the characters milsymbol is given at placement.
+      for (const k of ['sidc', 'customSidc']) if (k in out.meta && !(typeof out.meta[k] === 'string' && SIDC_RE.test(out.meta[k]))) delete out.meta[k];
+      // the symbol controls keep only values the panel offers (so a crafted '__proto__' or 'constructor' goes),
+      // and HQ / task force / dummy must be true or false (a missing flag is read back from the SIDC)
+      const ALLOW = { aff: ['friendly', 'afriend', 'hostile', 'suspect', 'neutral', 'unknown', 'pending'],
+        cond: ['present', 'planned', 'capable', 'damaged', 'destroyed', 'full'],
+        ech: ['none', 'team', 'squad', 'section', 'platoon', 'company', 'battalion', 'regiment', 'brigade', 'division', 'corps', 'army', 'armygroup'],
+        strength: ['', '+', '-', '±'] };
+      for (const k of Object.keys(ALLOW)) if (k in out.meta && !(typeof out.meta[k] === 'string' && ALLOW[k].includes(out.meta[k]))) delete out.meta[k];
+      for (const k of ['hq', 'tf', 'feint']) if (k in out.meta && typeof out.meta[k] !== 'boolean') delete out.meta[k];
+      if ('iconKey' in out.meta && !(typeof out.meta.iconKey === 'string' && /^[a-z0-9_]{1,32}$/.test(out.meta.iconKey))) delete out.meta.iconKey;
+      for (const k of ['designation', 'higher']) if (k in out.meta) out.meta[k] = String(out.meta[k] || '').toUpperCase().replace(/[^A-Z0-9 .,:;/()#+\-*_]/g, '').trim().slice(0, 21);
     }
     if (out.cot && (typeof out.cot.uid !== 'string' || typeof out.cot.xml !== 'string')) delete out.cot;
     return out;
@@ -285,6 +307,14 @@
       const lbl = labelText(ent, t);
       const props = { name: m.label || lbl.split('\n')[0] || ent.name || 'Marker', comment: m.comment || '', type: m.type || s.kind, label: lbl };
       if (group) props.group = group;
+      if (m.type === 'unit') {   // p175: keep the symbology, so QGIS / other C2 tools can redraw the unit
+        const sd = m.sidc || m.customSidc;
+        if (sd) { props.sidc = sd; const ct = sidcCoT(sd); if (ct) props.cot_type = ct; }
+        if (m.iconKey) props.unit_type = m.iconKey;
+        for (const [k, p] of [['aff', 'affiliation'], ['cond', 'status'], ['ech', 'echelon'], ['strength', 'strength'], ['designation', 'designation'], ['higher', 'higher_formation']])
+          if (m[k] && m[k] !== 'none') props[p] = m[k];
+        for (const [k, p] of [['hq', 'headquarters'], ['tf', 'task_force'], ['feint', 'feint_dummy']]) if (m[k]) props[p] = true;
+      }
       let geometry;
       if (s.kind === 'polygon') geometry = { type: 'Polygon', coordinates: s.rings.map(r => closeRing(r.map(ll))) };
       else if (s.kind === 'circle') {
@@ -318,15 +348,23 @@
       const mm = metaMap(); const m = (mm && mm.get(ent)) || {};
       const lbl = labelText(ent, t);
       const callsign = (m.label || lbl.split('\n')[0] || ent.name || 'Marker').slice(0, 40);
-      const uid = 'BDOC-BP-' + (++n) + '-' + rnd();
+      // p175: the uid comes from the entity id, so exporting the plan again UPDATES the markers in ATAK
+      // instead of adding a second copy of every one (it was 'BDOC-BP-<n>-<random>' per export)
+      const uid = ent.id ? 'BDOC-' + String(ent.id).slice(0, 60) : 'BDOC-BP-' + (++n) + '-' + rnd();
       if (s.kind === 'point') {
         if (s.labelOnly && group) continue;   // ring / degree labels are decoration, not TAK markers
         const d = val(ent.description, t);
         const x = d && window._cotStore && String(d).match(/_downloadCotXml\('([^']+)'\)/);
         if (x && window._cotStore.has(x[1])) { events.push(window._cotStore.get(x[1]).replace(/<\?xml[^>]*\?>\s*/, '')); continue; }   // full CASEVAC 9-line
         const c = Cesium.Cartographic.fromCartesian(s.position);
-        events.push(buildCoT({ cotType: pickCoT(m), uid, lat: Cesium.Math.toDegrees(c.latitude), lon: Cesium.Math.toDegrees(c.longitude),
-          hae: c.height || 0, callsign, remarks: m.comment || '', staleMs: 3600000 }).replace(/<\?xml[^>]*\?>\s*/, ''));
+        // p175: a unit with a SIDC goes out as its exact 2525 CoT type; pickCoT is optional
+        // (tools/qa/ww3.js calls cotEvents() bare) and stays the rule for everything else
+        const sd = m.sidc || m.customSidc;   // a custom code placed while the symbol set was missing has only customSidc
+        const unitType = sd ? sidcCoT(sd) : null;
+        const cotType = unitType || (typeof pickCoT === 'function' ? pickCoT(m) : 'a-u-G');
+        const remarks = [m.comment || '', unitType ? ['SIDC ' + sd, m.higher ? 'Higher: ' + m.higher : ''].filter(Boolean).join(' · ') : ''].filter(Boolean).join('\n');
+        events.push(buildCoT({ cotType, uid, lat: Cesium.Math.toDegrees(c.latitude), lon: Cesium.Math.toDegrees(c.longitude),
+          hae: c.height || 0, callsign, remarks, staleMs: unitType ? 86400000 : 3600000 }).replace(/<\?xml[^>]*\?>\s*/, ''));   // plan units: 24 h, not 1 h
         continue;
       }
       // ATAK drawing shapes: u-d-f freehand polyline/polygon (link points), u-d-c-c circle
@@ -377,6 +415,9 @@
     if (doc.version > VERSION) throw new Error('this plan was saved by a newer BDOC (format v' + doc.version + ')');
     const added = []; let bad = 0;
     for (const it of doc.items) { try { added.push(...addItem(it, false, false)); } catch (e) { bad++; console.warn('[plan] import item failed:', e && e.message); } }
+    // p175: lets index.html redraw imported units from their SIDC, so a file's picture cannot say one
+    // thing while its SIDC (and TAK export) says another, and their popup buttons work again
+    try { window.dispatchEvent(new CustomEvent('bdoc:plan-imported', { detail: { entities: added } })); } catch (_) {}
     markDirty();
     try { if (added.length) V.flyTo(added, { duration: 1.2 }); else V.scene.requestRender(); } catch (_) {}
     return { items: doc.items.length - bad, failed: bad };

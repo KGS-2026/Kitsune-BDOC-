@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v176';  // p174: double-click a SIT card to expand it beside the panel; live OSINT cards show place, source and time instead of the headline twice
+const SW_VERSION = 'bdoc-v177';  // p175: Battle Tracker units are real MIL-STD-2525C / APP-6 symbols (side, status, size, HQ / task force / dummy, strength, designation, custom SIDC), edit dialog, correct TAK types
+// (prev) const SW_VERSION = 'bdoc-v176';  // p174: double-click a SIT card to expand it beside the panel; live OSINT cards show place, source and time instead of the headline twice
 // (prev) const SW_VERSION = 'bdoc-v175';  // p173: helicopters no longer drawn as jets (W3 + 7 more codes, wider name match); info box moves clear of the parked compass; Undo button moves under the coordinate bar, red
 // (prev) const SW_VERSION = 'bdoc-v174';  // p172: fire danger forecast opens to Operator; locked layers name the plan that unlocks them (Analyst-only layers no longer say Operator)
 // (prev) const SW_VERSION = 'bdoc-v173';  // p171: European open data: Meteoalarm warnings (39 countries), Copernicus EMS activations, GWIS fire danger forecast (7 days, worldwide)
@@ -48,12 +49,12 @@ const STATIC_PRECACHE = [
   '/js/bdoc-glass-guard.js?v=p75',
   '/js/bdoc-push.js?v=p165',
   '/js/bdoc-offline-store.js?v=p75',
-  '/js/bdoc-plan.js?v=p159e',
+  '/js/bdoc-plan.js?v=p175',
   '/js/vendor/hls.min.js?v=1.5.17',
   '/js/bdoc-link-manager.js?v=p156d',
   '/js/bdoc-offline-hud.js?v=p158f',
   '/css/bdoc.css?v=p173',
-  '/css/bdoc-p154.css?v=p173',
+  '/css/bdoc-p154.css?v=p175',
   '/css/bdoc-p158f.css?v=p158f',
   '/css/bdoc-p159.css?v=p159',
   '/css/bdoc-p159d.css?v=p159d',
@@ -64,19 +65,21 @@ const STATIC_PRECACHE = [
   '/js/bdoc-auth-fetch.js?v=p162',
   '/js/filters.js?v=p154',
   '/js/kitsune-ai.js?v=p93',
-  '/js/bdoc-atak.js?v=p156d',
+  '/js/bdoc-atak.js?v=p175',
   '/js/cesium-init.js?v=p163i',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p173',
-  '/js/modules/layers-conflict.js?v=p173',
-  '/js/modules/layers-infra.js?v=p173',
-  '/js/modules/layers-air.js?v=p173',
-  '/js/modules/layers-nuke.js?v=p173',
-  '/js/modules/nuke-sim.js?v=p173',
-  '/js/modules/layers-airfields.js?v=p173',
-  '/js/modules/net-builder.js?v=p173',
-  '/js/modules/mesh-world.js?v=p173',
-  '/js/modules/skybridge.js?v=p173',
+  '/js/modules/layers-military.js?v=p175',
+  '/js/modules/layers-conflict.js?v=p175',
+  '/js/modules/layers-infra.js?v=p175',
+  '/js/modules/layers-air.js?v=p175',
+  '/js/modules/layers-nuke.js?v=p175',
+  '/js/modules/nuke-sim.js?v=p175',
+  '/js/modules/layers-airfields.js?v=p175',
+  '/js/modules/net-builder.js?v=p175',
+  '/js/modules/mesh-world.js?v=p175',
+  '/js/modules/skybridge.js?v=p175',
+  '/js/modules/milsymbol-loader.js?v=p175',
+  '/js/modules/battle-symbols.js?v=p175',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',
@@ -130,13 +133,39 @@ self.addEventListener('activate', event => {
   const validCaches = [STATIC_CACHE, CDN_CACHE, API_CACHE, TILE_CACHE];
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(
-        keys.filter(k => k.startsWith('bdoc-') && !validCaches.includes(k))
-            .map(k => caches.delete(k))
-      ))
+      .then(async keys => {
+        const old = keys.filter(k => k.startsWith('bdoc-') && !validCaches.includes(k));
+        await carryPinnedCdn(old.filter(k => k.endsWith('-cdn')));
+        return Promise.all(old.map(k => caches.delete(k)));
+      })
       .then(() => self.clients.claim())
   );
 });
+
+// p175: the Battle Tracker's standard unit symbols come from milsymbol on the CDN. Every deploy
+// used to delete the old -cdn cache, so a field laptop that went offline after an update lost the
+// symbols it had already downloaded. A version-pinned URL never changes, so copy it into the new
+// cache before the old one goes. Add a prefix here only for exact-version (immutable) URLs.
+const CARRY_CDN_PREFIXES = [
+  'https://cdn.jsdelivr.net/npm/milsymbol@2.2.0/',
+];
+async function carryPinnedCdn(oldCdnCaches) {
+  if (!oldCdnCaches.length) return;
+  try {
+    const dest = await caches.open(CDN_CACHE);
+    for (const name of oldCdnCaches) {
+      const src = await caches.open(name);
+      for (const req of await src.keys()) {
+        if (!CARRY_CDN_PREFIXES.some(p => req.url.startsWith(p))) continue;
+        if (await dest.match(req)) continue;
+        const res = await src.match(req);
+        if (res && res.ok) await dest.put(req, res);
+      }
+    }
+  } catch (e) {
+    console.warn('[SW] pinned CDN carry-over skipped:', e);
+  }
+}
 
 // ── Fetch: route requests to appropriate strategy ────────────────────────────
 self.addEventListener('fetch', event => {

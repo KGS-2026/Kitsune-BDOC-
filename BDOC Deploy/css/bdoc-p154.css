@@ -106,3 +106,47 @@ body.bdoc-tight #nav-widget:not(.nw-parked){transform:scale(0.8);transform-origi
 .battle-panel.bp-compact > .bp-section,.battle-panel.bp-compact > div:not(.bp-header):not(#bp-status){display:none!important}
 .battle-panel.bp-compact #bp-status{border-top:none!important;padding-top:2px!important;color:#E6E9EE!important;font-size:9px!important}
 #bpCompactBtn{color:#E8B349;border-color:rgba(232,179,73,0.5)}
+
+/* ── p175 UNIT SYMBOL row (MIL-STD-2525C / APP-6) + Edit Unit dialog ─────────
+   The panel grew a row of symbol fields, so it scrolls instead of running under
+   the top bar on short laptop screens. */
+@media(min-width:768px){.battle-panel{max-height:calc(100vh - var(--tbh,56px) - 80px);overflow-y:auto;overscroll-behavior:contain}}
+.bp-sym-note{font-size:8px;color:var(--t4,#5c6370);letter-spacing:.3px}
+.bp-sym{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06)}
+.bp-sym-prev{width:104px;height:66px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.12);border-radius:3px}
+.bp-sym-prev img{display:block;max-width:100px;max-height:62px}
+.bp-sym-grid{flex:1;min-width:260px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 8px}
+.bp-sym-grid label{display:flex;flex-direction:column;gap:2px;font-family:var(--m);font-size:7px;letter-spacing:1px;color:var(--t3,#8B919A);cursor:default}
+.bp-sym-grid select,.bp-sym-grid input:not([type=checkbox]){width:100%;box-sizing:border-box;background:#0a0e14;border:1px solid var(--bdr,rgba(255,255,255,0.14));color:var(--t2,#C8CCD6);font-family:var(--m);font-size:9px;padding:3px 4px;border-radius:2px;letter-spacing:.3px}
+.bp-sym-grid input:not([type=checkbox]){text-transform:uppercase}
+.bp-sym-grid input::placeholder{text-transform:none;color:var(--t4,#5c6370)}
+.bp-sym-grid input.bad{border-color:#DA3633;box-shadow:0 0 0 1px rgba(218,54,51,0.35)}
+.bp-sym-flags{grid-column:1 / -1;display:flex;gap:14px;align-items:center}
+.bp-sym-flags label{flex-direction:row;align-items:center;gap:4px;font-size:8px;color:var(--t2,#C8CCD6);cursor:pointer}
+.bp-sym-flags input{margin:0;accent-color:#2D72D2;cursor:pointer}
+.bp-sym-adv{grid-column:1 / -1}
+.bp-sym-code{width:100%;font-family:var(--m);font-size:8px;color:var(--t3,#8B919A);letter-spacing:.3px;line-height:1.5}
+.bp-sym-code b{color:#E6E9EE;font-weight:600}
+.bp-sym-code .mono{color:#9CC4FF;letter-spacing:.6px}
+.bp-sym-code .bad{color:#FF6B66}
+/* collapsed strip with the UNIT tool keeps the symbol row (beats the p154 hide-all rule) */
+#battlePanel.bp-compact.bp-unit > #bp-sym{display:flex!important;padding:4px 0}
+#battlePanel.bp-compact.bp-unit > #bp-sym .bp-sym-adv{display:none}
+#bdocUnitEdit{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10050;width:min(560px,calc(100vw - 24px));max-height:calc(100vh - 32px);overflow-y:auto;box-sizing:border-box;
+  background:rgba(9,12,19,0.97);border:1px solid rgba(255,255,255,0.16);border-radius:6px;padding:12px 14px;box-shadow:0 18px 48px rgba(0,0,0,0.6);font-family:var(--m);color:#E6E9EE}
+#bdocUnitEdit .ue-h{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:1.5px;margin-bottom:10px;color:#9CC4FF}
+#bdocUnitEdit .ue-x{background:none;border:1px solid rgba(255,255,255,0.2);color:#C8CCD6;border-radius:3px;cursor:pointer;font-size:11px;padding:1px 7px}
+#bdocUnitEdit .ue-x:hover{border-color:#fff;color:#fff}
+#bdocUnitEdit .ue-b{display:flex;gap:12px;align-items:flex-start}
+#bdocUnitEdit .bp-sym-prev{width:120px;height:76px}
+#bdocUnitEdit .bp-sym-prev img{max-width:116px;max-height:72px}
+#bdocUnitEdit .ue-wide{grid-column:1 / -1}
+#bdocUnitEdit .bp-sym-code{margin-top:8px}
+#bdocUnitEdit .ue-f{display:flex;justify-content:flex-end;gap:6px;margin-top:10px}
+#bdocUnitEdit .ue-save{border-color:#2D72D2;color:#9CC4FF}
+#bdocUnitEdit button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:767px){
+  .bp-sym-grid{min-width:0}
+  #bdocUnitEdit .ue-b{flex-direction:column;align-items:stretch}
+  #bdocUnitEdit .bp-sym-prev{width:100%}
+}
