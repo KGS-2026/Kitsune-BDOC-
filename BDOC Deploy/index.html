@@ -1165,6 +1165,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
 <button class="bp-tool" onclick="battleMeasureTool()" title="Measure distance between two points" style="border-color:#00bbff;color:#00bbff">MEASURE</button>
 <button class="bp-tool" onclick="exportBattlePlan()" title="Export all battle markers as GeoJSON" style="border-color:#FFD700;color:#FFD700">EXPORT</button>
 <button class="bp-tool" onclick="exportBattlePlanCoT()" title="Export all battle markers as CoT XML — imports into ATAK / WinTAK / iTAK" style="border-color:#52b788;color:#52b788">⬇ TAK</button>
+<button class="bp-tool" onclick="importBattleCoT()" title="Open a CoT file from ATAK / WinTAK / iTAK (.cot / .xml, one event or a list). Units come in as their military symbol; opening the same file again updates them." style="border-color:#52b788;color:#52b788">📂 OPEN TAK</button>
 <button class="bp-tool" onclick="window.BDOCPlan&&BDOCPlan.saveFile()" title="Save the whole plan to a .bdoc.json file (everything, full detail). The plan also autosaves on this device." style="border-color:#E8B349;color:#E8B349">💾 SAVE FILE</button>
 <button class="bp-tool" onclick="window.BDOCPlan&&BDOCPlan.openFile()" title="Open a .bdoc.json plan file and add it to the map" style="border-color:#E8B349;color:#E8B349">📂 OPEN FILE</button>
 </div>
@@ -8430,8 +8431,12 @@ function _bpSymReady(wasFailed){
   for(const x of battleEntities){
     if(!x||Array.isArray(x)||!x.billboard)continue;
     const m=battleMeta.get(x);
-    if(!m||m.type!=='unit'||m.sidc||m.customSidc||!_bpOwn(S.CATALOG,m.iconKey))continue;
-    try{if(V.entities.contains(x)){_bpApplyUnit(x,_bpStateFromMeta(m));n++}}catch(e){console.warn('[battle-symbols] upgrade',e)}
+    if(!m||m.type!=='unit'||m.sidc)continue;
+    // p177: a unit that holds only its exact code (a TAK import, or a plan file, opened while the symbols
+    // were missing) is drawn from that code now, under its library name when one draws it exactly
+    const exact=!!m.customSidc&&S.isUsableSIDC(m.customSidc)&&!!window.BDOCCot;
+    if(!exact&&(m.customSidc||!_bpOwn(S.CATALOG,m.iconKey)))continue;
+    try{if(V.entities.contains(x)){_bpApplyUnit(x,exact?_cotStateForCode(m,S):_bpStateFromMeta(m));n++}}catch(e){console.warn('[battle-symbols] upgrade',e)}
   }
   if(n){af('var(--bl)',n+' unit'+(n===1?'':'s')+' drawn with simple icons now use'+(n===1?'s':'')+' the standard symbol');try{EventLog.add('info','Standard symbols loaded: '+n+' fallback unit symbol'+(n===1?'':'s')+' redrawn')}catch(_){}}
   else if(wasFailed)af('var(--bl)','Standard military symbols loaded');
@@ -8817,10 +8822,16 @@ function placeBattleUnit(lat,lon){
   // symbols failed earlier: try again in the background (at most every 30 s); this unit uses the simple icon
   if(window._bpSymFailed&&!_bpSymLoading&&Date.now()-_bpSymLastTry>30000)setTimeout(()=>{try{_bpSymLoad()}catch(_){}},0);
   if(!st.custom&&!BATTLE_ICONS[st.key])return;
+  const {vis,meta}=_bpAddUnit(lat,lon,st,'');
+  EventLog.add('info',`${meta.label} placed at ${lat.toFixed(3)}, ${lon.toFixed(3)}`+(vis.sidc?' ('+vis.sidc+')':''));
+}
+// the unit entity itself, for the UNIT tool and the TAK import (p177). Pushing it into battleEntities
+// puts it on the undo stack and in the autosave.
+function _bpAddUnit(lat,lon,st,comment){
   // p159e (APP-6 doctrine): affiliation OWNS the colour. p175: standard symbols always take the
   // standard identity colours; the colour swatches are for shapes, lines and notes.
   const vis=_bpUnitVisual(st);
-  const meta=_bpUnitMeta(st,vis,'');
+  const meta=_bpUnitMeta(st,vis,comment||'');
   const ent=V.entities.add({
     position:Cesium.Cartesian3.fromDegrees(lon,lat),
     // the SVG is padded so the symbol's anchor (frame centre, or the foot of an HQ staff) is the
@@ -8829,14 +8840,14 @@ function placeBattleUnit(lat,lon){
     label:{text:_bpUnitLabel(st,vis),font:'bold 11px JetBrains Mono',fillColor:_readable(vis.col),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
       pixelOffset:_bpLabelOffset(vis),pixelOffsetScaleByDistance:new Cesium.NearFarScalar(5e4,1.4,5e6,0.4),
       scaleByDistance:new Cesium.NearFarScalar(1e5,1,4e6,0.3),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},
-    description:buildEntityPopup({title:meta.popupTitle,subtitle:meta.popupSubtitle,lat,lon,comment:'',color:vis.col,extras:meta.popupExtras})
+    description:buildEntityPopup({title:meta.popupTitle,subtitle:meta.popupSubtitle,lat,lon,comment:meta.comment,color:vis.col,extras:meta.popupExtras})
   });
   // Persist SALT/symbology fields in meta so editEntityNote() can rebuild the popup WITHOUT wiping
   // them (Task 5a). p175: flat strings / booleans only (sidc, aff, cond, ech, hq, tf, feint,
   // designation, higher …): bdoc-plan's OPEN FILE sanitizer drops object-valued meta keys.
   attachMeta(ent,meta);
   battleEntities.push(ent);
-  EventLog.add('info',`${meta.label} placed at ${lat.toFixed(3)}, ${lon.toFixed(3)}`+(vis.sidc?' ('+vis.sidc+')':''));
+  return {ent,vis,meta};
 }
 
 // ═══ DRAW POLYGON ═══
@@ -9307,6 +9318,167 @@ function exportBattlePlanCoT(){
   }
   af('var(--gn)','Battle plan exported as CoT XML (TAK): '+events.length+' events');
   if(typeof EventLog!=='undefined')EventLog.add('info','Battle plan exported as CoT XML (TAK) — '+events.length+' events');
+}
+
+// ═══ p177 CoT IMPORT (TAK → BDOC) ═══
+// 📂 OPEN TAK reads a .cot / .xml file from ATAK / WinTAK / iTAK (one <event> or an <events> list)
+// with js/bdoc-cot-import.js (DOMParser, no DTD, every string cleaned) and puts each event on the map:
+// a- types as units drawn as their 2525C symbol, spot / waypoint / CASEVAC / alert points as plain
+// markers; drawings, routes and chat are counted and skipped. The TAK uid is kept (meta.cotUid), so
+// opening the same file again, or a TAK edit of something BDOC exported (uid BDOC-<entity id>),
+// updates that unit or marker instead of adding a copy, and the next ⬇ TAK sends the same uid back.
+// Each placement or update is one undo step. Without milsymbol, units get the simple icons the UNIT
+// tool uses offline and keep their exact code, for TAK and for the redraw once the symbols load.
+const _cotHasIcon=k=>_bpOwn(BATTLE_ICONS,k);
+const _COT_AFF_KEY={friendly:'friendly_ground',afriend:'friendly_ground',hostile:'hostile_ground',suspect:'hostile_ground',neutral:'neutral_ground',unknown:'unknown_ground',pending:'unknown_ground'};
+// the TAK type ⬇ TAK sends for this unit now (the same rules as pickCoT)
+function _bpUnitCoT(m){
+  if(!m)return null;
+  const sd=m.sidc||m.customSidc;
+  if(sd)return (window.BDOCSym?BDOCSym.cotType(sd):_bpSidcCoT(sd))||null;
+  const k=_bpOwn(_COT_AFF_KEY,m.aff)?_COT_AFF_KEY[m.aff]:null;
+  return k&&typeof COT_TYPES!=='undefined'&&_bpOwn(COT_TYPES,k)?COT_TYPES[k]:null;
+}
+// the controls for a unit that holds only its exact code: its library type when one draws that code
+function _cotStateForCode(m,S){
+  const st=_bpStateFromMeta(m),n=BDOCCot.stateFromSidc(m.customSidc,S,_cotHasIcon);
+  if(n){st.key=n.key;st.custom=n.custom;st.customRaw=n.customRaw}
+  return st;
+}
+// a TAK uid → what it names on the map: something imported with that uid, or (BDOC-<id>) something BDOC exported
+function _cotFind(uid){
+  if(!uid)return null;
+  const own=uid.startsWith('BDOC-')?uid.slice(5):null;
+  let hit=null;
+  for(const x of battleEntities){
+    if(!x||Array.isArray(x))continue;
+    let alive=false;try{alive=V.entities.contains(x)}catch(_){}
+    if(!alive)continue;
+    const m=battleMeta.get(x);
+    if(m&&m.cotUid===uid)return x;
+    if(!hit&&own!==null&&!(m&&m.cotUid)&&String(x.id).slice(0,60)===own)hit=x;
+  }
+  return hit;
+}
+const _cotR=(k,v)=>v?`<b style="color:#4a5068">${k}:</b> ${esc(v)}<br>`:'';
+// a plain marker: diamond + glyph, both chosen by BDOCCot.markerStyle (nothing from the file)
+function _cotMarkerSVG(s){
+  const col=/^#[0-9a-fA-F]{6}$/.test((s&&s.color)||'')?s.color:'#E8B349';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><path d="M20 3L37 20L20 37L3 20Z" fill="#0a0e14" fill-opacity="0.9" stroke="${col}" stroke-width="2.5"/><text x="20" y="21" text-anchor="middle" dominant-baseline="middle" font-size="15" font-weight="bold" fill="${col}" font-family="Arial">${esc((s&&s.glyph)||'•')}</text></svg>`;
+}
+function _cotMarkerMeta(r){
+  const s=r.style;
+  const m={label:r.label,comment:r.comment||'',type:'tactical',color:s.color,cotType:r.type,popupTitle:r.label,popupSubtitle:s.kind,
+    popupExtras:_cotR('TAK TYPE',r.type)+_cotR('TAK UID',r.uid)+'<span style="color:#4a5068;font-size:9px">From a TAK file — map marker, not a unit symbol</span>'};
+  if(r.uid)m.cotUid=r.uid;
+  return m;
+}
+function _cotAddMarker(r){
+  const s=r.style,meta=_cotMarkerMeta(r);
+  const ent=V.entities.add({
+    position:Cesium.Cartesian3.fromDegrees(r.lon,r.lat),
+    billboard:{image:svgToDataUri(_cotMarkerSVG(s)),width:30,height:30,scaleByDistance:new Cesium.NearFarScalar(5e4,1.3,5e6,0.4),verticalOrigin:Cesium.VerticalOrigin.CENTER,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:5e6},
+    label:{text:r.label,font:'bold 11px JetBrains Mono',fillColor:_readable(s.color),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.TOP,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,pixelOffset:new Cesium.Cartesian2(0,19),scaleByDistance:new Cesium.NearFarScalar(1e5,1,4e6,0.3),showBackground:true,backgroundColor:Cesium.Color.BLACK.withAlpha(0.7),backgroundPadding:new Cesium.Cartesian2(4,2),disableDepthTestDistance:5e6},
+    description:buildEntityPopup({title:meta.popupTitle,subtitle:meta.popupSubtitle,lat:r.lat,lon:r.lon,comment:meta.comment,color:s.color,extras:meta.popupExtras})
+  });
+  attachMeta(ent,meta);
+  battleEntities.push(ent);
+  return ent;
+}
+function _cotAddUnit(r,S){
+  const {ent,vis,meta}=_bpAddUnit(r.lat,r.lon,BDOCCot.unitState(r,S,_cotHasIcon),r.comment);
+  if(r.uid)meta.cotUid=r.uid;
+  // drawn with the simple icon (no milsymbol): keep the exact code for ⬇ TAK and for the redraw once it loads
+  if(!vis.sidc)meta.customSidc=r.sidc;
+  return ent;
+}
+// the same uid again: move it and redraw it from the file, as one undo step
+function _cotUpdate(ent,r,S){
+  const m=battleMeta.get(ent);
+  const pos=ent.position&&ent.position.getValue(V.clock.currentTime),snap=_bpSnapUnit(ent),prevNote=m.comment||'';
+  if(r.comment)m.comment=r.comment;
+  ent.position=Cesium.Cartesian3.fromDegrees(r.lon,r.lat);
+  if(r.kind==='unit'){
+    const prevCode=m.sidc||m.customSidc||'';
+    // TAK only moved or renamed it: keep what a CoT type cannot carry (status, strength, the library type)
+    const keep=r.type===_bpUnitCoT(m);
+    let st;
+    if(keep){
+      st=_bpStateFromMeta(m);
+      if(S.cleanText(r.callsign,40).trim()!==S.cleanText(m.label,40).trim())st.designation=r.designation;
+      if(r.higher)st.higher=r.higher;
+    }else st=BDOCCot.unitState(r,S,_cotHasIcon);
+    const vis=_bpApplyUnit(ent,st);
+    if(!vis.sidc){const code=keep?prevCode:r.sidc;if(code)battleMeta.get(ent).customSidc=code}
+  }else{
+    const s=r.style,nm=_cotMarkerMeta(r);
+    if(!r.comment)nm.comment=m.comment||'';
+    Object.assign(m,nm);
+    ent.billboard.image=svgToDataUri(_cotMarkerSVG(s));
+    if(ent.label){ent.label.text=r.label;ent.label.fillColor=_readable(s.color)}
+    ent.description=buildEntityPopup({title:m.popupTitle,subtitle:m.popupSubtitle,lat:null,lon:null,comment:m.comment,color:m.color,extras:m.popupExtras,positionText:getEntityPosition(ent),placed:_bpPlacedOf(ent)});
+    try{window.BDOCPlan&&BDOCPlan.markDirty()}catch(_){}
+  }
+  const now=battleMeta.get(ent),note=now.comment;
+  try{BDOCUndo.record(ent,'TAK update of '+esc(now.label||'marker'),{undo:()=>{
+    if(!V.entities.contains(ent))return;
+    if(pos)ent.position=pos;
+    // a note written after the update stays (as for Unit edit)
+    const live=battleMeta.get(ent);if(live&&live.comment===note)live.comment=prevNote;
+    _bpRestoreUnit(ent,snap);
+  }})}catch(_){}
+}
+function importBattleCoT(){
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='.cot,.xml,application/xml,text/xml';
+  inp.onchange=async()=>{
+    const f=inp.files&&inp.files[0];if(!f)return;
+    const nm=esc(String(f.name||'file').slice(0,80));
+    if(f.size>(window.BDOCCot?BDOCCot.MAX_BYTES:8388608)){af('var(--rd)','TAK file "'+nm+'" is larger than 8 MB — not opened');return}
+    let text;try{text=await f.text()}catch(_){af('var(--rd)','Could not read "'+nm+'"');return}
+    await _cotImportText(text,f.name);
+  };
+  inp.click();
+}
+async function _cotImportText(text,fileName){
+  const name=esc(String(fileName||'file').replace(/[\u0000-\u001F\u007F]/g,'').slice(0,80));
+  if(!window.BDOCCot){af('var(--rd)','CoT import module not loaded — refresh the page');return null}
+  if(!V||!V.entities){af('var(--rd)','The globe is not ready yet — try again in a moment');return null}
+  try{await BDOC.LazyLoader.load('battle-symbols')}catch(_){}
+  const S=_bpSym();
+  if(!S){af('var(--rd)','The military symbol module could not load — TAK file not opened');return null}
+  // standard symbols if they arrive within a few seconds; otherwise simple icons now, redrawn when they do
+  if(!S.hasMs()){
+    if(!window._bpSymFailed){af('var(--t3)','Loading military symbols for "'+name+'"…');await Promise.race([_bpSymLoad().catch(()=>false),new Promise(r=>setTimeout(r,6000))])}
+    else if(!_bpSymLoading&&Date.now()-_bpSymLastTry>30000)setTimeout(()=>{try{_bpSymLoad()}catch(_){}},0);
+  }
+  const res=BDOCCot.parse(text,{Sym:S});
+  if(res.error){af('var(--rd)','Could not open TAK file "'+name+'": '+esc(res.error));return res}
+  const out={units:0,markers:0,updated:0,other:0,failed:0,ents:[]};
+  for(const r of res.records){
+    try{
+      const hit=_cotFind(r.uid);
+      if(hit){
+        const m=battleMeta.get(hit);
+        const same=!!(m&&hit.billboard&&(r.kind==='unit'?m.type==='unit':(m.type!=='unit'&&m.cotType)));
+        if(!same){out.other++;continue}
+        _cotUpdate(hit,r,S);out.updated++;out.ents.push(hit);continue;
+      }
+      out.ents.push(r.kind==='unit'?_cotAddUnit(r,S):_cotAddMarker(r));
+      out[r.kind==='unit'?'units':'markers']++;
+    }catch(e){out.failed++;console.warn('[cot import]',e)}
+  }
+  const pl=(n,w)=>n+' '+w+(n===1?'':'s');
+  const did=[out.units?pl(out.units,'unit'):'',out.markers?pl(out.markers,'marker'):'',out.updated?out.updated+' updated':''].filter(Boolean);
+  // "reason (count)" reads right for any count; ';' because one reason contains commas
+  const skipped=Object.keys(res.skipped).map(k=>(BDOCCot.REASONS[k]||BDOCCot.REASONS.other)+' ('+res.skipped[k]+')');
+  if(out.other)skipped.push('already on the map as another kind of item ('+out.other+')');
+  if(out.failed)skipped.push('could not be drawn ('+out.failed+')');
+  const txt='TAK file "'+name+'": '+(did.length?did.join(', '):'nothing placed')+(skipped.length?' · skipped: '+skipped.join('; '):'')+(out.units&&!S.hasMs()?' · simple icons until the military symbols load':'');
+  af(did.length?'var(--bl)':'var(--yl)',txt);
+  try{EventLog.add('info',txt)}catch(_){}
+  try{if(out.ents.length)V.flyTo(out.ents,{duration:1.2});else V.scene.requestRender()}catch(_){}
+  return Object.assign(out,{skipped:res.skipped,total:res.total});
 }
 
 // ═══ ENTITY METADATA — comments/labels attached to battle entities ═══
@@ -14392,7 +14564,8 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 <script src="js/mesh-globe-layer.js?v=p163s"></script>
 <script src="js/bdoc-offline-store.js?v=p75"></script>
 <!-- P156e: battle plan autosave/restore + real-shape exports + .bdoc.json (needs V, battleEntities, BDOCOfflineStore) -->
-<script src="js/bdoc-plan.js?v=p175"></script>
+<script src="js/bdoc-plan.js?v=p177"></script>
+<script src="js/bdoc-cot-import.js?v=p177"></script>
 <script src="js/bdoc-link-manager.js?v=p156d"></script>
 <script src="js/bdoc-plugin-renderer.js?v=p166"></script>
 <script src="js/bdoc-offline-hud.js?v=p158f"></script>
