@@ -79,7 +79,14 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
-### Claude Code — p175 Battle Tracker units are real MIL-STD-2525C / APP-6 symbols (2026-11-06) — BRANCH `claude/milsym-units`, NOT LIVE until Travon says ship
+### Claude Code — p175 Battle Tracker units are real MIL-STD-2525C / APP-6 symbols (2026-11-06) — LIVE on `main` @ `542008e`
+**Live check 6 Nov ~14:40Z (on Travon's "Yes, ship it"):**
+- **Deploy:** fast-forward push `eb9a3bc..542008e` at 14:34:32Z. Netlify served SW `bdoc-v177` by 14:35:14Z.
+- **Live files (`p175_live.sh`, 21/23 pass):** the page has LazyLoader `p175` and loads `bdoc-atak.js` / `bdoc-plan.js` / `bdoc-p154.css` at `?v=p175`. The SW precaches every p175 file and carries milsymbol across deploys. The served `service-worker.js`, `battle-symbols.js`, `milsymbol-loader.js`, `bdoc-atak.js`, `bdoc-plan.js` and `bdoc-p154.css` are byte-identical to the commit (line endings aside).
+  - The 2 "fails" are `index.html` and `sources.html`. They differ only by Netlify post-processing: pretty URLs (`/privacy.html` → `/privacy`) and the injected Simple Analytics snippet.
+  - The milsymbol 2.2.0 jsDelivr URL returns 200 with CORS `*`.
+- **In the live app (Chrome, read-only, no units placed):** the `bdoc-v177` SW is active with its caches. The symbol module loads. `ensure()` gets milsymbol, which lands in `bdoc-v177-cdn` for offline use. Sample codes render valid: HQ company, fighter, tracked tank, sub, emergency-management `EFIPA`, stability-ops `OHVPA`. The joker code is refused with its reason. CoT types match. No console errors on a fresh load.
+
 Travon picked "Military symbols first" from the Battle Tracker ideas. Before this, the UNIT tool drew hand-made look-alikes: no planned or damaged status, no HQ / task force / dummy, and every size mark one step off (a brigade showed XX, which is a division).
 - **New module `js/modules/battle-symbols.js` (`window.BDOCSym`):** builds a 15-character 2525C SIDC from side (7 identities, including assumed friend, suspect and pending), status (present, planned, fully capable, damaged, destroyed, full), size (team to army group), HQ / task force / dummy and a custom base code. It draws the code with milsymbol 2.2.0 (MIT), which the military layers already load.
   - 59 of the 83 library entries map to a 2525C function ID, each checked with milsymbol's `isValid()`. The other 24 (infrastructure and status markers) keep their hand-drawn icons, and their tooltip says they are map markers, not standard symbols.
