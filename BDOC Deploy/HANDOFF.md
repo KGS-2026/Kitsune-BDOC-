@@ -79,7 +79,15 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
-### Claude Code — p174 SIT cards expand on double-click; live OSINT cards fixed (2026-11-06) — same BRANCH `claude/heli-infobox-undo` (on top of p173), NOT LIVE UNTIL TRAVON SAYS
+### Claude Code — p174 SIT cards expand on double-click; live OSINT cards fixed (2026-11-06) — LIVE on `main` @ `9092a81`
+**Live check 6 Nov ~04:05Z (p172 + p173 + p174 together, on Travon's "Ship all three"):**
+- **Deploy:** fast-forward push `e34acf8..9092a81` at ~04:00:20Z. Netlify served SW `bdoc-v176` by 04:00:39Z, with the page at LazyLoader `p173`, `bdoc.css` / `bdoc-p154.css` at `?v=p173` and `auth.js` at `?v=p172`.
+- **Live files:** `auth.js` has `firedanger` in the Operator list, `layers-air.js?v=p173` has the new rotorcraft codes, and the red Undo and info-box rules are in the live CSS. proxy-gdelt returned 200 with 75 features carrying `name` / `domain` / `place` / `seendate` / `url`.
+- **Live page in Chrome (1920×945):** service worker in control with only the `bdoc-v176` caches; `BDOC_Auth.TIERS.operator` includes `firedanger`, and `minTier('camwall')` is `analyst`. Undo is `rgb(180,43,40)` at left 262px, top 102px. The SIT tab shows 5 briefs and 15 feed cards, each with headline then "place · source · age", and no repeated headline.
+- **Expand test:** a real double-click on a feed card opened `#sitExpand` at left 260px, 640px wide, with a 21px title and the ✕, OPEN ARTICLE and SHOW ON MAP buttons. Double-clicking the panel closed it.
+- **Errors:** 0 console errors, including across a reload.
+- **Not checked live:** a W-3 in the air (no live helicopter to point at) and the info box beside the parked compass. Both are covered by tests and were checked in the dev server.
+
 Travon: double-click a situation card and it "shoots off to the side of the bar and gets really big"; double-click again and it goes back. All of it is inside `SituationManager` in `index.html`.
 - **Expanded view:** double-clicking any card in the SIT tab (analyst brief or live GDELT item) grows it out of the card (a FLIP transform) into `#sitExpand`, beside the INTEL panel (`left: var(--lw)+12px`, up to 640px, z 130). Title 21px, body 14px, plus place, source, age and UTC time.
   - Briefs show Details, Intelligence and Possible Activity.
@@ -89,7 +97,7 @@ Travon: double-click a situation card and it "shoots off to the side of the bar 
 - **Live feed fix:** the cards read an `<a href>` out of `properties.html`, which proxy-gdelt no longer sends, so every card showed its headline twice in grey and had no link. They now use the proxy's fields (`name`, `place`/`country`, `domain`, `url`, `seendate`): headline, then place, source and age.
 - CSS is injected once by JS (`#sitExpandCss`), so no stylesheet version bump. SW `bdoc-v176`. `tests/sit-expand-p174.test.js` (6 tests).
 
-### Claude Code — p173 Helicopters drawn as jets; info box under the compass; Undo button over the panel (2026-11-06) — BRANCH `claude/heli-infobox-undo` (stacked on p172), NOT LIVE UNTIL TRAVON SAYS
+### Claude Code — p173 Helicopters drawn as jets; info box under the compass; Undo button over the panel (2026-11-06) — LIVE on `main` @ `9092a81` (shipped with p174)
 Three fixes from Travon's screenshots.
 - **Helicopter shown as a jet:** KR07, a PZL W-3 Sokol (type `W3`), drew as a jet with "NARROW-BODY JET" on its card. `js/modules/layers-air.js`:
   - Added 8 codes to the rotorcraft list (`W3 B105 FREL S55 S58 H2 KA25 WG30`).
@@ -103,7 +111,7 @@ Three fixes from Travon's screenshots.
   - on phones (≤767px) puts it bottom-left at `12px`, because `--lw` stays 248px there and pushed it off the right edge.
 - SW `bdoc-v175`; LazyLoader and all module entries `p173`; `bdoc.css` and `bdoc-p154.css` at `?v=p173`. `tests/air-heli-ui-p173.test.js` (7 tests); the p172 version test no longer pins numbers that later bumps move.
 
-### Claude Code — p172 Fire danger forecast opens to Operator; locked layers name the plan that unlocks them (2026-11-05) — BRANCH `claude/firedanger-operator`, NOT LIVE UNTIL TRAVON SAYS
+### Claude Code — p172 Fire danger forecast opens to Operator; locked layers name the plan that unlocks them (2026-11-05) — LIVE on `main` @ `9092a81` (shipped with p174)
 Travon's tier call ("Fire danger to Operator"): `firedanger` joins the Operator list in `js/auth.js`, for county emergency managers. Signals, Cam Wall, AOI Watch, EU warnings and CEMS stay Analyst.
 - **Fixed on the way:** every locked-layer surface said "Operator $9.99/mo", so the Analyst-only layers (all five above) told Recon users to buy a plan that still left them locked. The hover badge, command palette, preset message, onboarding tour and upgrade screen now name the right plan.
 - **How:** the tier table moved to `BDOC_Auth.TIERS`; `canAccess()` reads it, and the new `BDOC_Auth.minTier(feature)` returns the lowest plan that unlocks a feature. `markLockedLayers()` writes it to `data-tier` on each locked toggle. CSS `.ly.locked[data-tier="analyst"]:hover::after` and the palette read that. `showMo()` falls back to `minTier()` after its own `LAYER_TIER` list and names unnamed layers from their toggle. Replay and PDF now pass their name to `showMo()`, so the Analyst card is highlighted.
