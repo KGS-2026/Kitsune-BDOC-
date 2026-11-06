@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v175';  // p173: helicopters no longer drawn as jets (W3 + 7 more codes, wider name match); info box moves clear of the parked compass; Undo button moves under the coordinate bar, red
+const SW_VERSION = 'bdoc-v176';  // p174: double-click a SIT card to expand it beside the panel; live OSINT cards show place, source and time instead of the headline twice
+// (prev) const SW_VERSION = 'bdoc-v175';  // p173: helicopters no longer drawn as jets (W3 + 7 more codes, wider name match); info box moves clear of the parked compass; Undo button moves under the coordinate bar, red
 // (prev) const SW_VERSION = 'bdoc-v174';  // p172: fire danger forecast opens to Operator; locked layers name the plan that unlocks them (Analyst-only layers no longer say Operator)
 // (prev) const SW_VERSION = 'bdoc-v173';  // p171: European open data: Meteoalarm warnings (39 countries), Copernicus EMS activations, GWIS fire danger forecast (7 days, worldwide)
 // (prev) const SW_VERSION = 'bdoc-v172';  // p170: Signals layer (SIGINT group): HF radio conditions (NOAA scales), emergency squawks 7500/7600/7700 worldwide, public KiwiSDR receivers + listen

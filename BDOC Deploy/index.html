@@ -2216,6 +2216,96 @@ const SituationManager=(()=>{
   ];
   // Default to LAYERS tab (tab index 2) so Intel Layers are visible on page load
   let _tab=2,_view='list',_active=null,_arcs=null;
+  // ── p174: double-click a SIT card to blow it up beside the panel; double-click / Esc / ✕ shrinks it ──
+  let _feed=[],_xSrc=null,_clickT=null;
+  function _gdTime(s){const m=/^(\d{4})(\d\d)(\d\d)T(\d\d)(\d\d)(\d\d)Z$/.exec(String(s||''));return m?Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5],+m[6]):0;}
+  function _xCss(){
+    if(document.getElementById('sitExpandCss'))return;
+    const st=document.createElement('style');st.id='sitExpandCss';
+    st.textContent='#spBody .sit-card{-webkit-user-select:none;user-select:none}'+
+      '.sit-card.sx-src{outline:1px solid rgba(232,179,73,0.75);outline-offset:-1px}'+
+      '#sitExpand{position:fixed;left:calc(var(--lw,248px) + 12px);top:calc(var(--tbh,56px) + 10px);z-index:130;display:none;box-sizing:border-box;'+
+        'width:min(640px,calc(100vw - var(--lw,248px) - 40px));max-height:calc(100vh - var(--tbh,56px) - 96px);overflow-y:auto;padding:16px 20px 18px;'+
+        'background:rgba(10,13,18,0.98);border:1px solid rgba(232,179,73,0.35);border-left:3px solid #E8B349;border-radius:6px;'+
+        'box-shadow:0 18px 48px rgba(0,0,0,0.6);color:#E6E9EE;font-family:var(--m)}'+
+      'body.ai-open #sitExpand{width:min(640px,calc(100vw - var(--lw,248px) - var(--rw,360px) - 40px))}'+
+      '#sitExpand.sx-open{display:block}'+
+      '#sitExpand .sx-h{display:flex;align-items:center;gap:10px;margin-bottom:12px}'+
+      '#sitExpand .sx-badge{font-size:10px;letter-spacing:.12em;font-weight:700;padding:3px 8px;border-radius:3px;background:rgba(232,179,73,0.14);color:#E8B349}'+
+      '#sitExpand .sx-badge.sev-critical{background:rgba(218,54,51,0.2);color:#ff7a77}'+
+      '#sitExpand .sx-badge.sev-low{background:rgba(63,185,80,0.16);color:#56d364}'+
+      '#sitExpand .sx-hint{flex:1;text-align:right;font-size:9px;letter-spacing:.06em;color:#8B919A}'+
+      '#sitExpand .sx-x{width:26px;height:26px;border-radius:4px;cursor:pointer;background:none;border:1px solid rgba(255,255,255,0.15);color:#AEB4BE;font-size:13px}'+
+      '#sitExpand .sx-x:hover{color:#fff;border-color:rgba(255,255,255,0.4)}'+
+      '#sitExpand .sx-title{font-size:21px;line-height:1.35;font-weight:700;color:#fff;margin-bottom:8px}'+
+      '#sitExpand .sx-meta{font-size:12px;line-height:1.5;color:#AEB4BE;margin-bottom:6px}'+
+      '#sitExpand .sx-sec{margin-top:14px}#sitExpand .sx-sh{font-size:10px;letter-spacing:.14em;color:#E8B349;margin-bottom:5px;text-transform:uppercase}'+
+      '#sitExpand p{margin:0;font-size:14px;line-height:1.6;color:#D7DBE0}'+
+      '#sitExpand .sx-note{font-size:11px;color:#8B919A;margin-top:8px}'+
+      '#sitExpand .sx-act{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}'+
+      '#sitExpand .sx-act button{padding:8px 14px;border-radius:4px;cursor:pointer;font-family:var(--m);font-size:11px;font-weight:700;letter-spacing:.1em;background:rgba(232,179,73,0.12);border:1px solid rgba(232,179,73,0.45);color:#E8B349}'+
+      '#sitExpand .sx-act button:hover{background:rgba(232,179,73,0.22);color:#fff}'+
+      '@media(max-width:767px){#sitExpand,body.ai-open #sitExpand{left:8px;right:8px;width:auto;top:64px;max-height:calc(100vh - 140px)}}';
+    document.head.appendChild(st);
+  }
+  function _cardData(card){
+    if(card.dataset.sit){const s=_sits.find(x=>x.id===card.dataset.sit);if(!s)return null;
+      return{kind:'brief',title:s.title,badge:s.severity,place:s.region,source:s.author,seen:s.created,lat:s.lat,lon:s.lng,
+        sections:[['Details',s.details],['Intelligence',s.intel],['Possible Activity',s.activity]]};}
+    if(card.dataset.osint!=null){const it=_feed[+card.dataset.osint];if(!it)return null;
+      return{kind:'osint',title:it.title,badge:'OSINT · GDELT',place:it.place,source:it.domain,seen:it.seen,url:it.url,lat:it.lat,lon:it.lon,approx:it.approx};}
+    return null;
+  }
+  function _xEl(){
+    let x=document.getElementById('sitExpand');
+    if(!x){_xCss();x=document.createElement('div');x.id='sitExpand';x.setAttribute('role','dialog');x.setAttribute('aria-label','Expanded situation card');
+      x.addEventListener('dblclick',e=>{if(e.target.closest('button'))return;_collapse();});document.body.appendChild(x);}
+    return x;
+  }
+  function _flipFrom(card,x){
+    const a=card.getBoundingClientRect(),b=x.getBoundingClientRect();if(!b.width||!b.height)return 'none';
+    return `translate(${Math.round(a.left-b.left)}px,${Math.round(a.top-b.top)}px) scale(${Math.max(0.2,a.width/b.width).toFixed(3)},${Math.max(0.08,a.height/b.height).toFixed(3)})`;
+  }
+  function _expand(card){
+    const d=_cardData(card);if(!d)return;
+    const x=_xEl();clearTimeout(x._t);
+    const when=d.seen?_ago(d.seen)+' · '+new Date(d.seen).toISOString().slice(0,16).replace('T',' ')+'Z':'';
+    const sev=d.kind==='brief'?' sev-'+String(d.badge).toLowerCase():'';
+    x.innerHTML=`<div class="sx-h"><span class="sx-badge${esc(sev)}">${esc(d.badge)}</span><span class="sx-hint">Double-click to shrink · Esc</span><button class="sx-x" title="Shrink (Esc)">✕</button></div>`+
+      `<div class="sx-title">${esc(d.title)}</div><div class="sx-meta">${[d.place,d.source,when].filter(Boolean).map(esc).join(' · ')}</div>`+
+      (d.sections?d.sections.map(([h,t])=>`<div class="sx-sec"><div class="sx-sh">${esc(h)}</div><p>${esc(t)}</p></div>`).join(''):'')+
+      (d.kind==='osint'&&d.approx?'<div class="sx-note">Pinned at the source country, not the event location.</div>':'')+
+      `<div class="sx-act">${d.url&&d.url!=='#'?'<button class="sx-open">OPEN ARTICLE ↗</button>':''}${isFinite(d.lat)&&isFinite(d.lon)&&(d.lat||d.lon)?'<button class="sx-fly">SHOW ON MAP</button>':''}</div>`;
+    x.querySelector('.sx-x').addEventListener('click',_collapse);
+    const op=x.querySelector('.sx-open');if(op)op.addEventListener('click',()=>window.open(d.url,'_blank','noopener'));
+    const fl=x.querySelector('.sx-fly');if(fl)fl.addEventListener('click',()=>{if(window.V&&window.Cesium){try{V.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(d.lon,d.lat,d.kind==='osint'&&d.approx?2500000:900000),duration:1.6});}catch(_){}}});
+    if(_xSrc)_xSrc.classList.remove('sx-src');_xSrc=card;card.classList.add('sx-src');
+    x.classList.add('sx-open');x.scrollTop=0;
+    // grow out of the card (FLIP): start at the card's box, animate to the full panel
+    x.style.transition='none';x.style.transformOrigin='top left';x.style.transform=_flipFrom(card,x);x.style.opacity='0.35';
+    void x.offsetWidth;
+    x.style.transition='transform .22s cubic-bezier(.2,.8,.2,1),opacity .2s';x.style.transform='none';x.style.opacity='1';
+  }
+  function _collapse(){
+    const x=document.getElementById('sitExpand');if(!x||!x.classList.contains('sx-open'))return;
+    const card=_xSrc&&document.body.contains(_xSrc)?_xSrc:null;
+    if(_xSrc)_xSrc.classList.remove('sx-src');_xSrc=null;
+    x.style.transform=card?_flipFrom(card,x):'scale(0.96)';x.style.opacity='0';
+    clearTimeout(x._t);x._t=setTimeout(()=>{x.classList.remove('sx-open');x.style.transition='';x.style.transform='';x.style.opacity='';x.innerHTML='';},230);
+  }
+  // Briefs open their detail on a single click, delayed so a double-click can expand instead.
+  document.addEventListener('click',e=>{
+    const card=e.target.closest&&e.target.closest('#spBody .sit-card[data-sit]');if(!card)return;
+    clearTimeout(_clickT);const id=card.dataset.sit;
+    _clickT=setTimeout(()=>{const s=_sits.find(x=>x.id===id);if(!s)return;_collapse();_active=s;_view='detail';_renderDetail(s);},260);
+  });
+  document.addEventListener('dblclick',e=>{
+    const card=e.target.closest&&e.target.closest('#spBody .sit-card');if(!card)return;
+    clearTimeout(_clickT);try{window.getSelection().removeAllRanges();}catch(_){}
+    const x=document.getElementById('sitExpand');
+    if(_xSrc===card&&x&&x.classList.contains('sx-open'))_collapse();else _expand(card);
+  });
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')_collapse();});
 
   // ── Helpers ──
   function _ago(ms){const d=Date.now()-ms;if(d<3600000)return Math.floor(d/60000)+'m ago';if(d<86400000)return Math.floor(d/3600000)+'h ago';return Math.floor(d/86400000)+'d ago';}
@@ -2258,7 +2348,7 @@ const SituationManager=(()=>{
     const el=document.getElementById('spBody');if(!el)return;
     if(_tab!==0){el.innerHTML=`<div style="padding:24px 12px;font-family:var(--m);font-size:9px;color:var(--t3);text-align:center;letter-spacing:0.08em">NO ${_tab===1?'OPERATIONS':'CONTENT'} CONFIGURED</div>`;return;}
     el.innerHTML=`<div style="padding:6px 10px 3px;font-family:var(--m);font-size:7px;color:var(--t3);letter-spacing:0.12em">── ANALYST BRIEFS ──</div>`+
-      _sits.map(s=>`<div class="sit-card sev-${s.severity.toLowerCase()}" onclick="SituationManager.openSit('${s.id}')"><div class="sit-title">${esc(s.title)}</div><div class="sit-meta">Updated ${_ago(s.created)} · ${esc(s.region)}</div><div class="sit-badges">${_sev(s.severity)}${_coaBadge()}</div></div>`).join('')+
+      _sits.map(s=>`<div class="sit-card sev-${s.severity.toLowerCase()}" data-sit="${esc(s.id)}" title="Click to open · double-click to expand"><div class="sit-title">${esc(s.title)}</div><div class="sit-meta">Updated ${_ago(s.created)} · ${esc(s.region)}</div><div class="sit-badges">${_sev(s.severity)}${_coaBadge()}</div></div>`).join('')+
       `<div style="padding:6px 10px 3px;font-family:var(--m);font-size:7px;color:var(--t3);letter-spacing:0.12em;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px">── LIVE OSINT FEED · GDELT 24H ──</div>`+
       `<div id="sp-gdelt-list"><div style="padding:10px;font-family:var(--m);font-size:8px;color:var(--t3);text-align:center">⟳ Loading live intel...</div></div>`;
     fetch('/.netlify/functions/proxy-gdelt?query=war+OR+attack+OR+airstrike+OR+battle+OR+military+OR+conflict&timespan=24h&maxpoints=60')
@@ -2266,20 +2356,19 @@ const SituationManager=(()=>{
       .then(gd=>{
         const ld=document.getElementById('sp-gdelt-list');if(!ld)return;
         if(!gd.features||!gd.features.length){ld.innerHTML='<div style="padding:8px 10px;font-family:var(--m);font-size:8px;color:var(--t3)">No events in 24h window.</div>';return;}
-        ld.innerHTML=gd.features.slice(0,15).map(f=>{
-          const loc=f.properties?.name||'';
-          const rawHtml=f.properties?.html||'';
-          const lm=rawHtml.match(/href=["']([^"']+)["'][^>]*>([^<]{8,100})</);
-          const link=lm?.[1]||'';const headline=lm?[2].trim()||(loc||'Intel Event'):loc||'Intel Event';
-          const srcDom=link?link.replace(/^https?:\/\/(www\.)?/,'').split('/')[0]:'';
-          // Phase 24 (2026-05-23): use safeUrl() to block javascript: protocol injection from GDELT HTML;
-          // use esc() for text content (replaces incomplete .replace(/</g,'&lt;') partial-escaping).
-          const safeLink=safeUrl(link);
-          return `<div class="sit-card" style="border-left-color:#E8B34955;${safeLink&&safeLink!=='#'?'cursor:pointer':''}opacity:0.88" ${safeLink&&safeLink!=='#'?`onclick="window.open('${safeLink}','_blank','')"`:''}>
-            <div class="sit-title" style="font-size:9px">${esc(headline)}</div>
-            <div class="sit-meta">${esc(loc)}${srcDom?' · '+esc(srcDom):''}</div>
-          </div>`;
-        }).join('');
+        // p174: proxy-gdelt sends title / place / country / domain / url / seendate as fields. The old
+        // code looked for an <a href> inside properties.html that the proxy no longer sends, so every card
+        // showed its headline twice and had no link. Items are kept in _feed for the expanded view;
+        // safeUrl() still blocks javascript: links and esc() covers every text field.
+        _feed=gd.features.slice(0,15).map(f=>{
+          const p=f.properties||{},c=(f.geometry&&f.geometry.coordinates)||[];
+          return{title:String(p.name||'').trim()||'Intel event',place:String(p.place||p.country||''),domain:String(p.domain||''),
+            url:safeUrl(String(p.url||'')),seen:_gdTime(p.seendate),approx:p.precision==='country',lon:+c[0],lat:+c[1]};
+        });
+        ld.innerHTML=_feed.map((it,i)=>`<div class="sit-card sit-osint" data-osint="${i}" title="Double-click to expand" style="border-left-color:#E8B34955;opacity:0.88">
+            <div class="sit-title" style="font-size:9px">${esc(it.title)}</div>
+            <div class="sit-meta">${esc([it.place,it.domain,it.seen?_ago(it.seen):''].filter(Boolean).join(' · '))}</div>
+          </div>`).join('');
       })
       .catch(()=>{const ld=document.getElementById('sp-gdelt-list');if(ld)ld.innerHTML='<div style="padding:8px 10px;font-family:var(--m);font-size:8px;color:var(--t3)">Live feed unavailable.</div>';});
   }
@@ -2316,11 +2405,11 @@ const SituationManager=(()=>{
       const el=document.getElementById('sitPanel');
       if(el)el.classList.remove('sp-open');
       _moveLpOut(); // Always restore — _moveLpOut is safe if lp-b is already in #lp
-      _syncPositions(false);_clearArcs();
+      _syncPositions(false);_clearArcs();_collapse();
     },
     // Switch tabs: SIT(0) OPS(1) LAYERS(2)
     switchTab(t){
-      const prev=_tab;_tab=t;
+      const prev=_tab;_tab=t;_collapse();
       document.querySelectorAll('.sp-tab').forEach((b,i)=>b.classList.toggle('sp-tab-a',i===t));
       if(prev===2&&t!==2)_moveLpOut();
       if(t===2){_moveLpIn();}
@@ -2336,8 +2425,8 @@ const SituationManager=(()=>{
       _tab=2;document.querySelectorAll('.sp-tab').forEach((b,i)=>b.classList.toggle('sp-tab-a',i===2));
       _moveLpIn();
     },
-    openSit(id){const s=_sits.find(x=>x.id===id);if(!s)return;_active=s;_view='detail';_renderDetail(s);},
-    back(){_view='list';_active=null;_clearArcs();_renderList();},
+    openSit(id){const s=_sits.find(x=>x.id===id);if(!s)return;_collapse();_active=s;_view='detail';_renderDetail(s);},
+    back(){_view='list';_active=null;_clearArcs();_collapse();_renderList();},
     // Called once on page load to activate LAYERS tab with #sitPanel open by default
     _boot(){_moveLpIn();_syncPositions(true);},
     _sits,

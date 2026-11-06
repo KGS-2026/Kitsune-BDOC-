@@ -79,6 +79,16 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Claude Code — p174 SIT cards expand on double-click; live OSINT cards fixed (2026-11-06) — same BRANCH `claude/heli-infobox-undo` (on top of p173), NOT LIVE UNTIL TRAVON SAYS
+Travon: double-click a situation card and it "shoots off to the side of the bar and gets really big"; double-click again and it goes back. All of it is inside `SituationManager` in `index.html`.
+- **Expanded view:** double-clicking any card in the SIT tab (analyst brief or live GDELT item) grows it out of the card (a FLIP transform) into `#sitExpand`, beside the INTEL panel (`left: var(--lw)+12px`, up to 640px, z 130). Title 21px, body 14px, plus place, source, age and UTC time.
+  - Briefs show Details, Intelligence and Possible Activity.
+  - Feed items get OPEN ARTICLE (`safeUrl`, `noopener`) and SHOW ON MAP buttons. Items pinned only to the source country say so.
+  - Double-click the panel, double-click the card again, press Esc or ✕ to shrink it back. Closing the panel, switching tabs, opening a detail or going back shrinks it too.
+- **Single click still opens a brief's detail,** delayed 260 ms so a double-click cancels it (no detail flash).
+- **Live feed fix:** the cards read an `<a href>` out of `properties.html`, which proxy-gdelt no longer sends, so every card showed its headline twice in grey and had no link. They now use the proxy's fields (`name`, `place`/`country`, `domain`, `url`, `seendate`): headline, then place, source and age.
+- CSS is injected once by JS (`#sitExpandCss`), so no stylesheet version bump. SW `bdoc-v176`. `tests/sit-expand-p174.test.js` (6 tests).
+
 ### Claude Code — p173 Helicopters drawn as jets; info box under the compass; Undo button over the panel (2026-11-06) — BRANCH `claude/heli-infobox-undo` (stacked on p172), NOT LIVE UNTIL TRAVON SAYS
 Three fixes from Travon's screenshots.
 - **Helicopter shown as a jet:** KR07, a PZL W-3 Sokol (type `W3`), drew as a jet with "NARROW-BODY JET" on its card. `js/modules/layers-air.js`:
