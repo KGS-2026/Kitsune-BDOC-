@@ -79,6 +79,21 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Claude Code — p176 military map layers: every 2525C code is valid (2026-11-06) — on branch `claude/milsym-layer-sidc`, NOT on `main`
+**Not live.** Waiting for Travon's OK to push. Follow-up from p175: `getSIDC()` in `js/modules/layers-military.js` builds the MIL-STD-2525C code for every base (Military Bases layer) and airfield (Military Airfields layer).
+- **All codes enumerated:** the 269 bases and 34 airfields, plus every branch name the function knows × allied / hostile / other country × base / airfield / naval. That gives 21 distinct codes, each run through milsymbol 2.2.0 `isValid()` and `BDOCSym.isSIDC()`. Two branches were wrong (6 codes, one per side):
+  - **PLA Rocket Force** (4 bases: Wenchang, Jiuquan, Xichang, Taiyuan) got `S?GPUWS---`. `UWS---` is not a 2525C function ID: milsymbol marked it invalid and drew its red "unknown icon" hook in the frame. Now `S?GPUCM---`, the 2525C surface-to-surface missile unit. `BDOCSym.CATALOG` has no missile entry; its nearest, `UCFRM-`, is a multiple rocket launcher and would mislabel a strategic missile force.
+  - **Space Force** (8 bases, e.g. Vandenberg SFB, Thule AB) got `S?PT------`. Position 4 is the status, and T is not a 2525C status, so `BDOCSym.isSIDC` refused the code (milsymbol drew it only because it ignores position 4). Now `S?PP------`: same space-track drawing, valid code.
+  - The other 15 codes were already valid and are unchanged.
+- **Test `tests/layers-military-sidc-p176.test.js` (7):** runs `getSIDC` straight from the module source over all of the above. Every code must be 15 characters and pass `BDOCSym.isSIDC`, and its dimension + function ID must be on a list checked with milsymbol 2.2.0. With `MILSYMBOL_JS=path/to/milsymbol.js` it also calls the real `isValid()` on every code; it skips without it. Run against `origin/main`'s file with `MILSYMBOL_JS` set, 4 of the 7 fail (Thule AB and Wenchang named). The p175 version test now accepts p175 or later.
+- **Versions:** SW `bdoc-v178`; LazyLoader and every precached module `p176`.
+- **Checked:** 872/872 unit tests, including the real-milsymbol sweep. `scripts/ci-validate.sh` green. Dev server (port 8898, worktree `C:\Users\ARNAUTICA\bdoc-sidc`): modules served at `?v=p176` and milsymbol 2.2.0 from jsDelivr. All 17 codes the layers draw are valid in the page, and Xichang shows the hostile missile symbol on the globe.
+- **Found, not fixed (outside this change):**
+  - *Cold start:* the Military Bases toggle draws as soon as `milsymbol-loader.js` has run, before milsymbol itself arrives. In a fresh session all 269 bases came up hand-drawn and stayed that way (nothing redraws once `ms` loads). So the 2525C symbols appear only if milsymbol was already loaded, e.g. after the Battle Tracker. The Military Airfields toggle does not load `milsymbol-loader` at all. Fix: wait for `BDOC.loadMilsymbol()` (it has a timeout) before `loadMilBases()` / `loadMilAirfields()`.
+  - *Array hole:* `MILBASES` has an empty slot at index 230 (`},,` after Lumut Naval Base, `layers-military.js:272`). `upgradeUSBranchIcons()` pairs `milbaseEnts[i]` with `MILBASES[i]`, so each of the last 39 billboards (MCMWTC Bridgeport onward) gets the insignia worked out from the record before it.
+  - *Semantics:* airfields use `S?APMFA---` (an attack aircraft, not an airfield). Army / DOD / NATO / default bases use `IBA---` (airport / air base, not `IB----` base). No installation carries the `H` at position 11 that 2525C and `BDOCSym.buildSIDC` use, so they draw as plain ground frames. All of these are valid codes, so they were left as they are.
+- **Release note:** the TAK CoT import session (`claude/cot-import`) may also claim p176 / `bdoc-v178`. Whichever ships second rebases and takes the next number.
+
 ### Claude Code — p175 Battle Tracker units are real MIL-STD-2525C / APP-6 symbols (2026-11-06) — LIVE on `main` @ `542008e`
 **Live check 6 Nov ~14:40Z (on Travon's "Yes, ship it"):**
 - **Deploy:** fast-forward push `eb9a3bc..542008e` at 14:34:32Z. Netlify served SW `bdoc-v177` by 14:35:14Z.
@@ -111,7 +126,7 @@ Travon picked "Military symbols first" from the Battle Tracker ideas. Before thi
 - **Checked:** 865/865 unit tests, `scripts/ci-validate.sh` green (125 JS files, 9 inline scripts), and `tools/qa/ww3.js` 12/12 in the dev server with no JS errors.
   - *Before the review:* 15 units across all 7 sides on the map (frames, size marks, TF bracket, HQ staff, planned dashes, damaged bar, reinforced), paste-to-sync, bad-code refusal, edit + undo, GeoJSON and CoT types, a tampered plan file redrawn to match its code, the offline fallback, autosave restore of 23 units, and the dialog at phone width.
   - *After the fixes (dev server):* joker code refused with its reason; EMS code `EFIPA----------` placed and drawn; tracked tank `SHGPEVAT--MQ---` keeps its mobility; `(+)` on infantry and none on a fighter; bridge edits as a map marker; edit → note → undo keeps the note and PLACED; deleting a unit retires its edit step; offline custom code refused; a simple-icon unit upgraded to `SFGPUCIZ-------` when milsymbol arrived; CoT XML well-formed with a control character in a note.
-- **Not done:** CoT import (TAK → BDOC) — `BDOCSym.sidcFromCot()` is ready for it. `layers-military.js` `getSIDC` still emits some codes milsymbol marks invalid. The ENEMY tactical marker is not a 2525 unit.
+- **Not done:** CoT import (TAK → BDOC) — `BDOCSym.sidcFromCot()` is ready for it. `layers-military.js` `getSIDC` still emits some codes milsymbol marks invalid (fixed in p176, see above). The ENEMY tactical marker is not a 2525 unit.
 
 ### Claude Code — p174 SIT cards expand on double-click; live OSINT cards fixed (2026-11-06) — LIVE on `main` @ `9092a81`
 **Live check 6 Nov ~04:05Z (p172 + p173 + p174 together, on Travon's "Ship all three"):**

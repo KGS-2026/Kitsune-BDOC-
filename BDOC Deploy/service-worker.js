@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v177';  // p175: Battle Tracker units are real MIL-STD-2525C / APP-6 symbols (side, status, size, HQ / task force / dummy, strength, designation, custom SIDC), edit dialog, correct TAK types
+const SW_VERSION = 'bdoc-v178';  // p176: military map layers: PLA Rocket Force bases draw the 2525C missile-unit symbol (was an invalid code, drawn as a question mark); Space Force bases get a valid space-track code
+// (prev) const SW_VERSION = 'bdoc-v177';  // p175: Battle Tracker units are real MIL-STD-2525C / APP-6 symbols (side, status, size, HQ / task force / dummy, strength, designation, custom SIDC), edit dialog, correct TAK types
 // (prev) const SW_VERSION = 'bdoc-v176';  // p174: double-click a SIT card to expand it beside the panel; live OSINT cards show place, source and time instead of the headline twice
 // (prev) const SW_VERSION = 'bdoc-v175';  // p173: helicopters no longer drawn as jets (W3 + 7 more codes, wider name match); info box moves clear of the parked compass; Undo button moves under the coordinate bar, red
 // (prev) const SW_VERSION = 'bdoc-v174';  // p172: fire danger forecast opens to Operator; locked layers name the plan that unlocks them (Analyst-only layers no longer say Operator)
@@ -68,18 +69,18 @@ const STATIC_PRECACHE = [
   '/js/bdoc-atak.js?v=p175',
   '/js/cesium-init.js?v=p163i',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p175',
-  '/js/modules/layers-conflict.js?v=p175',
-  '/js/modules/layers-infra.js?v=p175',
-  '/js/modules/layers-air.js?v=p175',
-  '/js/modules/layers-nuke.js?v=p175',
-  '/js/modules/nuke-sim.js?v=p175',
-  '/js/modules/layers-airfields.js?v=p175',
-  '/js/modules/net-builder.js?v=p175',
-  '/js/modules/mesh-world.js?v=p175',
-  '/js/modules/skybridge.js?v=p175',
-  '/js/modules/milsymbol-loader.js?v=p175',
-  '/js/modules/battle-symbols.js?v=p175',
+  '/js/modules/layers-military.js?v=p176',
+  '/js/modules/layers-conflict.js?v=p176',
+  '/js/modules/layers-infra.js?v=p176',
+  '/js/modules/layers-air.js?v=p176',
+  '/js/modules/layers-nuke.js?v=p176',
+  '/js/modules/nuke-sim.js?v=p176',
+  '/js/modules/layers-airfields.js?v=p176',
+  '/js/modules/net-builder.js?v=p176',
+  '/js/modules/mesh-world.js?v=p176',
+  '/js/modules/skybridge.js?v=p176',
+  '/js/modules/milsymbol-loader.js?v=p176',
+  '/js/modules/battle-symbols.js?v=p176',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',

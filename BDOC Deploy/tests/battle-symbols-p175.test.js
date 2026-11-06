@@ -372,7 +372,8 @@ test('battle mode starts loading the symbol set; the module is lazy-loaded and p
   const enter = HTML.slice(HTML.indexOf('function enterBattleMode('), HTML.indexOf('function enterBattleMode(') + 4000);
   assert.match(enter, /_bpSymLoad\(\)/);
   const ver = /_version:\s*'([^']+)'/.exec(HTML)[1];
-  assert.equal(ver, 'p175');
+  // p175 or later: a later build bumps the module version for every module together
+  assert.ok(Number(ver.replace(/^p/, '').replace(/\D.*$/, '')) >= 175, `LazyLoader ${ver}`);
   for (const m of ['battle-symbols', 'milsymbol-loader', 'layers-military']) assert.ok(SW.includes(`'/js/modules/${m}.js?v=${ver}',`), m);
 });
 

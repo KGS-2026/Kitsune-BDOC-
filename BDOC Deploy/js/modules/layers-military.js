@@ -468,7 +468,9 @@ function getSIDC(branchType,countryCode,iconKind){
   if(branchType==='USN')return  `S${aff}SP------*****`; // Sea surface
   if(branchType==='USMC')return `S${aff}GPUCI---*****`; // Ground unit infantry (Marines)
   if(branchType==='USA')return  `S${aff}GPIBA---*****`; // Ground installation, base
-  if(branchType==='USSF')return `S${aff}PT------*****`; // Space track
+  // p176: space track is battle dimension P with status P. It was 'PT', and T is not a 2525C
+  // status, so BDOCSym.isSIDC refused the code (milsymbol drew it only because it skips position 4).
+  if(branchType==='USSF')return `S${aff}PP------*****`; // Space track
   // p153: Guard/Reserve take the same 2525 frame as their parent service.
   if(branchType==='ANG'||branchType==='AFRC')return `S${aff}AP------*****`;
   if(branchType==='ARNG'||branchType==='USAR')return `S${aff}GPIBA---*****`;
@@ -476,7 +478,9 @@ function getSIDC(branchType,countryCode,iconKind){
   if(branchType==='USMCR')return `S${aff}GPUCI---*****`;
   if(branchType==='DOD')return  `S${aff}GPIBA---*****`; // Generic base
   if(branchType==='NATO')return `S${aff}GPIBA---*****`;
-  if(branchType==='missile'||branchType==='PLA Rocket Force')return `S${aff}GPUWS---*****`; // Surface-to-surface missile
+  // p176: UCM--- is the 2525C surface-to-surface missile unit. It was UWS---, which is not a
+  // 2525C function ID: milsymbol 2.2.0 marked it invalid and drew a question mark in the frame.
+  if(branchType==='missile'||branchType==='PLA Rocket Force')return `S${aff}GPUCM---*****`; // Surface-to-surface missile
   if(['PLAN','RU Navy','Royal Navy','French Navy','German Navy','Indian Navy','RSN','RMN','ROKN','JMSDF'].includes(branchType))return `S${aff}SP------*****`;
   if(['PLAAF','RU AF','French AF','UA AF','RAAF','Pakistan AF','Indian AF','RAF'].includes(branchType))return `S${aff}AP------*****`;
   return `S${aff}GPIBA---*****`; // Default = ground installation, base
