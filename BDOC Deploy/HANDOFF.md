@@ -82,7 +82,10 @@ here, update §1 so Hermes knows where you left off.
 ### Claude Code — p177 CoT import (TAK → BDOC): 📂 OPEN TAK puts ATAK / WinTAK / iTAK files on the Battle Tracker (2026-11-06) — branch `claude/cot-import`, NOT LIVE
 **Not pushed. Going live needs Travon's explicit OK.** Built in the worktree `C:\Users\ARNAUTICA\bdoc-cot`, from `main` @ `410a388`.
 - **Numbering:** this is p177 / SW `bdoc-v179`, not p176. Branch `claude/milsym-layer-sidc` (`79e0825`, military layers draw only valid codes) already took p176 / `bdoc-v178` from the same base. Two builds with one `SW_VERSION` would leave the second one's devices on the old cache.
-  - If the sidc branch ships first, this one merges on top. Do by hand: `service-worker.js` (the SW line, the `(prev)` lines and the precache list), `index.html`, `HANDOFF.md` and `tests/battle-symbols-p175.test.js`.
+  - If the sidc branch ships first, this one merges on top. A trial `git merge-tree` conflicts only in `service-worker.js` and `HANDOFF.md`; `index.html` and `tests/battle-symbols-p175.test.js` merge cleanly.
+    - In the SW, keep `bdoc-v179` as the one live line, add `(prev)` lines for v178 and v177, and keep both branches' precache entries.
+    - In HANDOFF, keep both entries.
+    - Then run `tests/cot-import-p177.test.js`. It checks for one live SW line and that LazyLoader equals the module `?v=`.
   - If this one ships first, renumber the sidc branch to p178 / `bdoc-v180`.
 - **What it does:** the Battle Tracker toolbar has **📂 OPEN TAK** next to ⬇ TAK. It opens a `.cot` / `.xml` file holding one `<event>` or an `<events>` list.
   - *Units:* each `a-…` event becomes a unit drawn as its 2525C symbol.
