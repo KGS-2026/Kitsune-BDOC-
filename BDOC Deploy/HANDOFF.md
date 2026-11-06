@@ -79,6 +79,56 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Claude Code — p178 Every box and pop-up drags by its title bar; pressing a covered box brings it to the front (2026-11-06) — branch `claude/drag-panels`, NOT LIVE
+**Not pushed. Going live needs Travon's explicit OK.** Built in the worktree `C:\Users\ARNAUTICA\bdoc-drag`, from `main` @ `410a388`.
+
+Travon (screenshot: the AOI Watch box sat on top of a Taipei cam pop-up): "I need the boxes to be able to be dragged like the global threat box ... for all boxes and all pop-ups ... other boxes pop up on top of it which don't allow you to see it."
+- **Numbering:** p178 / SW `bdoc-v180`. It assumes p176 (`claude/milsym-layer-sidc`, `bdoc-v178`) and p177 (`claude/cot-import`, `bdoc-v179`) ship first.
+  - All three branches start from `410a388` and change the SW line and precache list; whichever ships later keeps its own number and adds `(prev)` lines for the others.
+  - If this ships before them, renumber whichever ships after it to the next free number.
+- **New `js/bdoc-float.js` (`window.BDOCFloat`), loaded last on the page:**
+  - *Drag:* press the top 36 px (title bar) of any floating box and move 4 px.
+    - Buttons, links, inputs, selects, tabs and iframes in the title bar still click. A plain click stays a click, and the click after a drag is swallowed so title-bar toggles don't fire.
+    - The box can't go under the top bar, and at least 80 px of it stays on screen.
+    - Mouse and pen only, at 768 px and wider. On touch and phone widths the panels keep their own layouts: the threat box made the same call in P111 / P113 because touch dragging fought the globe.
+    - Going below 768 px puts dragged boxes back on their phone layouts. A dragged box stays put until reload. `BDOCFloat.reset()` puts everything back.
+  - *Front:* pressing anywhere on a box that another box overlaps raises it just above that box, within its layer.
+    - Data panels (z < 80) stop at 79, under the tickers (80, 95) and the top bar (100), so a raised panel never covers menus or modals.
+    - z 80-99 stops at 99. Boxes above the top bar (camera viewer, LIVE WIRE, dialogs) order among themselves.
+    - Raising only goes up. When a layer fills, its raised boxes are renumbered as low as their order allows.
+  - *What counts as a box:* every visible `position:fixed` child of `<body>` (all 73 fixed elements are).
+    - Not boxes: the top bar, the left / right / SIT panels, tickers, HUD overlays, the nav widget, the globe, and full-screen overlays / modal backdrops.
+    - Boxes that drag themselves keep their own code and are only raised: threat box, Battle Tracker, COA, Cam Wall, Signals, time-zone bar, coordinates.
+  - *The map's info box* (the pop-up when you click something on the globe) was the real reason boxes "covered" it.
+    - Cesium puts it inside `#cesiumContainer`, which is its own stacking layer at z-index 1, so every BDOC panel (z 50+) drew over it whatever its z.
+    - It is now moved to `<body>` once at startup, as `position:fixed`, z 61: above the data panels (56-60), under the tickers.
+    - Pressing the box or its description raises it. Opening it from the map raises it over a panel it lands under.
+    - The move reloads its iframe once. BDOC already does that at startup (`cesium-init.js` sandbox fix), and Cesium's load handler redraws the current description.
+    - BDOC's info-box CSS is unscoped, so it still applies. A test fails if someone later scopes it under the globe.
+  - *Cost:* nothing runs until a press lands on a box. A press on the globe is one `closest()` call. The grab cursor is one check per animation frame while the mouse moves. No MutationObserver, no timers after startup.
+- **Versions:** SW `bdoc-v180`, with the `(prev)` line for v177 kept. `bdoc-float.js` is at `?v=p178` in `index.html` and the SW precache. LazyLoader is unchanged at `p175`: no `js/modules` file changed.
+- **Tests:** `tests/float-panels-p178.test.js` (12) covers:
+  - layers and ceilings, when a box is raised, renumbering;
+  - keeping the title bar on screen, the 36 px strip;
+  - the exclude / own-drag / clickable lists, with every id and class checked to still exist in the code;
+  - mouse-only drag, the swallowed click, no `stopPropagation`, no HTML building;
+  - the info-box move, with no CSS scoped through the globe;
+  - wiring and versions.
+- **Checked:** 877/877 unit tests; `scripts/ci-validate.sh` green (126 JS files, 9 inline scripts). In the dev server (port 8896; Claude's window was minimized, so most checks read the DOM after real mouse input):
+  - Pressing AOI Watch, which sat under the open info box, Signals and Cam Wall, raised it to 62, on top at the covered spot.
+  - Dragging its title bar moved it exactly (884,110 → 484,290). No text was selected.
+  - Dragging it up stopped at y 56, under the top bar.
+  - The info box dragged by its title (810,60 → 460,480) and stayed open with its cam card. Its × still closes it.
+  - Cam Wall still dragged with its own code and was only raised.
+  - 40 alternating raises of three overlapping panels peaked at z 79. The last pressed was on top.
+  - Shrinking to 700 px put a dragged AOI Watch back on its phone layout.
+  - No JS errors.
+- **Not done:**
+  - No drag on touch screens (iPad / phone).
+  - Positions are not kept across reloads; Cam Wall and Signals keep theirs as before.
+  - The docked side panels (INTEL / AI) don't move.
+  - Cross-origin iframes (YouTube tiles) can't raise their box when clicked inside the video; the title bar can.
+
 ### Claude Code — p175 Battle Tracker units are real MIL-STD-2525C / APP-6 symbols (2026-11-06) — LIVE on `main` @ `542008e`
 **Live check 6 Nov ~14:40Z (on Travon's "Yes, ship it"):**
 - **Deploy:** fast-forward push `eb9a3bc..542008e` at 14:34:32Z. Netlify served SW `bdoc-v177` by 14:35:14Z.

@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v177';  // p175: Battle Tracker units are real MIL-STD-2525C / APP-6 symbols (side, status, size, HQ / task force / dummy, strength, designation, custom SIDC), edit dialog, correct TAK types
+const SW_VERSION = 'bdoc-v180';  // p178: every floating box and pop-up drags by its title bar (mouse / pen, desktop); pressing a covered box brings it to the front in its own layer; the map info box comes out of the globe's layer
+// (prev) const SW_VERSION = 'bdoc-v177';  // p175: Battle Tracker units are real MIL-STD-2525C / APP-6 symbols (side, status, size, HQ / task force / dummy, strength, designation, custom SIDC), edit dialog, correct TAK types
 // (prev) const SW_VERSION = 'bdoc-v176';  // p174: double-click a SIT card to expand it beside the panel; live OSINT cards show place, source and time instead of the headline twice
 // (prev) const SW_VERSION = 'bdoc-v175';  // p173: helicopters no longer drawn as jets (W3 + 7 more codes, wider name match); info box moves clear of the parked compass; Undo button moves under the coordinate bar, red
 // (prev) const SW_VERSION = 'bdoc-v174';  // p172: fire danger forecast opens to Operator; locked layers name the plan that unlocks them (Analyst-only layers no longer say Operator)
@@ -53,6 +54,7 @@ const STATIC_PRECACHE = [
   '/js/vendor/hls.min.js?v=1.5.17',
   '/js/bdoc-link-manager.js?v=p156d',
   '/js/bdoc-offline-hud.js?v=p158f',
+  '/js/bdoc-float.js?v=p178',
   '/css/bdoc.css?v=p173',
   '/css/bdoc-p154.css?v=p175',
   '/css/bdoc-p158f.css?v=p158f',
