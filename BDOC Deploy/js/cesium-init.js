@@ -139,9 +139,13 @@ try{V.scene.preRender.addEventListener(()=>{try{window.BDOC_DDTD.update(V.camera
 // All card HTML is built by OUR code from trusted API data (escaped via esc()),
 // so re-enabling scripts is safe here. The frame exists immediately after viewer
 // construction; set the sandbox once and force a reload so it takes effect.
+// p180: + allow-popups-to-escape-sandbox. Without it a tab opened from a card ("OPEN SOURCE →",
+// "Copernicus ↗") inherits this sandbox, and Chrome refuses any page that sends a
+// Cross-Origin-Opener-Policy header in a sandboxed tab: atlas.ripe.net showed
+// "refused to connect" (ERR_BLOCKED_BY_RESPONSE). The links keep rel="noopener noreferrer".
 try{
   if(V.infoBox&&V.infoBox.frame){
-    V.infoBox.frame.setAttribute('sandbox','allow-same-origin allow-scripts allow-popups allow-forms');
+    V.infoBox.frame.setAttribute('sandbox','allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox allow-forms');
     V.infoBox.frame.src='about:blank';
   }
 }catch(e){console.warn('[infoBox sandbox fix]',e)}

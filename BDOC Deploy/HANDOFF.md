@@ -79,12 +79,14 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
-### Claude Code — p179 Battle Tracker toasts escape item labels (2026-11-07) — branch `claude/toast-xss-p179`, NOT live
+### Claude Code — p179 Battle Tracker toasts escape item labels (2026-11-07) — branch `claude/toast-xss-p179`, NOT live, SW `bdoc-v183`
 Built in `C:\Users\ARNAUTICA\bdoc-port`, on a new branch from `origin/main` @ `f0b8ab8` (fix commit `f40d501`). Not pushed. Going live needs Travon's explicit OK.
-- **Merged `origin/main` @ `7ef330e` (p178, draggable panels, which went live first as `bdoc-v180`).**
-  - Conflicts only in `service-worker.js` (v181 stays the live line; v180 is added as a `(prev)` line above v179 and v178), `HANDOFF.md` (both entries kept) and `tests/cot-import-p177.test.js` (main's live-or-`(prev)` regex, kept under this branch's test name).
-  - `tests/float-panels-p178.test.js` now also accepts v180 as a `(prev)` line, as main did for p177. The p179 version test checks the order v181 → v180 → v179 → v178.
-  - p180 / `bdoc-v182` is claimed by a separate info-box fix (the `cesium-init.js` sandbox gets `allow-popups-to-escape-sandbox`). Whichever of p179 / p180 ships second merges `main` and takes the next free number.
+- **Merged `main` three times while it waited:** `7ef330e` (p178 live, `bdoc-v180`), `09003f7` (p178 HANDOFF record), then `7dd0eea` (p180 live @ `19fc2a9`, `bdoc-v182`).
+  - The SW number moved from v181 to **v183**, the next free one. v181 never went live, so it has no `(prev)` line.
+  - Conflicts were only in `service-worker.js` (v183 live, then `(prev)` v182, v180, v179, v178), `HANDOFF.md` (every entry kept) and the version lines of two tests:
+    - `tests/cot-import-p177.test.js`: main's live-or-`(prev)` regex, kept under this branch's test name;
+    - `tests/float-panels-p178.test.js`: main's version.
+  - The p179 version test checks the order v183 → v182 → v180 → v179 → v178.
 - **The hole:** `af()` puts its message into the feed, and `rf()` writes the feed with innerHTML.
   - The undo toast (`↶ Undone: …`) and both delete toasts (`Deleted: …`, Delete key and right-click) used the item's label raw.
   - A `.bdoc.json` plan file is shared between people, and `sanitizeSpec` cleaned neither `meta.label`, `name` nor `label.text`. A file with a label like `<img src=x onerror=alert(1)>` ran script when the user undid or deleted that item.
@@ -99,8 +101,8 @@ Built in `C:\Users\ARNAUTICA\bdoc-port`, on a new branch from `origin/main` @ `f
 - **Fix in `js/bdoc-plan.js` `sanitizeSpec`:** `< >` are removed from `meta.label` and the entity `name` on import. A label or name that is not text or a number is dropped.
   - Notes (`comment`) keep `< >`: every note sink escapes or uses `textContent`.
   - `label.text` (the Cesium canvas label) is left as is. `_label()` can still fall back to it; the sink escape covers that.
-- **Versions:** p179 / SW `bdoc-v181`, with `(prev)` lines for v180, v179 and v178 kept. `bdoc-plan.js?v=p179` in `index.html` and in the SW precache. LazyLoader is unchanged at `p176` (no `js/modules` file changed) and equals every module `?v=`.
-  - Not v180: p178 (draggable panels) took `bdoc-v180` and is live @ `7ef330e`.
+- **Versions:** p179 / SW `bdoc-v183`, with `(prev)` lines for v182, v180, v179 and v178 kept. `bdoc-plan.js?v=p179` in `index.html` and in the SW precache. LazyLoader is unchanged at `p176` (no `js/modules` file changed) and equals every module `?v=`.
+  - p178 took `bdoc-v180` (live @ `7ef330e`) and p180 took `bdoc-v182` (live @ `19fc2a9`) while this waited.
 - **Tests:** new `tests/toast-escape-p179.test.js` (9 tests). It runs the page's own `esc` / `af` / `rf`, `BDOCUndo`, Delete-key handler, `Watchlist` and `_ctxEntityTitle` (sliced from `index.html`), with the real `bdoc-plan.js`, in a vm. It covers:
   - a plan file's `<img src=x onerror=alert(1)>` label reaching the undo toast, the Delete-key toast and both watchlist toasts as `&lt;img …&gt;`;
   - the autosave restore path (raw label), escaped too; a TAK update label, escaped exactly once;
@@ -108,9 +110,9 @@ Built in `C:\Users\ARNAUTICA\bdoc-port`, on a new branch from `origin/main` @ `f
 
   Against `origin/main`'s files, all 9 fail: the toasts carry the raw `<img …>`.
   - `tests/cot-import-p177.test.js`: the `_cotUpdate` check follows the plain-text label. Its version test now accepts p177 or later, as p176 did for the p175 test.
-- **Checked (before the merge):** 898/899 unit tests (1 skip: the node milsymbol sweep, as before). `scripts/ci-validate.sh` green.
+- **Checked:** before the merges, 898/899 unit tests (1 skip: the node milsymbol sweep, as before) and `scripts/ci-validate.sh` green. After merging p180, see the end of this entry.
   - Dev server (port 8899, launch config `bdoc-port-dev`): a crafted plan went in through `BDOCPlan.importDoc` (what OPEN FILE calls). Then: right-click → Add to Watchlist, Ctrl+Z, the Delete key, right-click → Delete This Marker, Ctrl+Z.
-  - Each toast showed the label as text. `#fdEl` held 0 `<img>`, a trapped `alert` was never called, and there were no JS errors. The SW offered the update to v181 ("NEW BDOC VERSION READY").
+  - Each toast showed the label as text. `#fdEl` held 0 `<img>`, a trapped `alert` was never called, and there were no JS errors. The SW offered the update to v181, this branch's number at the time ("NEW BDOC VERSION READY").
   - The test items and the watchlist entry were removed afterwards.
 - **Seen, not fixed (outside this task):**
   - `js/modules/layers-air.js:703`: `'Camera locked on '+callsign` goes into `af()` raw, though the tracking indicator just above escapes it. The callsign is from a third-party ADS-B feed, at most 8 characters. Fixing it means a LazyLoader bump.
@@ -118,6 +120,40 @@ Built in `C:\Users\ARNAUTICA\bdoc-port`, on a new branch from `origin/main` @ `f
   - `js/modules/watch-zones.js` toasts use `z.name` raw (typed by the user).
   - `js/bdoc-atak.js` geofence toasts use `label` and `t.name` raw, but nothing calls `createGeofence` / `checkGeofences` today.
   - The TAK import toast text is escaped before it goes to `EventLog`, which escapes again. A file name with `&` shows as `&amp;` in the event log (display only).
+- **Checked after merging p180 (`7dd0eea`):** 913/914 unit tests (1 skip, as before). `scripts/ci-validate.sh` green (127 JS files, 9 inline scripts).
+  - The dev server serves SW `bdoc-v183` with `(prev)` v182 / v180 / v179 / v178. The page loads `cesium-init.js?v=p180`, `bdoc-plan.js?v=p179` and `bdoc-float.js?v=p178`, and the info box frame carries `allow-popups-to-escape-sandbox`.
+  - Same crafted-plan run (right-click → Add to Watchlist, Ctrl+Z, the Delete key, right-click → Delete): all four toasts were escaped, with 0 `<img>`, 0 alerts and no JS errors. The test items and the watchlist entry were removed.
+- **Going live** = fast-forward `main` to this branch's tip. It needs Travon's explicit OK. If `main` moves again first, merge it and take the next free SW number.
+
+### Claude Code — p180 Links in the map info box open as normal tabs; atlas.ripe.net no longer "refused to connect" (2026-11-07) — LIVE on `main` @ `19fc2a9`
+**Live check 7 Nov ~15:54Z (on Travon's "Ship p180"):**
+- **Deploy:** fast-forward push `09003f7..19fc2a9` at 15:52:53Z. Netlify served SW `bdoc-v182` by 15:53:30Z.
+- **Live check** (`bdoc-port-tmp/checks/p180_live.sh`): 13/13.
+  - Versions: SW v182 with `(prev)` v180 and v178; LazyLoader `p176` = every module `?v=`.
+  - `cesium-init.js?v=p180` is in the page and in the precache, and the served file has `allow-popups-to-escape-sandbox`.
+  - `js/cesium-init.js` and `service-worker.js` are byte-identical to `19fc2a9`. `index.html` differs only by Netlify rewrites. p178 (`bdoc-float.js`) and OPEN TAK are still there.
+- **Chrome, live site, read-only:** caches `bdoc-v182-*`, `cesium-init.js?v=p180`, and the info box frame carries `allow-popups-to-escape-sandbox`. The info box sits in `<body>` (p178) and `BDOCFloat` is loaded.
+  - A real RIPE card was not clicked on the live site: AOI Watch was off in that tab, and turning it on would change Travon's saved layers. The click itself was proven on the dev server; see the proof note below.
+
+Built in `C:\Users\ARNAUTICA\bdoc-s178`, on top of `main` @ `09003f7` (p178 live).
+
+Travon ("this is also broken", with a screenshot): **RIPE ATLAS PROBE #13312 → OPEN SOURCE →** opened `https://atlas.ripe.net/probes/13312/` as "atlas.ripe.net is blocked — refused to connect" (`ERR_BLOCKED_BY_RESPONSE`).
+- **Cause:**
+  - Map info box cards render in Cesium's sandboxed iframe. `cesium-init.js` sets `allow-same-origin allow-scripts allow-popups allow-forms`.
+  - A tab opened from a sandboxed frame inherits the sandbox. Chrome refuses to load a page that sends `Cross-Origin-Opener-Policy` into such a tab, and RIPE sends `same-origin-allow-popups`.
+  - This was never about RIPE alone: every card link to a site that sends COOP failed the same way.
+- **Fix:**
+  - Add `allow-popups-to-escape-sandbox` to that one `setAttribute`. The existing `src='about:blank'` reload applies it.
+  - Links keep `rel="noopener noreferrer"`. No other flag was added: no top navigation, modals or downloads.
+- **Versions:** `cesium-init.js?v=p180` in `index.html` and the SW. SW `bdoc-v182`, with `(prev)` for v180.
+  - v181 is held by p179, the toast-label escape on `claude/toast-xss-p179` (its own session, in `bdoc-port`).
+  - Whichever ships second merges main and takes the next free number. LazyLoader is unchanged (`p176`, not a module change).
+- **Tests:** new `tests/infobox-popups-p180.test.js` (3 tests). `float-panels-p178` now also accepts v180 as a `(prev)` line.
+  - Full run: 904 pass / 0 fail / 1 skipped. `ci-validate.sh` passed.
+- **Proof, in Chrome against the dev server, with a test card linking to `atlas.ripe.net/probes/13312/`:**
+  - With the frame set back to the old flags, clicking the link opened a tab on Chrome's error page: the bug, reproduced.
+  - With the p180 code it opened "RIPE Atlas - Probe 13312" normally.
+  - The browser pane can't run this check, because it blocks new tabs opened by Claude's clicks.
 
 ### Claude Code — p178 Every box and pop-up drags by its title bar; pressing a covered box brings it to the front (2026-11-06) — LIVE on `main` @ `7ef330e` (2026-11-07)
 **Live check 7 Nov ~15:38Z (on Travon's "Ship p178"):**

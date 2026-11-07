@@ -150,7 +150,7 @@ test('page wiring and release versions (HANDOFF rule 3)', () => {
   assert.equal((HTML.match(/<script src="js\/bdoc-float\.js\?v=p178"><\/script>/g) || []).length, 1);
   assert.ok(HTML.indexOf('js/bdoc-float.js?v=p178') > HTML.indexOf('js/cesium-init.js'), 'after the globe is set up');
   assert.ok(SW.includes("'/js/bdoc-float.js?v=p178',"));
-  // live line while p178 is newest; a "(prev)" line once a later build ships (p179 = v181)
+  // live line while p178 is newest; a "(prev)" line once a later build ships
   assert.match(SW, /^(?:\/\/ \(prev\) )?const SW_VERSION = 'bdoc-v180';  \/\/ p178: every floating box/m);
   assert.equal((SW.match(/^const SW_VERSION = /gm) || []).length, 1, 'one live SW_VERSION line');
   assert.match(SW, /^\/\/ \(prev\) const SW_VERSION = 'bdoc-v177';  \/\/ p175:/m);
