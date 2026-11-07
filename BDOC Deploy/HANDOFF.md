@@ -79,6 +79,27 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Claude Code — p180 Links in the map info box open as normal tabs; atlas.ripe.net no longer "refused to connect" (2026-11-07) — branch `claude/infobox-popups`, NOT LIVE
+**Not pushed. Going live needs Travon's explicit OK.** Built in `C:\Users\ARNAUTICA\bdoc-s178`, on top of `main` @ `09003f7` (p178 live).
+
+Travon ("this is also broken", with a screenshot): **RIPE ATLAS PROBE #13312 → OPEN SOURCE →** opened `https://atlas.ripe.net/probes/13312/` as "atlas.ripe.net is blocked — refused to connect" (`ERR_BLOCKED_BY_RESPONSE`).
+- **Cause:**
+  - Map info box cards render in Cesium's sandboxed iframe. `cesium-init.js` sets `allow-same-origin allow-scripts allow-popups allow-forms`.
+  - A tab opened from a sandboxed frame inherits the sandbox. Chrome refuses to load a page that sends `Cross-Origin-Opener-Policy` into such a tab, and RIPE sends `same-origin-allow-popups`.
+  - This was never about RIPE alone: every card link to a site that sends COOP failed the same way.
+- **Fix:**
+  - Add `allow-popups-to-escape-sandbox` to that one `setAttribute`. The existing `src='about:blank'` reload applies it.
+  - Links keep `rel="noopener noreferrer"`. No other flag was added: no top navigation, modals or downloads.
+- **Versions:** `cesium-init.js?v=p180` in `index.html` and the SW. SW `bdoc-v182`, with `(prev)` for v180.
+  - v181 is held by p179, the toast-label escape on `claude/toast-xss-p179` (its own session, in `bdoc-port`).
+  - Whichever ships second merges main and takes the next free number. LazyLoader is unchanged (`p176`, not a module change).
+- **Tests:** new `tests/infobox-popups-p180.test.js` (3 tests). `float-panels-p178` now also accepts v180 as a `(prev)` line.
+  - Full run: 904 pass / 0 fail / 1 skipped. `ci-validate.sh` passed.
+- **Proof, in Chrome against the dev server, with a test card linking to `atlas.ripe.net/probes/13312/`:**
+  - With the frame set back to the old flags, clicking the link opened a tab on Chrome's error page: the bug, reproduced.
+  - With the p180 code it opened "RIPE Atlas - Probe 13312" normally.
+  - The browser pane can't run this check, because it blocks new tabs opened by Claude's clicks.
+
 ### Claude Code — p178 Every box and pop-up drags by its title bar; pressing a covered box brings it to the front (2026-11-06) — LIVE on `main` @ `7ef330e` (2026-11-07)
 **Live check 7 Nov ~15:38Z (on Travon's "Ship p178"):**
 - **Merge:** in a new worktree, `C:\Users\ARNAUTICA\bdoc-s178`, branch `claude/ship-p178`. Another session had switched `bdoc-port` to its own branch, so this merge stayed out of it. `claude/drag-panels` (`686cb33`) was merged on top of `f0b8ab8` as `2696d3c`.
