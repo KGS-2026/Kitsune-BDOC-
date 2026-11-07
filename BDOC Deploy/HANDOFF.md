@@ -79,8 +79,19 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
-### Claude Code — p177 CoT import (TAK → BDOC): 📂 OPEN TAK puts ATAK / WinTAK / iTAK files on the Battle Tracker (2026-11-06) — branch `claude/cot-import`, NOT LIVE
-**Not pushed. Going live needs Travon's explicit OK.** Built in the worktree `C:\Users\ARNAUTICA\bdoc-cot`, from `main` @ `410a388`.
+### Claude Code — p176 + p177 shipped together (2026-11-07) — LIVE on `main` @ `8710c62`
+**On Travon's "Ship both".** Merged in `C:\Users\ARNAUTICA\bdoc-port`, branch `claude/ship-p176-p177`: p176 (`79e0825`) fast-forward, then p177 (`0d18a34` + `b957aea`) as merge `321544c`.
+- **Merge:** conflicts only in `service-worker.js` (v179 live, v178 kept as `(prev)`) and `HANDOFF.md` (both entries kept).
+- **Fixed before shipping (`8710c62`):** re-importing BDOC's own TAK export added range-ring / bullseye centres as unknown units. Those entities sit both on their own and inside a drawing group. `cotEvents` now writes each uid once (it wrote some twice; that dated from p175's uid change, and ATAK simply keeps one). `_cotFind` now searches group members too. Test: `tests/cot-roundtrip-groups-p177.test.js`.
+- **Checked before push:** 889/889 tests (1 skip: the node milsymbol sweep needs a local copy of milsymbol, which is not run here; checked in the browser instead). CI green. ww3 12/12. In the dev server: a TAK file of units, a marker, a bad type and a remarks SIDC places 3 units + 1 marker and keeps HQ + higher unit. Opening it again updates 4 with no copies. A DOCTYPE / entity file is refused, with its name escaped in the toast. The BDOC → TAK → BDOC round trip adds 0 new items with 0 duplicate uids. Undo works. milsymbol accepts `SHGPUCM` / `SFPP` and rejects the old `UWS`.
+- **Deploy:** fast-forward push `410a388..8710c62` at 15:20:06Z. Netlify served SW `bdoc-v179` by 15:20:40Z.
+- **Live check (`bdoc-port-tmp/checks/p177_live.sh`, 11/11):** SW v179 with the v178 `(prev)` line; LazyLoader `p176` = every module `?v=`; OPEN TAK and `bdoc-cot-import.js` in the page and precached. Every changed served file matches `8710c62` (`index.html` apart from Netlify's pretty URLs + analytics snippet).
+  - In the live app (Chrome, read-only, nothing placed): `BDOCCot.parse` turns a TAK file into units / a marker with the HQ kept, and refuses a DOCTYPE file. Both p176 codes are valid. `bdoc-v179` caches are active. No console errors on a fresh load.
+- **p178 (`claude/drag-panels`, `686cb33`, draggable panels) is NOT live.** Its session ran out of usage before pushing. It was cut from `410a388`, so before it ships it must merge `main` and resolve the SW / version lines (its `bdoc-v180` is still above v179).
+- **Seen, not fixed (older code):** the undo / delete toasts put `meta.label` into `af()` (innerHTML) without `esc()`. TAK labels are cleaned, but labels from a shared `.bdoc.json` plan file are not.
+
+### Claude Code — p177 CoT import (TAK → BDOC): 📂 OPEN TAK puts ATAK / WinTAK / iTAK files on the Battle Tracker (2026-11-06) — LIVE on `main` @ `8710c62` (see the ship entry above)
+Built in the worktree `C:\Users\ARNAUTICA\bdoc-cot`, from `main` @ `410a388`.
 - **Numbering:** this is p177 / SW `bdoc-v179`, not p176. Branch `claude/milsym-layer-sidc` (`79e0825`, military layers draw only valid codes) already took p176 / `bdoc-v178` from the same base. Two builds with one `SW_VERSION` would leave the second one's devices on the old cache.
   - If the sidc branch ships first, this one merges on top. A trial `git merge-tree` conflicts only in `service-worker.js` and `HANDOFF.md`; `index.html` and `tests/battle-symbols-p175.test.js` merge cleanly.
     - In the SW, keep `bdoc-v179` as the one live line, add `(prev)` lines for v178 and v177, and keep both branches' precache entries.
@@ -143,8 +154,8 @@ here, update §1 so Hermes knows where you left off.
   - The undo / delete toasts (`↶ Undone: …`, `Deleted: …`) put `meta.label` or the entity's label into `af()`, which is innerHTML, without `esc()`. A crafted plan file's label may reach it; not checked end to end.
   - `tests/tier-labels-p172.test.js` fails on a CRLF checkout (its regex expects `\n}\nfunction hideMo`).
 
-### Claude Code — p176 military map layers: every 2525C code is valid (2026-11-06) — on branch `claude/milsym-layer-sidc`, NOT on `main`
-**Not live.** Waiting for Travon's OK to push. Follow-up from p175: `getSIDC()` in `js/modules/layers-military.js` builds the MIL-STD-2525C code for every base (Military Bases layer) and airfield (Military Airfields layer).
+### Claude Code — p176 military map layers: every 2525C code is valid (2026-11-06) — LIVE on `main` @ `8710c62` (shipped with p177, see above)
+Follow-up from p175: `getSIDC()` in `js/modules/layers-military.js` builds the MIL-STD-2525C code for every base (Military Bases layer) and airfield (Military Airfields layer).
 - **All codes enumerated:** the 269 bases and 34 airfields, plus every branch name the function knows × allied / hostile / other country × base / airfield / naval. That gives 21 distinct codes, each run through milsymbol 2.2.0 `isValid()` and `BDOCSym.isSIDC()`. Two branches were wrong (6 codes, one per side):
   - **PLA Rocket Force** (4 bases: Wenchang, Jiuquan, Xichang, Taiyuan) got `S?GPUWS---`. `UWS---` is not a 2525C function ID: milsymbol marked it invalid and drew its red "unknown icon" hook in the frame. Now `S?GPUCM---`, the 2525C surface-to-surface missile unit. `BDOCSym.CATALOG` has no missile entry; its nearest, `UCFRM-`, is a multiple rocket launcher and would mislabel a strategic missile force.
   - **Space Force** (8 bases, e.g. Vandenberg SFB, Thule AB) got `S?PT------`. Position 4 is the status, and T is not a 2525C status, so `BDOCSym.isSIDC` refused the code (milsymbol drew it only because it ignores position 4). Now `S?PP------`: same space-track drawing, valid code.
