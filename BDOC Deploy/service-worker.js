@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v180';  // p178: every floating box and pop-up drags by its title bar (mouse / pen, desktop); pressing a covered box brings it to the front in its own layer; the map info box comes out of the globe's layer
+const SW_VERSION = 'bdoc-v182';  // p180: links in the map info box (OPEN SOURCE →, Copernicus ↗ …) open as normal tabs; sites that send Cross-Origin-Opener-Policy (atlas.ripe.net) no longer show "refused to connect". v181 is held by p179 (toast labels)
+// (prev) const SW_VERSION = 'bdoc-v180';  // p178: every floating box and pop-up drags by its title bar (mouse / pen, desktop); pressing a covered box brings it to the front in its own layer; the map info box comes out of the globe's layer
 // (prev) const SW_VERSION = 'bdoc-v179';  // p177: CoT import (TAK → BDOC): OPEN TAK places ATAK / WinTAK / iTAK events as 2525C units and markers; same uid updates, TAK uid / type go back out
 // (prev) const SW_VERSION = 'bdoc-v178';  // p176: military map layers: PLA Rocket Force bases draw the 2525C missile-unit symbol (was an invalid code, drawn as a question mark); Space Force bases get a valid space-track code
 // (prev) const SW_VERSION = 'bdoc-v177';  // p175: Battle Tracker units are real MIL-STD-2525C / APP-6 symbols (side, status, size, HQ / task force / dummy, strength, designation, custom SIDC), edit dialog, correct TAK types
@@ -71,7 +72,7 @@ const STATIC_PRECACHE = [
   '/js/filters.js?v=p154',
   '/js/kitsune-ai.js?v=p93',
   '/js/bdoc-atak.js?v=p175',
-  '/js/cesium-init.js?v=p163i',
+  '/js/cesium-init.js?v=p180',
   '/js/deeplink.js?v=p115',
   '/js/modules/layers-military.js?v=p176',
   '/js/modules/layers-conflict.js?v=p176',

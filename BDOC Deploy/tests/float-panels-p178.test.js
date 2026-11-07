@@ -150,11 +150,12 @@ test('page wiring and release versions (HANDOFF rule 3)', () => {
   assert.equal((HTML.match(/<script src="js\/bdoc-float\.js\?v=p178"><\/script>/g) || []).length, 1);
   assert.ok(HTML.indexOf('js/bdoc-float.js?v=p178') > HTML.indexOf('js/cesium-init.js'), 'after the globe is set up');
   assert.ok(SW.includes("'/js/bdoc-float.js?v=p178',"));
-  assert.match(SW, /^const SW_VERSION = 'bdoc-v180';  \/\/ p178: every floating box/m);
+  // live line while p178 is newest; a "(prev)" line once a later build ships
+  assert.match(SW, /^(?:\/\/ \(prev\) )?const SW_VERSION = 'bdoc-v180';  \/\/ p178: every floating box/m);
   assert.equal((SW.match(/^const SW_VERSION = /gm) || []).length, 1, 'one live SW_VERSION line');
   assert.match(SW, /^\/\/ \(prev\) const SW_VERSION = 'bdoc-v177';  \/\/ p175:/m);
   // shipped after p176 (v178) and p177 (v179): both stay as (prev) lines, newest first
-  assert.match(SW, /^const SW_VERSION = 'bdoc-v180';[^\n]*\n\/\/ \(prev\) const SW_VERSION = 'bdoc-v179';  \/\/ p177:[^\n]*\n\/\/ \(prev\) const SW_VERSION = 'bdoc-v178';  \/\/ p176:/m);
+  assert.match(SW, /^(?:\/\/ \(prev\) )?const SW_VERSION = 'bdoc-v180';[^\n]*\n\/\/ \(prev\) const SW_VERSION = 'bdoc-v179';  \/\/ p177:[^\n]*\n\/\/ \(prev\) const SW_VERSION = 'bdoc-v178';  \/\/ p176:/m);
   // no js/modules change: LazyLoader keeps its build, and it must equal every module ?v=
   const lz = /_version:\s*'([^']+)'/.exec(HTML)[1];
   const mods = [...SW.matchAll(/'\/js\/modules\/[^'?]+\?v=([^']+)'/g)].map(m => m[1]);
