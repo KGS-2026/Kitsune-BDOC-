@@ -200,10 +200,12 @@ test('sanitizeSpec: < > leave meta.label and name; a non-text label or name is d
   assert.deepEqual(Object.keys(sx.f({ meta: { type: 'tactical' } }).meta), ['type'], 'no label is not added');
 });
 
-// p179, not p178: branch claude/drag-panels (686cb33, not live) already took p178 / bdoc-v180.
-test('versions: SW v181 for p179 with v179 kept; bdoc-plan.js at p179; LazyLoader = module ?v=', () => {
-  assert.match(SW, /const SW_VERSION = 'bdoc-v181';  \/\/ p179:/);
-  assert.match(SW, /^\/\/ \(prev\) const SW_VERSION = 'bdoc-v179';  \/\/ p177:/m);
+// p179, not p178: p178 (draggable panels, bdoc-v180) shipped first, at 7ef330e.
+test('versions: SW v181 for p179 with v180 / v179 / v178 kept; bdoc-plan.js at p179; LazyLoader = module ?v=', () => {
+  // live line while p179 is newest; a "(prev)" line once a later build ships
+  assert.match(SW, /^(?:\/\/ \(prev\) )?const SW_VERSION = 'bdoc-v181';  \/\/ p179:/m);
+  // newest first: p179 (v181), then p178 (v180), p177 (v179), p176 (v178)
+  assert.match(SW, /^(?:\/\/ \(prev\) )?const SW_VERSION = 'bdoc-v181';[^\n]*\n\/\/ \(prev\) const SW_VERSION = 'bdoc-v180';  \/\/ p178:[^\n]*\n\/\/ \(prev\) const SW_VERSION = 'bdoc-v179';  \/\/ p177:[^\n]*\n\/\/ \(prev\) const SW_VERSION = 'bdoc-v178';  \/\/ p176:/m);
   assert.equal((SW.match(/^const SW_VERSION = /gm) || []).length, 1, 'one live SW_VERSION line');
   const live = Number(/^const SW_VERSION = 'bdoc-v(\d+)/m.exec(SW)[1]);
   assert.ok(live >= 181, `SW_VERSION v${live}`);
