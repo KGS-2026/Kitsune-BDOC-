@@ -349,7 +349,7 @@
     return ((b(c.alpha) << 24) | (b(c.red) << 16) | (b(c.green) << 8) | b(c.blue)) | 0;
   }
   function cotEvents(pickCoT) {
-    const t = tNow(), events = []; let n = 0;
+    const t = tNow(), events = [], seenUid = new Set(); let n = 0;
     const rnd = () => Math.random().toString(36).slice(2, 7).toUpperCase();
     for (const { ent, group } of entries()) {
       const s = shapeOf(ent, t); if (!s) continue;
@@ -360,8 +360,11 @@
       // instead of adding a second copy of every one (it was 'BDOC-BP-<n>-<random>' per export).
       // p177: a unit or marker imported from TAK keeps the uid TAK gave it.
       const uid = takUidOk(m.cotUid) ? m.cotUid : ent.id ? 'BDOC-' + String(ent.id).slice(0, 60) : 'BDOC-BP-' + (++n) + '-' + rnd();
+      if (s.kind === 'point' && s.labelOnly && group) continue;   // ring / degree labels are decoration, not TAK markers
+      // an entity can sit both on its own and inside a drawing group: one event per uid
+      if (seenUid.has(uid)) continue;
+      seenUid.add(uid);
       if (s.kind === 'point') {
-        if (s.labelOnly && group) continue;   // ring / degree labels are decoration, not TAK markers
         const d = val(ent.description, t);
         const x = d && window._cotStore && String(d).match(/_downloadCotXml\('([^']+)'\)/);
         if (x && window._cotStore.has(x[1])) { events.push(window._cotStore.get(x[1]).replace(/<\?xml[^>]*\?>\s*/, '')); continue; }   // full CASEVAC 9-line

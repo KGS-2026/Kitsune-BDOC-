@@ -9350,13 +9350,17 @@ function _cotFind(uid){
   if(!uid)return null;
   const own=uid.startsWith('BDOC-')?uid.slice(5):null;
   let hit=null;
-  for(const x of battleEntities){
-    if(!x||Array.isArray(x))continue;
-    let alive=false;try{alive=V.entities.contains(x)}catch(_){}
-    if(!alive)continue;
-    const m=battleMeta.get(x);
-    if(m&&m.cotUid===uid)return x;
-    if(!hit&&own!==null&&!(m&&m.cotUid)&&String(x.id).slice(0,60)===own)hit=x;
+  // members of a drawing group (range rings, bullseye …) count too: BDOC exports their points, and
+  // re-importing that file must find them as "already on the map", not add them again as units
+  for(const g of battleEntities){
+    for(const x of (Array.isArray(g)?g.flat(Infinity):[g])){
+      if(!x)continue;
+      let alive=false;try{alive=V.entities.contains(x)}catch(_){}
+      if(!alive)continue;
+      const m=battleMeta.get(x);
+      if(m&&m.cotUid===uid)return x;
+      if(!hit&&own!==null&&!(m&&m.cotUid)&&String(x.id).slice(0,60)===own)hit=x;
+    }
   }
   return hit;
 }
