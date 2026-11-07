@@ -79,8 +79,17 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
-### Claude Code — p180 Links in the map info box open as normal tabs; atlas.ripe.net no longer "refused to connect" (2026-11-07) — branch `claude/infobox-popups`, NOT LIVE
-**Not pushed. Going live needs Travon's explicit OK.** Built in `C:\Users\ARNAUTICA\bdoc-s178`, on top of `main` @ `09003f7` (p178 live).
+### Claude Code — p180 Links in the map info box open as normal tabs; atlas.ripe.net no longer "refused to connect" (2026-11-07) — LIVE on `main` @ `19fc2a9`
+**Live check 7 Nov ~15:54Z (on Travon's "Ship p180"):**
+- **Deploy:** fast-forward push `09003f7..19fc2a9` at 15:52:53Z. Netlify served SW `bdoc-v182` by 15:53:30Z.
+- **Live check** (`bdoc-port-tmp/checks/p180_live.sh`): 13/13.
+  - Versions: SW v182 with `(prev)` v180 and v178; LazyLoader `p176` = every module `?v=`.
+  - `cesium-init.js?v=p180` is in the page and in the precache, and the served file has `allow-popups-to-escape-sandbox`.
+  - `js/cesium-init.js` and `service-worker.js` are byte-identical to `19fc2a9`. `index.html` differs only by Netlify rewrites. p178 (`bdoc-float.js`) and OPEN TAK are still there.
+- **Chrome, live site, read-only:** caches `bdoc-v182-*`, `cesium-init.js?v=p180`, and the info box frame carries `allow-popups-to-escape-sandbox`. The info box sits in `<body>` (p178) and `BDOCFloat` is loaded.
+  - A real RIPE card was not clicked on the live site: AOI Watch was off in that tab, and turning it on would change Travon's saved layers. The click itself was proven on the dev server; see the proof note below.
+
+Built in `C:\Users\ARNAUTICA\bdoc-s178`, on top of `main` @ `09003f7` (p178 live).
 
 Travon ("this is also broken", with a screenshot): **RIPE ATLAS PROBE #13312 → OPEN SOURCE →** opened `https://atlas.ripe.net/probes/13312/` as "atlas.ripe.net is blocked — refused to connect" (`ERR_BLOCKED_BY_RESPONSE`).
 - **Cause:**
