@@ -445,7 +445,8 @@ test('_cotFind: a TAK uid finds the unit imported with it, or the BDOC entity it
 // p177, not p176: branch claude/milsym-layer-sidc already took p176 / bdoc-v178 from the same base.
 // Two builds sharing one SW_VERSION would leave the second one's devices on the old cache.
 test('versions: SW v179 for p177 with v177 kept; the new module and bdoc-plan.js are precached at p177', () => {
-  assert.match(SW, /^const SW_VERSION = 'bdoc-v179';  \/\/ p177: CoT import/m);
+  // live line while p177 was newest; a "(prev)" line once a later build ships
+  assert.match(SW, /^(?:\/\/ \(prev\) )?const SW_VERSION = 'bdoc-v179';  \/\/ p177: CoT import/m);
   assert.match(SW, /^\/\/ \(prev\) const SW_VERSION = 'bdoc-v177';  \/\/ p175:/m);
   assert.equal((SW.match(/^const SW_VERSION = /gm) || []).length, 1, 'one live SW_VERSION line');
   for (const f of ['bdoc-plan', 'bdoc-cot-import']) {
