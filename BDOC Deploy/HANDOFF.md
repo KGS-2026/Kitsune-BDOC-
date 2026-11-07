@@ -79,8 +79,17 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
-### Claude Code — p179 Battle Tracker toasts escape item labels (2026-11-07) — branch `claude/toast-xss-p179`, NOT live, SW `bdoc-v183`
-Built in `C:\Users\ARNAUTICA\bdoc-port`, on a new branch from `origin/main` @ `f0b8ab8` (fix commit `f40d501`). Not pushed. Going live needs Travon's explicit OK.
+### Claude Code — p179 Battle Tracker toasts escape item labels (2026-11-07) — LIVE on `main` @ `0999663`, SW `bdoc-v183`
+**Live check 7 Nov ~16:01Z (on Travon's "Ship p179"):**
+- **Deploy:** fast-forward push `7dd0eea..0999663` at 15:59:50Z, from `C:\Users\ARNAUTICA\bdoc-port` (branch `claude/toast-xss-p179`). Netlify served SW `bdoc-v183` by 16:00:16Z.
+- **Live check** (`bdoc-port-tmp/checks/p179_live.sh`): 19/19.
+  - Versions: SW v183 with `(prev)` v182, v180, v179 and v178, and one live line. LazyLoader `p176` = every module `?v=`.
+  - `bdoc-plan.js?v=p179` is in the page and in the precache, and the served file strips `< >` from labels. The served page has the escaped undo toast, both escaped delete toasts and the escaped watchlist toast.
+  - p180 (`cesium-init.js?v=p180`), p178 (`bdoc-float.js?v=p178`) and OPEN TAK are still there.
+  - `js/bdoc-plan.js` and `service-worker.js` are byte-identical to `0999663`. `index.html` differs only by Netlify rewrites.
+- **Chrome, live site, read-only** (nothing imported or placed, so the saved plan was not touched): caches are `bdoc-v183-*` only, the SW is active with none waiting, and the running `BDOCUndo.undo` and `Watchlist.add` escape the label. No JS errors on a fresh load.
+
+Built in `C:\Users\ARNAUTICA\bdoc-port`, on a new branch from `origin/main` @ `f0b8ab8` (fix commit `f40d501`).
 - **Merged `main` three times while it waited:** `7ef330e` (p178 live, `bdoc-v180`), `09003f7` (p178 HANDOFF record), then `7dd0eea` (p180 live @ `19fc2a9`, `bdoc-v182`).
   - The SW number moved from v181 to **v183**, the next free one. v181 never went live, so it has no `(prev)` line.
   - Conflicts were only in `service-worker.js` (v183 live, then `(prev)` v182, v180, v179, v178), `HANDOFF.md` (every entry kept) and the version lines of two tests:
@@ -123,7 +132,7 @@ Built in `C:\Users\ARNAUTICA\bdoc-port`, on a new branch from `origin/main` @ `f
 - **Checked after merging p180 (`7dd0eea`):** 913/914 unit tests (1 skip, as before). `scripts/ci-validate.sh` green (127 JS files, 9 inline scripts).
   - The dev server serves SW `bdoc-v183` with `(prev)` v182 / v180 / v179 / v178. The page loads `cesium-init.js?v=p180`, `bdoc-plan.js?v=p179` and `bdoc-float.js?v=p178`, and the info box frame carries `allow-popups-to-escape-sandbox`.
   - Same crafted-plan run (right-click → Add to Watchlist, Ctrl+Z, the Delete key, right-click → Delete): all four toasts were escaped, with 0 `<img>`, 0 alerts and no JS errors. The test items and the watchlist entry were removed.
-- **Going live** = fast-forward `main` to this branch's tip. It needs Travon's explicit OK. If `main` moves again first, merge it and take the next free SW number.
+- **Went live** as the fast-forward to `0999663`; see the live check at the top of this entry.
 
 ### Claude Code — p180 Links in the map info box open as normal tabs; atlas.ripe.net no longer "refused to connect" (2026-11-07) — LIVE on `main` @ `19fc2a9`
 **Live check 7 Nov ~15:54Z (on Travon's "Ship p180"):**
