@@ -183,10 +183,12 @@ test('plan export: SIDC units go out as their CoT type, with the SIDC in remarks
   assert.equal(ctx.f('junk'), null);
   assert.match(PLAN, /const sd = m\.sidc \|\| m\.customSidc;   \/\/ a custom code/);
   assert.match(PLAN, /const unitType = sd \? sidcCoT\(sd\) : null;/);
-  assert.match(PLAN, /const cotType = unitType \|\| \(typeof pickCoT === 'function' \? pickCoT\(m\) : 'a-u-G'\);/);
+  // p177: a marker imported from TAK keeps its CoT type, and anything imported keeps its TAK uid
+  // (tests/cot-import-p177.test.js runs the export for real)
+  assert.match(PLAN, /const cotType = unitType \|\| takType \|\| \(typeof pickCoT === 'function' \? pickCoT\(m\) : 'a-u-G'\);/);
   assert.match(PLAN, /'SIDC ' \+ sd/);
-  assert.match(PLAN, /staleMs: unitType \? 86400000 : 3600000/);
-  assert.match(PLAN, /const uid = ent\.id \? 'BDOC-' \+ String\(ent\.id\)\.slice\(0, 60\) : 'BDOC-BP-'/);
+  assert.match(PLAN, /staleMs: \(unitType \|\| takType\) \? 86400000 : 3600000/);
+  assert.match(PLAN, /const uid = takUidOk\(m\.cotUid\) \? m\.cotUid : ent\.id \? 'BDOC-' \+ String\(ent\.id\)\.slice\(0, 60\) : 'BDOC-BP-'/);
   // GeoJSON keeps the symbology for QGIS / other C2 tools
   for (const p of ['props.sidc = sd', 'props.cot_type = ct', "['higher', 'higher_formation']", "['feint', 'feint_dummy']"]) assert.ok(PLAN.includes(p), p);
 });
@@ -381,9 +383,10 @@ test('service worker: v177 for p175, and the pinned milsymbol file survives a de
   assert.match(SW, /const SW_VERSION = 'bdoc-v177';  \/\/ p175:/);
   assert.match(SW, /^\/\/ \(prev\) const SW_VERSION = 'bdoc-v176';  \/\/ p174:/m);
   assert.ok(SW.includes("'/css/bdoc-p154.css?v=p175',"));
-  assert.ok(SW.includes("'/js/bdoc-plan.js?v=p175',"));
+  // p177 changed bdoc-plan.js again (CoT import); any later build is fine here
+  assert.match(SW, /'\/js\/bdoc-plan\.js\?v=p1(7[5-9]|[89]\d)\w*',/);
   assert.match(HTML, /href="css\/bdoc-p154\.css\?v=p175"/);
-  assert.match(HTML, /src="js\/bdoc-plan\.js\?v=p175"/);
+  assert.match(HTML, /src="js\/bdoc-plan\.js\?v=p1(7[5-9]|[89]\d)\w*"/);
   assert.match(SW, /await carryPinnedCdn\(old\.filter\(k => k\.endsWith\('-cdn'\)\)\);\n\s*return Promise\.all\(old\.map\(k => caches\.delete\(k\)\)\);/);
   assert.ok(SW.includes("'https://cdn.jsdelivr.net/npm/milsymbol@2.2.0/',"));
   // the loader URL must match the carried prefix (and the desktop build's vendored basename)

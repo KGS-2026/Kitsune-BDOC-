@@ -79,6 +79,70 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Claude Code — p177 CoT import (TAK → BDOC): 📂 OPEN TAK puts ATAK / WinTAK / iTAK files on the Battle Tracker (2026-11-06) — branch `claude/cot-import`, NOT LIVE
+**Not pushed. Going live needs Travon's explicit OK.** Built in the worktree `C:\Users\ARNAUTICA\bdoc-cot`, from `main` @ `410a388`.
+- **Numbering:** this is p177 / SW `bdoc-v179`, not p176. Branch `claude/milsym-layer-sidc` (`79e0825`, military layers draw only valid codes) already took p176 / `bdoc-v178` from the same base. Two builds with one `SW_VERSION` would leave the second one's devices on the old cache.
+  - If the sidc branch ships first, this one merges on top. A trial `git merge-tree` conflicts only in `service-worker.js` and `HANDOFF.md`; `index.html` and `tests/battle-symbols-p175.test.js` merge cleanly.
+    - In the SW, keep `bdoc-v179` as the one live line, add `(prev)` lines for v178 and v177, and keep both branches' precache entries.
+    - In HANDOFF, keep both entries.
+    - Then run `tests/cot-import-p177.test.js`. It checks for one live SW line and that LazyLoader equals the module `?v=`.
+  - If this one ships first, renumber the sidc branch to p178 / `bdoc-v180`.
+- **What it does:** the Battle Tracker toolbar has **📂 OPEN TAK** next to ⬇ TAK. It opens a `.cot` / `.xml` file holding one `<event>` or an `<events>` list.
+  - *Units:* each `a-…` event becomes a unit drawn as its 2525C symbol.
+    - The code is the `SIDC …` line BDOC writes into remarks, when it is usable and its CoT type matches the event's. So BDOC → TAK → BDOC keeps HQ, size and status. Otherwise the code comes from `BDOCSym.sidcFromCot(type)`.
+    - A code that matches a library entry becomes that entry. Any other code is kept as a custom code on the nearest library type.
+    - The callsign becomes the designation. It is left blank when it is only the auto label ("Hostile Armor / Tank"). Remarks become the note. The higher unit comes from BDOC's remarks line.
+  - *Markers:* map points `b-m-p-*`, CASEVAC `b-r-f-h-c` and alerts `b-a-o-*` (not the cancel) become tactical markers. Each is a diamond with a fixed glyph and colour, and its popup shows the TAK type. An `a-` type with no usable code also becomes a marker.
+  - *Skipped, with a count in the toast:*
+    - drawings `u-d-*` and routes `b-m-r`;
+    - chat, tasking and other non-map messages;
+    - a position that is not a finite in-range number, or is 0,0;
+    - an unreadable type;
+    - repeats of one uid in a file (the newest `time` wins);
+    - anything past 2000 events.
+  - *Same uid again:* updates that unit or marker in place: position, note and label.
+    - The symbol is redrawn only if the TAK type changed, so strength, status and library type survive a move in TAK.
+    - `BDOC-<entity id>` uids from BDOC's own export find the original entity.
+    - A uid already on the map as the other kind (unit vs marker) is left alone and counted.
+  - *Undo:* every new item and every update is its own undo step, named after the item.
+  - *Back out:* the TAK uid (`meta.cotUid`) and a marker's TAK type (`meta.cotType`) go back out unchanged in ⬇ TAK, so ATAK updates its item instead of adding a copy. Plan files keep both; `sanitizeSpec` drops bad values.
+  - *Offline:* without milsymbol, OPEN TAK waits up to 6 s. Then it places simple icons and keeps the exact code in `customSidc`, and `_bpSymReady` redraws those units with it when the symbols arrive.
+- **The file is untrusted:**
+  - Parsed with DOMParser only. A DOCTYPE or ENTITY is refused before parsing, so entities are never expanded.
+  - Limits: 8 MB and 2000 events. Numbers must match a strict decimal pattern.
+  - Text loses control, bidi and line-separator characters. The callsign goes through `BDOCSym.cleanText`, and labels also lose `< > & " ' \``. Every toast and popup string goes through `esc()`.
+  - The uid (at most 128 characters) is used only for matching and in the export (`xmlEsc`). Codes must pass `isUsableSIDC`, and lookups are own-property only.
+- **Files:**
+  - new `js/bdoc-cot-import.js` (`window.BDOCCot`: pure parser and mapper, no DOM writes);
+  - `index.html`: the button. `_bpAddUnit` is split out of `placeBattleUnit`. `_bpSymReady` also redraws exact-code units. The p177 block holds `importBattleCoT`, `_cotImportText`, `_cotFind`, `_cotUpdate` and the marker helpers;
+  - `js/bdoc-plan.js`: the TAK uid / type round trip and the `sanitizeSpec` checks;
+  - `service-worker.js`.
+- **Versions:** SW `bdoc-v179`, with the `(prev)` line for v177 kept. `bdoc-plan.js` and `bdoc-cot-import.js` are at `?v=p177` in `index.html` and in the SW precache. LazyLoader is unchanged at `p175`: no `js/modules` file changed.
+- **Tests:** `tests/cot-import-p177.test.js` (16) uses `tests/helpers/xml-dom.js`, a strict test-only XML DOM, because node has no DOMParser. The tests cover:
+  - ATAK single events and lists; number formats;
+  - the DTD refusal (the parser is never called); broken, empty, huge and non-XML files;
+  - text cleaning, prototype uids, the 2000 cap, duplicates and remarks-SIDC precedence;
+  - every library key × 7 sides round trip, and custom codes;
+  - a real `bdoc-plan.js` `cotEvents` round trip in a vm;
+  - bad uid / type in plan files, the page wiring, `_cotFind`;
+  - versions: the LazyLoader rule, not a pinned build.
+
+  The p175 tests are updated for the new export lines.
+- **Checked:** 881/881 unit tests; `scripts/ci-validate.sh` green (126 JS files, 9 inline scripts). In the dev server (port 8897, real DOMParser and milsymbol; the page's tier was set to enterprise because localhost is not signed in):
+  - *ATAK list:* 3 units and 3 markers, with the skips counted.
+  - *Re-import:* moved, renamed and retyped items in place with the count unchanged. Three undos restored each item.
+  - *Round trip:* opening a ⬇ TAK export changed nothing. Into an empty map it rebuilt `SFGPUCI---AF---` (HQ battalion, higher 1 BCT) and `SHGAUCF----E---` (planned company) exactly.
+  - *Hostile files:* the billion-laughs and external-entity DOCTYPEs were refused, as were broken XML, JSON and a 9 MB file. 2005 events were capped at 2000. Script / img in the callsign, remarks, uid and detail never reached the DOM (0 alerts), and the uid was escaped in the export.
+  - *Offline:* simple icons with the exact code, redrawn when milsymbol loaded.
+  - No JS errors.
+- **Not done:**
+  - Shapes (`u-d-*`) and routes are not imported. ATAK data packages (`.zip`) are not opened. Only one file per open.
+  - Strength (2525C field F) has no place in CoT, so a new unit from TAK has none. It does survive a TAK move of an existing unit.
+  - `stale` / `how` are ignored, so a stale event is still placed.
+- **Seen, not touched (older code):**
+  - The undo / delete toasts (`↶ Undone: …`, `Deleted: …`) put `meta.label` or the entity's label into `af()`, which is innerHTML, without `esc()`. A crafted plan file's label may reach it; not checked end to end.
+  - `tests/tier-labels-p172.test.js` fails on a CRLF checkout (its regex expects `\n}\nfunction hideMo`).
+
 ### Claude Code — p176 military map layers: every 2525C code is valid (2026-11-06) — on branch `claude/milsym-layer-sidc`, NOT on `main`
 **Not live.** Waiting for Travon's OK to push. Follow-up from p175: `getSIDC()` in `js/modules/layers-military.js` builds the MIL-STD-2525C code for every base (Military Bases layer) and airfield (Military Airfields layer).
 - **All codes enumerated:** the 269 bases and 34 airfields, plus every branch name the function knows × allied / hostile / other country × base / airfield / naval. That gives 21 distinct codes, each run through milsymbol 2.2.0 `isValid()` and `BDOCSym.isSIDC()`. Two branches were wrong (6 codes, one per side):

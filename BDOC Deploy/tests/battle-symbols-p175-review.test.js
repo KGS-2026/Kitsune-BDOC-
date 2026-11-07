@@ -194,8 +194,11 @@ test('a failed symbol load is retried, and simple-icon units are upgraded once t
   assert.match(arm, /window\.addEventListener\('online',onOnline\);/);
   assert.match(arm, /n\+\+<40&&window\._bpSymFailed&&S&&S\.hasMs\(\)/);
   const ready = fnSrc('function _bpSymReady(wasFailed){');
-  assert.match(ready, /if\(!m\|\|m\.type!=='unit'\|\|m\.sidc\|\|m\.customSidc\|\|!_bpOwn\(S\.CATALOG,m\.iconKey\)\)continue;/);
-  assert.match(ready, /_bpApplyUnit\(x,_bpStateFromMeta\(m\)\)/);
+  // p177: a unit holding only its exact code (TAK import / plan file opened offline) is redrawn from it too
+  assert.match(ready, /if\(!m\|\|m\.type!=='unit'\|\|m\.sidc\)continue;/);
+  assert.match(ready, /const exact=!!m\.customSidc&&S\.isUsableSIDC\(m\.customSidc\)&&!!window\.BDOCCot;/);
+  assert.match(ready, /if\(!exact&&\(m\.customSidc\|\|!_bpOwn\(S\.CATALOG,m\.iconKey\)\)\)continue;/);
+  assert.match(ready, /_bpApplyUnit\(x,exact\?_cotStateForCode\(m,S\):_bpStateFromMeta\(m\)\)/);
   // a library click drops a hidden pasted code
   assert.match(fnSrc('function selectBattleIcon(type){'), /if\(ci&&ci\.value\)\{ci\.value='';ci\._bpSynced='';ci\.classList\.remove\('bad'\)\}/);
 });

@@ -42,6 +42,11 @@
     return ['a', a, (s[2] === 'Z' || s[2] === 'X') ? 'X' : s[2]].concat(s.slice(4, 10).split('-')[0].split('')).join('-');
   }
 
+  // p177: a TAK uid / CoT type kept from a CoT import (js/bdoc-cot-import.js) goes back out unchanged, so
+  // TAK updates its own marker instead of adding a copy, and a spot or CASEVAC point keeps its type
+  const takUidOk = u => typeof u === 'string' && u.length > 0 && u.length <= 128 && !/[\u0000-\u001F\u007F]/.test(u);
+  const COT_TYPE_RE = /^[a-z](?:-[A-Za-z0-9]{1,12}){1,15}$/;   // = BDOCCot.TYPE_RE
+
   const hasV = () => typeof V !== 'undefined' && V && V.entities;
   const tNow = () => (hasV() && V.clock) ? V.clock.currentTime : Cesium.JulianDate.now();
   const metaMap = () => (typeof battleMeta !== 'undefined' ? battleMeta : null);
@@ -150,6 +155,9 @@
       for (const k of ['hq', 'tf', 'feint']) if (k in out.meta && typeof out.meta[k] !== 'boolean') delete out.meta[k];
       if ('iconKey' in out.meta && !(typeof out.meta.iconKey === 'string' && /^[a-z0-9_]{1,32}$/.test(out.meta.iconKey))) delete out.meta.iconKey;
       for (const k of ['designation', 'higher']) if (k in out.meta) out.meta[k] = String(out.meta[k] || '').toUpperCase().replace(/[^A-Z0-9 .,:;/()#+\-*_]/g, '').trim().slice(0, 21);
+      // p177: the TAK uid / type of an imported unit or marker go out in the next TAK export
+      if ('cotUid' in out.meta && !takUidOk(out.meta.cotUid)) delete out.meta.cotUid;
+      if ('cotType' in out.meta && !(typeof out.meta.cotType === 'string' && COT_TYPE_RE.test(out.meta.cotType))) delete out.meta.cotType;
     }
     if (out.cot && (typeof out.cot.uid !== 'string' || typeof out.cot.xml !== 'string')) delete out.cot;
     return out;
@@ -349,8 +357,9 @@
       const lbl = labelText(ent, t);
       const callsign = (m.label || lbl.split('\n')[0] || ent.name || 'Marker').slice(0, 40);
       // p175: the uid comes from the entity id, so exporting the plan again UPDATES the markers in ATAK
-      // instead of adding a second copy of every one (it was 'BDOC-BP-<n>-<random>' per export)
-      const uid = ent.id ? 'BDOC-' + String(ent.id).slice(0, 60) : 'BDOC-BP-' + (++n) + '-' + rnd();
+      // instead of adding a second copy of every one (it was 'BDOC-BP-<n>-<random>' per export).
+      // p177: a unit or marker imported from TAK keeps the uid TAK gave it.
+      const uid = takUidOk(m.cotUid) ? m.cotUid : ent.id ? 'BDOC-' + String(ent.id).slice(0, 60) : 'BDOC-BP-' + (++n) + '-' + rnd();
       if (s.kind === 'point') {
         if (s.labelOnly && group) continue;   // ring / degree labels are decoration, not TAK markers
         const d = val(ent.description, t);
@@ -361,10 +370,12 @@
         // (tools/qa/ww3.js calls cotEvents() bare) and stays the rule for everything else
         const sd = m.sidc || m.customSidc;   // a custom code placed while the symbol set was missing has only customSidc
         const unitType = sd ? sidcCoT(sd) : null;
-        const cotType = unitType || (typeof pickCoT === 'function' ? pickCoT(m) : 'a-u-G');
+        // p177: a marker imported from TAK (spot, waypoint, CASEVAC …) goes back as the type it came in as
+        const takType = !unitType && typeof m.cotType === 'string' && COT_TYPE_RE.test(m.cotType) ? m.cotType : null;
+        const cotType = unitType || takType || (typeof pickCoT === 'function' ? pickCoT(m) : 'a-u-G');
         const remarks = [m.comment || '', unitType ? ['SIDC ' + sd, m.higher ? 'Higher: ' + m.higher : ''].filter(Boolean).join(' · ') : ''].filter(Boolean).join('\n');
         events.push(buildCoT({ cotType, uid, lat: Cesium.Math.toDegrees(c.latitude), lon: Cesium.Math.toDegrees(c.longitude),
-          hae: c.height || 0, callsign, remarks, staleMs: unitType ? 86400000 : 3600000 }).replace(/<\?xml[^>]*\?>\s*/, ''));   // plan units: 24 h, not 1 h
+          hae: c.height || 0, callsign, remarks, staleMs: (unitType || takType) ? 86400000 : 3600000 }).replace(/<\?xml[^>]*\?>\s*/, ''));   // plan units and TAK markers: 24 h, not 1 h
         continue;
       }
       // ATAK drawing shapes: u-d-f freehand polyline/polygon (link points), u-d-c-c circle
