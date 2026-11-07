@@ -2545,10 +2545,10 @@ const Watchlist={
   add(item){
     const id=String(item.id||('wl_'+Date.now()+'_'+Math.random().toString(36).slice(2,7))).replace(/[\\'"<>]/g,'');
     if(!isFinite(item.lat)||!isFinite(item.lon)){af('var(--rd)','Watchlist: no position for that target');return}
-    if(this._items.find(i=>String(i.id)===id)){af('var(--yl)','Already on watchlist: '+item.name);this.open();return}
+    if(this._items.find(i=>String(i.id)===id)){af('var(--yl)','Already on watchlist: '+esc(item.name));this.open();return}
     const entry={id,name:item.name||'Unknown Location',lat:+item.lat,lon:+item.lon,type:item.type||'location',entityId:item.entityId||null,description:item.description||'',added:new Date().toISOString()};
     this._items.push(entry);this.save();
-    af('var(--gn)','⭐ Added to watchlist: '+entry.name);
+    af('var(--gn)','⭐ Added to watchlist: '+esc(entry.name));
     EventLog.add('info','Watchlist: added '+entry.name);
     this.renderPanel();
   },
@@ -7956,6 +7956,7 @@ window.BDOCUndo=(function(){
     if(b)b.classList.toggle('show',api.canUndo());
   }
   const api={
+    // lbl is plain text, never HTML: undo() escapes it for the toast
     record(ref,lbl,custom){stack.push({ref:ref||null,lbl:lbl||null,custom:custom||null});if(stack.length>400)stack.shift();_btn();},
     owns(ent){
       if(!ent)return false;
@@ -7986,7 +7987,8 @@ window.BDOCUndo=(function(){
           try{const i=battleEntities.indexOf(r.ref);if(i>=0)battleEntities.splice(i,1)}catch(_){}
           if(r.custom&&r.custom.onRemove){try{r.custom.onRemove()}catch(_){}}
         }
-        af('var(--bl)','↶ Undone: '+(r.lbl||_label(r.ref)));
+        // p179: af() is innerHTML. r.lbl and the entity label are plain text (a plan file's label is not cleaned on import)
+        af('var(--bl)','↶ Undone: '+esc(r.lbl||_label(r.ref)));
         try{V.scene.requestRender()}catch(_){}
         _btn();return;
       }
@@ -8009,7 +8011,7 @@ document.addEventListener('keydown',function(e){
   if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&(e.key==='z'||e.key==='Z')){e.preventDefault();BDOCUndo.undo();return}
   // Delete / Backspace removes the selected marker if the user placed it
   if((e.key==='Delete'||e.key==='Backspace')&&V&&V.selectedEntity&&BDOCUndo.owns(V.selectedEntity)){
-    e.preventDefault();const n=BDOCUndo.remove(V.selectedEntity);af('var(--bl)','Deleted: '+n);
+    e.preventDefault();const n=BDOCUndo.remove(V.selectedEntity);af('var(--bl)','Deleted: '+esc(n));
   }
 });
 let battleTempEntities=[]; // temporary drawing vertices
@@ -9424,7 +9426,7 @@ function _cotUpdate(ent,r,S){
     try{window.BDOCPlan&&BDOCPlan.markDirty()}catch(_){}
   }
   const now=battleMeta.get(ent),note=now.comment;
-  try{BDOCUndo.record(ent,'TAK update of '+esc(now.label||'marker'),{undo:()=>{
+  try{BDOCUndo.record(ent,'TAK update of '+(now.label||'marker'),{undo:()=>{
     if(!V.entities.contains(ent))return;
     if(pos)ent.position=pos;
     // a note written after the update stays (as for Unit edit)
@@ -9762,7 +9764,7 @@ function ctxAction(action){
       if(!window._battleBeacons)window._battleBeacons=[];
       window._battleBeacons.push(bEnt);
       try{BDOCUndo.record(bEnt,'FOXFIRE beacon')}catch(_){}
-      af('var(--rd)',`${bLabel} activated at ${bMGRS}`+(bNote?' — '+bNote.slice(0,40):''));
+      af('var(--rd)',`${esc(bLabel)} activated at ${esc(bMGRS)}`+(bNote?' — '+esc(bNote.slice(0,40)):''));
       EventLog.add('warn',`EMERGENCY BEACON: ${bLabel} at ${bLat.toFixed(4)}, ${bLon.toFixed(4)}`+(bNote?' — '+bNote:''));
       break;
     }
@@ -9947,7 +9949,7 @@ function ctxAction(action){
         // bullseye, a measurement line takes its label with it), not just one piece.
         if(BDOCUndo.owns(_savedEntity)){
           const n=BDOCUndo.remove(_savedEntity);
-          af('var(--bl)','Deleted: '+n);
+          af('var(--bl)','Deleted: '+esc(n));
         }else{
           try{_savedEntity.show=false}catch(x){}
           V.selectedEntity=undefined;
@@ -14568,7 +14570,7 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 <script src="js/mesh-globe-layer.js?v=p163s"></script>
 <script src="js/bdoc-offline-store.js?v=p75"></script>
 <!-- P156e: battle plan autosave/restore + real-shape exports + .bdoc.json (needs V, battleEntities, BDOCOfflineStore) -->
-<script src="js/bdoc-plan.js?v=p177"></script>
+<script src="js/bdoc-plan.js?v=p179"></script>
 <script src="js/bdoc-cot-import.js?v=p177"></script>
 <script src="js/bdoc-link-manager.js?v=p156d"></script>
 <script src="js/bdoc-plugin-renderer.js?v=p166"></script>

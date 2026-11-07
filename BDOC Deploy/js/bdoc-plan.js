@@ -134,6 +134,10 @@
     const hex = c => (typeof c === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(c) ? c : undefined);
     const out = JSON.parse(JSON.stringify(s));
     if (out.description) out.description = clean(out.description);
+    // p179: the label / name reach toasts (undo, delete, watchlist) and the right-click title. Every
+    // sink escapes them; this also keeps markup out of the file's text in the first place.
+    const noTags = (o, k) => { if (!(k in o)) return; if (typeof o[k] === 'string' || typeof o[k] === 'number') o[k] = String(o[k]).replace(/[<>]/g, ''); else delete o[k]; };
+    noTags(out, 'name');
     if (out.billboard && out.billboard.image) {
       const im = out.billboard.image; const u = typeof im === 'string' ? im : (im && im.v);
       if (!(typeof u === 'string' && /^data:image\//.test(u))) delete out.billboard;
@@ -142,6 +146,7 @@
       if ('popupExtras' in out.meta) out.meta.popupExtras = clean(out.meta.popupExtras || '');
       if ('color' in out.meta) out.meta.color = hex(out.meta.color);
       for (const k of Object.keys(out.meta)) if (typeof out.meta[k] === 'object' && out.meta[k] !== null) delete out.meta[k];
+      noTags(out.meta, 'label');
       // p175 unit symbols: a SIDC must be a real 15-character MIL-STD-2525C code (it picks the TAK type
       // and redraws the symbol); unit text keeps to the characters milsymbol is given at placement.
       for (const k of ['sidc', 'customSidc']) if (k in out.meta && !(typeof out.meta[k] === 'string' && SIDC_RE.test(out.meta[k]))) delete out.meta[k];

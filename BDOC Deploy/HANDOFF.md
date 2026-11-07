@@ -79,6 +79,43 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
+### Claude Code — p179 Battle Tracker toasts escape item labels (2026-11-07) — branch `claude/toast-xss-p179`, NOT live
+Built in `C:\Users\ARNAUTICA\bdoc-port`, on a new branch from `origin/main` @ `f0b8ab8`. Not pushed. Going live needs Travon's explicit OK.
+- **The hole:** `af()` puts its message into the feed, and `rf()` writes the feed with innerHTML.
+  - The undo toast (`↶ Undone: …`) and both delete toasts (`Deleted: …`, Delete key and right-click) used the item's label raw.
+  - A `.bdoc.json` plan file is shared between people, and `sanitizeSpec` cleaned neither `meta.label`, `name` nor `label.text`. A file with a label like `<img src=x onerror=alert(1)>` ran script when the user undid or deleted that item.
+  - The watchlist toasts had the same gap: their name is the right-click title, which is that label.
+  - The autosave restore is trusted (no `sanitizeSpec`), so a label opened from a file before p179 is still raw in IndexedDB. That is why the sinks escape, not just the import.
+- **Fix in `index.html`:**
+  - `BDOCUndo.undo()` shows `esc(r.lbl||_label(r.ref))`. A `record()` label is now plain text, never HTML. `_cotUpdate` (p177) passes `'TAK update of '+(now.label||'marker')` without its own `esc()`, so the label is escaped once, not twice.
+  - `'Deleted: '+esc(n)` for the Delete key and for right-click Delete.
+  - Watchlist `Added to watchlist` / `Already on watchlist`: `esc(name)`.
+  - FOXFIRE beacon toast: the typed note, the type and the grid go through `esc()`.
+  - Already escaped, left alone: `'Unit updated: '+esc(…)`, the TAK import toasts, the proximity scan, `buildEntityPopup` (title / subtitle / comment), the Edit Unit dialog. The hover tooltip and the right-click title use `textContent`.
+- **Fix in `js/bdoc-plan.js` `sanitizeSpec`:** `< >` are removed from `meta.label` and the entity `name` on import. A label or name that is not text or a number is dropped.
+  - Notes (`comment`) keep `< >`: every note sink escapes or uses `textContent`.
+  - `label.text` (the Cesium canvas label) is left as is. `_label()` can still fall back to it; the sink escape covers that.
+- **Versions:** p179 / SW `bdoc-v181`, with the `(prev)` line for v179 kept. `bdoc-plan.js?v=p179` in `index.html` and in the SW precache. LazyLoader is unchanged at `p176` (no `js/modules` file changed) and equals every module `?v=`.
+  - Not v180: `claude/drag-panels` (`686cb33`, p178, not live) holds `bdoc-v180`.
+  - If this ships first, drag-panels takes p180 / `bdoc-v182` when it merges `main`. If drag-panels ships first, this branch merges `main` and keeps v181, with a `(prev)` line for v180.
+- **Tests:** new `tests/toast-escape-p179.test.js` (9 tests). It runs the page's own `esc` / `af` / `rf`, `BDOCUndo`, Delete-key handler, `Watchlist` and `_ctxEntityTitle` (sliced from `index.html`), with the real `bdoc-plan.js`, in a vm. It covers:
+  - a plan file's `<img src=x onerror=alert(1)>` label reaching the undo toast, the Delete-key toast and both watchlist toasts as `&lt;img …&gt;`;
+  - the autosave restore path (raw label), escaped too; a TAK update label, escaped exactly once;
+  - `sanitizeSpec` stripping `< >`; static guards on both delete sinks and the FOXFIRE toast; versions.
+
+  Against `origin/main`'s files, all 9 fail: the toasts carry the raw `<img …>`.
+  - `tests/cot-import-p177.test.js`: the `_cotUpdate` check follows the plain-text label. Its version test now accepts p177 or later, as p176 did for the p175 test.
+- **Checked:** 898/899 unit tests (1 skip: the node milsymbol sweep, as before). `scripts/ci-validate.sh` green.
+  - Dev server (port 8899, launch config `bdoc-port-dev`): a crafted plan went in through `BDOCPlan.importDoc` (what OPEN FILE calls). Then: right-click → Add to Watchlist, Ctrl+Z, the Delete key, right-click → Delete This Marker, Ctrl+Z.
+  - Each toast showed the label as text. `#fdEl` held 0 `<img>`, a trapped `alert` was never called, and there were no JS errors. The SW offered the update to v181 ("NEW BDOC VERSION READY").
+  - The test items and the watchlist entry were removed afterwards.
+- **Seen, not fixed (outside this task):**
+  - `js/modules/layers-air.js:703`: `'Camera locked on '+callsign` goes into `af()` raw, though the tracking indicator just above escapes it. The callsign is from a third-party ADS-B feed, at most 8 characters. Fixing it means a LazyLoader bump.
+  - Saved views (`View saved / loaded: name`) and the COA toasts (saved / removed / APPROVED / REJECTED / view loaded) put user-typed names into `af()` raw. They are kept on the device (localStorage), so only the user's own text reaches them. A name with `&` or `<` displays wrong.
+  - `js/modules/watch-zones.js` toasts use `z.name` raw (typed by the user).
+  - `js/bdoc-atak.js` geofence toasts use `label` and `t.name` raw, but nothing calls `createGeofence` / `checkGeofences` today.
+  - The TAK import toast text is escaped before it goes to `EventLog`, which escapes again. A file name with `&` shows as `&amp;` in the event log (display only).
+
 ### Claude Code — p176 + p177 shipped together (2026-11-07) — LIVE on `main` @ `8710c62`
 **On Travon's "Ship both".** Merged in `C:\Users\ARNAUTICA\bdoc-port`, branch `claude/ship-p176-p177`: p176 (`79e0825`) fast-forward, then p177 (`0d18a34` + `b957aea`) as merge `321544c`.
 - **Merge:** conflicts only in `service-worker.js` (v179 live, v178 kept as `(prev)`) and `HANDOFF.md` (both entries kept).
@@ -88,7 +125,7 @@ here, update §1 so Hermes knows where you left off.
 - **Live check (`bdoc-port-tmp/checks/p177_live.sh`, 11/11):** SW v179 with the v178 `(prev)` line; LazyLoader `p176` = every module `?v=`; OPEN TAK and `bdoc-cot-import.js` in the page and precached. Every changed served file matches `8710c62` (`index.html` apart from Netlify's pretty URLs + analytics snippet).
   - In the live app (Chrome, read-only, nothing placed): `BDOCCot.parse` turns a TAK file into units / a marker with the HQ kept, and refuses a DOCTYPE file. Both p176 codes are valid. `bdoc-v179` caches are active. No console errors on a fresh load.
 - **p178 (`claude/drag-panels`, `686cb33`, draggable panels) is NOT live.** Its session ran out of usage before pushing. It was cut from `410a388`, so before it ships it must merge `main` and resolve the SW / version lines (its `bdoc-v180` is still above v179).
-- **Seen, not fixed (older code):** the undo / delete toasts put `meta.label` into `af()` (innerHTML) without `esc()`. TAK labels are cleaned, but labels from a shared `.bdoc.json` plan file are not.
+- **Seen, not fixed (older code):** the undo / delete toasts put `meta.label` into `af()` (innerHTML) without `esc()`. TAK labels are cleaned, but labels from a shared `.bdoc.json` plan file are not. **Fixed in p179** (`claude/toast-xss-p179`, see above; not live yet).
 
 ### Claude Code — p177 CoT import (TAK → BDOC): 📂 OPEN TAK puts ATAK / WinTAK / iTAK files on the Battle Tracker (2026-11-06) — LIVE on `main` @ `8710c62` (see the ship entry above)
 Built in the worktree `C:\Users\ARNAUTICA\bdoc-cot`, from `main` @ `410a388`.
@@ -151,7 +188,7 @@ Built in the worktree `C:\Users\ARNAUTICA\bdoc-cot`, from `main` @ `410a388`.
   - Strength (2525C field F) has no place in CoT, so a new unit from TAK has none. It does survive a TAK move of an existing unit.
   - `stale` / `how` are ignored, so a stale event is still placed.
 - **Seen, not touched (older code):**
-  - The undo / delete toasts (`↶ Undone: …`, `Deleted: …`) put `meta.label` or the entity's label into `af()`, which is innerHTML, without `esc()`. A crafted plan file's label may reach it; not checked end to end.
+  - The undo / delete toasts (`↶ Undone: …`, `Deleted: …`) put `meta.label` or the entity's label into `af()`, which is innerHTML, without `esc()`. A crafted plan file's label may reach it; not checked end to end. **Fixed in p179** (`claude/toast-xss-p179`; it does reach it, proven by `tests/toast-escape-p179.test.js`).
   - `tests/tier-labels-p172.test.js` fails on a CRLF checkout (its regex expects `\n}\nfunction hideMo`).
 
 ### Claude Code — p176 military map layers: every 2525C code is valid (2026-11-06) — LIVE on `main` @ `8710c62` (shipped with p177, see above)

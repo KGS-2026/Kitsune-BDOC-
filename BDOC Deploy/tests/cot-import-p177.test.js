@@ -416,7 +416,8 @@ test('OPEN TAK sits beside the TAK export and the import code is wired, escaped 
   assert.match(fnSrc('function _cotAddMarker(r){'), /attachMeta\(ent,meta\);\n  battleEntities\.push\(ent\);/);
   assert.match(fnSrc('function placeBattleUnit(lat,lon){'), /const \{vis,meta\}=_bpAddUnit\(lat,lon,st,''\);/);
   const upd = fnSrc('function _cotUpdate(ent,r,S){');
-  assert.match(upd, /BDOCUndo\.record\(ent,'TAK update of '\+esc\(/);
+  // p179: an undo label is plain text and BDOCUndo.undo() escapes it once (tests/toast-escape-p179.test.js)
+  assert.match(upd, /BDOCUndo\.record\(ent,'TAK update of '\+\(now\.label\|\|'marker'\),/);
   assert.match(upd, /_bpRestoreUnit\(ent,snap\);/);
   // offline: the exact code is kept for ⬇ TAK and the later redraw
   assert.match(fnSrc('function _cotAddUnit(r,S){'), /if\(!vis\.sidc\)meta\.customSidc=r\.sidc;/);
@@ -444,16 +445,21 @@ test('_cotFind: a TAK uid finds the unit imported with it, or the BDOC entity it
 
 // p177, not p176: branch claude/milsym-layer-sidc already took p176 / bdoc-v178 from the same base.
 // Two builds sharing one SW_VERSION would leave the second one's devices on the old cache.
-test('versions: SW v179 for p177 with v177 kept; the new module and bdoc-plan.js are precached at p177', () => {
-  assert.match(SW, /^const SW_VERSION = 'bdoc-v179';  \/\/ p177: CoT import/m);
+test('versions: SW v179 for p177 with v177 kept; the new module and bdoc-plan.js are precached at p177 or later', () => {
+  // p179 or later keeps this line as `// (prev)`, so the match is not anchored to the line start
+  assert.match(SW, /const SW_VERSION = 'bdoc-v179';  \/\/ p177: CoT import/);
   assert.match(SW, /^\/\/ \(prev\) const SW_VERSION = 'bdoc-v177';  \/\/ p175:/m);
   assert.equal((SW.match(/^const SW_VERSION = /gm) || []).length, 1, 'one live SW_VERSION line');
+  // p177 or later: a later build that changes one of these files bumps its ?v= (p179 changed bdoc-plan.js)
+  const at = {};
   for (const f of ['bdoc-plan', 'bdoc-cot-import']) {
-    assert.ok(SW.includes(`'/js/${f}.js?v=p177',`), f);
-    assert.match(HTML, new RegExp(`<script src="js/${f}\\.js\\?v=p177"></script>`), f);
+    const m = new RegExp(`<script src="js/${f}\\.js\\?v=(p1(?:7[7-9]|[89]\\d)\\w*)"></script>`).exec(HTML);
+    assert.ok(m, f);
+    at[f] = m[1];
+    assert.ok(SW.includes(`'/js/${f}.js?v=${m[1]}',`), `${f} precached at ${m[1]}`);
   }
   // the module loads after bdoc-plan.js (no order dependency, but keep the pair together)
-  assert.ok(HTML.indexOf('js/bdoc-cot-import.js?v=p177') > HTML.indexOf('js/bdoc-plan.js?v=p177'));
+  assert.ok(HTML.indexOf(`js/bdoc-cot-import.js?v=${at['bdoc-cot-import']}`) > HTML.indexOf(`js/bdoc-plan.js?v=${at['bdoc-plan']}`));
   // p177 changes no js/modules file, so LazyLoader keeps whatever build it is at; the rule that
   // matters (HANDOFF rule 3) is that it equals ?v= on every /js/modules/* precache entry
   const lz = /_version:\s*'([^']+)'/.exec(HTML)[1];

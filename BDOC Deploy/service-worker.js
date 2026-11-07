@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v179';  // p177: CoT import (TAK → BDOC): OPEN TAK places ATAK / WinTAK / iTAK events as 2525C units and markers; same uid updates, TAK uid / type go back out
+const SW_VERSION = 'bdoc-v181';  // p179: Battle Tracker undo / delete / watchlist toasts escape the item's label (a crafted .bdoc.json plan label could run script); plan files lose < > in labels and names
+// (prev) const SW_VERSION = 'bdoc-v179';  // p177: CoT import (TAK → BDOC): OPEN TAK places ATAK / WinTAK / iTAK events as 2525C units and markers; same uid updates, TAK uid / type go back out
 // (prev) const SW_VERSION = 'bdoc-v178';  // p176: military map layers: PLA Rocket Force bases draw the 2525C missile-unit symbol (was an invalid code, drawn as a question mark); Space Force bases get a valid space-track code
 // (prev) const SW_VERSION = 'bdoc-v177';  // p175: Battle Tracker units are real MIL-STD-2525C / APP-6 symbols (side, status, size, HQ / task force / dummy, strength, designation, custom SIDC), edit dialog, correct TAK types
 // (prev) const SW_VERSION = 'bdoc-v176';  // p174: double-click a SIT card to expand it beside the panel; live OSINT cards show place, source and time instead of the headline twice
@@ -51,7 +52,7 @@ const STATIC_PRECACHE = [
   '/js/bdoc-glass-guard.js?v=p75',
   '/js/bdoc-push.js?v=p165',
   '/js/bdoc-offline-store.js?v=p75',
-  '/js/bdoc-plan.js?v=p177',
+  '/js/bdoc-plan.js?v=p179',
   '/js/bdoc-cot-import.js?v=p177',
   '/js/vendor/hls.min.js?v=1.5.17',
   '/js/bdoc-link-manager.js?v=p156d',
