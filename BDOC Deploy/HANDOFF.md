@@ -79,8 +79,21 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-10-02)
 
-### Claude Code — p178 Every box and pop-up drags by its title bar; pressing a covered box brings it to the front (2026-11-06) — branch `claude/drag-panels`, NOT LIVE
-**Not pushed. Going live needs Travon's explicit OK.** Built in the worktree `C:\Users\ARNAUTICA\bdoc-drag`, from `main` @ `410a388`.
+### Claude Code — p178 Every box and pop-up drags by its title bar; pressing a covered box brings it to the front (2026-11-06) — LIVE on `main` @ `7ef330e` (2026-11-07)
+**Live check 7 Nov ~15:38Z (on Travon's "Ship p178"):**
+- **Merge:** in a new worktree, `C:\Users\ARNAUTICA\bdoc-s178`, branch `claude/ship-p178`. Another session had switched `bdoc-port` to its own branch, so this merge stayed out of it. `claude/drag-panels` (`686cb33`) was merged on top of `f0b8ab8` as `2696d3c`.
+  - Conflicts were only the SW line and this file. `bdoc-v180` is the live line, with `(prev)` lines for v179 (p177) and v178 (p176).
+  - `7ef330e`: version tests for p177 / p178 now also accept their SW line as a `(prev)` line, so the next ship doesn't break them.
+- **Before push:** `node --test` 901 pass / 0 fail / 1 skipped, and `ci-validate.sh` passed.
+  - Dev server: ww3 12/12. The map info box dragged with the mouse by exactly (-256, +256) and stayed open.
+  - A press on the AOI Watch box raised it over the info box (z 62 over 61); a press on the info box raised it back (63). Both stayed under the ticker (80).
+- **Deploy:** fast-forward push `f0b8ab8..7ef330e` at 15:36:52Z. Netlify served SW `bdoc-v180` by 15:37:21Z.
+- **Live check** (`bdoc-port-tmp/checks/p178_live.sh`): 10/10.
+  - Versions: SW v180 with `(prev)` v179 and v178; LazyLoader `p176` = every module `?v=`.
+  - `bdoc-float.js?v=p178` is in the page and in the precache; OPEN TAK is still there.
+  - `js/bdoc-float.js` and `service-worker.js` are byte-identical to `7ef330e`. `index.html` differs only by Netlify rewrites.
+
+Built in the worktree `C:\Users\ARNAUTICA\bdoc-drag`, from `main` @ `410a388`.
 
 Travon (screenshot: the AOI Watch box sat on top of a Taipei cam pop-up): "I need the boxes to be able to be dragged like the global threat box ... for all boxes and all pop-ups ... other boxes pop up on top of it which don't allow you to see it."
 - **Numbering:** p178 / SW `bdoc-v180`. It assumes p176 (`claude/milsym-layer-sidc`, `bdoc-v178`) and p177 (`claude/cot-import`, `bdoc-v179`) ship first.
