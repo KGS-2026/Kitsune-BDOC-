@@ -1,4 +1,5 @@
-// Cyber layer (p182): reported cyber incidents, placed where they happened.
+// Cyber layer (p182, origin lines p184): reported cyber incidents, placed where they happened,
+// and a line from the country a report names as the attacker.
 //
 // The headlines below are real ones the live collector saw on 2026-11-09 (or close copies of
 // them), chosen for the mistakes the place finder made on the way: Maine-et-Loire is not Maine,
@@ -217,21 +218,21 @@ test('the made-up hotspots, random counts and random arcs are gone', () => {
     assert.ok(!HTML.includes(gone), gone + ' still in index.html');
   assert.ok(!/Math\.random/.test(CLIENT), 'the client never invents data');
   assert.match(HTML, /<span class="ly-n">Cyber Incidents<\/span>/);
-  assert.match(HTML, /<script src="js\/bdoc-cyber-map\.js\?v=p182"><\/script>/);
+  assert.match(HTML, /<script src="js\/bdoc-cyber-map\.js\?v=p184"><\/script>/);
   assert.match(HTML, /BDOCCyberMap\.load\(V,cyberEnts,\(\)=>layers\.cyber\)/);
 });
 
-test('service worker v185 precaches the cyber map client; the desktop server runs the function', () => {
-  assert.match(SW, /const SW_VERSION = 'bdoc-v185';/);
-  assert.match(SW, /\(prev\) const SW_VERSION = 'bdoc-v184';/);
-  assert.ok(SW.includes("'/js/bdoc-cyber-map.js?v=p182'"));
+test('service worker v186 precaches the cyber map client; the desktop server runs the function', () => {
+  assert.match(SW, /const SW_VERSION = 'bdoc-v186';/);
+  assert.match(SW, /\(prev\) const SW_VERSION = 'bdoc-v185';/);
+  assert.ok(SW.includes("'/js/bdoc-cyber-map.js?v=p184'"));
   const srv = fs.readFileSync(path.join(ROOT, 'electron', 'server.js'), 'utf8');
   assert.match(srv, /'gov-alert', 'cyber-incidents'\]/);
 });
 
 // The client runs in a stub page: feed text with markup must come out escaped in the info box
 // and as plain text in the panel, and links must be http(s).
-function runClient(payload) {
+function runClient(payload, store = null) {
   const made = [];
   const node = () => {
     const n = { style: {}, children: [], textContent: '', listeners: {}, set innerHTML(v) { throw new Error('innerHTML used in panel'); } };
@@ -242,13 +243,19 @@ function runClient(payload) {
   const hud = node();
   const ctx = {
     console, setTimeout: () => 1, clearTimeout: () => {}, Date, JSON, Math,
-    localStorage: { getItem: () => null, setItem: () => {} },
+    localStorage: { getItem: () => store, setItem: () => {} },
     document: { getElementById: (id) => (id === 'cyberHud' ? hud : null), createElement: () => node() },
     fetch: async () => ({ ok: true, json: async () => payload }),
     Cesium: {
-      Cartesian3: { fromDegrees: (x, y, z) => ({ x, y, z }) }, Cartesian2: function (x, y) { this.x = x; this.y = y; },
+      Cartesian3: { fromDegrees: (x, y, z) => ({ x, y, z }), fromDegreesArrayHeights: (a) => a.slice() }, Cartesian2: function (x, y) { this.x = x; this.y = y; },
       Color: { fromCssColorString: () => ({ withAlpha: () => ({}) }), BLACK: { withAlpha: () => ({}) } },
-      LabelStyle: { FILL_AND_OUTLINE: 2 }, DistanceDisplayCondition: function () {}
+      LabelStyle: { FILL_AND_OUTLINE: 2 }, DistanceDisplayCondition: function () {},
+      Cartographic: { fromDegrees: (lon, lat) => ({ longitude: lon, latitude: lat }) },
+      EllipsoidGeodesic: function (a, b) { this.surfaceDistance = 5e6; this.interpolateUsingFraction = (t) => ({ longitude: a.longitude + (b.longitude - a.longitude) * t, latitude: a.latitude + (b.latitude - a.latitude) * t }); },
+      Math: { toDegrees: (x) => x },
+      PolylineGlowMaterialProperty: function (o) { this.kind = 'glow'; this.o = o; },
+      PolylineArrowMaterialProperty: function (c) { this.kind = 'arrow'; },
+      ArcType: { NONE: 0 }
     }
   };
   ctx.window = ctx;
@@ -297,4 +304,86 @@ test('client: feed down shows a plain message and draws nothing', async () => {
   const r = await runClient({ ok: false, error: 'all feeds down', incidents: [], advisories: [] });
   assert.equal(r.made.length, 0);
   assert.match(allText(r.hud), /unavailable/);
+});
+
+// ── where attacks came from (p184) ───────────────────────────
+const from = (title, summary = '') => { const o = lib.originOf(title, summary); return o ? o.cc : null; };
+
+test('origin: the country or group a report names as the attacker', () => {
+  assert.equal(from('Iran-linked group claims it hacked CA water utility serving the Central Valley'), 'IR');
+  assert.equal(from('Russian group hacked Quebec water treatment plant, gained access to control pumps'), 'RU');
+  assert.equal(from('U.S. investigating if Iran was behind cyberattack on water systems in 7 states'), 'IR');
+  assert.equal(from('Italy\u2019s Meloni blames pro-Russian hackers for leak of foreign minister\u2019s data'), 'RU', 'pro-Russian, not Italy');
+  assert.equal(from('Cyberattack on Polish water plant attributed to Russia'), 'RU');
+  assert.equal(from('Volt Typhoon hackers lurked in Littleton, Massachusetts water utility for months'), 'CN', 'named group');
+  assert.equal(from('Lazarus Group drains $1.5 billion from exchange'), 'KP');
+  assert.equal(from("North Korea's army of world-class hackers is secret weapon that took down Binance"), 'KP');
+  assert.equal(from('Ukrainian and Belarusian Hackers Expose Russia\u2019s Secret War Death Records'), 'UA');
+  assert.equal(from('Hospital hit by ransomware', 'The attack was claimed by pro-Iranian hacktivists on Telegram.'), 'IR', 'from the summary');
+});
+
+test("origin: the victim, a passive verb or a company's home is never an origin", () => {
+  assert.equal(from('France targeted by wave of cyberattacks'), null);
+  assert.equal(from('US-based firm hacked in ransomware attack'), null);
+  assert.equal(from("France's cyber agency says hospital hit by ransomware"), null);
+  assert.equal(from('Hackers Hijacked French Blood Plasma Freezers, Changing Temperature Settings'), null, 'no attacker named');
+  assert.equal(from('LockBit ransomware hits county jail'), null, 'a gang is not a country');
+});
+
+test('origin: the victim moves to the right country when the attackers are named first', () => {
+  assert.equal(where('Ukrainian and Belarusian Hackers Expose Russia\u2019s Secret War Death Records'), 'country:Russia:RU');
+  assert.equal(where("North Korea's army of world-class hackers is secret weapon that took down Binance"), null);
+  assert.equal(where('Italy\u2019s Meloni blames pro-Russian hackers for leak of foreign minister\u2019s data'), 'country:Italy:IT');
+});
+
+test("build: origin kept per incident, carried through a merge, dropped when it is the victim's own country", () => {
+  const out = lib.build([
+    item('Iran-linked group claims it hacked CA water utility serving the Central Valley', { published: NOW - 3 * DAY }),
+    item('CA water utility serving the Central Valley hacked, group claims', { published: NOW - 2 * DAY, source: 'Other' }),
+    item('Russian hackers hit Russian state statistics agency'),
+    item('Ransomware attack hits Ohio hospital')
+  ], NOW);
+  const ca = out.find(x => x.place && x.place.state === 'CA');
+  assert.equal(ca.reports, 2);
+  assert.equal(ca.origin.cc, 'IR');
+  assert.equal(ca.origin.why, 'Iran-linked');
+  const ru = out.find(x => /statistics/.test(x.title));
+  assert.equal(ru.origin, null, 'no line from a country to itself');
+  assert.equal(out.find(x => /Ohio/.test(x.title)).origin, null);
+});
+
+test('client: a line per attacker to victim pair with an arrowhead, an origin marker, escaped, and a switch', async () => {
+  const t = new Date(NOW).toISOString();
+  const ca = { level: 'state', name: 'California', state: 'CA', cc: 'US', lat: 36.5, lon: -119.6 };
+  const payload = {
+    ok: true, checked: t, advisories: [],
+    incidents: [
+      { id: 'a', title: '<b>Iran-linked</b> group hacked CA water', link: 'https://ok.example/a', source: 'X', sources: [], reports: 1, published: t, latest: t, sector: 'water',
+        place: ca, origin: { cc: 'IR', name: 'Iran', lat: 32.4, lon: 53.7, why: '<script>x</script>' } },
+      { id: 'b', title: 'Second CA report', link: 'https://ok.example/b', source: 'Y', sources: [], reports: 1, published: t, latest: t, sector: 'water',
+        place: ca, origin: { cc: 'IR', name: 'Iran', lat: 32.4, lon: 53.7, why: 'Iran-linked' } },
+      { id: 'c', title: 'North Korean hackers drain exchange', link: 'https://ok.example/c', source: 'Z', sources: [], reports: 1, published: t, latest: t, sector: 'finance',
+        place: null, origin: { cc: 'KP', name: 'North Korea', lat: 40.3, lon: 127.5, why: 'North Korean hackers' } }
+    ]
+  };
+  const r = await runClient(payload);
+  const lines = r.made.filter(e => e.polyline);
+  assert.equal(lines.length, 2, 'one line (body + arrowhead) for Iran to California, none for the unplaced victim');
+  assert.deepEqual(lines.map(e => e.polyline.material.kind), ['glow', 'arrow']);
+  const markers = r.made.filter(e => e.label && /ATTACKER IN/.test(e.label.text));
+  assert.deepEqual(markers.map(e => e.label.text).sort(), ['IRAN \u00b7 ATTACKER IN 2', 'NORTH KOREA \u00b7 ATTACKER IN 1']);
+  assert.ok(!lines[0].description.includes('<script>') && lines[0].description.includes('&lt;script&gt;'), 'attribution words are escaped');
+  const st = r.api.state();
+  assert.equal(st.arcs, 1);
+  assert.equal(st.origins, 2);
+  assert.equal(st.pins, 1);
+  const text = allText(r.hud);
+  assert.ok(text.includes('WHERE ATTACKS CAME FROM'));
+  assert.ok(text.includes('2 named \u00b7 2 on map') && text.includes('1 named'));
+  assert.ok(text.includes('3 of 3 incidents in view name an attacker'));
+
+  const off = await runClient(payload, JSON.stringify({ arcs: false }));
+  assert.equal(off.made.filter(e => e.polyline).length, 0, 'LINES OFF draws no lines');
+  assert.equal(off.api.state().arcs, 0);
+  assert.ok(allText(off.hud).includes('LINES OFF'));
 });

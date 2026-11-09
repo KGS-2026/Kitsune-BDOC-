@@ -135,12 +135,31 @@ const DEMONYM = {
   Saudi: 'SA', Emirati: 'AE', Indian: 'IN', Pakistani: 'PK', Chinese: 'CN', Japanese: 'JP', 'South Korean': 'KR', 'North Korean': 'KP',
   Taiwanese: 'TW', Australian: 'AU', Canadian: 'CA', Mexican: 'MX', Brazilian: 'BR', Argentine: 'AR', Colombian: 'CO', Chilean: 'CL',
   'South African': 'ZA', Nigerian: 'NG', Kenyan: 'KE', Egyptian: 'EG', Singaporean: 'SG', Malaysian: 'MY', Indonesian: 'ID', Thai: 'TH',
-  Vietnamese: 'VN', Filipino: 'PH', American: 'US'
+  Vietnamese: 'VN', Filipino: 'PH', American: 'US', Belarusian: 'BY', Lithuanian: 'LT', Latvian: 'LV', Estonian: 'EE',
+  Palestinian: 'PS', Syrian: 'SY', Lebanese: 'LB', Iraqi: 'IQ', Qatari: 'QA', Hungarian: 'HU', Serbian: 'RS'
 };
+// Shared tails: "Ukrainian and Belarusian hackers" (both are actors), "North Korea's army of hackers".
+const AND_ACTOR = String.raw`\s+(?:and|&)\s+(?:pro-)?[A-Z][\w-]*(?:\s+[A-Z][\w-]*)?\s+(?:hackers?|hacktivists?|groups?|gangs?|actors?)\b`;
+// Case-sensitive on purpose (the ACTOR_* regexes are not): only lower-case words may sit between
+// "'s" and the noun, so "Italy's Meloni blames pro-Russian hackers" does not make Italy an actor.
+const POSS_ACTOR = /^['’]s\s+(?:[a-z][\w-]*\s+){0,3}?(?:[Hh]ackers?|[Hh]acking|army|spies|cyber ?attacks?|cyber-attacks?)\b/;
 // "Russian hackers", "China-linked", "pro-Iranian group": who attacked, not where.
-const ACTOR_AFTER = /^(?:-?\s*(?:linked|backed|nexus|aligned|sponsored|based|affiliated|style)\b|\s+(?:state[- ]sponsored\s+|state[- ]backed\s+|government\s+)?(?:hackers?|hacking|hacktivists?|group|groups|gang|gangs|apt|threat actors?|actors?|spies|spy|intelligence|military|cyber ?criminals?|cybercriminals?|operatives|ransomware gang|pirates?|hackeurs?|cyber ?attacks?|attacks?)\b|\s+(?:hacks?|hacked|attacked|targets?|targeted|launch\w*|behind|blamed|denies|struck|strikes?)\b)/i;
+const ACTOR_AFTER = new RegExp(String.raw`^(?:-?\s*(?:linked|backed|nexus|aligned|sponsored|based|affiliated|style)\b|\s+(?:state[- ]sponsored\s+|state[- ]backed\s+|government\s+)?(?:hackers?|hacking|hacktivists?|group|groups|gang|gangs|apt|threat actors?|actors?|spies|spy|intelligence|military|cyber ?criminals?|cybercriminals?|operatives|ransomware gang|pirates?|hackeurs?|cyber ?attacks?|attacks?)\b|\s+(?:hacks?|hacked|attacked|targets?|targeted|launch\w*|behind|blamed|denies|struck|strikes?)\b|\s+(?:was|were|is|are)\s+behind\b|` + AND_ACTOR + ')', 'i');
 // "blamed on Iran", "attributed to Russia", "backed by China".
 const ACTOR_BEFORE = /\b(?:by|blames?|blamed on|accuse[sd]?|attributed to|tied to|ties to|linked to|backed by|suspects?|pro)[\s-]+$/i;
+
+// Where an attack came from, as the report says. Stricter than ACTOR_*: "France targeted" or
+// "US-based firm" must not draw a line out of France or the US.
+const ORIGIN_AFTER = new RegExp(String.raw`^(?:-?\s*(?:linked|backed|nexus|aligned|sponsored|affiliated)\b|\s+(?:state[- ]sponsored\s+|state[- ]backed\s+|government\s+|military\s+)?(?:hackers?|hacking (?:groups?|units?|teams?|campaigns?)|hacktivists?|group|groups|gang|gangs|apt|threat actors?|actors?|spies|spy agency|intelligence|military intelligence|cyber ?criminals?|cybercriminals?|operatives|hackeurs?|cyber ?attacks?|cyber-attacks?)\b|\s+(?:was\s+|were\s+|is\s+|are\s+)?behind\b|\s+hacks\b|` + AND_ACTOR + ')', 'i');
+const ORIGIN_BEFORE = /\b(?:blames?|blamed on|blaming|accuse[sd]?|accusing|attributed to|attributes? (?:it |the attacks? )?to|tied to|ties to|linked to|backed by|suspects?|suspected|(?:attack(?:ed|s)?|hack(?:ed|s)?|targeted|hit|claimed|carried out|launched|conducted|orchestrated|staged)\s+by)\s+(?:the\s+)?$/i;
+// Named state-linked groups. Microsoft's weather names: Typhoon = China, Sandstorm = Iran,
+// Blizzard = Russia, Sleet = North Korea. Ransomware gangs are left out: a gang is not a country.
+const GROUPS = [
+  [/\b(?:APT ?28|APT ?29|Sandworm|Fancy Bear|Cozy Bear|Gamaredon|Turla|Killnet|NoName ?057(?:\(16\))?|Cyber Army of Russia(?: Reborn)?|XakNet|Z-Pentest|(?:Midnight|Forest|Seashell|Star|Aqua|Cadet|Secret|Ghost) Blizzard)\b/i, 'RU'],
+  [/\b(?:APT ?(?:3|10|15|31|40|41)|Mustang Panda|(?:Volt|Salt|Flax|Silk|Linen|Violet|Brass|Granite|Charcoal|Aquatic|Storm) Typhoon)\b/i, 'CN'],
+  [/\b(?:APT ?(?:33|34|35|39|42)|Charming Kitten|MuddyWater|OilRig|CyberAv3ngers|Cyber Av3ngers|Handala|Cyber Toufan|(?:Mint|Peach|Cotton|Mango|Crimson|Phosphorus|Hazel|Void|Lemon) Sandstorm)\b/i, 'IR'],
+  [/\b(?:Lazarus(?: Group)?|Kimsuky|Andariel|APT ?(?:37|38|43)|BlueNoroff|TraderTraitor|(?:Jade|Diamond|Onyx|Moonstone|Emerald|Sapphire|Citrine) Sleet)\b/i, 'KP']
+];
 
 // Ordinary words that are also US town names. Without a strong pattern they never place a story.
 const COMMON = new Set(('media industry energy security commerce ransom protection normal liberty independence union center centre data cloud ' +
@@ -270,34 +289,67 @@ function worldCityIn(text) {
   return null;
 }
 
-function countriesIn(text) {
+// Countries and demonyms in the text, in reading order, split into places (where it happened)
+// and actors (who did it). `origin` marks the actors the strict rules accept, with the words
+// that say so.
+function scanCountries(text) {
   const I = index();
-  let t = ' ' + text + ' ';
-  const found = [];
+  const orig = ' ' + text + ' ';      // context is read from the untouched text...
+  let t = orig;                       // ...matches are blanked here, so "West Virginia" is not also "Virginia"
+  const places = [], actors = [];
   const blank = (s) => ' '.repeat(s.length);
+  const judge = (off, cc, word, pro, rest, before) => {
+    const poss = rest.match(POSS_ACTOR);
+    const actor = !!pro || !!poss || ACTOR_AFTER.test(rest) || ACTOR_BEFORE.test(before);
+    if (!actor) return false;
+    const a = rest.match(ORIGIN_AFTER) || poss, b = before.match(ORIGIN_BEFORE);
+    const origin = !!pro || !!a || !!b;
+    const why = (b ? b[0].trim() + ' ' : '') + (pro || '') + word + (a ? a[0] : '');
+    actors.push({ off, cc, origin, why: why.replace(/\s+/g, ' ').trim().slice(0, 60) });
+    return true;
+  };
   for (const [name, cc] of I.countryNames) {
     if (name.length < 4 && !/^(?:UK|USA|UAE|U\.S\.|U\.K\.)$/.test(name)) continue;
     const re = new RegExp('(^|[^\\w-])' + esc(name) + '(?![\\w])', 'g');
     t = t.replace(re, (m, pre, off) => {
-      const rest = t.slice(off + m.length, off + m.length + 40);
-      const before = t.slice(Math.max(0, off - 30), off + pre.length);
-      if (!ACTOR_AFTER.test(rest) && !ACTOR_BEFORE.test(before)) found.push([off, cc]);
+      const rest = orig.slice(off + m.length, off + m.length + 48);
+      const before = orig.slice(Math.max(0, off - 30), off + pre.length);
+      if (!judge(off, cc, m.slice(pre.length), '', rest, before)) places.push([off, cc]);
       return pre + blank(m.slice(pre.length));
     });
   }
   for (const [word, cc] of Object.entries(DEMONYM).sort((a, b) => b[0].length - a[0].length)) {
     const re = new RegExp('(^|[^\\w-])(pro-)?' + esc(word) + '(?![\\w])', 'gi');
     t = t.replace(re, (m, pre, pro, off) => {
-      const rest = t.slice(off + m.length, off + m.length + 40);
-      const before = t.slice(Math.max(0, off - 30), off + pre.length);
-      const actor = !!pro || ACTOR_AFTER.test(rest) || ACTOR_BEFORE.test(before);
-      const cased = /^[A-ZÉ]/.test(m.slice(pre.length)) || /^fran[çc]ais/i.test(word);
-      if (!actor && cased) found.push([off, cc]);
+      const rest = orig.slice(off + m.length, off + m.length + 48);
+      const before = orig.slice(Math.max(0, off - 30), off + pre.length);
+      const said = m.slice(pre.length + (pro ? pro.length : 0));
+      const cased = /^[A-ZÉ]/.test(said) || /^fran[çc]ais/i.test(word);
+      if (cased && !judge(off, cc, said, pro, rest, before)) places.push([off, cc]);
       return pre + blank(m.slice(pre.length));
     });
   }
-  // In reading order, so the first country named is the one used.
-  return found.sort((a, b) => a[0] - b[0]).map(x => x[1]);
+  places.sort((a, b) => a[0] - b[0]);
+  actors.sort((a, b) => a.off - b.off);
+  return { places, actors };
+}
+// In reading order, so the first country named is the one used.
+function countriesIn(text) { return scanCountries(text).places.map(x => x[1]); }
+
+// The country the report says the attack came from, or null. Headline first, then the opening
+// of the summary. A named state-linked group counts ("Volt Typhoon" = China).
+function originOf(title, summary) {
+  const I = index();
+  for (const text of [title, String(summary || '').slice(0, 400)]) {
+    if (!text) continue;
+    const hits = [];
+    for (const a of scanCountries(text).actors) if (a.origin) hits.push({ off: a.off, cc: a.cc, why: a.why });
+    for (const [re, cc] of GROUPS) { const m = text.match(re); if (m) hits.push({ off: m.index, cc, why: m[0] }); }
+    hits.sort((a, b) => a.off - b.off);
+    const h = hits.find(x => I.country[x.cc]);
+    if (h) { const c = I.country[h.cc]; return { cc: h.cc, name: c.name, lat: c.lat, lon: c.lon, why: h.why }; }
+  }
+  return null;
 }
 
 // The most exact place the text supports, or null.
@@ -351,7 +403,10 @@ function build(items, now) {
     if (!attackish || NOT_INCIDENT.test(it.title)) continue;
     const sector = sectorOf(it.title, it.summary);
     if (age > (MAX_AGE[sector] || MAX_AGE.default)) continue;
-    kept.push({ ...it, sector, place: locate(it.title, it.summary), words: shingle(it.title) });
+    const place = locate(it.title, it.summary);
+    let origin = originOf(it.title, it.summary);
+    if (origin && place && origin.cc === place.cc) origin = null;     // no line from a country to itself
+    kept.push({ ...it, sector, place, origin, words: shingle(it.title) });
   }
   kept.sort((a, b) => a.published - b.published);
   const groups = [];
@@ -380,6 +435,7 @@ function build(items, now) {
       if (!g.place && it.place) g.place = it.place;
       else if (g.place && it.place && RANK[it.place.level] < RANK[g.place.level]) g.place = it.place;
       if (g.sector === 'other' && it.sector !== 'other') g.sector = it.sector;
+      if (!g.origin && it.origin && !(g.place && g.place.cc === it.origin.cc)) g.origin = it.origin;
       continue;
     }
     groups.push({ ...it, words: new Set(it.words), reports: 1, sources: [{ name: it.source, link: it.link }] });
@@ -391,7 +447,8 @@ function build(items, now) {
       id: 'c' + i + '-' + g.published.toString(36),
       title: g.title, link: g.link, source: g.source, sources: g.sources.slice(0, 8), reports: g.reports,
       published: new Date(g.published).toISOString(), latest: new Date(g.latest || g.published).toISOString(),
-      sector: g.sector, lang: g.lang, place: g.place
+      sector: g.sector, lang: g.lang, place: g.place,
+      origin: g.origin && !(g.place && g.place.cc === g.origin.cc) ? g.origin : null
     }));
 }
 const RANK = { county: 0, city: 1, state: 2, country: 3 };
@@ -403,4 +460,4 @@ function advisories(xml, max = 8) {
     .map(a => ({ title: a.title, link: a.link, published: new Date(a.published).toISOString() }));
 }
 
-module.exports = { decode, plain, parseFeed, isIncident, sectorOf, statesIn, countyIn, placeIn, countriesIn, locate, build, advisories, STATE_NAME };
+module.exports = { decode, plain, parseFeed, isIncident, sectorOf, statesIn, countyIn, placeIn, countriesIn, scanCountries, originOf, locate, build, advisories, STATE_NAME };

@@ -7,6 +7,9 @@
 // the article text at county, town, state or country level, and it says which.
 // Data: /.netlify/functions/cyber-incidents (15-min CDN cache). Feed text is escaped
 // before it goes into an info box and set with textContent in the panel.
+// p184: origin lines. When a report names who did it ("Iran-linked group", "Russian hackers",
+// "Volt Typhoon"), a glowing arc runs from that country to the victim's pin, with an arrowhead
+// at the victim. Only reports that name an attacker get a line; nothing is guessed.
 // (c) 2026 Kitsune Global Solutions LLC
 // ============================================================
 (function () {
@@ -26,13 +29,23 @@
   var PRECISION = { county: 'county', city: 'town', state: 'state (no town named)', country: 'country (no town named)' };
   var RING_KM = { state: 180, country: 380 };
   var FLY_H = { county: 260e3, city: 160e3, state: 1.4e6, country: 3.2e6 };
+  // Origin line colours: the four countries named most often get their own, the rest share one.
+  var ORIGIN_COLOR = { RU: '#FF5D5D', CN: '#FFB020', IR: '#3DDC97', KP: '#C084FC' };
+  var ORIGIN_OTHER = '#7DD3FC';
+  function originColor(cc) { return ORIGIN_COLOR[cc] || ORIGIN_OTHER; }
 
   var V = null, ents = null, data = null, byKey = {}, timer = null, isOn = function () { return true; };
+  var counts = { pins: 0, arcs: 0, origins: 0 };
   var prefs = loadPrefs();
 
   function loadPrefs() {
-    var p = { days: 30, off: [] };
-    try { var s = JSON.parse(localStorage.getItem(LS) || '{}'); if (s && [7, 30, 365].indexOf(s.days) >= 0) p.days = s.days; if (s && Array.isArray(s.off)) p.off = s.off; } catch (_) {}
+    var p = { days: 30, off: [], arcs: true };
+    try {
+      var s = JSON.parse(localStorage.getItem(LS) || '{}');
+      if (s && [7, 30, 365].indexOf(s.days) >= 0) p.days = s.days;
+      if (s && Array.isArray(s.off)) p.off = s.off;
+      if (s && s.arcs === false) p.arcs = false;
+    } catch (_) {}
     return p;
   }
   function savePrefs() { try { localStorage.setItem(LS, JSON.stringify(prefs)); } catch (_) {} }
@@ -53,6 +66,9 @@
   function mappable(p) { return !!p && !(p.level === 'country' && p.cc === 'US'); }
   function placeKey(p) { return [p.level, p.name, p.state, p.cc].join('|'); }
   function placeName(p) { return p.name + (p.state && p.level !== 'state' ? ', ' + p.state : ''); }
+  // An origin line needs a named attacker and a victim with a pin.
+  function arcable(x) { return !!(x.origin && x.origin.cc && isFinite(x.origin.lat) && isFinite(x.origin.lon) && mappable(x.place)); }
+  function originLine(x) { return 'From ' + x.origin.name + ' (as reported: “' + x.origin.why + '”)'; }
 
   // ── map ────────────────────────────────────────────────────
   function clearMap() {
@@ -60,6 +76,96 @@
     ents.forEach(function (e) { try { V.entities.remove(e); } catch (_) {} });
     ents.length = 0;
     byKey = {};
+    counts = { pins: 0, arcs: 0, origins: 0 };
+  }
+
+  // Great-circle arc from a to b, lifted in the middle (higher for longer lines). Returns
+  // [lon, lat, height, ...] for Cartesian3.fromDegreesArrayHeights.
+  function arcPoints(a, b, n) {
+    var C = Cesium;
+    var g = new C.EllipsoidGeodesic(C.Cartographic.fromDegrees(a.lon, a.lat), C.Cartographic.fromDegrees(b.lon, b.lat));
+    var peak = Math.min(Math.max(g.surfaceDistance * 0.12, 250e3), 3.2e6);
+    var out = [];
+    for (var i = 0; i <= n; i++) {
+      var t = i / n, c = g.interpolateUsingFraction(t);
+      out.push(C.Math.toDegrees(c.longitude), C.Math.toDegrees(c.latitude), 4 * peak * t * (1 - t) + 15e3);
+    }
+    return out;
+  }
+
+  function describeArc(o, p, list) {
+    var col = originColor(o.cc);
+    var h = '<div style="font-family:system-ui,sans-serif;font-size:12px;color:#d6dae3;background:#0b0f16;padding:12px;max-width:440px">' +
+      '<div style="font:600 10px/1.4 monospace;letter-spacing:.08em;color:' + col + ';margin-bottom:8px">ATTACK ORIGIN AS REPORTED · ' +
+      esc(o.name.toUpperCase()) + ' → ' + esc(placeName(p).toUpperCase()) + '</div>';
+    list.slice(0, 12).forEach(function (x) {
+      var link = safeUrl(x.link);
+      h += '<div style="border-left:3px solid ' + col + ';padding:4px 0 6px 8px;margin-bottom:8px">' +
+        '<div style="font:600 9px monospace;color:#8b93a7;letter-spacing:.06em">' + esc(LABEL[x.sector].toUpperCase()) + ' · ' + esc(day(x.published)) +
+        (x.reports > 1 ? ' · ' + x.reports + ' REPORTS' : '') + '</div>' +
+        '<div style="margin:2px 0 3px;line-height:1.35">' + (link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener noreferrer" style="color:#e6e9ee">' + esc(x.title) + '</a>' : esc(x.title)) + '</div>' +
+        '<div style="font-size:10px;color:' + col + '">Named in the report as: “' + esc(x.origin.why) + '”</div></div>';
+    });
+    h += '<div style="font-size:10px;color:#6b7387;margin-top:6px">The line shows who the reports name: officials, researchers or the attackers’ own claims. ' +
+      'Attribution is often a claim or a suspicion; BDOC has not confirmed it.</div></div>';
+    return h;
+  }
+
+  function describeOrigin(o, list) {
+    var col = originColor(o.cc);
+    var h = '<div style="font-family:system-ui,sans-serif;font-size:12px;color:#d6dae3;background:#0b0f16;padding:12px;max-width:440px">' +
+      '<div style="font:600 10px/1.4 monospace;letter-spacing:.08em;color:' + col + ';margin-bottom:8px">NAMED AS THE ATTACKER · ' + esc(o.name.toUpperCase()) +
+      ' · ' + list.length + ' INCIDENT' + (list.length === 1 ? '' : 'S') + '</div>';
+    list.slice(0, 15).forEach(function (x) {
+      var link = safeUrl(x.link);
+      h += '<div style="padding:3px 0 6px">' + (link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener noreferrer" style="color:#e6e9ee">' + esc(x.title) + '</a>' : esc(x.title)) +
+        '<div style="font-size:10px;color:#8b93a7">' + esc(day(x.published)) + ' · ' + esc(mappable(x.place) ? placeName(x.place) : x.place ? 'United States (no state named)' : 'place not named') +
+        ' · “' + esc(x.origin.why) + '”</div></div>';
+    });
+    h += '<div style="font-size:10px;color:#6b7387;margin-top:6px">The pin is the country’s centre, not a known location. Attribution as reported, not confirmed by BDOC.</div></div>';
+    return h;
+  }
+
+  // Origin lines and origin markers for the incidents in view.
+  function drawArcs(list) {
+    var C = Cesium, lines = {}, from = {};
+    list.forEach(function (x) {
+      if (!x.origin || !x.origin.cc) return;
+      (from[x.origin.cc] = from[x.origin.cc] || { o: x.origin, list: [] }).list.push(x);
+      if (!arcable(x)) return;
+      var k = x.origin.cc + '>' + placeKey(x.place);
+      (lines[k] = lines[k] || { o: x.origin, p: x.place, list: [] }).list.push(x);
+    });
+    Object.keys(lines).forEach(function (k) {
+      var L = lines[k], col = C.Color.fromCssColorString(originColor(L.o.cc));
+      var pts = arcPoints(L.o, L.p, 40);
+      var n = L.list.length, name = L.o.name + ' → ' + placeName(L.p) + ' (as reported)', desc = describeArc(L.o, L.p, L.list);
+      ents.push(V.entities.add({
+        name: name, description: desc,
+        polyline: { positions: C.Cartesian3.fromDegreesArrayHeights(pts.slice(0, 37 * 3)), width: 2.4 + Math.min(3, n),
+          material: new C.PolylineGlowMaterialProperty({ glowPower: 0.22, color: col.withAlpha(0.8) }), arcType: C.ArcType.NONE }
+      }));
+      // Arrowhead over the last stretch, pointing at the victim.
+      ents.push(V.entities.add({
+        name: name, description: desc,
+        polyline: { positions: C.Cartesian3.fromDegreesArrayHeights(pts.slice(34 * 3)), width: 9 + Math.min(4, n),
+          material: new C.PolylineArrowMaterialProperty(col.withAlpha(0.95)), arcType: C.ArcType.NONE }
+      }));
+      counts.arcs++;
+    });
+    Object.keys(from).forEach(function (cc) {
+      var F = from[cc], col = C.Color.fromCssColorString(originColor(cc)), n = F.list.length;
+      ents.push(V.entities.add({
+        name: F.o.name + ' — named as the attacker in ' + n + ' report' + (n === 1 ? '' : 's'),
+        position: C.Cartesian3.fromDegrees(F.o.lon, F.o.lat),
+        point: { pixelSize: 10 + Math.min(6, n), color: C.Color.BLACK.withAlpha(0.6), outlineColor: col, outlineWidth: 3, disableDepthTestDistance: 5e6 },
+        label: { text: F.o.name.toUpperCase() + ' · ATTACKER IN ' + n, font: '600 11px JetBrains Mono, monospace',
+          fillColor: col, outlineColor: C.Color.BLACK, outlineWidth: 3, style: C.LabelStyle.FILL_AND_OUTLINE,
+          pixelOffset: new C.Cartesian2(0, 24), distanceDisplayCondition: new C.DistanceDisplayCondition(0, 2.2e7), disableDepthTestDistance: 5e6 },
+        description: describeOrigin(F.o, F.list)
+      }));
+      counts.origins++;
+    });
   }
 
   function describe(p, list) {
@@ -72,6 +178,7 @@
         '<div style="font:600 9px monospace;color:' + COLOR[x.sector] + ';letter-spacing:.06em">' + esc(LABEL[x.sector].toUpperCase()) + ' · ' + esc(day(x.published)) +
         (x.reports > 1 ? ' · ' + x.reports + ' REPORTS' : '') + '</div>' +
         '<div style="margin:2px 0 3px;line-height:1.35">' + (link ? '<a href="' + esc(link) + '" target="_blank" rel="noopener noreferrer" style="color:#e6e9ee">' + esc(x.title) + '</a>' : esc(x.title)) + '</div>' +
+        (x.origin ? '<div style="font-size:10px;color:' + originColor(x.origin.cc) + ';margin-bottom:2px">' + esc(originLine(x)) + '</div>' : '') +
         '<div style="font-size:10px;color:#8b93a7">' + (x.sources || []).slice(0, 6).map(function (s) {
           var u = safeUrl(s.link);
           return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer" style="color:#8b93a7">' + esc(s.name) + '</a>' : esc(s.name);
@@ -120,8 +227,27 @@
       var ent = V.entities.add(opts);
       ents.push(ent);
       byKey[k] = ent;
+      counts.pins++;
     });
+    if (prefs.arcs) drawArcs(visible());
     panel();
+  }
+
+  function flyToOrigin(cc) {
+    if (!V || !data) return;
+    var hit = visible().filter(function (x) { return x.origin && x.origin.cc === cc; });
+    if (!hit.length) return;
+    var o = hit[0].origin, targets = hit.filter(arcable).map(function (x) { return x.place; });
+    // Look from above the middle of the lines so origin and victims are both in view.
+    var lat = o.lat, lon = o.lon, far = 9e6;
+    if (targets.length) {
+      var t = targets[0];
+      var g = new Cesium.EllipsoidGeodesic(Cesium.Cartographic.fromDegrees(o.lon, o.lat), Cesium.Cartographic.fromDegrees(t.lon, t.lat));
+      var mid = g.interpolateUsingFraction(0.5);
+      lat = Cesium.Math.toDegrees(mid.latitude); lon = Cesium.Math.toDegrees(mid.longitude);
+      far = Math.min(Math.max(g.surfaceDistance * 1.3, 4e6), 2e7);
+    }
+    V.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(lon, lat, far), duration: 1.6 });
   }
 
   function flyTo(x) {
@@ -205,6 +331,39 @@
     if (more.length) wbox.appendChild(el('div', muted + ';font-size:10px;margin-top:4px', '+ ' + more.join(', ') + ' (1 YEAR view lists them).'));
     hud.appendChild(wbox);
 
+    // Where the attacks came from, as the reports say.
+    var inView = visible();
+    var named = inView.filter(function (x) { return x.origin && x.origin.cc; });
+    var by = {};
+    named.forEach(function (x) { (by[x.origin.cc] = by[x.origin.cc] || { o: x.origin, n: 0, lines: 0 }).n++; if (arcable(x)) by[x.origin.cc].lines++; });
+    var obox = el('div', 'border:1px solid #FF5D5D44;background:#FF5D5D0D;border-radius:2px;padding:6px 8px;margin-bottom:8px');
+    var ohead = el('div', 'display:flex;justify-content:space-between;align-items:center;margin-bottom:4px');
+    ohead.appendChild(el('span', 'font:600 9px monospace;letter-spacing:.08em;color:#FF8A8A', 'WHERE ATTACKS CAME FROM · AS REPORTED'));
+    var tog = el('button', 'font:600 9px monospace;padding:2px 6px;border-radius:2px;cursor:pointer;border:1px solid #FF8A8A;' +
+      (prefs.arcs ? 'background:#FF5D5D33;color:#fff' : 'background:transparent;color:#FF8A8A;opacity:.6'), prefs.arcs ? 'LINES ON' : 'LINES OFF');
+    tog.type = 'button';
+    tog.title = prefs.arcs ? 'Hide the origin lines' : 'Show the origin lines';
+    tog.addEventListener('click', function () { prefs.arcs = !prefs.arcs; savePrefs(); draw(); });
+    ohead.appendChild(tog);
+    obox.appendChild(ohead);
+    var ccs = Object.keys(by).sort(function (a, b) { return by[b].n - by[a].n; });
+    if (!ccs.length) obox.appendChild(el('div', muted + ';font-size:10px', 'No report in this period names an attacker' + (prefs.days < 365 ? ' (try 1 YEAR).' : '.')));
+    ccs.forEach(function (cc) {
+      var r = by[cc];
+      var row = el('button', 'display:flex;width:100%;align-items:center;gap:6px;padding:3px 0;border:0;background:transparent;cursor:pointer;text-align:left;color:var(--text-primary,#e6e9ee);font:11px var(--m,monospace)');
+      row.type = 'button';
+      row.appendChild(el('span', 'flex:0 0 14px;height:3px;border-radius:2px;background:' + originColor(cc)));
+      row.appendChild(el('span', 'flex:1', r.o.name));
+      row.appendChild(el('span', muted + ';font-size:10px', r.n + ' named' + (r.lines ? ' · ' + r.lines + ' on map' : '')));
+      row.title = 'Show the lines from ' + r.o.name;
+      row.addEventListener('click', function () { if (!prefs.arcs) { prefs.arcs = true; savePrefs(); draw(); } flyToOrigin(cc); });
+      obox.appendChild(row);
+    });
+    obox.appendChild(el('div', muted + ';font-size:9px;line-height:1.4;margin-top:4px',
+      named.length + ' of ' + inView.length + ' incidents in view name an attacker; the rest get no line. A line runs from the country the report names ' +
+      '(officials, researchers or the attackers’ own claim) to the victim, arrow at the victim. Not confirmed by BDOC.'));
+    hud.appendChild(obox);
+
     var list = visible().sort(function (a, b) { return Date.parse(b.latest || b.published) - Date.parse(a.latest || a.published); });
     hud.appendChild(el('div', 'font:600 9px monospace;letter-spacing:.08em;' + muted + ';margin:4px 0', 'LATEST · ' + list.length + ' IN VIEW · ' + list.filter(function (x) { return mappable(x.place); }).length + ' ON THE MAP'));
     list.slice(0, 25).forEach(function (x) {
@@ -215,6 +374,7 @@
       body.appendChild(el('div', 'font-size:11px;line-height:1.3;color:var(--text-primary,#e6e9ee)', x.title));
       body.appendChild(el('div', muted + ';font-size:9px;margin-top:2px',
         day(x.published) + ' · ' + (!x.place ? 'place not named' : onMap ? placeName(x.place) : 'United States (no state named)') + (x.reports > 1 ? ' · ' + x.reports + ' reports' : '') + ' · ' + (x.source || '')));
+      if (x.origin) body.appendChild(el('div', 'font-size:9px;margin-top:1px;color:' + originColor(x.origin.cc), originLine(x)));
       row.appendChild(body);
       var u = safeUrl(x.link);
       if (u) {
@@ -237,7 +397,7 @@
       });
     }
     hud.appendChild(el('div', muted + ';font-size:9px;line-height:1.4;margin-top:8px',
-      'Pins come from reported incidents only, placed from the article text at county, town, state or country level. A faint ring means only the state or country is known. Stories that name no place, or only "the US", are listed, not mapped.'));
+      'Pins come from reported incidents only, placed from the article text at county, town, state or country level. A faint ring means only the state or country is known. Stories that name no place, or only "the US", are listed, not mapped. Lines run only where a report names the attacker.'));
   }
 
   // ── load ───────────────────────────────────────────────────
@@ -278,6 +438,6 @@
       var since = Date.now() - hours * 3600e3;
       return data.incidents.filter(function (x) { return x.sector === sector && Date.parse(x.latest || x.published) >= since; });
     },
-    state: function () { return { prefs: prefs, incidents: data ? data.incidents.length : 0, pins: ents ? ents.length : 0, error: data && data.error }; }
+    state: function () { return { prefs: prefs, incidents: data ? data.incidents.length : 0, pins: counts.pins, arcs: counts.arcs, origins: counts.origins, error: data && data.error }; }
   };
 })();

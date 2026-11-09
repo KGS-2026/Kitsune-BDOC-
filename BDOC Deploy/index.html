@@ -6134,7 +6134,7 @@ function loadCyberAttacks(){
   return BDOCCyberMap.load(V,cyberEnts,()=>layers.cyber).then(placed=>{
     const st=BDOCCyberMap.state();
     if(st.error){af('var(--yl)','[Cyber] incident feed unavailable: '+esc(st.error));EventLog.add('warn','Cyber incident feed unavailable: '+st.error);return}
-    af('var(--rd)','[Cyber] '+placed+' reported incidents on the map ('+st.pins+' places), '+st.incidents+' in the feed');
+    af('var(--rd)','[Cyber] '+placed+' reported incidents on the map ('+st.pins+' places, '+st.arcs+' origin lines), '+st.incidents+' in the feed');
     EventLog.add('info','Cyber incident map: '+placed+' reported incidents placed at '+st.pins+' places');
   }).catch(e=>console.warn('[Cyber]',e));
 }
@@ -14277,7 +14277,7 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 <script src="js/bdoc-glass-guard.js?v=p75"></script>
 <script src="js/bdoc-push.js?v=p181"></script>
 <script src="js/bdoc-gov-alert.js?v=p181"></script>
-<script src="js/bdoc-cyber-map.js?v=p182"></script>
+<script src="js/bdoc-cyber-map.js?v=p184"></script>
 <script src="js/mesh-globe-layer.js?v=p163s"></script>
 <script src="js/bdoc-offline-store.js?v=p75"></script>
 <!-- P156e: battle plan autosave/restore + real-shape exports + .bdoc.json (needs V, battleEntities, BDOCOfflineStore) -->
