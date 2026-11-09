@@ -336,42 +336,8 @@ if('serviceWorker' in navigator){
     </div>
   </div>
 </div>
-<!-- Phase 4B (2026-05-04): CYBER THREAT HUD — appears when DDoS layer active. NETSCOUT Omnis Cyber Intelligence style -->
-<div id="cyberHud" style="display:none;position:fixed;bottom:60px;right:14px;z-index:200;background:rgba(19,23,31,0.95);border:1px solid var(--bdr2);border-radius:2px;padding:12px 14px;font-family:var(--m);font-size:11px;color:var(--text-primary);width:260px;box-shadow:0 1px 2px rgba(0,0,0,0.4)">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--bdr)">
-    <span style="color:var(--text-primary);font-weight:600;letter-spacing:0.12em;font-size:10px;text-transform:uppercase">CYBER THREAT</span>
-    <span id="cyberHudSource" style="color:var(--text-tertiary);font-size:10px;letter-spacing:0.08em">--</span>
-  </div>
-  <div style="display:flex;gap:10px;margin-bottom:10px">
-    <div style="flex:1">
-      <div style="color:var(--text-tertiary);font-size:10px;letter-spacing:0.08em;margin-bottom:2px;text-transform:uppercase">Attacks / hr</div>
-      <div id="cyberHudTotal" style="color:var(--text-primary);font-size:20px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums">--</div>
-    </div>
-    <div style="flex:1">
-      <div style="color:var(--text-tertiary);font-size:10px;letter-spacing:0.08em;margin-bottom:2px;text-transform:uppercase">Active Nodes</div>
-      <div id="cyberHudNodes" style="color:var(--text-primary);font-size:20px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums">--</div>
-    </div>
-  </div>
-  <canvas id="cyberHudSpark" width="232" height="32" style="width:100%;height:32px;background:var(--bg-surface-2);border:1px solid var(--border);border-radius:2px;margin-bottom:8px"></canvas>
-  <div style="font-size:10px;color:var(--text-tertiary);letter-spacing:0.08em;margin-bottom:4px;text-transform:uppercase">Top Origins</div>
-  <div id="cyberHudOrigins" style="font-size:11px;line-height:1.5;margin-bottom:8px;color:var(--text-primary)">--</div>
-  <div style="font-size:10px;color:var(--text-tertiary);letter-spacing:0.08em;margin-bottom:4px;text-transform:uppercase">Top Targets</div>
-  <div id="cyberHudTargets" style="font-size:11px;line-height:1.5;margin-bottom:8px;color:var(--text-primary)">--</div>
-  <div style="display:flex;gap:6px;font-size:10px">
-    <div style="flex:1;padding:5px 6px;background:var(--bg-surface-2);border:1px solid var(--border);border-radius:2px;text-align:center">
-      <div style="color:var(--text-primary);font-weight:600;font-variant-numeric:tabular-nums" id="cyberHudDdos">0</div>
-      <div style="color:var(--text-tertiary);font-size:9px;letter-spacing:0.08em;text-transform:uppercase">DDoS</div>
-    </div>
-    <div style="flex:1;padding:5px 6px;background:var(--bg-surface-2);border:1px solid var(--border);border-radius:2px;text-align:center">
-      <div style="color:var(--text-primary);font-weight:600;font-variant-numeric:tabular-nums" id="cyberHudIntr">0</div>
-      <div style="color:var(--text-tertiary);font-size:9px;letter-spacing:0.08em;text-transform:uppercase">Intrusion</div>
-    </div>
-    <div style="flex:1;padding:5px 6px;background:var(--bg-surface-2);border:1px solid var(--border);border-radius:2px;text-align:center">
-      <div style="color:var(--text-primary);font-weight:600;font-variant-numeric:tabular-nums" id="cyberHudApt">0</div>
-      <div style="color:var(--text-tertiary);font-size:9px;letter-spacing:0.08em;text-transform:uppercase">APT</div>
-    </div>
-  </div>
-</div>
+<!-- p182: Cyber layer panel. js/bdoc-cyber-map.js fills it with reported incidents (no made-up counts). -->
+<div id="cyberHud" style="display:none;position:fixed;bottom:60px;right:14px;z-index:200;background:rgba(19,23,31,0.95);border:1px solid var(--bdr2);border-radius:2px;padding:12px 14px;font-family:var(--m);font-size:11px;color:var(--text-primary);width:310px;max-width:calc(100vw - 28px);max-height:64vh;overflow-y:auto;box-shadow:0 1px 2px rgba(0,0,0,0.4)"></div>
 <div id="wxLegend" style="display:none;position:fixed;bottom:62px;left:50%;transform:translateX(-50%);z-index:90;background:rgba(10,14,26,0.9);border:1px solid rgba(0,204,0,0.2);border-radius:6px;padding:6px 14px;font-family:var(--m);font-size:8px;color:#ccc;white-space:nowrap">
   <div style="display:flex;align-items:center;gap:10px">
     <span style="color:#3FB950;font-weight:600;letter-spacing:1px">PRECIP</span>
@@ -720,7 +686,7 @@ if('serviceWorker' in navigator){
 </div>
 <div class="lg-title lg-collapse collapsed" onclick="togCat(this)">CYBER / DIGITAL <span class="lg-arrow">&#9660;</span></div>
 <div class="lg-group closed">
-<div class="ly" data-layer="cyber" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#DA3633"></div><span class="ly-n">DDoS / Cyber Attacks</span><span class="ly-tg tg-l">LIVE</span></div>
+<div class="ly" data-layer="cyber" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#DA3633"></div><span class="ly-n">Cyber Incidents</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="outages" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#E8B339"></div><span class="ly-n">Power Grid Stress (US)</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="downdetect" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#DA3633"></div><span class="ly-n">Service Outages</span><span class="ly-tg tg-l">LIVE</span></div>
 <div class="ly" data-layer="wireshark" onclick="togLy(this)"><div class="sw"></div><div class="ly-d" style="background:#00ffcc"></div><span class="ly-n">&#x1F50C; Wireshark Live</span><span class="ly-tg" style="color:#00ffcc;background:rgba(0,255,204,0.08)">LOCAL</span></div>
@@ -1900,8 +1866,11 @@ const FusionEngine={
   // CYBER ATTACKS + POWER OUTAGES overlapping
   _checkCyberOutage(){
     if(typeof cyberEnts==='undefined'||typeof outageEnts==='undefined')return;
-    if(cyberEnts.length>20&&outageEnts.length>5){
-      this._fire('cyber_outage','HIGH CYBER ACTIVITY ('+cyberEnts.length+' vectors) + '+outageEnts.length+' power outages detected simultaneously — possible infrastructure attack. Correlation required.');
+    // p182: was cyberEnts.length>20 (the old layer's made-up hotspots and arcs). Now: a reported cyber
+    // incident at an energy company in the last 48 h while outages are on the map. Says what it is, not more.
+    const hit=window.BDOCCyberMap?BDOCCyberMap.recent('energy',48):[];
+    if(hit.length&&outageEnts.length>5){
+      this._fire('cyber_outage','Cyber incident reported at an energy company in the last 48 h ("'+String(hit[0].title).slice(0,90)+'") while '+outageEnts.length+' power outages are on the map. Not linked unless reports say so; check the outage areas.','WARN');
     }
   },
   // ACTIVE CONFLICTS + SEVERE WEATHER in same region
@@ -3716,7 +3685,7 @@ function togLy(el){
   if(ly==='lightning'){if(layers.lightning)loadLightning();else _origRemoveLightning()}
   if(ly==='vessels'){const vl=document.getElementById('vesselLegend');if(layers.vessels){loadVessels();connectAISstream();if(vl)vl.style.display='block'}else{disconnectAISstream();_aisVesselMap.forEach(v=>{if(v.ent&&V.entities.contains(v.ent))V.entities.remove(v.ent)});_aisVesselMap.clear();vesselEnts.forEach(e=>V.entities.remove(e));vesselEnts=[];if(vl)vl.style.display='none'}}
   if(ly==='darkships'){if(layers.darkships){if(darkshipEnts.length===0)loadDarkShips();else darkshipEnts.forEach(e=>e.show=true)}else{darkshipEnts.forEach(e=>e.show=false)}}
-  if(ly==='cyber'){const ch=document.getElementById('cyberHud');if(layers.cyber){loadCyberAttacks();if(ch)ch.style.display='block'}else{cyberEnts.forEach(e=>V.entities.remove(e));cyberEnts=[];if(window._cyberRefreshTimer){clearTimeout(window._cyberRefreshTimer);window._cyberRefreshTimer=null}if(ch)ch.style.display='none'}}
+  if(ly==='cyber'){const ch=document.getElementById('cyberHud');if(layers.cyber){loadCyberAttacks();if(ch)ch.style.display='block'}else{if(window.BDOCCyberMap)BDOCCyberMap.clear();cyberEnts.forEach(e=>V.entities.remove(e));cyberEnts=[];if(window._cyberRefreshTimer){clearTimeout(window._cyberRefreshTimer);window._cyberRefreshTimer=null}if(ch)ch.style.display='none'}}
   if(ly==='outages'){if(layers.outages)loadPowerOutages();else{outageEnts.forEach(e=>V.entities.remove(e));outageEnts=[]}}
   if(ly==='downdetect'){if(layers.downdetect)loadDowndetector();else{downEnts.forEach(e=>V.entities.remove(e));downEnts=[]}}
   if(ly==='webcams'){if(layers.webcams)loadWebcams();else{V.entities.suspendEvents();webcamEnts.forEach(e=>V.entities.remove(e));webcamEnts=[];V.entities.resumeEvents();}}
@@ -3766,7 +3735,7 @@ function showMo(triggerLayer){
   // and swap the headline so the user knows exactly what they're buying.
   // Techniques from ATOC (#2) and IntelX (#1): per-item inline paywall, not generic wall.
   const LAYER_NAMES = {
-    cyber:'Cyber Threat Feed',forcetrack:'Force Tracker',territory:'Territory Control',
+    cyber:'Cyber Incidents',forcetrack:'Force Tracker',territory:'Territory Control',
     imint:'IMINT Facility Cards',sat:'Satellite Imagery',sentinel:'Sentinel-2 Imagery',
     warlive:'War Room Live',incidents:'Incident Archive',replay:'Historical Replay',pdf:'PDF Brief Generation',
     vessels:'Maritime AIS',celltowers:'Cell Tower Map',substations:'Power Grid Layer',
@@ -4522,10 +4491,13 @@ const IntelTicker={
     // Satellite count
     const satEl=document.getElementById('satV');
     if(satEl&&satEl.textContent!=='--')this.add('SPACE','intel',satEl.textContent+' satellites tracked in orbit');
+    // p182: the newest reported cyber incident, once the Cyber layer has loaded (replaces a made-up
+    // "Threat level: ELEVATED — Active APT campaigns detected" standing item).
+    const cy=window.BDOCCyberMap?BDOCCyberMap.latest():null;
+    if(cy)this.add('CYBER','alert','Reported: '+String(cy.title).slice(0,120));
     // If still sparse, add standing intel items
     if(this.items.length<8){
       this.add('SIGINT','intel','Monitoring global RF spectrum for anomalies');
-      this.add('CYBER','alert','Threat level: ELEVATED — Active APT campaigns detected');
       this.add('MARITIME','intel','Strait of Hormuz — elevated naval activity');
       this.add('GEOINT','intel','Satellite imagery tasking queue active');
     }
@@ -6150,285 +6122,21 @@ function voteCommunityReport(id,vote){
 }
 // Load persisted community reports on boot
 try{const saved=localStorage.getItem('bdoc_community_reports');if(saved)_communityReports=JSON.parse(saved)}catch(e){}
-// ═══ CYBER ATTACK MAP ═══
-// Aggregates from multiple free threat intelligence feeds
+// ═══ CYBER INCIDENT MAP (p182) ═══
+// Reported cyber incidents placed where they happened (county, town, state or country), from cyber news,
+// local news and CISA: js/bdoc-cyber-map.js + /.netlify/functions/cyber-incidents.
+// Replaced the 2026-05 layer, which drew made-up hotspots ("US East Coast", "US West Coast") with random
+// attack counts and random arcs whenever Cloudflare Radar (no token on live) and DShield both failed.
 let cyberEnts=[];
-// Country-code → centroid for plotting Cloudflare Radar attack-share rankings
-const _CYBER_CC_GEO={
-  US:{lat:39.5,lon:-98.4,city:'United States'},CN:{lat:35.86,lon:104.20,city:'China'},RU:{lat:61.52,lon:105.32,city:'Russia'},
-  IN:{lat:20.59,lon:78.96,city:'India'},DE:{lat:51.17,lon:10.45,city:'Germany'},GB:{lat:55.38,lon:-3.44,city:'United Kingdom'},
-  FR:{lat:46.23,lon:2.21,city:'France'},BR:{lat:-14.24,lon:-51.93,city:'Brazil'},NL:{lat:52.13,lon:5.29,city:'Netherlands'},
-  SG:{lat:1.35,lon:103.82,city:'Singapore'},JP:{lat:36.20,lon:138.25,city:'Japan'},KR:{lat:35.91,lon:127.77,city:'South Korea'},
-  KP:{lat:40.34,lon:127.51,city:'North Korea'},IR:{lat:32.43,lon:53.69,city:'Iran'},IL:{lat:31.05,lon:34.85,city:'Israel'},
-  UA:{lat:48.38,lon:31.17,city:'Ukraine'},BY:{lat:53.71,lon:27.95,city:'Belarus'},KZ:{lat:48.02,lon:66.92,city:'Kazakhstan'},
-  TR:{lat:38.96,lon:35.24,city:'Turkey'},VN:{lat:14.06,lon:108.28,city:'Vietnam'},ID:{lat:-0.79,lon:113.92,city:'Indonesia'},
-  TH:{lat:15.87,lon:100.99,city:'Thailand'},PH:{lat:12.88,lon:121.77,city:'Philippines'},MY:{lat:4.21,lon:101.98,city:'Malaysia'},
-  TW:{lat:23.70,lon:120.96,city:'Taiwan'},HK:{lat:22.32,lon:114.17,city:'Hong Kong'},MX:{lat:23.63,lon:-102.55,city:'Mexico'},
-  CA:{lat:56.13,lon:-106.35,city:'Canada'},AU:{lat:-25.27,lon:133.78,city:'Australia'},IT:{lat:41.87,lon:12.57,city:'Italy'},
-  ES:{lat:40.46,lon:-3.75,city:'Spain'},PL:{lat:51.92,lon:19.15,city:'Poland'},RO:{lat:45.94,lon:24.97,city:'Romania'},
-  ZA:{lat:-30.56,lon:22.94,city:'South Africa'},EG:{lat:26.82,lon:30.80,city:'Egypt'},SA:{lat:23.89,lon:45.08,city:'Saudi Arabia'},
-  AE:{lat:23.42,lon:53.85,city:'UAE'},NG:{lat:9.08,lon:8.68,city:'Nigeria'},BD:{lat:23.68,lon:90.36,city:'Bangladesh'},
-  PK:{lat:30.38,lon:69.35,city:'Pakistan'},AR:{lat:-38.42,lon:-63.62,city:'Argentina'},CL:{lat:-35.68,lon:-71.54,city:'Chile'},
-  SE:{lat:60.13,lon:18.64,city:'Sweden'},NO:{lat:60.47,lon:8.47,city:'Norway'},FI:{lat:61.92,lon:25.75,city:'Finland'},
-  DK:{lat:56.26,lon:9.50,city:'Denmark'},IE:{lat:53.41,lon:-8.24,city:'Ireland'},CH:{lat:46.82,lon:8.23,city:'Switzerland'},
-  AT:{lat:47.52,lon:14.55,city:'Austria'},BE:{lat:50.50,lon:4.47,city:'Belgium'},PT:{lat:39.40,lon:-8.22,city:'Portugal'},
-  GR:{lat:39.07,lon:21.82,city:'Greece'},CZ:{lat:49.82,lon:15.47,city:'Czech Republic'},HU:{lat:47.16,lon:19.50,city:'Hungary'},
-};
-async function loadCyberAttacks(){
+function loadCyberAttacks(){
   if(!V)return;
-  cyberEnts.forEach(e=>V.entities.remove(e));cyberEnts=[];
-  // Try real data first: Cloudflare Radar L3 attacks (top origins + top targets)
-  // Falls back to DShield (ISC SANS) attack sources, then to threat-hotspot baseline
-  let attackHotspots=[];
-  let dataSource='SIMULATED';
-  try{
-    const [originRes,targetRes]=await Promise.allSettled([
-      fetch('/.netlify/functions/proxy-cfradar?endpoint=attacks_origins&limit=10',{signal:AbortSignal.timeout(8000)}),
-      fetch('/.netlify/functions/proxy-cfradar?endpoint=attacks_targets&limit=10',{signal:AbortSignal.timeout(8000)}),
-    ]);
-    const origins=originRes.status==='fulfilled'&&originRes.value.ok?(await originRes.value.json()):null;
-    const targets=targetRes.status==='fulfilled'&&targetRes.value.ok?(await targetRes.value.json()):null;
-    const oList=origins?.result?.top_0||origins?.result||origins?.top_0||[];
-    const tList=targets?.result?.top_0||targets?.result||targets?.top_0||[];
-    if(Array.isArray(oList)&&oList.length>0){
-      // Origins: red/orange (sources)
-      oList.slice(0,10).forEach(o=>{
-        const cc=(o.originCountryAlpha2||o.clientCountryAlpha2||o.countryAlpha2||o.country||'').toUpperCase();
-        const geo=_CYBER_CC_GEO[cc];if(!geo)return;
-        const share=parseFloat(o.value||o.share||0);
-        attackHotspots.push({name:geo.city,lat:geo.lat,lon:geo.lon,targets:[`Origin: ${cc} attack share ${share.toFixed(2)}%`],intensity:'SOURCE',attacks:Math.round(share*1000),share});
-      });
-      dataSource='Cloudflare Radar';
-    }
-    if(Array.isArray(tList)&&tList.length>0){
-      // Targets: red/yellow (victims)
-      tList.slice(0,10).forEach(t=>{
-        const cc=(t.targetCountryAlpha2||t.countryAlpha2||t.country||'').toUpperCase();
-        const geo=_CYBER_CC_GEO[cc];if(!geo)return;
-        // Skip if already added as origin
-        if(attackHotspots.find(h=>h.name===geo.city))return;
-        const share=parseFloat(t.value||t.share||0);
-        const intensity=share>10?'HIGH':share>5?'MEDIUM':'LOW';
-        attackHotspots.push({name:geo.city,lat:geo.lat,lon:geo.lon,targets:[`Target: ${cc} attack share ${share.toFixed(2)}%`],intensity,attacks:Math.round(share*1000),share});
-      });
-      dataSource='Cloudflare Radar';
-    }
-  }catch(e){console.warn('[Cyber] Cloudflare Radar fetch failed:',e.message)}
-  // Tier 2: ISC SANS DShield top attack sources (real attacking IPs by country)
-  if(attackHotspots.length<5){
-    try{
-      const res=await fetch('https://isc.sans.edu/api/sources?json',{signal:AbortSignal.timeout(8000)});
-      if(res.ok){
-        const data=await res.json();
-        const sources=Array.isArray(data)?data:(data.sources||[]);
-        // Group by country
-        const byCountry={};
-        sources.slice(0,200).forEach(s=>{
-          const cc=(s.country||'').toUpperCase();
-          if(!cc||!_CYBER_CC_GEO[cc])return;
-          if(!byCountry[cc])byCountry[cc]=0;
-          byCountry[cc]+=parseInt(s.attacks||1);
-        });
-        Object.entries(byCountry).sort((a,b)=>b[1]-a[1]).slice(0,12).forEach(([cc,attacks])=>{
-          const geo=_CYBER_CC_GEO[cc];
-          if(attackHotspots.find(h=>h.name===geo.city))return;
-          const intensity=attacks>5000?'SOURCE':attacks>2000?'HIGH':'MEDIUM';
-          attackHotspots.push({name:geo.city,lat:geo.lat,lon:geo.lon,targets:[`DShield: ${attacks.toLocaleString()} attacks logged`],intensity,attacks});
-        });
-        if(dataSource==='SIMULATED')dataSource='DShield (ISC SANS)';
-        else dataSource+=' + DShield';
-      }
-    }catch(e){console.warn('[Cyber] DShield fetch failed:',e.message)}
-  }
-  // Tier 3: fallback to baseline hotspots if both real sources failed
-  if(attackHotspots.length===0){
-    attackHotspots=[
-      {name:'US East Coast',lat:39.0,lon:-76.0,targets:['AWS','Azure','Gov'],intensity:'HIGH',attacks:Math.floor(Math.random()*5000)+2000},
-      {name:'US West Coast',lat:37.4,lon:-122.0,targets:['Google','Meta','Apple'],intensity:'HIGH',attacks:Math.floor(Math.random()*4000)+1500},
-      {name:'London',lat:51.5,lon:-0.1,targets:['Financial','Gov UK'],intensity:'MEDIUM',attacks:Math.floor(Math.random()*3000)+800},
-      {name:'Frankfurt',lat:50.1,lon:8.7,targets:['DE-CIX','EU Banks'],intensity:'MEDIUM',attacks:Math.floor(Math.random()*2500)+600},
-      {name:'Singapore',lat:1.35,lon:103.8,targets:['APAC Hub','Banks'],intensity:'MEDIUM',attacks:Math.floor(Math.random()*2000)+500},
-      {name:'Tokyo',lat:35.7,lon:139.7,targets:['NTT','Gov JP'],intensity:'MEDIUM',attacks:Math.floor(Math.random()*2500)+700},
-      {name:'Moscow',lat:55.75,lon:37.6,targets:['Origin: RU APT'],intensity:'SOURCE',attacks:Math.floor(Math.random()*8000)+3000},
-      {name:'Beijing',lat:39.9,lon:116.4,targets:['Origin: CN APT'],intensity:'SOURCE',attacks:Math.floor(Math.random()*7000)+2500},
-      {name:'Pyongyang',lat:39.0,lon:125.7,targets:['Origin: Lazarus'],intensity:'SOURCE',attacks:Math.floor(Math.random()*3000)+500},
-      {name:'Tehran',lat:35.7,lon:51.4,targets:['Origin: IR APT'],intensity:'SOURCE',attacks:Math.floor(Math.random()*2000)+400},
-      {name:'Mumbai',lat:19.1,lon:72.9,targets:['Banks','Infra'],intensity:'MEDIUM',attacks:Math.floor(Math.random()*1500)+300},
-      {name:'Tel Aviv',lat:32.1,lon:34.8,targets:['Unit 8200','Cyber Hub'],intensity:'SOURCE',attacks:Math.floor(Math.random()*4000)+1000},
-    ];
-  }
-  window._cyberDataSource=dataSource;
-  const intColors={HIGH:'#DA3633',MEDIUM:'#E8B339',LOW:'#E8B339',SOURCE:'#2D72D2'};
-  // Attack types for realistic categorization
-  const attackTypes=['Intrusion','Malware','DDoS','Ransomware','Phishing','Exploit','Botnet','APT'];
-  attackHotspots.forEach(h=>{
-    const col=intColors[h.intensity];
-    const pulseSize=Math.max(h.attacks/20,50)*1000;
-    const topType=attackTypes[Math.floor(Math.random()*3)];
-    const secType=attackTypes[3+Math.floor(Math.random()*3)];
-    cyberEnts.push(V.entities.add({
-      position:Cesium.Cartesian3.fromDegrees(h.lon,h.lat),
-      ellipse:{semiMajorAxis:pulseSize,semiMinorAxis:pulseSize,material:Cesium.Color.fromCssColorString(col).withAlpha(0.12),outline:true,outlineColor:Cesium.Color.fromCssColorString(col).withAlpha(0.35),height:0},
-      label:{text:`${dataSource==='SIMULATED'?'[SIM] ':''}${h.name}\n${h.share!=null?h.share.toFixed(1)+'%':h.attacks.toLocaleString()}`,font:'bold 11px JetBrains Mono',fillColor:Cesium.Color.fromCssColorString(col),outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.CENTER,scaleByDistance:new Cesium.NearFarScalar(5e5,1,8e6,0.3),disableDepthTestDistance:5e6},
-      description:`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;max-width:420px;background:#0a0e14;padding:14px;border-radius:2px;border:1px solid ${col}22;color:#c8ccd6">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #1e2436">
-          <div>
-            <div style="color:${col};font-size:14px;font-weight:700;letter-spacing:1px">${h.name}</div>
-            <div style="display:flex;gap:6px;margin-top:4px;align-items:center">
-              <span style="padding:2px 6px;background:${col}15;border:1px solid ${col}33;border-radius:2px;font-size:8px;color:${col};letter-spacing:1px;font-weight:600">${h.intensity}</span>
-              <span style="color:#4a5068;font-size:9px">${h.intensity==='SOURCE'?'ATTACK ORIGIN':'ATTACK TARGET'}</span>
-            </div>
-          </div>
-          <div style="text-align:right">
-            <div style="color:${col};font-size:18px;font-weight:700">${h.attacks.toLocaleString()}</div>
-            <div style="color:#4a5068;font-size:8px">ATTACKS/HR</div>
-          </div>
-        </div>
-        <table style="width:100%;border-collapse:collapse;font-size:10px;color:#7a8194">
-          <tr><td style="padding:3px 0;width:40%"><b style="color:#4a5068">PRIMARY TYPE</b></td><td style="color:#c8ccd6">${topType}</td></tr>
-          <tr><td style="padding:3px 0"><b style="color:#4a5068">SECONDARY</b></td><td style="color:#c8ccd6">${secType}</td></tr>
-          <tr><td style="padding:3px 0"><b style="color:#4a5068">TARGETS</b></td><td style="color:#c8ccd6">${h.targets.join(', ')}</td></tr>
-          <tr><td style="padding:3px 0"><b style="color:#4a5068">POSITION</b></td><td style="color:#c8ccd6">${h.lat.toFixed(2)}\u00B0, ${h.lon.toFixed(2)}\u00B0</td></tr>
-        </table>
-        <div style="margin-top:8px;padding:6px 8px;background:rgba(${h.intensity==='SOURCE'?'204,0,255':'255,0,68'},0.04);border-left:2px solid ${col}44;font-size:9px;color:#E8B349">${dataSource==='SIMULATED'?'SIMULATED \u2014 both Cloudflare Radar and DShield unreachable':'LIVE DATA \u2014 '+esc(dataSource)}</div>
-        <div style="margin-top:8px;font-size:7px;color:#1e2436;letter-spacing:1px;text-align:right">KITSUNE BDOC \u2014 ${esc(dataSource)}</div>
-      </div>`,
-      show:layers.cyber
-    }));
-  });
-  // Draw attack arcs from SOURCE nodes → target nodes (NETSCOUT Omnis / Cybermap style)
-  // 3 arcs per source, parabolic (mid-altitude bulge), color-coded by attack type
-  const sources=attackHotspots.filter(h=>h.intensity==='SOURCE');
-  const targets=attackHotspots.filter(h=>h.intensity!=='SOURCE');
-  if(targets.length>0){
-    const arcTypes=[
-      // P111a: bloom reduced — 0.5/0.4/0.45 was too heavy when zoomed in
-      {name:'DDoS',col:'#DA3633',width:2.2,glow:0.18},
-      {name:'Intrusion',col:'#E8B339',width:1.8,glow:0.15},
-      {name:'APT/Recon',col:'#2D72D2',width:1.5,glow:0.16},
-    ];
-    sources.forEach(src=>{
-      // Pick 2-4 targets per source for visual density (NETSCOUT-style)
-      const arcCount=2+Math.floor(Math.random()*3);
-      const usedTargets=new Set();
-      for(let i=0;i<arcCount&&usedTargets.size<targets.length;i++){
-        let tgt;let tries=0;
-        do{tgt=targets[Math.floor(Math.random()*targets.length)];tries++}while(usedTargets.has(tgt.name)&&tries<10);
-        if(usedTargets.has(tgt.name))break;
-        usedTargets.add(tgt.name);
-        const aType=arcTypes[Math.floor(Math.random()*arcTypes.length)];
-        const lineCol=Cesium.Color.fromCssColorString(aType.col).withAlpha(0.55);
-        // True great-circle parabolic arc — sample along EllipsoidGeodesic with elevation bulge
-        const startCarto=Cesium.Cartographic.fromDegrees(src.lon,src.lat);
-        const endCarto=Cesium.Cartographic.fromDegrees(tgt.lon,tgt.lat);
-        const geodesic=new Cesium.EllipsoidGeodesic(startCarto,endCarto);
-        const distMeters=geodesic.surfaceDistance; // accurate Earth distance
-        const peakAlt=Math.min(Math.max(distMeters*0.08,200000),3500000); // ~8% of distance, capped
-        const samples=24;
-        const positions=[];
-        for(let s=0;s<=samples;s++){
-          const t=s/samples;
-          const interp=geodesic.interpolateUsingFraction(t);
-          const lat=Cesium.Math.toDegrees(interp.latitude);
-          const lon=Cesium.Math.toDegrees(interp.longitude);
-          // Parabolic altitude: 4*peakAlt*t*(1-t) → 0 at endpoints, peakAlt at midpoint
-          const alt=4*peakAlt*t*(1-t)+15000;
-          positions.push(lon,lat,alt);
-        }
-        cyberEnts.push(V.entities.add({
-          polyline:{
-            positions:Cesium.Cartesian3.fromDegreesArrayHeights(positions),
-            width:aType.width,
-            material:new Cesium.PolylineGlowMaterialProperty({glowPower:aType.glow,color:lineCol}),
-            arcType:Cesium.ArcType.NONE  // explicit positions, no extra interpolation
-          },
-          show:layers.cyber
-        }));
-        // Pulse at target endpoint — small pulsing ring marker
-        cyberEnts.push(V.entities.add({
-          position:Cesium.Cartesian3.fromDegrees(tgt.lon,tgt.lat,1000),
-          point:{
-            pixelSize:6,
-            color:Cesium.Color.fromCssColorString(aType.col).withAlpha(0.8),
-            outlineColor:Cesium.Color.fromCssColorString(aType.col).withAlpha(0.3),
-            outlineWidth:3,
-            scaleByDistance:new Cesium.NearFarScalar(5e5,1.4,1e7,0.4),
-            disableDepthTestDistance:5e6
-          },
-          show:layers.cyber
-        }));
-      }
-    });
-  }
-  // Schedule auto-refresh every 2 minutes for animated effect (re-randomizes arcs)
-  if(window._cyberRefreshTimer)clearTimeout(window._cyberRefreshTimer);
-  if(layers.cyber){window._cyberRefreshTimer=setTimeout(()=>{if(layers.cyber)loadCyberAttacks()},120000)}
-  const totalAttacks=attackHotspots.reduce((s,h)=>s+h.attacks,0);
-  const tag=dataSource==='SIMULATED'?'[SIMULATED]':`[${dataSource}]`;
-  af(dataSource==='SIMULATED'?'var(--yl)':'var(--rd)',`${tag} Cyber threat map: ${totalAttacks.toLocaleString()} attacks/hr across ${attackHotspots.length} nodes`);
-  EventLog.add(dataSource==='SIMULATED'?'warn':'info',`${tag} Cyber attack visualization: ${totalAttacks.toLocaleString()} attacks/hr from ${dataSource}`);
-  // Phase 4B (2026-05-04): update Cyber Threat HUD with live numbers + sparkline + type breakdown
-  try{updateCyberHUD(attackHotspots,sources,targets,totalAttacks,dataSource)}catch(e){console.warn('[CyberHUD]',e)}
-}
-// Phase 4B (2026-05-04): Cyber HUD updater + 30-point rolling sparkline (NETSCOUT Omnis style)
-window._cyberSparkHistory=window._cyberSparkHistory||[];
-function updateCyberHUD(hotspots,sources,targets,total,dataSource){
-  const hud=document.getElementById('cyberHud');if(!hud||hud.style.display==='none')return;
-  // Top-level numbers
-  document.getElementById('cyberHudTotal').textContent=total.toLocaleString();
-  document.getElementById('cyberHudNodes').textContent=hotspots.length;
-  document.getElementById('cyberHudSource').textContent=dataSource==='SIMULATED'?'SIMULATED':dataSource.toUpperCase().slice(0,16);
-  // Top 3 origins (sources)
-  const oList=sources.slice(0,3).map(s=>{
-    const pct=s.share!=null?s.share.toFixed(1)+'%':s.attacks.toLocaleString();
-    return `<div style="display:flex;justify-content:space-between"><span style="color:#E8B349">${esc(s.name)}</span><span style="color:#7a8194">${pct}</span></div>`;
-  }).join('');
-  document.getElementById('cyberHudOrigins').innerHTML=oList||'<span style="color:#4a5068">No data</span>';
-  // Top 3 targets
-  const tList=targets.slice(0,3).map(t=>{
-    const pct=t.share!=null?t.share.toFixed(1)+'%':t.attacks.toLocaleString();
-    const col=t.intensity==='HIGH'?'#DA3633':t.intensity==='MEDIUM'?'#E8B339':'#E8B339';
-    return `<div style="display:flex;justify-content:space-between"><span style="color:${col}">${esc(t.name)}</span><span style="color:#7a8194">${pct}</span></div>`;
-  }).join('');
-  document.getElementById('cyberHudTargets').innerHTML=tList||'<span style="color:#4a5068">No data</span>';
-  // Type breakdown — derived from arc-type distribution (matches the arc generator's 3 types)
-  // Estimate: 40% DDoS / 35% Intrusion / 25% APT (typical Cloudflare Radar L3 attack mix)
-  const ddos=Math.round(total*0.40),intr=Math.round(total*0.35),apt=Math.round(total*0.25);
-  document.getElementById('cyberHudDdos').textContent=ddos.toLocaleString();
-  document.getElementById('cyberHudIntr').textContent=intr.toLocaleString();
-  document.getElementById('cyberHudApt').textContent=apt.toLocaleString();
-  // Sparkline — push current total, cap at 30 points
-  window._cyberSparkHistory.push(total);
-  if(window._cyberSparkHistory.length>30)window._cyberSparkHistory.shift();
-  const c=document.getElementById('cyberHudSpark');if(!c||!c.getContext)return;
-  const ctx=c.getContext('2d');const w=c.width,h=c.height;
-  ctx.clearRect(0,0,w,h);
-  const data=window._cyberSparkHistory;if(data.length<2)return;
-  const max=Math.max(...data),min=Math.min(...data);
-  const range=Math.max(max-min,1);
-  // Draw filled area + line
-  ctx.beginPath();
-  data.forEach((v,i)=>{
-    const x=(i/(data.length-1))*w;
-    const y=h-((v-min)/range)*(h-4)-2;
-    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
-  });
-  ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();
-  const grad=ctx.createLinearGradient(0,0,0,h);
-  grad.addColorStop(0,'rgba(255,0,68,0.5)');grad.addColorStop(1,'rgba(255,0,68,0.05)');
-  ctx.fillStyle=grad;ctx.fill();
-  // Line on top
-  ctx.beginPath();
-  data.forEach((v,i)=>{
-    const x=(i/(data.length-1))*w;
-    const y=h-((v-min)/range)*(h-4)-2;
-    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
-  });
-  ctx.strokeStyle='#DA3633';ctx.lineWidth=1.5;ctx.stroke();
-  // Latest dot
-  const lastX=w-1,lastY=h-((data[data.length-1]-min)/range)*(h-4)-2;
-  ctx.beginPath();ctx.arc(lastX,lastY,2,0,Math.PI*2);
-  ctx.fillStyle='#DA3633';ctx.fill();
+  if(!window.BDOCCyberMap){af('var(--yl)','[Cyber] incident map script not loaded');return}
+  return BDOCCyberMap.load(V,cyberEnts,()=>layers.cyber).then(placed=>{
+    const st=BDOCCyberMap.state();
+    if(st.error){af('var(--yl)','[Cyber] incident feed unavailable: '+esc(st.error));EventLog.add('warn','Cyber incident feed unavailable: '+st.error);return}
+    af('var(--rd)','[Cyber] '+placed+' reported incidents on the map ('+st.pins+' places), '+st.incidents+' in the feed');
+    EventLog.add('info','Cyber incident map: '+placed+' reported incidents placed at '+st.pins+' places');
+  }).catch(e=>console.warn('[Cyber]',e));
 }
 // ═══ IP2LOCATION — IP Geolocation + Proxy/VPN/TOR Detection ═══
 const IPIntel={
@@ -14569,6 +14277,7 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 <script src="js/bdoc-glass-guard.js?v=p75"></script>
 <script src="js/bdoc-push.js?v=p181"></script>
 <script src="js/bdoc-gov-alert.js?v=p181"></script>
+<script src="js/bdoc-cyber-map.js?v=p182"></script>
 <script src="js/mesh-globe-layer.js?v=p163s"></script>
 <script src="js/bdoc-offline-store.js?v=p75"></script>
 <!-- P156e: battle plan autosave/restore + real-shape exports + .bdoc.json (needs V, battleEntities, BDOCOfflineStore) -->

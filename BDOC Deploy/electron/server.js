@@ -261,7 +261,8 @@ function createServer() {
   // p170: proxy-signals (Signals layer: NOAA scales, emergency squawks, KiwiSDR list) is keyless.
   // p171: proxy-eu (Meteoalarm warnings, Copernicus EMS activations) is keyless.
   // p181: gov-alert (FEMA national alerts banner) is keyless.
-  for (const fn of ['proxy-watch', 'proxy-mecams', 'proxy-signals', 'proxy-eu', 'gov-alert']) {
+  // p182: cyber-incidents (Cyber layer: news + CISA, placed with the Census gazetteer) is keyless.
+  for (const fn of ['proxy-watch', 'proxy-mecams', 'proxy-signals', 'proxy-eu', 'gov-alert', 'cyber-incidents']) {
     app.get('/.netlify/functions/' + fn, async (req, res) => {
       try {
         const r = await require(path.join(__dirname, '..', 'netlify', 'functions', fn + '.js'))
