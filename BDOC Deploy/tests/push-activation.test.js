@@ -313,7 +313,7 @@ function device({ existingKey, endpoint = 'https://push/old', serverKey, withOpt
 
 const flat = (x) => JSON.parse(JSON.stringify(x));
 // p165: every registration carries the device's watch zones and alert choices.
-const NO_ZONES = { zones: [], prefs: { level: 'serious', quake: true, weather: true, fire: true } };
+const NO_ZONES = { zones: [], prefs: { level: 'serious', quake: true, weather: true, fire: true, national: true } };
 
 test('same key: the subscription is kept and its key is reported', async () => {
   const k = newKey();

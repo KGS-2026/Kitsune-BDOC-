@@ -23,7 +23,7 @@
   // watch-zones module is lazy and may not be loaded yet.
   var LS_ZONES = 'bdoc_watch_zones';
   var LS_PREFS = 'bdoc_push_prefs';
-  var DEFAULT_PREFS = { level: 'serious', quake: true, weather: true, fire: true };
+  var DEFAULT_PREFS = { level: 'serious', quake: true, weather: true, fire: true, national: true };
 
   function zones() {
     try {
@@ -243,6 +243,7 @@
     var q = document.getElementById('setPushQuake'); if (q) q.checked = !!p.quake;
     var w = document.getElementById('setPushWx'); if (w) w.checked = !!p.weather;
     var f = document.getElementById('setPushFire'); if (f) f.checked = !!p.fire;
+    var na = document.getElementById('setPushNational'); if (na) na.checked = !!p.national;
     var nz = zones().length;
     if (st.permission === 'denied') {
       if (el) el.disabled = true;

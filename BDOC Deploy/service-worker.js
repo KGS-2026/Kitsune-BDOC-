@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v183';  // p179: Battle Tracker undo / delete / watchlist toasts escape the item's label (a crafted .bdoc.json plan label could run script); plan files lose < > in labels and names
+const SW_VERSION = 'bdoc-v184';  // p181: FEMA national alerts and the nationwide EAS test as a banner across the top (every plan) and as Web Push (gov-alert, gov-alert-tick every minute)
+// (prev) const SW_VERSION = 'bdoc-v183';  // p179: Battle Tracker undo / delete / watchlist toasts escape the item's label (a crafted .bdoc.json plan label could run script); plan files lose < > in labels and names
 // (prev) const SW_VERSION = 'bdoc-v182';  // p180: links in the map info box (OPEN SOURCE →, Copernicus ↗ …) open as normal tabs; sites that send Cross-Origin-Opener-Policy (atlas.ripe.net) no longer show "refused to connect". v181 is held by p179 (toast labels)
 // (prev) const SW_VERSION = 'bdoc-v180';  // p178: every floating box and pop-up drags by its title bar (mouse / pen, desktop); pressing a covered box brings it to the front in its own layer; the map info box comes out of the globe's layer
 // (prev) const SW_VERSION = 'bdoc-v179';  // p177: CoT import (TAK → BDOC): OPEN TAK places ATAK / WinTAK / iTAK events as 2525C units and markers; same uid updates, TAK uid / type go back out
@@ -52,7 +53,8 @@ const STATIC_PRECACHE = [
   // Grid-down core: these MUST be on disk or offline mode cannot start.
   '/css/bdoc-glass.css?v=p75',
   '/js/bdoc-glass-guard.js?v=p75',
-  '/js/bdoc-push.js?v=p165',
+  '/js/bdoc-push.js?v=p181',
+  '/js/bdoc-gov-alert.js?v=p181',
   '/js/bdoc-offline-store.js?v=p75',
   '/js/bdoc-plan.js?v=p179',
   '/js/bdoc-cot-import.js?v=p177',

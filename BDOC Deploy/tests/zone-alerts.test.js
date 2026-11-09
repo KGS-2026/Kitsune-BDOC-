@@ -54,8 +54,8 @@ test('zones: bad coordinates dropped, radius clamped, names cleaned, at most 10'
 });
 
 test('prefs: default is serious-only with every category on', () => {
-  assert.deepEqual(lib.cleanPrefs(undefined), { level: 'serious', quake: true, weather: true, fire: true });
-  assert.deepEqual(lib.cleanPrefs({ level: 'loud', fire: false }), { level: 'serious', quake: true, weather: true, fire: false });
+  assert.deepEqual(lib.cleanPrefs(undefined), { level: 'serious', quake: true, weather: true, fire: true, national: true });
+  assert.deepEqual(lib.cleanPrefs({ level: 'loud', fire: false }), { level: 'serious', quake: true, weather: true, fire: false, national: true });
 });
 
 // ── Earthquakes ────────────────────────────────────────────────────────────
@@ -354,7 +354,7 @@ test('subscribe stores cleaned zones and choices; unsubscribe deletes them with 
   })).json();
   const rec = store.json(r.key);
   assert.deepEqual(rec.zones, [HOME]);
-  assert.deepEqual(rec.prefs, { level: 'all', quake: true, weather: true, fire: false });
+  assert.deepEqual(rec.prefs, { level: 'all', quake: true, weather: true, fire: false, national: true });
 
   const status = await (await m.sub.default(new Request('https://kgsbdoc.netlify.app/.netlify/functions/push-subscribe'))).json();
   assert.deepEqual([status.count, status.zoned], [1, 1]);

@@ -879,6 +879,7 @@ if('serviceWorker' in navigator){
 <label class="set-chk"><input type="checkbox" id="setPushQuake" checked onchange="window.BDOCPush&&BDOCPush.setPrefs({quake:this.checked})"> Earthquakes in my watch zones</label>
 <label class="set-chk"><input type="checkbox" id="setPushWx" checked onchange="window.BDOCPush&&BDOCPush.setPrefs({weather:this.checked})"> NWS weather warnings (US)</label>
 <label class="set-chk"><input type="checkbox" id="setPushFire" checked onchange="window.BDOCPush&&BDOCPush.setPrefs({fire:this.checked})"> Wildfires (satellite detections)</label>
+<label class="set-chk"><input type="checkbox" id="setPushNational" checked onchange="window.BDOCPush&&BDOCPush.setPrefs({national:this.checked})"> FEMA national alerts and tests (US, every device)</label>
 <div style="font-family:var(--m);font-size:9px;color:var(--t3);margin:4px 0 0 20px;line-height:1.4">Add a zone: right-click the map, then Watch This Area. To check your zones while BDOC is closed, the server keeps each zone's center and radius with this device's alert address. They are not linked to your account, and turning alerts off deletes them.</div>
 </div>
 <div class="set-section">
@@ -14566,7 +14567,8 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 
 </script>
 <script src="js/bdoc-glass-guard.js?v=p75"></script>
-<script src="js/bdoc-push.js?v=p165"></script>
+<script src="js/bdoc-push.js?v=p181"></script>
+<script src="js/bdoc-gov-alert.js?v=p181"></script>
 <script src="js/mesh-globe-layer.js?v=p163s"></script>
 <script src="js/bdoc-offline-store.js?v=p75"></script>
 <!-- P156e: battle plan autosave/restore + real-shape exports + .bdoc.json (needs V, battleEntities, BDOCOfflineStore) -->

@@ -60,7 +60,9 @@ function cleanPrefs(raw) {
     level: LEVELS.includes(p.level) ? p.level : 'serious',
     quake: p.quake !== false,
     weather: p.weather !== false,
-    fire: p.fire !== false
+    fire: p.fire !== false,
+    // p181: FEMA national alerts and tests (gov-alert-tick.mjs). Not zone-based.
+    national: p.national !== false
   };
 }
 
