@@ -30,7 +30,18 @@
 //
 // NEVER returns 5xx. On total failure it serves last-good (stale-while-error)
 // and flags it, so the map degrades to "stale" not "empty".
+//
+// p183 (2026-11-09): news from around the world, not only the UK/US/Gulf desks. France 24,
+// RFI, WION, Arirang News, Yonhap, Japan Times, CNA, SCMP, The Hindu, Times of India, Dawn,
+// Rappler, ABC Australia, Africanews, AllAfrica, Premium Times, Arab News, The National,
+// Middle East Eye, Anadolu, Ukrinform, Meduza, MercoPress, Buenos Aires Times, Global News,
+// NPR, and AP / Reuters through Google News. Every feed checked live that day. WION and
+// Arirang publish no RSS: WION comes through a Google News site search, Arirang News through
+// its official YouTube channel's public upload feed (headline + link to their video, never
+// embedded or restreamed). Places beyond the theatre table come from _lib/world-places.js.
+// Items older than 48 h or dated in the future are dropped; links must be http(s).
 
+const GN = (q) => 'https://news.google.com/rss/search?q=' + encodeURIComponent(q) + '&hl=en-US&gl=US&ceid=US:en';
 const FEEDS = [
   { id: 'bbc-world',  name: 'BBC World',    url: 'https://feeds.bbci.co.uk/news/world/rss.xml', weight: 3 },
   { id: 'bbc-me',     name: 'BBC MidEast',  url: 'https://feeds.bbci.co.uk/news/world/middle_east/rss.xml', weight: 3 },
@@ -40,9 +51,40 @@ const FEEDS = [
   { id: 'dw',         name: 'DW',           url: 'https://rss.dw.com/rdf/rss-en-world', weight: 2 },
   { id: 'nypost',     name: 'NY Post',      url: 'https://nypost.com/world-news/feed/', weight: 1 },
   // World desks run a handful of Iran stories at most, so search the active theater directly.
-  { id: 'gn-iran',    name: 'Google News: Iran',   url: 'https://news.google.com/rss/search?q=iran+strike+OR+attack+OR+missile+when:1d&hl=en-US&gl=US&ceid=US:en', weight: 2 },
-  { id: 'gn-hormuz',  name: 'Google News: Hormuz', url: 'https://news.google.com/rss/search?q=%22strait+of+hormuz%22+OR+%22persian+gulf%22+tanker+when:1d&hl=en-US&gl=US&ceid=US:en', weight: 2 }
+  { id: 'gn-iran',    name: 'Google News: Iran',   url: 'https://news.google.com/rss/search?q=iran+strike+OR+attack+OR+missile+when:1d&hl=en-US&gl=US&ceid=US:en', weight: 2, google: true },
+  { id: 'gn-hormuz',  name: 'Google News: Hormuz', url: 'https://news.google.com/rss/search?q=%22strait+of+hormuz%22+OR+%22persian+gulf%22+tanker+when:1d&hl=en-US&gl=US&ceid=US:en', weight: 2, google: true },
+  // ── p183: world desks, by region ──
+  { id: 'france24',   name: 'France 24',    url: 'https://www.france24.com/en/rss', weight: 3 },
+  { id: 'rfi',        name: 'RFI',          url: 'https://www.rfi.fr/en/rss', weight: 2 },
+  { id: 'wion',       name: 'WION',         url: GN('site:wionews.com when:1d'), weight: 2, google: true },
+  { id: 'arirang',    name: 'Arirang News', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCzznO4xSV8BKnUBPyswtCUw', weight: 2 },
+  { id: 'yonhap',     name: 'Yonhap',       url: 'https://en.yna.co.kr/RSS/news.xml', weight: 2 },
+  { id: 'japantimes', name: 'Japan Times',  url: 'https://www.japantimes.co.jp/feed/', weight: 2 },
+  { id: 'cna',        name: 'CNA',          url: 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6511', weight: 2 },
+  { id: 'scmp',       name: 'SCMP',         url: 'https://www.scmp.com/rss/91/feed', weight: 2 },
+  { id: 'hindu',      name: 'The Hindu',    url: 'https://www.thehindu.com/news/international/feeder/default.rss', weight: 2 },
+  { id: 'toi',        name: 'Times of India', url: 'https://timesofindia.indiatimes.com/rssfeeds/296589292.cms', weight: 1 },
+  { id: 'dawn',       name: 'Dawn',         url: 'https://www.dawn.com/feeds/home', weight: 2 },
+  { id: 'rappler',    name: 'Rappler',      url: 'https://www.rappler.com/feed/', weight: 1 },
+  { id: 'abc-au',     name: 'ABC Australia', url: 'https://www.abc.net.au/news/feed/2942460/rss.xml', weight: 2 },
+  { id: 'africanews', name: 'Africanews',   url: 'https://www.africanews.com/feed/rss', weight: 2 },
+  { id: 'allafrica',  name: 'AllAfrica',    url: 'https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf', weight: 1 },
+  { id: 'premiumtimes', name: 'Premium Times', url: 'https://www.premiumtimesng.com/feed', weight: 1 },
+  { id: 'arabnews',   name: 'Arab News',    url: 'https://www.arabnews.com/rss.xml', weight: 2 },
+  { id: 'thenational', name: 'The National', url: 'https://www.thenationalnews.com/arc/outboundfeeds/rss/?outputType=xml', weight: 2 },
+  { id: 'mee',        name: 'Middle East Eye', url: 'https://www.middleeasteye.net/rss', weight: 2 },
+  { id: 'anadolu',    name: 'Anadolu',      url: 'https://www.aa.com.tr/en/rss/default?cat=world', weight: 2 },
+  { id: 'ukrinform',  name: 'Ukrinform',    url: 'https://www.ukrinform.net/rss/block-lastnews', weight: 2 },
+  { id: 'meduza',     name: 'Meduza',       url: 'https://meduza.io/rss/en/all', weight: 2 },
+  { id: 'mercopress', name: 'MercoPress',   url: 'https://en.mercopress.com/rss', weight: 1 },
+  { id: 'batimes',    name: 'Buenos Aires Times', url: 'https://www.batimes.com.ar/feed', weight: 1 },
+  { id: 'globalnews', name: 'Global News',  url: 'https://globalnews.ca/world/feed/', weight: 1 },
+  { id: 'npr-world',  name: 'NPR',          url: 'https://feeds.npr.org/1004/rss.xml', weight: 2 },
+  { id: 'gn-ap',      name: 'AP',           url: GN('site:apnews.com when:1d'), weight: 3, google: true },
+  { id: 'gn-reuters', name: 'Reuters',      url: GN('site:reuters.com when:1d'), weight: 3, google: true }
 ];
+const MAX_AGE_MS = 48 * 3600e3;
+const isHttp = (u) => /^https?:\/\/[^\s"'<>]+$/i.test(String(u || ''));
 
 // ── Gazetteer. lon, lat, precision-radius in metres. ─────────
 // radius encodes real locational uncertainty: a city hit is ~15km, a named
@@ -109,7 +151,7 @@ const GAZ = {
 const KINETIC = {
   strike:      ['airstrike','air strike','missile','drone strike','shelling','bombard','artillery','rocket','mortar','air raid','munition','ordnance'],
   attack:      ['attack','assault','offensive','raid','ambush','militant','insurgent','gunmen','shooting','bomb','explosion','blast','ied'],
-  casualty:    ['killed','dead','death toll','casualt','wounded','injured','massacre'],
+  casualty:    ['killed','killing','dead','death toll','casualt','wounded','injured','massacre'],
   military:    ['troops','soldiers','military','army','navy','air force','deploy','mobiliz','warship','submarine','fighter jet','battalion','brigade'],
   escalation:  ['ceasefire','truce','sanction','ultimatum','retaliat','warn','threat','nuclear','tension','border clash','incursion','violation'],
   cyber:       ['cyberattack','cyber attack','ransomware','hack','breach','malware','ddos'],
@@ -148,7 +190,11 @@ function extractImage(block) {
   // silently failed and the card rendered with no photo. Decode once here, at
   // the parse boundary, so downstream always holds a real URL.
   const first = (re) => { const m = block.match(re); return m ? decodeEnt(m[1]) : null; };
-  return first(/<media:content[^>]*\burl="([^"]+)"/i)
+  // p183: only a media:content that is (or may be) a picture. YouTube's feed (Arirang) puts the old
+  // Flash player there (type="application/x-shockwave-flash"), which drew a broken image on the card.
+  const pic = (block.match(/<media:content\b[^>]*>/gi) || []).find(t =>
+    !/\btype="(?!image)/i.test(t) && !/\bmedium="(?!image)/i.test(t) && /\burl="[^"]+"/i.test(t));
+  return (pic ? decodeEnt(pic.match(/\burl="([^"]+)"/i)[1]) : null)
       || first(/<media:thumbnail[^>]*\burl="([^"]+)"/i)
       || first(/<enclosure[^>]*\burl="([^"]+)"[^>]*type="image/i)
       || first(/<enclosure[^>]*\burl="([^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i)
@@ -159,21 +205,28 @@ function extractImage(block) {
 }
 
 function extractVideo(block) {
-  let m = block.match(/<media:content[^>]*type="video[^"]*"[^>]*\burl="([^"]+)"/i);
-  if (m) return m[1];
+  // p183: type/medium before or after url (feeds write the attributes in either order)
+  const vid = (block.match(/<media:content\b[^>]*>/gi) || []).find(t => /\b(?:type="video|medium="video)/i.test(t) && /\burl="[^"]+"/i.test(t));
+  if (vid) return decodeEnt(vid.match(/\burl="([^"]+)"/i)[1]);
+  let m;
   m = block.match(/\b(https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+)/i);
   if (m) return m[1];
+  m = block.match(/\bhttps?:\/\/(?:www\.)?youtube\.com\/shorts\/([\w-]+)/i);     // p183: Arirang posts Shorts too
+  if (m) return 'https://www.youtube.com/watch?v=' + m[1];
   return null;
 }
 
+// p183: terms match at the start of a word, not anywhere inside one. indexOf let "ied" fire inside
+// every "denied"/"carried", "dead" inside "deadlock", "warn" inside "Warner", so most world news
+// counted as conflict. Stems still match their endings ("bomb" -> bombing, "warn" -> warned).
+// Words that start like a term but mean something else are blanked first.
+const FALSE_FRIENDS = /\b(?:deadlock\w*|deadline\w*|warner\w*|raiders?|bombshell\w*|bombast\w*|blast(?:s|ed)? (?:off|critics?|rivals?|government|plans?|decision|opponents?)|(?:photo ?)?shoot(?:s|ing)? (?:star|film|movie|photos?|scenes?)|photoshoot\w*|ceasefire talks? stall\w*|(?:sexual|indecent) assaults?)\b/g;   // court cases are not war news
+const KINETIC_RE = Object.fromEntries(Object.entries(KINETIC).map(([k, terms]) =>
+  [k, new RegExp('\\b(?:' + terms.map(t => t === 'ied' ? 'ieds?\\b' : t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')')]));
 function classify(text) {
-  const t = text.toLowerCase();
+  const t = text.toLowerCase().replace(FALSE_FRIENDS, ' ');
   const hits = [];
-  for (const k in KINETIC) {
-    for (const term of KINETIC[k]) {
-      if (t.indexOf(term) !== -1) { hits.push(k); break; }
-    }
-  }
+  for (const k in KINETIC_RE) if (KINETIC_RE[k].test(t)) hits.push(k);
   return hits;
 }
 
@@ -194,6 +247,33 @@ function geocode(text) {
     }
   }
   return best;
+}
+
+// p183: where a story happened, most precise first, and the headline before the summary.
+//  1. a world city in the headline, unless the theatre table found a city or region ("Krakow" beats "Poland")
+//  2. a theatre city or region anywhere (as before p183: "Beirut" in the summary beats "Lebanon")
+//  3. a country the headline names, theatre table first ("Bangladesh challenges Hasina" is not India,
+//     even when the summary says she is in India)
+//  4. a world city in the summary, then a theatre country in the summary, then any country there.
+const world = require('./_lib/world-places.js');
+const CITY_R = 15000, COUNTRY_R = 400000;
+const asCity = (c) => ({ name: c.name, lon: c.lon, lat: c.lat, radius: CITY_R });
+const asCountry = (c) => ({ name: c.name, lon: c.lon, lat: c.lat, radius: COUNTRY_R });
+function place(title, desc) {
+  desc = desc || '';
+  const all = geocode(title + ' ' + desc);
+  const tc = world.cityIn(title);
+  if (tc && (!all || all.radius > 120000)) return asCity(tc);
+  if (all && all.radius <= 120000) return all;
+  const gt = geocode(title);
+  if (gt) return gt;
+  const tk = world.countryIn(title);
+  if (tk) return asCountry(tk);
+  const dc = world.cityIn(desc);
+  if (dc) return asCity(dc);
+  if (all) return all;
+  const dk = world.countryIn(desc);
+  return dk ? asCountry(dk) : null;
 }
 
 // Title shingle for cross-outlet dedupe: lowercase, strip stopwords/punctuation,
@@ -220,18 +300,27 @@ async function fetchFeed(f) {
     const blocks = xml.match(/<item[\s>][\s\S]*?<\/item>/gi) || xml.match(/<entry[\s>][\s\S]*?<\/entry>/gi) || [];
     const items = [];
     for (const b of blocks) {
-      const title = tag(b, 'title');
+      let title = tag(b, 'title');
       if (!title) continue;
       let link = tag(b, 'link');
-      if (!link) { const m = b.match(/<link[^>]*href="([^"]+)"/i); if (m) link = m[1]; }
+      if (!link) { const m = b.match(/<link[^>]*href="([^"]+)"/i); if (m) link = decodeEnt(m[1]); }
+      if (!isHttp(link)) continue;                       // p183: no javascript:/data: links into the card
+      // p183: Google News titles end " - Outlet"; credit the outlet, not Google.
+      let src = f.name;
+      if (f.google) {
+        const outlet = tag(b, 'source');
+        if (outlet && title.endsWith(' - ' + outlet)) title = title.slice(0, -(outlet.length + 3));
+        if (outlet) src = outlet;
+      }
+      const img = extractImage(b), video = extractVideo(b);
       items.push({
         title,
         link,
-        desc: (tag(b, 'description') || tag(b, 'summary') || tag(b, 'content:encoded') || '').slice(0, 400),
-        pub: tag(b, 'pubDate') || tag(b, 'updated') || tag(b, 'published') || '',
-        img: extractImage(b),
-        video: extractVideo(b),
-        src: f.name, srcId: f.id, weight: f.weight
+        desc: f.google ? '' : (tag(b, 'description') || tag(b, 'summary') || tag(b, 'content:encoded') || '').slice(0, 400),
+        pub: tag(b, 'pubDate') || tag(b, 'published') || tag(b, 'updated') || tag(b, 'dc:date') || '',
+        img: isHttp(img) ? img : null,
+        video: isHttp(video) ? video : null,
+        src, srcId: f.id, weight: f.weight
       });
     }
     return { id: f.id, ok: true, items };
@@ -240,6 +329,10 @@ async function fetchFeed(f) {
   }
 }
 
+exports.FEEDS = FEEDS;
+exports.place = place;
+exports.classify = classify;
+exports.fetchFeed = fetchFeed;
 exports.handler = async (event) => {
   const p = event.queryStringParameters || {};
   const wantMax = Math.min(Math.max(parseInt(p.max, 10) || 120, 1), 300);
@@ -256,12 +349,15 @@ exports.handler = async (event) => {
 
   // ── merge + classify + geocode + dedupe ────────────────────
   const byShingle = new Map();
+  const now = Date.now();
   for (const r of results) {
     for (const it of r.items) {
+      const t = Date.parse(it.pub);
+      if (Number.isFinite(t) && (now - t > MAX_AGE_MS || t - now > 2 * 3600e3)) continue;   // p183: stale or misdated
       const blob = it.title + ' ' + it.desc;
       const cats = classify(blob);
       if (!cats.length) continue;                       // drop non-signal news
-      const geo = needGeo ? geocode(blob) : null;
+      const geo = needGeo ? place(it.title, it.desc) : null;
       if (needGeo && !geo) continue;                    // unplaceable → not a map feature
 
       const key = shingle(it.title);

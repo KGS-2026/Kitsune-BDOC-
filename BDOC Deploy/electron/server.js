@@ -262,7 +262,9 @@ function createServer() {
   // p171: proxy-eu (Meteoalarm warnings, Copernicus EMS activations) is keyless.
   // p181: gov-alert (FEMA national alerts banner) is keyless.
   // p182: cyber-incidents (Cyber layer: news + CISA, placed with the Census gazetteer) is keyless.
-  for (const fn of ['proxy-watch', 'proxy-mecams', 'proxy-signals', 'proxy-eu', 'gov-alert', 'cyber-incidents']) {
+  // p183: proxy-newsgeo (War Room map: world outlets, placed with Natural Earth cities) is keyless;
+  //   the desktop app answered "Offline" for it before.
+  for (const fn of ['proxy-newsgeo', 'proxy-watch','proxy-mecams', 'proxy-signals', 'proxy-eu', 'gov-alert', 'cyber-incidents']) {
     app.get('/.netlify/functions/' + fn, async (req, res) => {
       try {
         const r = await require(path.join(__dirname, '..', 'netlify', 'functions', fn + '.js'))
