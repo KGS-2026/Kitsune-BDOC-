@@ -63,6 +63,8 @@
   var OFFICIAL_CYBER = /ddos|denial[- ]of[- ]service|security incident|unauthori[sz]ed|malicious|attack|intrusion|compromise|breach|ransom/i;
   // Watchlist ids that are shared upstream providers (an outage here explains outages elsewhere)
   var UPSTREAM_IDS = { aws: 1, azure: 1, gcp: 1, cloudflare: 1 };
+  // p185: same boxes as netlify/functions/_lib/incidents.js THEATERS [w, s, e, n]
+  var ARCHIVE_THEATERS = [[44, 23, 63.5, 40], [34, 29, 42.5, 37.5], [22, 44, 50, 57], [32, 10, 60, 23], [21.8, 8.7, 32, 23], [-17, 8, 21.8, 24], [92, 9.5, 102, 28.6]];
 
   var state = window.OutageWatch = {
     active: {},          // id → {name, kind, count, firstSeen, lastSeen, titles:[{t,u}], ent}
@@ -309,19 +311,28 @@
       .then(function (d) {
         if (!d || !d.days) return;
         var cut = new Date(Date.now() - 2 * 864e5), cutYmd = +(cut.toISOString().slice(0, 10).replace(/-/g, ''));
+        // p185: outside a named theater a big city always has assault / protest clusters
+        // (CAMEO 18x, 190) — live check fused Cloudflare SF to KINETIC on routine crime news.
+        // Out of theater only armed-combat codes (193-196, 20x) with real volume count.
+        var inTheater = ARCHIVE_THEATERS.some(function (t) { return w.lon >= t[0] && w.lat >= t[1] && w.lon <= t[2] && w.lat >= t[1] && w.lat <= t[3]; });
         var near = [];
         Object.keys(d.days).forEach(function (ymd) {
           if (+ymd < cutYmd) return;
           (d.days[ymd] || []).forEach(function (e) {
             if (typeof e.lat !== 'number' || typeof e.lon !== 'number') return;
-            if (kmBetween(w.lat, w.lon, e.lat, e.lon) <= 150) near.push(e);
+            if (kmBetween(w.lat, w.lon, e.lat, e.lon) > 150) return;
+            if (!inTheater) {
+              var code = +(e.code || 0);
+              if (!((code >= 193 && code <= 196) || code >= 200) || (e.m || 0) < 15 || (e.a || 0) < 3) return;
+            }
+            near.push(e);
           });
         });
         if (!near.length) return;
         near.sort(function (x, y) { return (y.m || 0) - (x.m || 0); });
         cand.push({
-          cause: 'KINETIC', weight: near.length >= 5 ? 4 : 2,
-          why: near.length + ' located violent event cluster(s) within 150 km of ' + w.hq + ' in last 48 h (GDELT incident archive)',
+          cause: 'KINETIC', weight: inTheater ? (near.length >= 5 ? 4 : 2) : (near.length >= 3 ? 3 : 1),
+          why: near.length + (inTheater ? ' located violent event cluster(s)' : ' armed-combat report cluster(s) (outside any named theater; crime/protest codes filtered)') + ' within 150 km of ' + w.hq + ' in last 48 h (GDELT incident archive)',
           evidence: near.slice(0, 3).map(function (e) { return { t: (e.place || 'unknown place') + ' · ' + (e.m || 0) + ' mentions', u: e.url || '' }; })
         });
       }).catch(function () {}));
@@ -360,9 +371,12 @@
     // p164 — coincidence: 3+ unrelated services degraded within the window and no upstream named
     // → systemic (BGP/DNS/transit) rather than org-local. Weak but worth saying.
     try {
-      var deg = Object.keys(state.statuspage).filter(function (n) { return state.statuspage[n] && state.statuspage[n] !== 'none'; });
+      // p185: 'maintenance' is scheduled, not degradation; three 'minor' pages is a normal day.
+      // Needs at least one major/critical in the wave, or 6+ real degradations.
+      var deg = Object.keys(state.statuspage).filter(function (n) { var i = state.statuspage[n]; return i && i !== 'none' && i !== 'maintenance'; });
+      var strong = deg.filter(function (n) { return /major|critical/.test(state.statuspage[n]); }).length;
       var newsN = Object.keys(state.active).length;
-      if (deg.length + newsN >= 4 && !cand.some(function (c) { return c.cause === 'UPSTREAM PROVIDER'; })) {
+      if (((strong >= 1 && deg.length + newsN >= 4) || deg.length + newsN >= 6) && !cand.some(function (c) { return c.cause === 'UPSTREAM PROVIDER'; })) {
         cand.push({ cause: 'SYSTEMIC (INTERNET)', weight: 3, why: (deg.length + newsN) + ' services degraded simultaneously with no single upstream named — suggests transit/BGP/DNS-level event', evidence: deg.map(function (n) { return { t: n + ': ' + state.statuspage[n], u: '' }; }) });
       }
     } catch (_) {}
