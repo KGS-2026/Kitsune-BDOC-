@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v186';  // p184: Cyber layer draws origin lines: an arc from the country a report names as the attacker ("Iran-linked group", "Russian hackers", "Volt Typhoon") to the victim's pin, arrow at the victim; panel lists where attacks came from, with a lines on/off switch
+const SW_VERSION = 'bdoc-v187';  // p185: Causal Fusion v2 (rebased p164) — official statuspage incident text as a CYBER leg, UPSTREAM PROVIDER cascade attribution, incident-archive KINETIC leg (150 km / 48 h), SYSTEMIC fallback, corroboration lifts confidence a tier, statuspage MAJOR outages plotted + fused, GTA INFRA weighted by attributed cause
+// (prev) const SW_VERSION = 'bdoc-v186';  // p184: Cyber layer draws origin lines: an arc from the country a report names as the attacker ("Iran-linked group", "Russian hackers", "Volt Typhoon") to the victim's pin, arrow at the victim; panel lists where attacks came from, with a lines on/off switch
 // (prev) const SW_VERSION = 'bdoc-v185';  // p182: Cyber layer shows reported incidents where they happened (water systems by state, hospitals, blood banks, supermarkets…) from cyber news, local news and CISA, placed at county / town / state / country level; the made-up East Coast / West Coast hotspots and random arcs are gone
 // (prev) const SW_VERSION = 'bdoc-v184';  // p181: FEMA national alerts and the nationwide EAS test as a banner across the top (every plan) and as Web Push (gov-alert, gov-alert-tick every minute)
 // (prev) const SW_VERSION = 'bdoc-v183';  // p179: Battle Tracker undo / delete / watchlist toasts escape the item's label (a crafted .bdoc.json plan label could run script); plan files lose < > in labels and names
@@ -80,18 +81,18 @@ const STATIC_PRECACHE = [
   '/js/bdoc-atak.js?v=p175',
   '/js/cesium-init.js?v=p180',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p176',
-  '/js/modules/layers-conflict.js?v=p176',
-  '/js/modules/layers-infra.js?v=p176',
-  '/js/modules/layers-air.js?v=p176',
-  '/js/modules/layers-nuke.js?v=p176',
-  '/js/modules/nuke-sim.js?v=p176',
-  '/js/modules/layers-airfields.js?v=p176',
-  '/js/modules/net-builder.js?v=p176',
-  '/js/modules/mesh-world.js?v=p176',
-  '/js/modules/skybridge.js?v=p176',
-  '/js/modules/milsymbol-loader.js?v=p176',
-  '/js/modules/battle-symbols.js?v=p176',
+  '/js/modules/layers-military.js?v=p185',
+  '/js/modules/layers-conflict.js?v=p185',
+  '/js/modules/layers-infra.js?v=p185',
+  '/js/modules/layers-air.js?v=p185',
+  '/js/modules/layers-nuke.js?v=p185',
+  '/js/modules/nuke-sim.js?v=p185',
+  '/js/modules/layers-airfields.js?v=p185',
+  '/js/modules/net-builder.js?v=p185',
+  '/js/modules/mesh-world.js?v=p185',
+  '/js/modules/skybridge.js?v=p185',
+  '/js/modules/milsymbol-loader.js?v=p185',
+  '/js/modules/battle-symbols.js?v=p185',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',

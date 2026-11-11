@@ -43,19 +43,26 @@
   ];
 
   // statuspage sweep set (real APIs, CORS-friendly directly or via proxy-status)
+  // p164: each statuspage carries HQ coords + an upstream flag so the fusion engine can run
+  // the same cyber/weather/seismic/kinetic legs on an OFFICIAL outage, and so a wave of
+  // simultaneous degradations can be attributed to a shared provider (Cloudflare/AWS-class).
   var STATUSPAGES = [
-    { name: 'Cloudflare', url: 'https://www.cloudflarestatus.com/api/v2/status.json' },
-    { name: 'GitHub', url: 'https://www.githubstatus.com/api/v2/status.json' },
-    { name: 'Discord', url: 'https://discordstatus.com/api/v2/status.json' },
-    { name: 'Meta', url: 'https://metastatus.com/api/v2/status.json' },
-    { name: 'Twilio', url: 'https://status.twilio.com/api/v2/status.json' },
-    { name: 'Reddit', url: 'https://www.redditstatus.com/api/v2/status.json' },
-    { name: 'DigitalOcean', url: 'https://status.digitalocean.com/api/v2/status.json' },
-    { name: 'Netlify', url: 'https://www.netlifystatus.com/api/v2/status.json' },
-    { name: 'OpenAI', url: 'https://status.openai.com/api/v2/status.json' },
-    { name: 'Slack', url: 'https://slack-status.com/api/v2.0.0/current', kind: 'slack' },
-    { name: 'Zoom', url: 'https://www.zoomstatus.com/api/v2/status.json' }
+    { name: 'Cloudflare', url: 'https://www.cloudflarestatus.com/api/v2/status.json', lat: 37.78, lon: -122.39, hq: 'San Francisco CA', kindOf: 'CDN', upstream: true, rx: /cloudflare/i },
+    { name: 'GitHub', url: 'https://www.githubstatus.com/api/v2/status.json', lat: 37.78, lon: -122.39, hq: 'San Francisco CA', kindOf: 'DEVOPS', rx: /github/i },
+    { name: 'Discord', url: 'https://discordstatus.com/api/v2/status.json', lat: 37.78, lon: -122.39, hq: 'San Francisco CA', kindOf: 'COMMS', rx: /discord/i },
+    { name: 'Meta', url: 'https://metastatus.com/api/v2/status.json', lat: 37.48, lon: -122.15, hq: 'Menlo Park CA', kindOf: 'SOCIAL', rx: /\bmeta\b|facebook|instagram|whatsapp/i },
+    { name: 'Twilio', url: 'https://status.twilio.com/api/v2/status.json', lat: 37.78, lon: -122.39, hq: 'San Francisco CA', kindOf: 'COMMS', rx: /twilio/i },
+    { name: 'Reddit', url: 'https://www.redditstatus.com/api/v2/status.json', lat: 37.78, lon: -122.39, hq: 'San Francisco CA', kindOf: 'SOCIAL', rx: /reddit/i },
+    { name: 'DigitalOcean', url: 'https://status.digitalocean.com/api/v2/status.json', lat: 40.71, lon: -74.01, hq: 'New York NY', kindOf: 'CLOUD', upstream: true, rx: /digitalocean/i },
+    { name: 'Netlify', url: 'https://www.netlifystatus.com/api/v2/status.json', lat: 37.78, lon: -122.39, hq: 'San Francisco CA', kindOf: 'CDN', rx: /netlify/i },
+    { name: 'OpenAI', url: 'https://status.openai.com/api/v2/status.json', lat: 37.78, lon: -122.39, hq: 'San Francisco CA', kindOf: 'AI', rx: /openai|chatgpt/i },
+    { name: 'Slack', url: 'https://slack-status.com/api/v2.0.0/current', kind: 'slack', lat: 37.78, lon: -122.39, hq: 'San Francisco CA', kindOf: 'COMMS', rx: /slack/i },
+    { name: 'Zoom', url: 'https://www.zoomstatus.com/api/v2/status.json', lat: 37.34, lon: -121.89, hq: 'San Jose CA', kindOf: 'COMMS', rx: /\bzoom\b/i }
   ];
+  // Official incident text that names a security cause beats every statistical leg.
+  var OFFICIAL_CYBER = /ddos|denial[- ]of[- ]service|security incident|unauthori[sz]ed|malicious|attack|intrusion|compromise|breach|ransom/i;
+  // Watchlist ids that are shared upstream providers (an outage here explains outages elsewhere)
+  var UPSTREAM_IDS = { aws: 1, azure: 1, gcp: 1, cloudflare: 1 };
 
   var state = window.OutageWatch = {
     active: {},          // id → {name, kind, count, firstSeen, lastSeen, titles:[{t,u}], ent}
@@ -128,11 +135,11 @@
     }
     return '<div style="font-family:\'JetBrains Mono\',monospace;padding:12px;color:#c8ccd6;background:#0a0e14;border:1px solid #DA3633;max-width:420px">' +
       '<div style="font-size:13px;font-weight:700;color:#DA3633">⛔ INFRASTRUCTURE OUTAGE — ' + esc(w.name) + '</div>' +
-      '<div style="font-size:8px;color:#8b949e;letter-spacing:1px;margin:4px 0 8px">' + esc(w.kind) + ' · ' + esc(w.hq) + ' · NEWS-DETECTED · LAST 60 MIN</div>' +
-      '<div style="font-size:10px;margin-bottom:6px">Reports: <b>' + a.count + '</b> in last hour</div>' +
+      '<div style="font-size:8px;color:#8b949e;letter-spacing:1px;margin:4px 0 8px">' + esc(w.kind) + ' · ' + esc(w.hq) + (a.official ? ' · OFFICIAL STATUSPAGE' : ' · NEWS-DETECTED · LAST 60 MIN') + '</div>' +
+      (a.official ? '' : '<div style="font-size:10px;margin-bottom:6px">Reports: <b>' + a.count + '</b> in last hour</div>') +
       a.titles.slice(0, 6).map(function (t) { return '<div style="margin-bottom:5px;font-size:10px"><a href="' + esc(t.u || '#') + '" target="_blank" rel="noopener" style="color:#c8ccd6">' + esc(t.t.slice(0, 100)) + '</a></div>'; }).join('') +
       fusionHtml +
-      '<div style="font-size:8px;color:#4a5068;margin-top:6px">Source: GDELT 1-hour news monitoring · OutageWatch sentinel + Causal Fusion Engine</div></div>';
+      '<div style="font-size:8px;color:#4a5068;margin-top:6px">Source: ' + (a.official ? 'operator statuspage' : 'GDELT 1-hour news monitoring') + ' · OutageWatch sentinel + Causal Fusion Engine v2</div></div>';
   }
 
   function plot(w, a) {
@@ -166,6 +173,32 @@
     return fetch(url, { signal: AbortSignal.timeout(ms || 10000) })
       .then(function (r) { return r.json(); })
       .then(function (d) { if (d && d.offline === true) throw new Error('sw-offline-sentinel'); return d; });
+  }
+
+  function kmBetween(lat1, lon1, lat2, lon2) {
+    var R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  // p164: unresolved incidents on an Atlassian-style statuspage → [{name, text, url}]
+  // (direct, then proxy-status; Slack has its own shape). Empty array on any failure.
+  function statusIncidents(s) {
+    if (s.kind === 'slack') {
+      return fetchJson(s.url, 8000).then(function (d) {
+        return (d.active_incidents || []).map(function (i) { return { name: i.title || 'Incident', text: (i.title || '') + ' ' + ((i.notes || []).map(function (n) { return n.body || ''; }).join(' ')), url: i.url || '' }; });
+      }).catch(function () { return []; });
+    }
+    var u = s.url.replace(/status\.json$/, 'incidents/unresolved.json');
+    var parse = function (d) {
+      return (d && d.incidents || []).map(function (i) {
+        var upd = (i.incident_updates || []).map(function (x) { return x.body || ''; }).join(' ');
+        return { name: i.name || 'Incident', text: (i.name || '') + ' ' + upd, url: i.shortlink || '' };
+      });
+    };
+    return fetchJson(u, 8000).then(parse)
+      .catch(function () { return fetchJson('/.netlify/functions/proxy-status?url=' + encodeURIComponent(u), 8000).then(parse); })
+      .catch(function () { return []; });
   }
 
   // p159i: GDELT DOC API 429s datacenter IPs and intermittently residential ones.
@@ -270,9 +303,53 @@
         }).catch(function () {})
     ];
 
+    // p164 — KINETIC b: incident archive density near HQ (last 48 h, 150 km). Catches an
+    // org whose HQ sits outside a named theater but inside a live strike/attack cluster.
+    jobs.push(fetchJson('/.netlify/functions/incidents-recent', 12000)
+      .then(function (d) {
+        if (!d || !d.days) return;
+        var cut = new Date(Date.now() - 2 * 864e5), cutYmd = +(cut.toISOString().slice(0, 10).replace(/-/g, ''));
+        var near = [];
+        Object.keys(d.days).forEach(function (ymd) {
+          if (+ymd < cutYmd) return;
+          (d.days[ymd] || []).forEach(function (e) {
+            if (typeof e.lat !== 'number' || typeof e.lon !== 'number') return;
+            if (kmBetween(w.lat, w.lon, e.lat, e.lon) <= 150) near.push(e);
+          });
+        });
+        if (!near.length) return;
+        near.sort(function (x, y) { return (y.m || 0) - (x.m || 0); });
+        cand.push({
+          cause: 'KINETIC', weight: near.length >= 5 ? 4 : 2,
+          why: near.length + ' located violent event cluster(s) within 150 km of ' + w.hq + ' in last 48 h (GDELT incident archive)',
+          evidence: near.slice(0, 3).map(function (e) { return { t: (e.place || 'unknown place') + ' · ' + (e.m || 0) + ' mentions', u: e.url || '' }; })
+        });
+      }).catch(function () {}));
+
+    // p164 — OFFICIAL: the org's own statuspage incident text names a security cause
+    // (DDoS, unauthorised access…). Strongest signal there is — the operator said so.
+    var ownSp = STATUSPAGES.find(function (s) { return s.rx && s.rx.test(w.name); });
+    if (ownSp) {
+      jobs.push(statusIncidents(ownSp).then(function (inc) {
+        var hit = inc.find(function (i) { return OFFICIAL_CYBER.test(i.text); });
+        if (hit) cand.push({ cause: 'CYBER', weight: 6, why: ownSp.name + ' statuspage incident names a security cause: "' + hit.name.slice(0, 80) + '"', evidence: [{ t: hit.name.slice(0, 90), u: hit.url || ownSp.url.replace(/\/api\/v2\/.*$/, '') }] });
+      }).catch(function () {}));
+    }
+
     await Promise.allSettled(jobs);
 
-    // KINETIC — HQ inside an active War Room theater bbox (local, no fetch)
+    // p164 — UPSTREAM CASCADE: a shared provider (AWS/Azure/GCP/Cloudflare/DO) is itself
+    // degraded right now → this outage is most likely downstream of it, not independent.
+    try {
+      if (!UPSTREAM_IDS[w.id] && !(w.upstream)) {
+        var ups = [];
+        Object.keys(state.active).forEach(function (id) { if (UPSTREAM_IDS[id] && id !== w.id) ups.push(state.active[id].name + ' (news-detected)'); });
+        STATUSPAGES.forEach(function (s) { var ind = state.statuspage[s.name]; if (s.upstream && ind && ind !== 'none' && s.name !== w.name) ups.push(s.name + ' (statuspage: ' + ind + ')'); });
+        if (ups.length) cand.push({ cause: 'UPSTREAM PROVIDER', weight: 5, why: 'Shared upstream degraded at the same time: ' + ups.join(', ') + ' — cascade failure, not an attack on ' + w.name, evidence: ups.map(function (u) { return { t: u, u: '' }; }) });
+      }
+    } catch (_) {}
+
+    // KINETIC a — HQ inside an active War Room theater bbox (local, no fetch)
     try {
       var th = (window.WAR_THEATERS || []).find(function (t) {
         return w.lon >= t.bbox[0] && w.lat >= t.bbox[1] && w.lon <= t.bbox[2] && w.lat <= t.bbox[3];
@@ -280,17 +357,35 @@
       if (th) cand.push({ cause: 'KINETIC', weight: 3, why: w.hq + ' lies inside active conflict theater: ' + th.name, evidence: [{ t: th.name, u: '' }] });
     } catch (_) {}
 
+    // p164 — coincidence: 3+ unrelated services degraded within the window and no upstream named
+    // → systemic (BGP/DNS/transit) rather than org-local. Weak but worth saying.
+    try {
+      var deg = Object.keys(state.statuspage).filter(function (n) { return state.statuspage[n] && state.statuspage[n] !== 'none'; });
+      var newsN = Object.keys(state.active).length;
+      if (deg.length + newsN >= 4 && !cand.some(function (c) { return c.cause === 'UPSTREAM PROVIDER'; })) {
+        cand.push({ cause: 'SYSTEMIC (INTERNET)', weight: 3, why: (deg.length + newsN) + ' services degraded simultaneously with no single upstream named — suggests transit/BGP/DNS-level event', evidence: deg.map(function (n) { return { t: n + ': ' + state.statuspage[n], u: '' }; }) });
+      }
+    } catch (_) {}
+
     cand.sort(function (x, y) { return y.weight - x.weight; });
     var top = cand[0];
+    // p164: corroboration — two INDEPENDENT legs naming the same cause lift confidence one tier.
+    var corroborated = 0;
+    if (top) corroborated = cand.filter(function (c) { return c.cause === top.cause && c !== top && c.weight >= 2; }).length;
+    var eff = top ? top.weight + (corroborated ? 1 : 0) : 0;
     var f;
-    if (top && top.weight >= 3) {
-      f = { cause: top.cause, confidence: top.weight >= 5 ? 'HIGH' : 'MEDIUM', why: top.why, evidence: top.evidence, candidates: cand, at: Date.now() };
+    if (top && eff >= 3) {
+      f = { cause: top.cause, confidence: eff >= 5 ? 'HIGH' : 'MEDIUM', why: top.why + (corroborated ? ' — corroborated by ' + corroborated + ' further signal(s)' : ''), evidence: top.evidence, candidates: cand, corroborated: corroborated, at: Date.now() };
     } else if (top) {
-      f = { cause: top.cause, confidence: 'LOW', why: top.why + ' — weak signal, treat as unconfirmed', evidence: top.evidence, candidates: cand, at: Date.now() };
+      f = { cause: top.cause, confidence: 'LOW', why: top.why + ' — weak signal, treat as unconfirmed', evidence: top.evidence, candidates: cand, corroborated: 0, at: Date.now() };
     } else {
-      f = { cause: 'UNDETERMINED', confidence: '—', why: 'No correlated cyber / weather / seismic / space-weather / kinetic signal in the time-space window. Likely internal technical failure (config change, software fault, fiber cut).', evidence: [], candidates: [], at: Date.now() };
+      f = { cause: 'UNDETERMINED', confidence: '—', why: 'No correlated cyber / weather / seismic / space-weather / kinetic / upstream signal in the time-space window. Likely internal technical failure (config change, software fault, fiber cut).', evidence: [], candidates: [], corroborated: 0, at: Date.now() };
     }
     a.fusion = f;
+    state.lastFusion = { id: w.id, name: w.name, cause: f.cause, confidence: f.confidence, at: f.at };
+    // p164: every fusion verdict is an explainable GTA event — re-score so the changelog
+    // carries "FUSION: <org> → <cause>" rather than a bare INFRA number.
+    try { state._fusionNote = w.name + ' → ' + f.cause + (f.cause !== 'UNDETERMINED' ? ' (' + f.confidence + ')' : ''); recomputeScore(); if (typeof updateGTA === 'function') updateGTA(); } catch (_) {}
 
     // patch UI everywhere the outage surfaces
     try { if (a.ent) a.ent.description = buildDesc(w, a); } catch (_) {}
@@ -330,6 +425,12 @@
     Object.keys(state.active).forEach(function (id) {
       var w = WATCH.find(function (x) { return x.id === id; });
       s += (w && (w.kind === 'CARRIER' || w.kind === 'GRID' || w.kind === 'NAVIGATION' || w.kind === 'AVIATION')) ? 6 : 4;
+      // p164: an attributed hostile cause is worth more than an unexplained fault; a cascade
+      // from a shared upstream is worth less (the upstream already scores).
+      var f = state.active[id].fusion;
+      if (f && f.confidence === 'HIGH' && (f.cause === 'CYBER' || f.cause === 'KINETIC')) s += 4;
+      else if (f && f.confidence === 'MEDIUM' && (f.cause === 'CYBER' || f.cause === 'KINETIC')) s += 2;
+      else if (f && f.cause === 'UPSTREAM PROVIDER') s -= 2;
     });
     Object.keys(state.statuspage).forEach(function (n) {
       var ind = state.statuspage[n];
@@ -408,12 +509,32 @@
       if (v.ind !== 'none' && prev === 'none') {
         try { af('#E8B339', '⚠ SERVICE DEGRADED: ' + v.name + ' — ' + v.desc); } catch (_) {}
         if (v.ind === 'major' || v.ind === 'critical') {
-          banner('<b>⚠ MAJOR SERVICE OUTAGE — ' + esc(v.name.toUpperCase()) + '</b><br>' + esc(v.desc) + '<br><span style="color:#8b949e;font-size:9px">Official statuspage · OutageWatch</span>', '#ff6600');
+          banner('<b>⚠ MAJOR SERVICE OUTAGE — ' + esc(v.name.toUpperCase()) + '</b><br>' + esc(v.desc) + '<br><span style="color:#8b949e;font-size:9px">Official statuspage · OutageWatch · causal fusion running…</span>', '#ff6600');
           notify('BDOC: ' + v.name + ' major outage', v.desc);
+          // p164: official MAJOR outage → same fusion as a news-detected one. Synthesise a
+          // watch entry from the statuspage row (HQ, kind, rx) and plot + fuse it.
+          try {
+            var sp = STATUSPAGES.find(function (s) { return s.name === v.name; });
+            if (sp && sp.lat !== undefined) {
+              var spId = 'sp-' + v.name.toLowerCase().replace(/\W+/g, '-');
+              var spW = { id: spId, name: v.name, rx: sp.rx || new RegExp(v.name, 'i'), kind: sp.kindOf || 'SERVICE', lat: sp.lat, lon: sp.lon, hq: sp.hq, upstream: !!sp.upstream };
+              if (!state.active[spId]) {
+                var spA = state.active[spId] = { name: v.name, kind: spW.kind, firstSeen: Date.now(), lastSeen: Date.now(), count: 1, official: true,
+                  titles: [{ t: 'OFFICIAL statuspage: ' + v.desc, u: sp.url.replace(/\/api\/v2\/.*$/, '') }] };
+                plot(spW, spA);
+                setTimeout(function () { fuseCause(spW, spA).catch(function (e) { console.warn('[OutageWatch fusion]', e); }); }, 1500);
+              }
+            }
+          } catch (e) { console.warn('[OutageWatch sp-fusion]', e); }
         }
         try { if (typeof EventLog !== 'undefined') EventLog.add(v.ind === 'major' || v.ind === 'critical' ? 'crit' : 'warn', 'STATUS: ' + v.name + ' → ' + v.ind); } catch (_) {}
       } else if (v.ind === 'none' && prev !== 'none') {
         try { af('#3FB950', '✓ SERVICE RESTORED: ' + v.name); } catch (_) {}
+        // p164: drop the synthetic official-outage entry + marker on recovery
+        try {
+          var rid = 'sp-' + v.name.toLowerCase().replace(/\W+/g, '-'), ra = state.active[rid];
+          if (ra) { if (ra.ent) V.entities.remove(ra.ent); delete state.active[rid]; }
+        } catch (_) {}
       }
       state.statuspage[v.name] = v.ind;
     });
