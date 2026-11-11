@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v188';  // p185b: fusion KINETIC leg filters crime/protest codes outside a theater, SYSTEMIC needs a major; p185: Causal Fusion v2 (rebased p164) — official statuspage incident text as a CYBER leg, UPSTREAM PROVIDER cascade attribution, incident-archive KINETIC leg (150 km / 48 h), SYSTEMIC fallback, corroboration lifts confidence a tier, statuspage MAJOR outages plotted + fused, GTA INFRA weighted by attributed cause
+const SW_VERSION = 'bdoc-v189';  // p185c: upstream 'minor' is a weak cascade signal (weight 2), only major/critical or news-detected upstream = HIGH; p185b: fusion KINETIC leg filters crime/protest codes outside a theater, SYSTEMIC needs a major; p185: Causal Fusion v2 (rebased p164) — official statuspage incident text as a CYBER leg, UPSTREAM PROVIDER cascade attribution, incident-archive KINETIC leg (150 km / 48 h), SYSTEMIC fallback, corroboration lifts confidence a tier, statuspage MAJOR outages plotted + fused, GTA INFRA weighted by attributed cause
+// (prev) const SW_VERSION = 'bdoc-v188';  // p185b: kinetic/systemic filters
 // (prev) const SW_VERSION = 'bdoc-v187';  // p185 first cut (same content, pre-filter)
 // (prev) const SW_VERSION = 'bdoc-v186';  // p184: Cyber layer draws origin lines: an arc from the country a report names as the attacker ("Iran-linked group", "Russian hackers", "Volt Typhoon") to the victim's pin, arrow at the victim; panel lists where attacks came from, with a lines on/off switch
 // (prev) const SW_VERSION = 'bdoc-v185';  // p182: Cyber layer shows reported incidents where they happened (water systems by state, hospitals, blood banks, supermarkets…) from cyber news, local news and CISA, placed at county / town / state / country level; the made-up East Coast / West Coast hotspots and random arcs are gone
@@ -82,18 +83,18 @@ const STATIC_PRECACHE = [
   '/js/bdoc-atak.js?v=p175',
   '/js/cesium-init.js?v=p180',
   '/js/deeplink.js?v=p115',
-  '/js/modules/layers-military.js?v=p185b',
-  '/js/modules/layers-conflict.js?v=p185b',
-  '/js/modules/layers-infra.js?v=p185b',
-  '/js/modules/layers-air.js?v=p185b',
-  '/js/modules/layers-nuke.js?v=p185b',
-  '/js/modules/nuke-sim.js?v=p185b',
-  '/js/modules/layers-airfields.js?v=p185b',
-  '/js/modules/net-builder.js?v=p185b',
-  '/js/modules/mesh-world.js?v=p185b',
-  '/js/modules/skybridge.js?v=p185b',
-  '/js/modules/milsymbol-loader.js?v=p185b',
-  '/js/modules/battle-symbols.js?v=p185b',
+  '/js/modules/layers-military.js?v=p185c',
+  '/js/modules/layers-conflict.js?v=p185c',
+  '/js/modules/layers-infra.js?v=p185c',
+  '/js/modules/layers-air.js?v=p185c',
+  '/js/modules/layers-nuke.js?v=p185c',
+  '/js/modules/nuke-sim.js?v=p185c',
+  '/js/modules/layers-airfields.js?v=p185c',
+  '/js/modules/net-builder.js?v=p185c',
+  '/js/modules/mesh-world.js?v=p185c',
+  '/js/modules/skybridge.js?v=p185c',
+  '/js/modules/milsymbol-loader.js?v=p185c',
+  '/js/modules/battle-symbols.js?v=p185c',
   '/cable-geo.json',
   '/landing-point-geo.json',
   '/assets/fallout-shelters-us.kml?v=p31',

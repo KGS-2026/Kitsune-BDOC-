@@ -353,10 +353,13 @@
     // degraded right now → this outage is most likely downstream of it, not independent.
     try {
       if (!UPSTREAM_IDS[w.id] && !(w.upstream)) {
-        var ups = [];
-        Object.keys(state.active).forEach(function (id) { if (UPSTREAM_IDS[id] && id !== w.id) ups.push(state.active[id].name + ' (news-detected)'); });
-        STATUSPAGES.forEach(function (s) { var ind = state.statuspage[s.name]; if (s.upstream && ind && ind !== 'none' && s.name !== w.name) ups.push(s.name + ' (statuspage: ' + ind + ')'); });
-        if (ups.length) cand.push({ cause: 'UPSTREAM PROVIDER', weight: 5, why: 'Shared upstream degraded at the same time: ' + ups.join(', ') + ' — cascade failure, not an attack on ' + w.name, evidence: ups.map(function (u) { return { t: u, u: '' }; }) });
+        var ups = [], upsStrong = 0;
+        Object.keys(state.active).forEach(function (id) { if (UPSTREAM_IDS[id] && id !== w.id) { ups.push(state.active[id].name + ' (news-detected)'); upsStrong++; } });
+        // p185b: a 'minor' indicator on Cloudflare/DO is routine (one feature degraded) — live check
+        // attributed a Kyiv telco to "Cloudflare: minor" at HIGH. Only major/critical, or a
+        // news-detected upstream outage, carries cascade weight; 'minor' is a weak mention.
+        STATUSPAGES.forEach(function (s) { var ind = state.statuspage[s.name]; if (s.upstream && ind && ind !== 'none' && ind !== 'maintenance' && s.name !== w.name) { ups.push(s.name + ' (statuspage: ' + ind + ')'); if (/major|critical/.test(ind)) upsStrong++; } });
+        if (ups.length) cand.push({ cause: 'UPSTREAM PROVIDER', weight: upsStrong ? 5 : 2, why: 'Shared upstream degraded at the same time: ' + ups.join(', ') + (upsStrong ? ' — cascade failure, not an attack on ' + w.name : ' — minor degradation only, weak cascade signal'), evidence: ups.map(function (u) { return { t: u, u: '' }; }) });
       }
     } catch (_) {}
 
