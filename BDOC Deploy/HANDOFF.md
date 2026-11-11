@@ -2,7 +2,7 @@
 
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
-**Last updated by Hermes:** 2026-10-02 · build **p150** · `SW_VERSION bdoc-v150`
+**Last updated by Hermes:** 2026-11-11 · build **p185c** on `main` · `SW_VERSION bdoc-v189`
 **Last updated by Claude Code:** 2026-10-31 · build **p163** on `main` · `SW_VERSION bdoc-v164`
 
 This is the running baton. Hermes updates the top section on every handoff.
@@ -77,7 +77,17 @@ here, update §1 so Hermes knows where you left off.
 
 ---
 
-## 1. WHERE HERMES LEFT OFF (2026-10-02)
+## 1. WHERE HERMES LEFT OFF (2026-11-11)
+
+### Hermes — p185 / p185b / p185c Causal Fusion v2 (2026-11-11 cron shift) — LIVE on `main` @ `b7ad589`, SW `bdoc-v189`
+**What:** the p164 fusion commit (4 Nov) had been sitting on the branch, 43 commits behind main, never shipped. Rebased it onto p184 and shipped as p185, then fixed two false positives the live check found. Branch `hermes-overnight-2026-06-09` is now a descendant of main again (the stale remote tip was merged in with `-s ours`).
+- **p185 (`f5204e8`, v187):** official statuspage incident text as a CYBER leg (weight 6); UPSTREAM PROVIDER cascade attribution; incident-archive KINETIC leg (150 km / 48 h from `incidents-recent`); SYSTEMIC fallback; corroboration lifts a tier; statuspage MAJOR outages plotted + fused like news-detected ones; GTA INFRA line carries `FUSION: <org> → <cause>`. `OutageWatch.fuse(w, a)` exposed for diagnostics. Build pill p185 (test in `wire-function.test.js` updated).
+- **p185b (`d2d4f1e`, v188):** KINETIC-b leg fused Cloudflare SF → KINETIC (MEDIUM) on SF assault/protest clusters (CAMEO 18x/190). Outside the 7 archive theaters only armed-combat codes (193-196, 20x) with ≥15 mentions / ≥3 articles count, one weight tier lower. SYSTEMIC ignores `maintenance` and needs a major/critical in the wave or 6+ degradations (3 `minor` pages is a normal Tuesday).
+- **p185c (`b7ad589`, v189):** UPSTREAM leg attributed a Kyiv telco to "Cloudflare: minor" at HIGH. `minor` on an upstream is now weight 2 (weak mention); only major/critical or a news-detected upstream outage is weight 5.
+
+**Verified (headless Chromium on the droplet, `bdoc-port-tmp/checks/p185_live.py` + `_kyiv.py`, prod URL):** SW v189 served; `BDOC.LazyLoader._version` p185c; 725 entities at boot; `OutageWatch.statuspage` live (Cloudflare/Twilio/Slack minor, Zoom maintenance); `newsOk:false` from the datacenter (GDELT browser path, expected). Synthetic official outage **Cloudflare SF → UNDETERMINED, 0 candidates** (was KINETIC MEDIUM before p185b). Synthetic **Kyivstar, Kyiv → KINETIC (HIGH)**: 29 archive clusters within 150 km in 48 h, corroborated by the War Room UKRAINE theater leg, upstream `Cloudflare: minor` ranked last at weight 2. `_fusionNote` set, GTA INFRA score moved 6 → 10/12 and the pill re-rendered. Console: 0 page errors; 4 resource 404/503s from upstream feeds (pre-existing, not p185). `node --test tests/*.test.js` 954/955 on Node 22; the one failure (`cyber-incidents` client test #144) also fails on untouched main here and passes on the laptop's Node 24 — not touched.
+**Not verified:** a real news-detected outage end to end (GDELT unreachable from this IP); the weather / seismic / space-weather legs fired nothing in both runs because nothing is active near SF or Kyiv — they were not exercised. 375 px not checked.
+**Next on the fusion axis:** (1) the CYBER-a GDELT leg still depends on the browser-direct path — route it through `proxy-gdelt?format=articles` first from datacenter-class clients; (2) feed `cyber-incidents` (p182) as a CYBER leg: an incident placed within 150 km / 72 h of the org HQ or matching `w.rx` is a stronger signal than GDELT headlines; (3) the fusion card should list all candidates, not only the top one.
 
 ### Claude Code — p184 Cyber layer: origin lines from the country a report names as the attacker (2026-11-09) — LIVE on `main` @ `8c277e7`, SW `bdoc-v186`
 **Live check 9 Nov ~14:55Z (on Travon's "Ship p184"):** fast-forward push `08d2830..8c277e7` at 14:53:39Z from `C:\Users\ARNAUTICA\bdoc-p184` (branch `claude/p184-cyber-origins`). Netlify served SW `bdoc-v186` by 14:54:21Z. Live check 17/17 (`bdoc-port-tmp/checks/p184_live.sh`): SW v186 keeps the v185 (prev) line and precaches `bdoc-cyber-map.js?v=p184`, the page loads it and its loader line counts origin lines, the client script answers 200 with the origins section and arrowheads, and the served `index.html`, `js/bdoc-cyber-map.js` and `service-worker.js` match `8c277e7`. `cyber-incidents` returned 200 `ok:true` in 4.61 s (cold start after the deploy): 223 incidents, every one with an `origin` field, 15 name an attacker (Russia 6, Iran 5, North Korea 2, China 1, Ukraine 1), no line from a country to itself, every origin has cc, lat, lon and the report's words. 9 attacker → place pairs in the full feed: Iran → Minnesota, Michigan, California, United States (country-level, listed not pinned, so no line); Russia → Canada, France, Italy, Ukraine; Ukraine → Russia.
