@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-11-11 · build **p185c** on `main` · `SW_VERSION bdoc-v189`
-**Last updated by Claude Code:** 2026-10-31 · build **p163** on `main` · `SW_VERSION bdoc-v164`
+**Last updated by Claude Code:** 2026-11-14 · build **p186** on branch `claude/p186-float-review`, not live · `SW_VERSION bdoc-v190` on that branch
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,49 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
+
+### Claude Code — p186 Review of the floating boxes (p178) and the TAK import (p177): the bugs it found, fixed (2026-11-14) — ON BRANCH `claude/p186-float-review`, **NOT LIVE**, SW `bdoc-v190`
+Travon asked me to finish what I had left off, look for bugs, and make improvements where I could. p178 was already live (`7ef330e`), so this was a review of p177 and p178 as they run on production. Everything below is fixed on the branch with a test that fails on `main` @ `63931bd`. Nothing is pushed: **it needs Travon's explicit OK** (see the ship note).
+
+**Floating boxes (`js/bdoc-float.js?v=p186`)**
+- **The FEMA banner (p181) counted as a box.** It could be dragged off the top of the screen, and one press on the camera viewer lifted the viewer over it (z 2147483001). Bars their own CSS stretches edge to edge are now docked by shape, whatever their id; alerts (z 99000 and up) are never raised over and never a reason to raise.
+- **One stack instead of three layers.** A data panel or the map info box under a tool panel (Watchlist, z 200) could never come forward.
+- **A box dragged across another slid under it** (live since p178: a press lifts a box only over what covers it at that moment). A dragged box is now over every other box while it moves and stays just above the ones it lands on. Same for the boxes that drag themselves (COA, threat widget, Cam Wall, Signals, Battle Tracker).
+- **Top-bar menus opened under any panel at z 200 and up** (COA in its usual place hid 8 of 12 View items, 9 of 14 Tools, 2 of 5 File). The bar lifts to 98950 while a menu or the search list is open (CSS `:has()`; a browser without it keeps the old behaviour).
+- **The sign-in, pricing and PACE dialogs were drawn under open panels.** All three share `.mo-bg` at z 200, the z of the Watchlist / COA / Situations panels, which come later in the page; the threat widget (999) and the camera viewer (10500) were over them too. They are now at 98920. The promo-code and thank-you dialogs (99999), the update banner and the alerts stay above.
+- z settles instead of creeping (raised boxes drop to the lowest z that keeps what is drawn over what); a raised box that is closed goes back to its own z.
+- A drag ends when the button is already up or the window loses focus (a box could follow a mouse with no button held). A title bar cannot be parked under an alert banner.
+- **View → Reset Panel Positions** (`resetPanelPositions()` → `BDOCFloat.reset()`): every box back to its usual place, including the ones that drag themselves and the saved places of Cam Wall, Signals and the time-zone bar.
+- Stack order now, low to high: boxes (their own z, raised at most to `PANEL_TOP` 98900) < blocking dialogs `MODAL_Z` 98920 < open menus `MENU_Z` 98950 < alerts `ALERT_Z` 99000+.
+
+**TAK files (`js/bdoc-cot-import.js`, `js/bdoc-plan.js`, `js/bdoc-atak.js`, `index.html`; all `?v=p186`)**
+- **Freeze.** `cleanNote` trimmed line ends with `/\s+$/`, which backtracks: 300,000 spaces in `<remarks>` took 90 s to parse (the parser of `63931bd` run in Node; in the page that is a frozen tab, and the file limit is 8 MB). `trimEnd()`: 28 ms.
+- **Emergency-management, stability-operations, SIGINT and pre-p175 units became plain infantry** when BDOC's own TAK export was opened again (TAK has no type for those codes). The export writes the `SIDC` line for every unit that has a code, the import trusts it while the type is still that side's plain ground type, and `_bpUnitCoT` asks `_bpPickCoT` (now a top-level function) instead of a second copy of its rules.
+- **Callsigns were squeezed into the 2525C designation alphabet** ("Сокіл-1" → "-1", "Müller" → "MLLER", lower case and anything past 21 characters lost) and sent back to TAK that way. New `meta.name` (plain text, 40 characters) is what the map, the popup and the export show; the designation still follows 2525C. The unit editor keeps the name unless the designation is retyped.
+- An alert cancelled later in the same file (`b-a-o-can`) was still placed. BDOC's own "FRIEND Infantry" label came back as the designation "FRIEND INFANTRY" after TAK changed the side or type. BDOC's `SIDC` line is the last one in remarks and survives a note longer than 4,000 characters.
+- **One undo step per file** (it was one per item on a stack that keeps 400: a 450-unit file left 50 on the map after 400 Ctrl+Z). `BDOCUndo.hold()` and `custom.alive` are new.
+- One index of the map per import (`_cotIndex`), not a walk per event.
+- **CASEVAC went to TAK as `b-c-c`, which is no TAK type.** Now `b-r-f-h-c` (ATAK `CASEVACMarkerImporter`); `COT_TYPES.waypoint` pointed at the CASEVAC type and is `b-m-p-w`. Cards stored by older builds are still read and go out under the real type.
+- **A `.bdoc.json` plan file could put events of its own into the operator's TAK export** (`item.cot.xml` was written out verbatim, so a shared plan could carry a forged unit or a delete task for a teammate's uid). `casevacEvent()` in `bdoc-plan.js` accepts one well-formed CASEVAC event with the item's own uid, on open and again on export.
+
+**Also**
+- **CI on `main` has been red since 11 Nov** (all four p185 pushes): `tests/cyber-incidents.test.js` ran the page on the real clock and its fixtures fell out of "the last 24 hours" on 10 Nov. It runs on a fixed clock now. On `63931bd` that is the only failing test (956 tests, 1 fail).
+- **Five boot scripts were never in the service worker precache** (`snapshot-client`, `bdoc-wire-boot`, `a11y`, `mesh-globe-layer`, `bdoc-plugin-renderer`), so after an update only the browser's ordinary HTTP cache held them. Added; `tests/release-p186.test.js` fails when a local `<script src>` or stylesheet in `index.html` is missing from `STATIC_PRECACHE`. Not reproduced as a visible failure: `/js/*` is served `immutable`, so the HTTP cache normally answers. `js/modules/icon-factory.js` is loaded at boot but nothing calls `BDOCIcons`; it is left out on purpose and the test says so.
+- **The changelog popup (build pill) was about 5,000 px tall with nothing to scroll** (4,961 measured at 1600×1000 with the new entry), centred, so its newest entries were above the top of the screen and CLOSE below the bottom. The box scrolls inside the screen. First entry is now p186 (it was p156g) and the pill reads `BUILD p186`. If you bump the pill, add a changelog entry.
+
+**Verified:** `node --test tests/*.test.js` 1009 tests, 1008 pass, 0 fail, 1 skipped (the milsymbol one), Node 24; `scripts/ci-validate.sh` passes. New: `tests/float-glue-p186.test.js` (28, the page glue run in `tests/helpers/fake-dom.js`), `tests/tak-roundtrip-p186.test.js` (15, the Battle Tracker's own page code cut out of `index.html` by `tests/helpers/battle-page.js` and run with the real symbol / plan / export / import modules), `tests/release-p186.test.js` (9). Run against `63931bd`: TAK 15 of 15 fail, float glue 17 of 28 fail (the other 11 are behaviour that did not change), release 6 of 9. Real page (dev server on the branch, Chromium, 1600×1000, milsymbol loaded): no script errors; SW `bdoc-v190` installs and its cache holds the five added scripts and the four `?v=p186` files; a TAK file with "Viper 2-6", "Сокіл-1", "Müller", a waypoint, an alert with its cancel and a 300,000-space note placed 4 units and 1 marker, exported the same callsigns under the same uids, re-opened with nothing changed (an `EFIPA` unit included), and three Ctrl+Z emptied the map; every item of all five menus reachable with COA and Watchlist open; a real mouse drag put the Watchlist on top of the COA panel (z 201 over 200) and COA, which drags itself, on top of the threat widget; Reset put both back; the pricing dialog covered the Watchlist, COA and the threat widget, with the promo-code dialog above it; the changelog opened on the p186 entry and CLOSE worked. The FEMA banner checks were done in the real page before the last two fixes and are covered by the tests since.
+**Not verified:** Node 20 (what CI runs; no Node 20 on the laptop, the new tests use nothing newer on inspection); touch and 375 px; Safari and Firefox (`:has()`); a real ATAK / WinTAK device reading the exported CASEVAC; production, since nothing is deployed.
+
+**Found, not fixed**
+- Top-bar menus still open under an outage banner (alert tier, as on production today). The banner can be dismissed or dragged aside.
+- `scripts/ci-validate.sh` does not syntax-check `service-worker.js`, the 13 `.mjs` functions, `electron/` or `tools/` (all 43 parse on Node 24; a test now parses the service worker).
+- `BDOC-<entity id>` uids change when a plan file is opened on another machine, so a TAK round trip across machines adds copies.
+- Ctrl+Z right after a reload deletes a restored plan item.
+- The info box "AS OF … old" row (`js/cesium-init.js`) stamps the time of the first click, not the data time, and never refreshes.
+- A cancel in a later TAK file does not remove an alert already on the map. Shapes, routes and data packages are not imported. A dragged box's place is not kept across a reload.
+- On the dev page the outage banner read "FAA/ATC SYSTEMS OUTAGE — PROBABLE CAUSE: CYBER (HIGH…)" on 14 Nov. The FAA detector fires on any headline with "ground stop"; I did not check whether that was a real event (p185 territory).
+
+**Ship note:** `main` was still `63931bd` (SW `bdoc-v189`) when this was written, so a fast-forward push of `claude/p186-float-review` takes `bdoc-v190`. If another build ships first, renumber (keep every `(prev)` line) and update `tests/release-p186.test.js`. p183 (world news, on its branch) then takes the next free number. No `js/modules` file changed: LazyLoader stays `p185c`.
 
 ### Claude Code — p183 War Room world news: France 24, WION, Arirang News and desks from every region (2026-11-09) — BUILT, NOT PUSHED (branch `claude/p183-world-news`, worktree `C:\Users\ARNAUTICA\bdoc-p183`), no SW bump
 Travon: "we need news from France 24, Arirang news, wion and other news from around the world". The War Room map (`proxy-newsgeo`) read 9 feeds and only knew conflict theatres, so a story from Senegal, Krakow or Dhaka was dropped or pinned to the wrong country. Headlines and links only: no news video is played (same rule as the Cam Wall).

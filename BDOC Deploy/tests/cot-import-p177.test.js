@@ -176,7 +176,11 @@ test('hostile files: text is cleaned before it can reach a label, a toast, a pop
   const [u, m, q] = r.records;
   // unit designation: the 2525C text set, 21 characters
   assert.match(u.designation, /^[A-Z0-9 .,:;/()#+\-*_]{0,21}$/);
-  assert.equal(u.designation, 'IMG SRCX ONERRORALERT');
+  // p186: a callsign the 2525C field would cut or strip letters from stays out of the symbol
+  // (p177 put the mangled 'IMG SRCX ONERRORALERT' in); the cleaned callsign is the unit's name
+  assert.equal(u.designation, '');
+  assert.doesNotMatch(u.callsign, /[<>&"'`\\]/);
+  assert.ok(u.callsign.length <= 40);
   // marker label: any script, no markup characters, 40 characters
   assert.doesNotMatch(m.label, /[<>&"'`\\]/);
   assert.ok(m.label.length <= 40 && m.label.includes('Ж'));
@@ -185,7 +189,9 @@ test('hostile files: text is cleaned before it can reach a label, a toast, a pop
   assert.equal(u.comment, 'line one <script>alert(1)</script>\n\nline two');
   // a uid over 128 characters is no TAK uid: placed, but never matched or sent back
   assert.equal(q.uid, '');
-  assert.equal(q.designation.length, 21);
+  // p186: 5000 Zs are cut to a 40-character name; the 21-character field would lose letters, so it stays empty
+  assert.equal(q.callsign.length, 40);
+  assert.equal(q.designation, '');
   // the module never writes HTML and never evaluates anything (comments aside)
   assert.doesNotMatch(COT_SRC.replace(/\/\/.*$/gm, ''), /\beval\s*\(|new Function|innerHTML|outerHTML|insertAdjacentHTML|document\.write|setTimeout\(['"`]/);
   assert.match(COT_SRC, /new DP\(\)\.parseFromString\(text, 'application\/xml'\)/);
@@ -283,7 +289,12 @@ test('unitState: BDOC\'s own "FRIEND Infantry" callsign is not a designation; a 
   assert.equal(K.unitState(rec('SFGPUCI----EUSA', 'FRIEND Custom symbol'), S).designation, '');
   assert.equal(K.unitState(rec('SAGPUSS3-------', 'ASSUMED FRIEND Supply Class III (Fuel / POL)'.slice(0, 40)), S).designation, '');
   assert.equal(K.unitState(rec('SFGPUCI--------', 'Alpha 1'), S).designation, 'ALPHA 1');
-  assert.equal(K.unitState(rec('SFGPUCI--------', 'HOSTILE Infantry'), S).designation, 'HOSTILE INFANTRY', 'a different side is a name');
+  // p186: BDOC's own label for ANOTHER side or type is not a name either. TAK may have changed the
+  // side or the type since BDOC sent it: "FRIEND Infantry" on a unit that came back hostile, or as
+  // armour, used to become its designation (p177 asserted exactly that here).
+  assert.equal(K.unitState(rec('SFGPUCI--------', 'HOSTILE Infantry'), S).designation, '');
+  assert.equal(K.unitState(rec('SHGPUCA--------', 'FRIEND Infantry'), S).designation, '');
+  assert.equal(K.unitState(rec('SHGPUCA--------', 'FRIEND Infantry'), S).name, '');
 });
 
 // ── round trip through the real export ──────────────────────────────────────────────────────
@@ -409,15 +420,21 @@ test('OPEN TAK sits beside the TAK export and the import code is wired, escaped 
   // standard symbols when they come within a few seconds, else the UNIT tool's offline icons
   assert.match(imp, /Promise\.race\(\[_bpSymLoad\(\)\.catch\(\(\)=>false\),new Promise\(r=>setTimeout\(r,6000\)\)\]\)/);
   // same uid → update; a different kind of item with that uid is left alone
-  assert.match(imp, /const hit=_cotFind\(r\.uid\);/);
-  assert.match(imp, /_cotUpdate\(hit,r,S\);out\.updated\+\+/);
+  // (p186: one index of the map per file instead of one walk per event; the whole file is one undo step)
+  assert.match(imp, /const added=\[\],undos=\[\],ix=_cotIndex\(\);/);
+  assert.match(imp, /const hit=_cotIndexGet\(ix,r\.uid\);/);
+  assert.match(imp, /undos\.push\(_cotUpdate\(hit,r,S\)\);out\.updated\+\+/);
+  assert.match(imp, /BDOCUndo\.hold\(true\);\n\s*try\{ent=r\.kind==='unit'\?_cotAddUnit\(r,S\):_cotAddMarker\(r\)\}finally\{BDOCUndo\.hold\(false\)\}/);
   // new units go through the UNIT tool's own entity code, so they are pushed (undo + autosave)
   assert.match(fnSrc('function _bpAddUnit(lat,lon,st,comment){'), /attachMeta\(ent,meta\);\n  battleEntities\.push\(ent\);/);
   assert.match(fnSrc('function _cotAddMarker(r){'), /attachMeta\(ent,meta\);\n  battleEntities\.push\(ent\);/);
   assert.match(fnSrc('function placeBattleUnit(lat,lon){'), /const \{vis,meta\}=_bpAddUnit\(lat,lon,st,''\);/);
   const upd = fnSrc('function _cotUpdate(ent,r,S){');
-  // p179: an undo label is plain text and BDOCUndo.undo() escapes it once (tests/toast-escape-p179.test.js)
-  assert.match(upd, /BDOCUndo\.record\(ent,'TAK update of '\+\(now\.label\|\|'marker'\),/);
+  // p179: an undo label is plain text and BDOCUndo.undo() escapes it once (tests/toast-escape-p179.test.js).
+  // p186: the label is the file's, recorded once by _cotImportText; _cotUpdate hands back how to undo its part
+  assert.match(imp, /BDOCUndo\.record\(null,'TAK file "'\+String\(fileName\|\|'file'\)\.replace\(/);
+  assert.doesNotMatch(upd, /BDOCUndo\.record\(/);
+  assert.match(upd, /return \{live,run:\(\)=>\{/);
   assert.match(upd, /_bpRestoreUnit\(ent,snap\);/);
   // offline: the exact code is kept for ⬇ TAK and the later redraw
   assert.match(fnSrc('function _cotAddUnit(r,S){'), /if\(!vis\.sidc\)meta\.customSidc=r\.sidc;/);
@@ -427,7 +444,7 @@ test('OPEN TAK sits beside the TAK export and the import code is wired, escaped 
 });
 
 test('_cotFind: a TAK uid finds the unit imported with it, or the BDOC entity it was exported from', () => {
-  const src = fnSrc('function _cotFind(uid){');
+  const src = fnSrc('function _cotIndex(){') + fnSrc('function _cotIndexGet(ix,uid){') + fnSrc('function _cotFind(uid){');
   const a = { id: 'aaa' }, b = { id: 'bbb' }, c = { id: 'ccc' }, gone = { id: 'ddd' };
   const meta = new Map([[a, { cotUid: 'ANDROID-1' }], [b, {}], [c, { cotUid: 'BDOC-bbb' }], [gone, { cotUid: 'ANDROID-9' }]]);
   const ctx = vm.createContext({ battleEntities: [a, [b], b, c, gone], battleMeta: meta, V: { entities: { contains: e => e !== gone } } });

@@ -430,7 +430,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p185</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p186</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -462,6 +462,7 @@ if('serviceWorker' in navigator){
 <div class="menu-drop-item" onclick="vmToggle('water')"><span class="mdi-chk" id="vm-water">&#10003;</span><span>Water Surface</span></div>
 <div class="menu-drop-sep"></div>
 <div class="menu-drop-item" onclick="toggleCleanView();closeMenus()"><span class="mdi-chk">&nbsp;</span><span>Clean View (Hide All UI)</span><span class="mdi-key">V</span></div>
+<div class="menu-drop-item" onclick="resetPanelPositions();closeMenus()" title="Puts every box you dragged back where it normally opens, including Cam Wall, Signals and the time-zone bar"><span class="mdi-chk">&nbsp;</span><span>Reset Panel Positions</span></div>
 </div>
 </div>
 <div class="menu-item">
@@ -1573,7 +1574,7 @@ if(!window.Cesium){
 <!-- layers-air.js is lazy-loaded on first toggle of air/forcetrack/sat/cable (Phase 3 Turn 8) -->
 <!-- layers-conflict.js is lazy-loaded on first toggle of conf/territory (Phase 3 Turn 3) -->
 <script src="js/kitsune-ai.js?v=p93"></script>
-<script src="js/bdoc-atak.js?v=p175"></script>
+<script src="js/bdoc-atak.js?v=p186"></script>
 <script>
 // ╔═══════════════════════════════════════════════════════╗
 // ║  KGS BDOC v7.0                                          ║
@@ -3259,6 +3260,15 @@ function bdocPlayScanner(feedUrl,name,color){
 }
 // Phase 5C (2026-05-04): Changelog popup wired to top-bar BUILD pill — deploy verification at a glance.
 const _BDOC_CHANGELOG=[
+  {ver:'p186 (2026-11-14) — PANELS AND TAK FILES',items:[
+    'Floating boxes: click any box to bring it to the front, even one that sits under a bigger panel; a box you drag stays on top of the boxes you drag it across',
+    'Menus from the top bar open over every panel, and the sign-in and pricing windows are no longer covered by an open panel',
+    'The FEMA national alert banner stays on top: it can no longer be dragged away or covered by another box',
+    'View → Reset Panel Positions puts every box back where it normally opens',
+    'Open TAK: callsigns are kept exactly as written, in any alphabet, and a whole file is one Undo step',
+    'Open TAK: emergency-management and stability units keep their symbol when a BDOC export is opened again; an alert cancelled later in the same file is not placed; long notes no longer freeze the page',
+    'TAK export: CASEVAC requests go out as the CASEVAC type ATAK uses (they went out as a type TAK does not know)'
+  ]},
   {ver:'p156g (2026-10-16) — GRIDS, TOUCH AND SHARING',items:[
     'Touch screens: press and hold the map (about half a second) to open the same action menu as a right-click',
     'New in that menu: ⌗ Copy Grid (MGRS) and ↗ Share This Spot (opens the phone share sheet for Signal, Telegram, SMS…)',
@@ -3408,8 +3418,10 @@ const _BDOC_CHANGELOG=[
     'Cache LRU + Health monitor improvements'
   ]}
 ];
+// p186: the box scrolls inside the screen. It had no height limit and the list is about 5,000 px
+// tall, so it was centred with its newest entries above the top of the screen and CLOSE below the bottom.
 function showBdocChangelog(){
-  let html='<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;background:#0a0e14;padding:18px 22px;border:1px solid rgba(232,179,73,0.3);border-radius:6px;max-width:520px;color:#c8ccd6">';
+  let html='<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;background:#0a0e14;padding:18px 22px;border:1px solid rgba(232,179,73,0.3);border-radius:6px;max-width:520px;max-height:calc(100vh - 40px);overflow-y:auto;box-sizing:border-box;color:#c8ccd6">';
   html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(232,179,73,0.15)"><div style="color:#E8B349;font-size:13px;font-weight:700;letter-spacing:2px">CHANGELOG</div><div style="font-size:8px;color:#4a5068;letter-spacing:1px">KITSUNE BDOC</div></div>';
   _BDOC_CHANGELOG.forEach((rel,i)=>{
     const isLatest=i===0;
@@ -7258,6 +7270,14 @@ document.addEventListener('keydown',e=>{
 // ═══════════════════════════════════════════
 // SECTION 11.7: CLEAN VIEW MODE (V key)
 // ═══════════════════════════════════════════
+// p186: View > Reset Panel Positions. Every box dragged around the screen goes back to where it
+// normally opens (js/bdoc-float.js: boxes it dragged, boxes that drag themselves, and the saved
+// places of Cam Wall, Signals and the time-zone bar).
+function resetPanelPositions(){
+  if(!window.BDOCFloat||typeof BDOCFloat.reset!=='function'){af('var(--t3)','Panel positions are not ready yet — try again in a moment');return}
+  BDOCFloat.reset();
+  af('var(--bl)','Panels are back in their usual places');
+}
 let _cleanView=false;
 function toggleCleanView(){
   _cleanView=!_cleanView;
@@ -7639,7 +7659,10 @@ window.BDOCUndo=(function(){
   const _ents=x=>Array.isArray(x)?x.flat(Infinity).filter(Boolean):(x?[x]:[]);
   const _live=ref=>_ents(ref).some(e=>{try{return V.entities.contains(e)}catch(_){return false}});
   // p175: a custom record that names an entity (Unit edit) dies with it, e.g. after CLEAR
-  const _alive=r=>{if(r.custom)return !r.dead&&(!r.ref||_live(r.ref));return _live(r.ref)};
+  // p186: a custom record may answer for itself (custom.alive): the one step of a TAK file import
+  // stays alive while anything it placed or changed is still on the map
+  const _alive=r=>{if(r.custom){if(r.dead)return false;if(typeof r.custom.alive==='function'){try{return !!r.custom.alive()}catch(_){return false}}return !r.ref||_live(r.ref)}return _live(r.ref)};
+  let _held=0;
   const _rm=ref=>_ents(ref).forEach(e=>{try{V.entities.remove(e)}catch(_){}});
   function _label(ref){
     const e=_ents(ref)[0];if(!e)return 'marker';
@@ -7666,7 +7689,10 @@ window.BDOCUndo=(function(){
   }
   const api={
     // lbl is plain text, never HTML: undo() escapes it for the toast
-    record(ref,lbl,custom){stack.push({ref:ref||null,lbl:lbl||null,custom:custom||null});if(stack.length>400)stack.shift();_btn();},
+    record(ref,lbl,custom){if(_held)return;stack.push({ref:ref||null,lbl:lbl||null,custom:custom||null});if(stack.length>400)stack.shift();_btn();},
+    // p186: while held, nothing is recorded: the caller is placing many items and records ONE step
+    // for all of them (a TAK file of 450 units was 450 steps on a stack that keeps 400)
+    hold(on){_held=Math.max(0,_held+(on?1:-1))},
     owns(ent){
       if(!ent)return false;
       if(stack.some(r=>r.ref&&_ents(r.ref).includes(ent)))return true;
@@ -8195,7 +8221,9 @@ function _bpCondName(cond){const S=_bpSym(),c=S&&S.COND_BY_V[cond];return c?c.na
 function _bpUnitLabel(st,vis){
   const ech=vis.p?vis.p.ech:(_bpIsMarker(st,vis)?'none':st.ech);
   const type=vis.label.toUpperCase()+(ech&&ech!=='none'&&!st.designation?' ['+ech.toUpperCase()+']':'');
-  const top=[st.designation,st.higher].filter(Boolean).join(' / ');
+  // p186: a unit that came from TAK shows its callsign as TAK wrote it (st.name: any script, original
+  // case). The 2525C designation is the same text squeezed into A-Z 0-9, or empty when it does not fit.
+  const top=[st.name||st.designation,st.higher].filter(Boolean).join(' / ');
   return top?top+'\n'+type:type;
 }
 function _bpUnitMeta(st,vis,comment){
@@ -8215,12 +8243,20 @@ function _bpUnitMeta(st,vis,comment){
     R('MODIFIERS',mods)+R('STRENGTH',strength)+R('DESIGNATION',st.designation)+R('HIGHER UNIT',st.higher)+
     (vis.sidc?R('SIDC',vis.sidc)+R('TAK TYPE',cot)+'<span style="color:#4a5068;font-size:9px">Symbol: MIL-STD-2525C / APP-6 (milsymbol)</span>':(marker?'<span style="color:#4a5068;font-size:9px">Map marker — not a standard unit symbol</span>':'<span style="color:#4a5068;font-size:9px">Simple icon — standard symbols were not available when this was placed</span>'));
   const typeU=vis.label.toUpperCase();
-  return {label:st.designation||(_bpAffName(st.aff)+' '+vis.label),comment:comment||'',type:'unit',color:vis.col,
-    popupTitle:st.designation?st.designation+' — '+typeU:typeU+(st.ech&&st.ech!=='none'?' ['+st.ech.toUpperCase()+']':''),
+  // p186: the name (a TAK callsign) leads the label, the popup title and, through meta.label, the
+  // callsign ⬇ TAK sends back, so "Сокіл-1" returns to TAK as "Сокіл-1" and not as "-1"
+  const shown=st.name||st.designation;
+  const m={label:shown||(_bpAffName(st.aff)+' '+vis.label),comment:comment||'',type:'unit',color:vis.col,
+    popupTitle:shown?shown+' — '+typeU:typeU+(st.ech&&st.ech!=='none'?' ['+st.ech.toUpperCase()+']':''),
     popupSubtitle:_bpAffName(st.aff),popupExtras:extras,
     iconKey:st.key,sidc:vis.sidc||'',customSidc:st.custom||'',aff:st.aff,cond:st.cond,ech:st.ech||'none',strength:st.strength||'',
-    hq:!!st.hq,tf:!!st.tf,feint:!!st.feint,designation:st.designation||'',higher:st.higher||''};
+    hq:!!st.hq,tf:!!st.tf,feint:!!st.feint,designation:st.designation||'',higher:st.higher||'',
+    // always written, so a redraw without a name clears an old one (_bpApplyUnit merges into the stored meta)
+    name:st.name||''};
+  return m;
 }
+// a unit's display name from stored data: plain text, no markup characters, 40 characters (as BDOCCot.cleanLabel)
+function _bpCleanName(s){return typeof s==='string'?s.replace(/[\u0000-\u001F\u007F-\u009F\u2028-\u2029\u202A-\u202E\u2066-\u2069\uFEFF<>&"'`\\]/g,'').replace(/\s+/g,' ').trim().slice(0,40):''}
 // live preview + SIDC readout in the panel
 function bpSymChanged(){
   try{
@@ -8280,7 +8316,7 @@ function _bpStateFromMeta(m){
   return {key:keyOk?m.iconKey:'infantry',aff:_bpOwn(_BP_AFF_COL,m.aff)?m.aff:(p&&_bpOwn(_BP_AFF_COL,p.aff)?p.aff:'friendly'),
     cond:(S&&_bpOwn(S.COND_BY_V,m.cond))?m.cond:(p?p.cond:'present'),ech:_bpOwn(ECHELON_MARKS,m.ech)?m.ech:(p?p.ech:'none'),
     strength:/^[+\-±]$/.test(typeof m.strength==='string'?m.strength:'')?m.strength:'',hq:flag('hq'),tf:flag('tf'),feint:flag('feint'),
-    designation:clean(m.designation),higher:clean(m.higher),custom,customRaw:c0};
+    designation:clean(m.designation),higher:clean(m.higher),custom,customRaw:c0,name:_bpCleanName(m.name)};
 }
 function _bpApplyUnit(ent,st){
   const m=battleMeta.get(ent)||{};
@@ -8364,6 +8400,8 @@ function openUnitEditor(ent){
   d.addEventListener('change',upd);
   g('ue-save').onclick=()=>{const s=read();if(s.customRaw&&!s.custom)return;
     if(!V.entities.contains(ent)){closeUnitEditor();af('var(--t3)','That unit is no longer on the map');return}
+    // p186: a unit from TAK keeps its callsign through an edit of anything else; a new designation replaces it
+    if(st.name&&s.designation===st.designation)s.name=st.name;
     const snap=_bpSnapUnit(ent);const v=_bpApplyUnit(ent,s);closeUnitEditor();
     // the record names the unit, so deleting or clearing it also retires this undo step
     try{BDOCUndo.record(ent,'Unit edit',{undo:()=>_bpRestoreUnit(ent,snap)})}catch(_){}af('var(--bl)','Unit updated: '+esc(s.designation||v.label)+(v.sidc?' ('+esc(v.sidc)+')':''));try{EventLog.add('info','Unit symbol edited → '+(v.sidc||v.label))}catch(_){}};
@@ -8979,11 +9017,10 @@ function exportBattlePlan(){
 // XML file containing every battle marker, mapped to MIL-STD-2525D CoT types by
 // affiliation/type, importable into ATAK/WinTAK/iTAK. Reuses buildCoT() from
 // bdoc-atak.js.
-function exportBattlePlanCoT(){
-  if(typeof battleEntities==='undefined'||battleEntities.length===0){af('var(--t3)','No battle markers to export');return}
-  if(typeof buildCoT!=='function'){af('var(--rd)','CoT module not loaded — refresh page');return}
-  // Map a marker's meta → CoT type code key understood by COT_TYPES.
-  const pickCoT=(meta)=>{
+// What ⬇ TAK sends for an item: a CoT type (a unit with a 2525C code) or a key of COT_TYPES in
+// js/bdoc-atak.js. p186: a function of its own (it lived inside exportBattlePlanCoT), so the TAK
+// import asks "what did BDOC send for this unit?" with the very same rules (_bpUnitCoT).
+function _bpPickCoT(meta){
     // p175: a unit with a MIL-STD-2525C SIDC exports its exact CoT type (a-h-A-M-F-F for a hostile
     // fighter, a-f-G-U-C-I for friendly infantry …), so ATAK / WinTAK / iTAK draw the same symbol.
     // The label rules below stay for tactical markers, notes and units placed before p175.
@@ -9011,7 +9048,12 @@ function exportBattlePlanCoT(){
     if(lbl.startsWith('unknown')||lbl.startsWith('pending'))return 'unknown_ground';
     // DEFEND / friendly / observe / move default to friendly ground
     return 'friendly_ground';
-  };
+}
+function exportBattlePlanCoT(){
+  if(typeof battleEntities==='undefined'||battleEntities.length===0){af('var(--t3)','No battle markers to export');return}
+  if(typeof buildCoT!=='function'){af('var(--rd)','CoT module not loaded — refresh page');return}
+  // Map a marker's meta → CoT type code key understood by COT_TYPES.
+  const pickCoT=_bpPickCoT;
   // P156e (field audit S5): lines/areas go out as ATAK drawing shapes (u-d-f with <link>
   // vertices, u-d-c-c circles) instead of one point at the first vertex; grouped items are
   // included; a CASEVAC marker exports its full 9-line CoT.
@@ -9038,29 +9080,33 @@ function exportBattlePlanCoT(){
 // markers; drawings, routes and chat are counted and skipped. The TAK uid is kept (meta.cotUid), so
 // opening the same file again, or a TAK edit of something BDOC exported (uid BDOC-<entity id>),
 // updates that unit or marker instead of adding a copy, and the next ⬇ TAK sends the same uid back.
-// Each placement or update is one undo step. Without milsymbol, units get the simple icons the UNIT
+// A whole file is one undo step (p186; it was one per item). Without milsymbol, units get the simple icons the UNIT
 // tool uses offline and keep their exact code, for TAK and for the redraw once the symbols load.
 const _cotHasIcon=k=>_bpOwn(BATTLE_ICONS,k);
 const _COT_AFF_KEY={friendly:'friendly_ground',afriend:'friendly_ground',hostile:'hostile_ground',suspect:'hostile_ground',neutral:'neutral_ground',unknown:'unknown_ground',pending:'unknown_ground'};
-// the TAK type ⬇ TAK sends for this unit now (the same rules as pickCoT)
+// The TAK type ⬇ TAK sends for this unit now. p186: asked of _bpPickCoT itself. The copy of its rules
+// that stood here returned nothing for a unit whose code TAK has no type for (emergency management,
+// stability operations) and for units placed before p175, so opening BDOC's own export redrew those
+// as plain infantry.
 function _bpUnitCoT(m){
   if(!m)return null;
-  const sd=m.sidc||m.customSidc;
-  if(sd)return (window.BDOCSym?BDOCSym.cotType(sd):_bpSidcCoT(sd))||null;
-  const k=_bpOwn(_COT_AFF_KEY,m.aff)?_COT_AFF_KEY[m.aff]:null;
-  return k&&typeof COT_TYPES!=='undefined'&&_bpOwn(COT_TYPES,k)?COT_TYPES[k]:null;
+  const k=_bpPickCoT(m);
+  if(typeof COT_TYPES!=='undefined'&&_bpOwn(COT_TYPES,k))return COT_TYPES[k];
+  return /^[a-z]-/.test(String(k||''))?k:null;
 }
+// every type name BDOC may have sent as part of its own "HOSTILE Infantry" style callsign (BDOCCot.isAutoLabel)
+const _COT_TYPE_LABELS=Object.keys(BATTLE_ICONS).map(k=>BATTLE_ICONS[k].label);
 // the controls for a unit that holds only its exact code: its library type when one draws that code
 function _cotStateForCode(m,S){
   const st=_bpStateFromMeta(m),n=BDOCCot.stateFromSidc(m.customSidc,S,_cotHasIcon);
   if(n){st.key=n.key;st.custom=n.custom;st.customRaw=n.customRaw}
   return st;
 }
-// a TAK uid → what it names on the map: something imported with that uid, or (BDOC-<id>) something BDOC exported
-function _cotFind(uid){
-  if(!uid)return null;
-  const own=uid.startsWith('BDOC-')?uid.slice(5):null;
-  let hit=null;
+// Everything on the map by the uid TAK knows it by: something imported with that uid (byUid), or
+// something BDOC exported as BDOC-<id> (byId). p186: one pass per file. _cotFind used to walk the
+// whole map for every event, which was most of the time a 2000-event file took.
+function _cotIndex(){
+  const byUid=new Map(),byId=new Map();
   // members of a drawing group (range rings, bullseye …) count too: BDOC exports their points, and
   // re-importing that file must find them as "already on the map", not add them again as units
   for(const g of battleEntities){
@@ -9069,11 +9115,19 @@ function _cotFind(uid){
       let alive=false;try{alive=V.entities.contains(x)}catch(_){}
       if(!alive)continue;
       const m=battleMeta.get(x);
-      if(m&&m.cotUid===uid)return x;
-      if(!hit&&own!==null&&!(m&&m.cotUid)&&String(x.id).slice(0,60)===own)hit=x;
+      if(m&&m.cotUid){if(!byUid.has(m.cotUid))byUid.set(m.cotUid,x)}
+      else{const k=String(x.id).slice(0,60);if(!byId.has(k))byId.set(k,x)}
     }
   }
-  return hit;
+  return {byUid,byId};
+}
+function _cotIndexGet(ix,uid){
+  if(!uid)return null;
+  return ix.byUid.get(uid)||(uid.startsWith('BDOC-')?ix.byId.get(uid.slice(5)):null)||null;
+}
+// a TAK uid → what it names on the map: something imported with that uid, or (BDOC-<id>) something BDOC exported
+function _cotFind(uid){
+  return _cotIndexGet(_cotIndex(),uid);
 }
 const _cotR=(k,v)=>v?`<b style="color:#4a5068">${k}:</b> ${esc(v)}<br>`:'';
 // a plain marker: diamond + glyph, both chosen by BDOCCot.markerStyle (nothing from the file)
@@ -9101,47 +9155,58 @@ function _cotAddMarker(r){
   return ent;
 }
 function _cotAddUnit(r,S){
-  const {ent,vis,meta}=_bpAddUnit(r.lat,r.lon,BDOCCot.unitState(r,S,_cotHasIcon),r.comment);
+  const {ent,vis,meta}=_bpAddUnit(r.lat,r.lon,BDOCCot.unitState(r,S,_cotHasIcon,_COT_TYPE_LABELS),r.comment);
   if(r.uid)meta.cotUid=r.uid;
   // drawn with the simple icon (no milsymbol): keep the exact code for ⬇ TAK and for the redraw once it loads
   if(!vis.sidc)meta.customSidc=r.sidc;
   return ent;
 }
-// the same uid again: move it and redraw it from the file, as one undo step
+// The same uid again: move it and bring it up to date from the file. Returns how to undo that
+// ({ run, live }); the caller records ONE undo step for the whole file (p186).
 function _cotUpdate(ent,r,S){
   const m=battleMeta.get(ent);
   const pos=ent.position&&ent.position.getValue(V.clock.currentTime),snap=_bpSnapUnit(ent),prevNote=m.comment||'';
   if(r.comment)m.comment=r.comment;
   ent.position=Cesium.Cartesian3.fromDegrees(r.lon,r.lat);
+  // the popup shows the position and the note: rebuilt here when the symbol itself is left alone
+  const popup=()=>{ent.description=buildEntityPopup({title:m.popupTitle||m.label||'',subtitle:m.popupSubtitle||'',lat:null,lon:null,comment:m.comment||'',color:m.color||'#E8B349',extras:m.popupExtras||'',positionText:getEntityPosition(ent),placed:_bpPlacedOf(ent)});try{window.BDOCPlan&&BDOCPlan.markDirty()}catch(_){}};
   if(r.kind==='unit'){
     const prevCode=m.sidc||m.customSidc||'';
     // TAK only moved or renamed it: keep what a CoT type cannot carry (status, strength, the library type)
     const keep=r.type===_bpUnitCoT(m);
-    let st;
     if(keep){
-      st=_bpStateFromMeta(m);
-      if(S.cleanText(r.callsign,40).trim()!==S.cleanText(m.label,40).trim())st.designation=r.designation;
+      const cur=_bpStateFromMeta(m),st=Object.assign({},cur);
+      // a new callsign from TAK is a new name. BDOC's own "FRIEND Infantry" is not one, and neither is
+      // the label the unit already has.
+      if(r.callsign&&r.callsign!==m.label&&!BDOCCot.isAutoLabel(r.callsign,S,_COT_TYPE_LABELS)){st.designation=r.designation;st.name=r.callsign!==r.designation?r.callsign:''}
       if(r.higher)st.higher=r.higher;
-    }else st=BDOCCot.unitState(r,S,_cotHasIcon);
-    const vis=_bpApplyUnit(ent,st);
-    if(!vis.sidc){const code=keep?prevCode:r.sidc;if(code)battleMeta.get(ent).customSidc=code}
+      // p186: nothing about the symbol changed, so it is not redrawn. A redraw turned a unit placed
+      // before p175 (hand-drawn icon, no code) into a "custom symbol" every time its own export was opened.
+      if(st.designation!==cur.designation||st.name!==cur.name||st.higher!==cur.higher){
+        const vis=_bpApplyUnit(ent,st);
+        if(!vis.sidc&&prevCode)battleMeta.get(ent).customSidc=prevCode;
+      }else popup();
+    }else{
+      const vis=_bpApplyUnit(ent,BDOCCot.unitState(r,S,_cotHasIcon,_COT_TYPE_LABELS));
+      if(!vis.sidc&&r.sidc)battleMeta.get(ent).customSidc=r.sidc;
+    }
   }else{
     const s=r.style,nm=_cotMarkerMeta(r);
     if(!r.comment)nm.comment=m.comment||'';
     Object.assign(m,nm);
     ent.billboard.image=svgToDataUri(_cotMarkerSVG(s));
     if(ent.label){ent.label.text=r.label;ent.label.fillColor=_readable(s.color)}
-    ent.description=buildEntityPopup({title:m.popupTitle,subtitle:m.popupSubtitle,lat:null,lon:null,comment:m.comment,color:m.color,extras:m.popupExtras,positionText:getEntityPosition(ent),placed:_bpPlacedOf(ent)});
-    try{window.BDOCPlan&&BDOCPlan.markDirty()}catch(_){}
+    popup();
   }
-  const now=battleMeta.get(ent),note=now.comment;
-  try{BDOCUndo.record(ent,'TAK update of '+(now.label||'marker'),{undo:()=>{
-    if(!V.entities.contains(ent))return;
+  const note=battleMeta.get(ent).comment;
+  const live=()=>{try{return V.entities.contains(ent)}catch(_){return false}};
+  return {live,run:()=>{
+    if(!live())return;
     if(pos)ent.position=pos;
     // a note written after the update stays (as for Unit edit)
-    const live=battleMeta.get(ent);if(live&&live.comment===note)live.comment=prevNote;
+    const now=battleMeta.get(ent);if(now&&now.comment===note)now.comment=prevNote;
     _bpRestoreUnit(ent,snap);
-  }})}catch(_){}
+  }};
 }
 function importBattleCoT(){
   const inp=document.createElement('input');
@@ -9170,18 +9235,37 @@ async function _cotImportText(text,fileName){
   const res=BDOCCot.parse(text,{Sym:S});
   if(res.error){af('var(--rd)','Could not open TAK file "'+name+'": '+esc(res.error));return res}
   const out={units:0,markers:0,updated:0,other:0,failed:0,ents:[]};
+  // p186: the whole file is ONE undo step. It was one step per item on a stack that keeps 400, so a
+  // file of 450 units could not be fully undone, and undoing even a small file took one Ctrl+Z each.
+  const added=[],undos=[],ix=_cotIndex();
+  const onMap=e=>{try{return V.entities.contains(e)}catch(_){return false}};
   for(const r of res.records){
     try{
-      const hit=_cotFind(r.uid);
+      const hit=_cotIndexGet(ix,r.uid);
       if(hit){
         const m=battleMeta.get(hit);
         const same=!!(m&&hit.billboard&&(r.kind==='unit'?m.type==='unit':(m.type!=='unit'&&m.cotType)));
         if(!same){out.other++;continue}
-        _cotUpdate(hit,r,S);out.updated++;out.ents.push(hit);continue;
+        undos.push(_cotUpdate(hit,r,S));out.updated++;out.ents.push(hit);continue;
       }
-      out.ents.push(r.kind==='unit'?_cotAddUnit(r,S):_cotAddMarker(r));
+      let ent;
+      BDOCUndo.hold(true);
+      try{ent=r.kind==='unit'?_cotAddUnit(r,S):_cotAddMarker(r)}finally{BDOCUndo.hold(false)}
+      added.push(ent);out.ents.push(ent);
+      if(r.uid)ix.byUid.set(r.uid,ent);
       out[r.kind==='unit'?'units':'markers']++;
     }catch(e){out.failed++;console.warn('[cot import]',e)}
+  }
+  if(added.length||undos.length){
+    const n=added.length+undos.length;
+    // the label is plain text: BDOCUndo.undo() escapes it for the toast
+    try{BDOCUndo.record(null,'TAK file "'+String(fileName||'file').replace(/[\u0000-\u001F\u007F]/g,'').slice(0,80)+'" ('+n+(n===1?' item':' items')+')',{
+      alive:()=>added.some(onMap)||undos.some(u=>u.live()),
+      undo:()=>{
+        for(let i=undos.length-1;i>=0;i--){try{undos[i].run()}catch(_){}}
+        for(const e of added){try{if(onMap(e)){V.entities.remove(e);const k=battleEntities.indexOf(e);if(k>=0)battleEntities.splice(k,1)}}catch(_){}}
+        try{if(V.selectedEntity&&added.includes(V.selectedEntity))V.selectedEntity=undefined}catch(_){}
+      }})}catch(_){}
   }
   const pl=(n,w)=>n+' '+w+(n===1?'':'s');
   const did=[out.units?pl(out.units,'unit'):'',out.markers?pl(out.markers,'marker'):'',out.updated?out.updated+' updated':''].filter(Boolean);
@@ -14281,12 +14365,12 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
 <script src="js/mesh-globe-layer.js?v=p163s"></script>
 <script src="js/bdoc-offline-store.js?v=p75"></script>
 <!-- P156e: battle plan autosave/restore + real-shape exports + .bdoc.json (needs V, battleEntities, BDOCOfflineStore) -->
-<script src="js/bdoc-plan.js?v=p179"></script>
-<script src="js/bdoc-cot-import.js?v=p177"></script>
+<script src="js/bdoc-plan.js?v=p186"></script>
+<script src="js/bdoc-cot-import.js?v=p186"></script>
 <script src="js/bdoc-link-manager.js?v=p156d"></script>
 <script src="js/bdoc-plugin-renderer.js?v=p166"></script>
 <script src="js/bdoc-offline-hud.js?v=p158f"></script>
 <!-- p178: every floating box / pop-up drags by its title bar; a covered box comes to the front when pressed -->
-<script src="js/bdoc-float.js?v=p178"></script>
+<script src="js/bdoc-float.js?v=p186"></script>
 </body>
 </html>

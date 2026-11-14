@@ -241,8 +241,16 @@ function runClient(payload, store = null) {
     return n;
   };
   const hud = node();
+  // p186: the page asks the clock which reports are recent ("last 24 hours", "last 30 days"), and the
+  // fixtures are dated around NOW. With the real clock this file began to fail on 10 Nov 2026, a day
+  // after it was written (recent('water', 24) found nothing), and would fail for good from then on.
+  // The page under test runs at NOW + 1 h instead.
+  class PageDate extends Date {
+    constructor(...a) { if (a.length) super(...a); else super(NOW + 3600e3); }
+    static now() { return NOW + 3600e3; }
+  }
   const ctx = {
-    console, setTimeout: () => 1, clearTimeout: () => {}, Date, JSON, Math,
+    console, setTimeout: () => 1, clearTimeout: () => {}, Date: PageDate, JSON, Math,
     localStorage: { getItem: () => store, setItem: () => {} },
     document: { getElementById: (id) => (id === 'cyberHud' ? hud : null), createElement: () => node() },
     fetch: async () => ({ ok: true, json: async () => payload }),

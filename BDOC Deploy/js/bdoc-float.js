@@ -8,16 +8,24 @@
 //
 // How it works (nothing runs until you press on a box, so the globe and the feeds pay nothing):
 // - A "box" is any visible position:fixed child of <body> (they all are) that is not docked UI:
-//   top bar, side panels, tickers, HUD overlays, the nav widget, full-screen overlays and modals.
+//   top bar, side panels, tickers, HUD overlays, the nav widget, menus, full-screen overlays and
+//   modals, and (p186) any bar its own CSS stretches across the whole viewport, such as a banner.
 // - Drag: press the top 36 px of a box (its title bar) and move 4 px. Buttons, links, inputs, tabs
 //   and selects in the title bar keep working, and a plain click stays a click. Mouse and pen only,
 //   at desktop width: on touch and phones the panels keep their own layouts (the threat box made
 //   the same call in P111 / P113, because touch dragging fought the globe).
-// - Front: pressing anywhere on a box that another box overlaps raises it just above that box, in
-//   its own layer: data panels (z < 80) stay under the tickers (80, 95) and the top bar (100), so a
-//   raised panel never covers the menus or the modals; boxes at z 80-99 stay under 100; boxes that
-//   already sit above the top bar (camera viewer, LIVE WIRE, dialogs) order among themselves.
-//   Raising only ever goes up, so nothing a box covered before is uncovered by surprise.
+// - Front: pressing anywhere on a box that another box overlaps raises it just above that box.
+//   p186: one stack for every box. Alert banners (z 99000 and up: outage, update, FEMA) are not part
+//   of it: nothing is raised over them and they are never a reason to raise. Open menus (top-bar
+//   drop-downs, the search list, the right-click menu) draw over every box. Before each raise the
+//   raised boxes settle to the lowest z that keeps what is drawn over what, and a raised box that
+//   was closed goes back to its own z, so z never creeps.
+//   (p178 had three layers: a data panel under the Watchlist could not come forward, the layer above
+//   the top bar had no ceiling, and the FEMA banner, added later, counted as a box.)
+//   A box being dragged is over every other box while it moves, and where it is dropped it stays just
+//   above the boxes under it (p186: it used to slide underneath a later or higher box).
+//   The sign-in, pricing and PACE dialogs draw over every box (p186: their backdrop shared z 200 with
+//   the Watchlist and COA panels, which were drawn on top of the dialog).
 // - Boxes that already drag themselves keep their own code (OWN_DRAG); they still come to the front.
 // - The map's info box is moved to <body> once at startup, at z 61 (above the data panels, under the
 //   tickers), so it shows over the panels and drags like the rest. Its iframe reloads once on the
@@ -25,7 +33,12 @@
 //   redraws the current description, so nothing is lost.
 // - A dragged box stays where you put it until the page reloads; if the window shrinks, it is pulled
 //   back so its title bar can still be grabbed, and below 768 px every box goes back to its own phone
-//   layout. BDOCFloat.reset() puts every box back.
+//   layout. A title bar cannot be dragged under the top bar or an alert banner.
+// - View > Reset Panel Positions (p186) calls BDOCFloat.reset(): every box back to its usual place,
+//   including the ones that drag themselves and the saved places of Cam Wall, Signals and the
+//   time-zone bar.
+// - A drag ends if the button is already up or the window loses focus (p186), so a box can never
+//   follow a mouse with no button held.
 (function (root) {
   'use strict';
 
@@ -35,13 +48,21 @@
   const MIN_W = 80, MIN_H = 30;
   const MIN_DESKTOP = 768;     // narrower: panels use their phone layouts, no dragging
   const INFOBOX_Z = 61;
+  // p186: alert banners and critical notices sit at or above this z (outage banner 99990, update
+  // banner 100000, FEMA alert 2147483000). They keep the order their own code gave them: nothing is
+  // raised to this height, and they never count as "covering" a panel.
+  const ALERT_Z = 99000;
+  const PANEL_TOP = ALERT_Z - 100;   // the highest z a pressed box can reach
+  const MODAL_Z = ALERT_Z - 80;      // the dialogs that block the page (sign-in, pricing, PACE): over every box
+  const MENU_Z = ALERT_Z - 50;       // open menus (top-bar drop-downs, the right-click menu): over every box, under the alerts
 
-  // Docked or full-width UI: never dragged, never raised, never counted as covering a box.
+  // Docked or full-width UI and menus: never dragged, never raised, never counted as covering a box.
+  // (p186: any bar that spans the viewport edge to edge is left out by isBox as well, whatever its id.)
   const EXCLUDE = [
     '.tb', '#lp', '.lp', '#rp', '.rp', '#sitPanel', '#sc', '.sc', '.fd', '#bdocTicker', '#intel-ticker',
     '.grid-ov', '.hud-vignette', '.hud-frame', '.hud-corner', '.vfx-crt', '#ss-watermark', '#ss-ts',
     '#nav-widget', '#cesiumContainer', '#bootSeq', '#loginBtn', '#bdocUndoBtn', '#scToggle', '.lp-reopen',
-    '#mob-ov', '.mo-bg', '#settingsOverlay',
+    '#mob-ov', '.mo-bg', '#settingsOverlay', '#bdocGovAlert', '#battle-ctx', '#battle-tooltip',
   ].join(',');
   // These drag themselves already (their own handle code): raise only.
   const OWN_DRAG = [
@@ -54,34 +75,48 @@
     + '[role="menuitem"],[data-nodrag]';
 
   // ── pure helpers (tests/float-panels-p178.test.js) ─────────────────────────────────────────────
-  // The highest z a box may be raised to: its layer's ceiling.
-  const layerCap = z => (z < 80 ? 79 : z < 100 ? 99 : Infinity);
+  // The highest z a box may be raised to. p186: one stack for every box under the alerts. p178 kept
+  // three layers (data panels under 80, 80-99, the rest with no ceiling at all): a data panel or the
+  // map info box under the Watchlist (z 200) could never come forward, and a pressed camera viewer
+  // went over the FEMA alert. The top bar is protected by the drag limit and by MENU_Z instead.
+  const layerCap = z => (z < ALERT_Z ? PANEL_TOP : Infinity);
   const overlaps = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 
-  // t / others: { z, order (DOM order), rect, natural (z before BDOCFloat touched it) }.
-  // Returns null when no other box in t's layer covers t, else { z, compact }: compact means the
-  // layer is full (z would pass the ceiling) and the raised boxes in it must be renumbered first.
-  function planRaise(t, others) {
-    const cap = layerCap(t.natural);
+  // t / others: { z, order (DOM order), rect, natural (z before BDOCFloat touched it) }; others holds
+  // no alerts. Returns null when nothing covers t, else { z }: just above the highest box over it.
+  // all: over every other box, covering t or not. That is a box being dragged: it was lifted only
+  // over what covered it at the press, so a panel dragged across a later or higher one slid
+  // underneath it and needed a second click to come forward.
+  function planRaise(t, others, all) {
+    if (t.natural >= ALERT_Z) return null;                       // an alert is never re-ordered
     let cover = -Infinity;
     for (const o of others) {
-      if (o.z > cap) continue;                                   // a higher layer stays above
+      if (o.z >= ALERT_Z) continue;                              // alerts stay above, and are no reason to climb
       if (o.z < t.z || (o.z === t.z && o.order < t.order)) continue;  // already under t
-      if (!overlaps(t.rect, o.rect)) continue;
+      if (!all && !overlaps(t.rect, o.rect)) continue;
       cover = Math.max(cover, o.z);
     }
     if (cover === -Infinity) return null;
-    return cover + 1 > cap ? { z: cap, compact: true } : { z: cover + 1, compact: false };
+    return { z: Math.min(cover + 1, PANEL_TOP) };
   }
 
-  // Renumber the raised boxes of one layer as low as their order allows (never under their natural
-  // z), so raising never creeps up into the tickers or the top bar. boxes: { z, order, natural }.
-  // Returns the new z for each box, in the order given.
-  function compactPlan(boxes) {
+  // Before each raise, every raised box drops to the lowest z that keeps each overlapping pair drawn
+  // in the order it is now, so z never creeps (two panels pressed in turn stay around their own z),
+  // and a box that was lifted over a panel which has since closed comes back down.
+  // boxes: every visible box under the alerts, { z, order, natural, raised, rect }. Returns the z for
+  // each, in the order given (unraised boxes keep theirs).
+  function settlePlan(boxes) {
     const idx = boxes.map((b, i) => i).sort((a, b) => boxes[a].z - boxes[b].z || boxes[a].order - boxes[b].order);
-    const out = new Array(boxes.length);
-    let v = -Infinity;
-    for (const i of idx) { v = Math.max(v + 1, boxes[i].natural); out[i] = v; }
+    const out = boxes.map(b => b.z), below = [];
+    for (const i of idx) {
+      const b = boxes[i];
+      if (b.raised) {
+        let v = b.natural;
+        for (const j of below) if (overlaps(b.rect, boxes[j].rect)) v = Math.max(v, out[j] + 1);
+        out[i] = Math.min(v, b.z);                               // settling only ever lowers
+      }
+      below.push(i);
+    }
     return out;
   }
 
@@ -95,7 +130,7 @@
 
   const inHandle = (r, x, y) => y >= r.top && y <= r.top + HANDLE_PX && x >= r.left && x <= r.right;
 
-  const core = Object.freeze({ HANDLE_PX, KEEP_PX, THRESHOLD, MIN_DESKTOP, INFOBOX_Z, EXCLUDE, OWN_DRAG, INTERACTIVE, layerCap, overlaps, planRaise, compactPlan, clampRect, inHandle });
+  const core = Object.freeze({ HANDLE_PX, KEEP_PX, THRESHOLD, MIN_DESKTOP, INFOBOX_Z, ALERT_Z, PANEL_TOP, MODAL_Z, MENU_Z, EXCLUDE, OWN_DRAG, INTERACTIVE, layerCap, overlaps, planRaise, settlePlan, clampRect, inHandle });
 
   const doc = root.document;
   if (!doc || !doc.body || typeof root.getComputedStyle !== 'function') {
@@ -104,18 +139,23 @@
   }
 
   // ── page glue ──────────────────────────────────────────────────────────────────────────────────
-  const S = { drag: null, raf: 0, hot: null, hoverT: null, hoverB: null, hx: 0, hy: 0, ht: null, hraf: 0, ib: null, saved: new Map(), raised: new Set() };
+  const S = { drag: null, own: null, raf: 0, hot: null, hoverT: null, hoverB: null, hx: 0, hy: 0, ht: null, hraf: 0, ib: null, saved: new Map(), raised: new Set() };
   const cs = el => root.getComputedStyle(el);
   const zOf = el => { const z = parseInt(cs(el).zIndex, 10); return Number.isFinite(z) ? z : 0; };
   const natural = el => (S.saved.has(el) && S.saved.get(el).z0 != null ? S.saved.get(el).z0 : zOf(el));
+  const pinned = el => { const s = S.saved.get(el); return !!(s && s.pinned); };   // dragged by this code and still where the drag left it
+  const shown = c => c.position === 'fixed' && c.display !== 'none' && c.visibility !== 'hidden' && +c.opacity >= 0.05;
+  const spansWidth = r => r.left <= 1 && r.right >= root.innerWidth - 1;
 
   function isBox(el) {
     if (!el || el.nodeType !== 1 || el.parentElement !== doc.body) return false;
     if (el.matches(EXCLUDE)) return false;
-    const c = cs(el);
-    if (c.position !== 'fixed' || c.display === 'none' || c.visibility === 'hidden' || +c.opacity < 0.05) return false;
+    if (!shown(cs(el))) return false;
     const r = el.getBoundingClientRect();
     if (r.width < MIN_W || r.height < MIN_H) return false;
+    // p186: a bar its own CSS stretches across the whole viewport (an alert banner, a status strip)
+    // is docked UI, not a box. A box the user dragged there stays a box, or it could never be moved back.
+    if (spansWidth(r) && !pinned(el)) return false;
     return !(r.width >= root.innerWidth * 0.9 && r.height >= root.innerHeight * 0.9);   // full-screen overlay
   }
   // the box a press landed in (boxes are children of <body>, so this is one hop at most)
@@ -142,41 +182,77 @@
     S.raised.add(el);
   }
 
-  function raise(el) {
+  // back to the z the box's own code gave it
+  function unraise(el) {
+    restore(el, ['z-index']);
+    S.raised.delete(el);
+    const s = S.saved.get(el);
+    if (s) s.z0 = null;
+  }
+
+  // Every raised box down to the lowest z that keeps the picture as it is (settlePlan). A raised box
+  // that has been closed goes back to its own z: reopened, it starts where its code puts it.
+  // Returns the stack: every visible box under the alerts, in page order.
+  function settle(keep) {
     const kids = Array.prototype.slice.call(doc.body.children);
-    const info = n => ({ el: n, z: zOf(n), order: kids.indexOf(n), rect: n.getBoundingClientRect(), natural: natural(n) });
-    const others = () => kids.filter(n => n !== el && isBox(n)).map(info);
-    let t = info(el), p = planRaise(t, others());
+    for (const b of Array.from(S.raised)) if (b !== keep && !isBox(b)) unraise(b);
+    const list = kids.filter(n => n === keep || isBox(n))
+      .map(n => ({ el: n, z: zOf(n), order: kids.indexOf(n), rect: n.getBoundingClientRect(), natural: natural(n), raised: S.raised.has(n) }))
+      .filter(b => b.natural < ALERT_Z);                         // alerts are not part of the stack
+    settlePlan(list).forEach((z, i) => {
+      const b = list[i];
+      if (!b.raised || z === b.z) return;
+      if (z === b.natural) { unraise(b.el); b.raised = false; } else setZ(b.el, z);
+      b.z = z;
+    });
+    return list;
+  }
+
+  // all: over every box (a drag), not only the ones covering it now (a press)
+  function raise(el, all) {
+    const list = settle(el);
+    const t = list.find(b => b.el === el);
+    const p = t && planRaise(t, list.filter(b => b !== t), all);
     if (!p) return false;
-    if (p.compact) {
-      const cap = layerCap(t.natural);
-      const group = Array.from(S.raised).filter(b => b.isConnected && b !== el && layerCap(natural(b)) === cap).map(info);
-      group.push(t);
-      compactPlan(group).forEach((z, i) => setZ(group[i].el, z));
-      t = info(el);
-      p = planRaise(t, others());
-      if (!p) return true;
-    }
-    setZ(el, Math.min(p.z, layerCap(t.natural)));
+    setZ(el, p.z);
     return true;
   }
 
+  // After a key or a click, which may have closed the panel a box was lifted over, settle once.
+  // Without this, a panel reopened a moment later (W, W for the Watchlist) would come up underneath
+  // the box that had been lifted over it. Nothing runs unless a box is raised.
+  let settleT = 0;
+  function settleSoon() {
+    if (!S.raised.size || settleT) return;
+    // not in the middle of a drag, ours or a box's own: a key pressed while dragging must not drop the box
+    settleT = root.setTimeout(() => { settleT = 0; if (!S.drag && !(S.own && S.own.lifted)) { try { settle(null); } catch (_) {} } }, 200);
+  }
+
   const POS = ['left', 'top', 'right', 'bottom', 'margin', 'transform', 'translate', 'width', 'height'];
+  const HOME = ['left', 'top', 'right', 'bottom', 'transform'];   // what a box's own drag code rewrites
+  const setBack = (el, p, was) => { if (was[0]) el.style.setProperty(p, was[0], was[1]); else el.style.removeProperty(p); };
   // put back what we changed (all of it, or only the position)
   function restore(el, props) {
     const s = S.saved.get(el);
     if (!s) return;
     for (const p of props || Object.keys(s.props)) {
       if (!(p in s.props)) continue;
-      const [v, pr] = s.props[p];
-      if (v) el.style.setProperty(p, v, pr); else el.style.removeProperty(p);
+      setBack(el, p, s.props[p]);
       delete s.props[p];
     }
+    if (!('left' in s.props)) s.pinned = false;
+  }
+  // p186: a box that drags itself (OWN_DRAG) is noted as it stood before its own code first moved it,
+  // so "Reset Panel Positions" can send it home too. Our pointerdown runs before the box's handlers.
+  function rememberHome(el) {
+    let s = S.saved.get(el);
+    if (!s) { s = { props: {}, z0: null }; S.saved.set(el, s); }
+    if (!s.home) { s.home = {}; for (const p of HOME) s.home[p] = [el.style.getPropertyValue(p), el.style.getPropertyPriority(p)]; }
   }
 
   // switch a box to plain left / top (keeping where it is on screen and its size) so it can move
   function pin(el) {
-    remember(el, POS);
+    remember(el, POS).pinned = true;
     const r = el.getBoundingClientRect();
     ['right', 'bottom'].forEach(p => put(el, p, 'auto'));
     put(el, 'margin', '0'); put(el, 'transform', 'none'); put(el, 'translate', 'none');
@@ -189,11 +265,22 @@
     return { ox: o.left, oy: o.top };
   }
 
+  // How high a box may be dragged: its title bar stays below the bars across the top of the screen,
+  // which are the top bar and, when one is up, an alert banner (a title bar parked under the FEMA
+  // banner could not be grabbed again). p186: for every box, whatever its z, now that a pressed panel
+  // can rise above the top bar's own z. Bars are found by shape, not by name: fixed, edge to edge,
+  // stacked down from the top edge. A hidden top bar (Clean View) does not count.
   function minTopFor(el) {
-    if (zOf(el) >= 100) return 0;
-    const tb = doc.querySelector('.tb');
-    const r = tb && tb.getBoundingClientRect();
-    return r && r.height ? Math.max(0, Math.round(r.bottom)) : 0;
+    const bars = [];
+    for (const n of Array.prototype.slice.call(doc.body.children)) {
+      if (n === el || n.nodeType !== 1 || !shown(cs(n))) continue;
+      const r = n.getBoundingClientRect();
+      if (spansWidth(r) && r.height >= 1 && r.height <= root.innerHeight / 2) bars.push(r);
+    }
+    bars.sort((a, b) => a.top - b.top);
+    let top = 0;
+    for (const r of bars) if (r.top <= top + 1) top = Math.max(top, r.bottom);
+    return Math.max(0, Math.round(top));
   }
 
   function place(d) {
@@ -211,6 +298,9 @@
     d.ox = o.ox; d.oy = o.oy;
     d.base = d.box.getBoundingClientRect();
     d.minTop = minTopFor(d.box);
+    // p186: over every other box while it moves; where it lands, finish() settles it just above
+    // the boxes under it (or back to its own z when it lands on none)
+    try { raise(d.box, true); } catch (_) {}
     try { d.box.setPointerCapture(d.id); } catch (_) {}
     doc.documentElement.classList.add('bdoc-float-drag');
     try { root.getSelection().removeAllRanges(); } catch (_) {}
@@ -226,6 +316,7 @@
     d.box.style.setProperty('transition', d.tr[0], d.tr[1]);
     try { d.box.releasePointerCapture(d.id); } catch (_) {}
     doc.documentElement.classList.remove('bdoc-float-drag');
+    try { settle(null); } catch (_) {}
     if (!keepClick) {
       // the click that follows a drag must not press the title bar (collapse toggles and the like)
       const eat = ev => { ev.stopPropagation(); ev.preventDefault(); };
@@ -236,9 +327,16 @@
 
   function onDown(e) {
     if (S.drag || !e.isPrimary || e.button !== 0) return;
-    const t = e.target, box = boxOf(t);
+    const t = e.target;
+    // a box that drags itself, even one too small to count as a box here (the coordinate readout)
+    const own = t && t.nodeType === 1 ? t.closest(OWN_DRAG) : null;
+    if (own && own.parentElement === doc.body) rememberHome(own);
+    const box = boxOf(t);
     if (!box) return;
     try { raise(box); } catch (_) {}
+    // p186: a box that drags itself is watched while the button is down, so it too goes over the
+    // other boxes once it moves (onMove), and settles after the release (settleSoon)
+    S.own = box.matches(OWN_DRAG) ? { box, id: e.pointerId, sx: e.clientX, sy: e.clientY } : null;
     if (e.pointerType === 'touch' || root.innerWidth < MIN_DESKTOP || box.matches(OWN_DRAG)) return;
     if (!inHandle(box.getBoundingClientRect(), e.clientX, e.clientY)) return;
     const hit = t.closest(INTERACTIVE);
@@ -247,8 +345,20 @@
   }
 
   function onMove(e) {
+    const o = S.own;
+    if (o && e.pointerId === o.id) {
+      if (e.pointerType === 'mouse' && !(e.buttons & 1)) { S.own = null; settleSoon(); }   // released where we could not see it
+      else if (!o.lifted && (Math.abs(e.clientX - o.sx) >= THRESHOLD || Math.abs(e.clientY - o.sy) >= THRESHOLD)) {
+        o.lifted = true;                                                    // once per press; stays lifted until the release
+        try { if (isBox(o.box)) raise(o.box, true); } catch (_) {}
+      }
+    }
     const d = S.drag;
     if (!d || e.pointerId !== d.id) return;
+    // p186: the button came up where this page could not see it (focus left the window mid-press, a
+    // native menu or dialog took the release). Without this the box would follow a mouse with no
+    // button held until the next click.
+    if (!(e.buttons & 1)) { finish(e, true); return; }
     d.x = e.clientX; d.y = e.clientY;
     if (!d.on) {
       if (Math.abs(d.x - d.sx) < THRESHOLD && Math.abs(d.y - d.sy) < THRESHOLD) return;
@@ -278,7 +388,7 @@
     }
   }
   function onHover(e) {
-    if (e.pointerType !== 'mouse') return;
+    if (e.pointerType !== 'mouse' || S.drag) return;
     S.hx = e.clientX; S.hy = e.clientY; S.ht = e.target;
     if (!S.hraf) S.hraf = root.requestAnimationFrame(hover);
   }
@@ -293,7 +403,7 @@
       for (const el of S.saved.keys()) {
         if (!el.isConnected) { S.saved.delete(el); S.raised.delete(el); continue; }
         if (phone) { restore(el, POS); continue; }
-        if (!('left' in S.saved.get(el).props) || !isBox(el)) continue;
+        if (!pinned(el) || !isBox(el)) continue;
         const r = el.getBoundingClientRect();
         const p = clampRect(r.left, r.top, r.width, r.height, root.innerWidth, root.innerHeight, minTopFor(el));
         if (p.left !== Math.round(r.left) || p.top !== Math.round(r.top)) {
@@ -304,10 +414,29 @@
     }, 150);
   }
 
-  // every box back where its own code put it, and at its own z
+  // Every box back where its own code put it, and at its own z (View > Reset Panel Positions, p186).
+  // That covers boxes dragged by this code, boxes that drag themselves (as first seen this session),
+  // and the three that keep a position of their own across reloads: Cam Wall, Signals, the time-zone bar.
   function reset() {
-    for (const el of S.saved.keys()) if (el.isConnected) restore(el);
+    for (const [el, s] of S.saved) {
+      if (!el.isConnected) continue;
+      restore(el);
+      if (s.home) for (const p of HOME) setBack(el, p, s.home[p]);
+    }
     S.saved.clear(); S.raised.clear();
+    for (const m of [root.CamWall, root.SignalsWatch]) {
+      try {
+        if (!m || !m.pos) continue;
+        m.pos = null;
+        if (typeof m._save === 'function') m._save();
+        if (m.panel) ['left', 'top', 'right', 'bottom'].forEach(p => m.panel.style.removeProperty(p));
+      } catch (_) {}
+    }
+    try {
+      root.localStorage.removeItem('bdoc_tzbar_pos');
+      const tz = doc.getElementById('tz-bar');
+      if (tz) ['top', 'right'].forEach(p => tz.style.removeProperty(p));
+    } catch (_) {}
   }
 
   // ── the map's info box: out of the globe's layer, into <body> ─────────────────────────────────
@@ -350,13 +479,32 @@
   css.textContent = 'html.bdoc-float-drag,html.bdoc-float-drag *{user-select:none!important;-webkit-user-select:none!important;cursor:grabbing!important}'
     + 'html.bdoc-float-drag iframe{pointer-events:none!important}'
     + '.bdoc-float-hot,.bdoc-float-hot *:not(a):not(button):not(input):not(select):not(textarea):not(iframe){cursor:grab!important}'
-    + '.cesium-infoBox.bdoc-float-ib{position:fixed!important;z-index:' + INFOBOX_Z + '}';
+    + '.cesium-infoBox.bdoc-float-ib{position:fixed!important;z-index:' + INFOBOX_Z + '}'
+    // p186: menus draw over every box. The top bar is a stacking layer at z 100, so its drop-downs
+    // opened UNDER any panel at z 200 and up (COA in its usual place hid most of the View and Tools
+    // menus). While a menu or the search list is open, the bar is lifted over the boxes with it.
+    + '.tb:has(.menu-drop.show),.tb:has(#searchBar:focus){z-index:' + MENU_Z + '!important}'
+    + '#battle-ctx{z-index:' + MENU_Z + '!important}'
+    // p186: the sign-in, pricing and PACE dialogs share one backdrop (.mo-bg) at z 200, the z of the
+    // Watchlist, COA and Situations panels. Those come later in the page, so an open panel was drawn
+    // on top of the dialog, and so was everything higher (threat widget 999, camera viewer 10500, any
+    // raised box). A dialog that blocks the page goes over every box. The promo-code and thank-you
+    // dialogs (99999), the update banner and the alerts are above this and stay above it.
+    + '.mo-bg{z-index:' + MODAL_Z + '!important}';
   doc.head.appendChild(css);
 
   root.addEventListener('pointerdown', onDown, true);
   root.addEventListener('pointermove', onMove, true);
   root.addEventListener('pointerup', e => finish(e, false), true);
   root.addEventListener('pointercancel', e => finish(e, true), true);
+  // p186: leaving the window mid-drag (Alt+Tab, a system dialog) ends the drag where the box is
+  root.addEventListener('blur', () => { if (S.drag) finish({ pointerId: S.drag.id }, true); });
+  root.addEventListener('pointerup', settleSoon, true);
+  root.addEventListener('pointercancel', settleSoon, true);
+  root.addEventListener('keyup', settleSoon, true);
+  const ownEnd = e => { if (S.own && e.pointerId === S.own.id) S.own = null; };
+  root.addEventListener('pointerup', ownEnd, true);
+  root.addEventListener('pointercancel', ownEnd, true);
   doc.addEventListener('pointermove', onHover, { passive: true });
   root.addEventListener('resize', onResize);
   // the phone-layout switch, even where a resize event is not sent (some emulators, split views)

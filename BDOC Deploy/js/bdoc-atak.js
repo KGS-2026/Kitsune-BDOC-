@@ -23,9 +23,12 @@ const COT_TYPES = {
   neutral_ground:    'a-n-G',
   unknown_ground:    'a-u-G',
   // Tactical
-  casevac:           'b-c-c',
-  medevac:           'b-c-c-m',
-  waypoint:          'b-r-f-h-c',
+  // p186: b-r-f-h-c is TAK's CASEVAC / MEDEVAC type (ATAK CASEVACMarkerImporter COT_TYPE). BDOC sent
+  // its 9-line as 'b-c-c' ('b-c-c-m' for medevac), which is no TAK type, so ATAK did not show a
+  // CASEVAC marker for it, and 'waypoint' (not used by any export) pointed at the CASEVAC type.
+  casevac:           'b-r-f-h-c',
+  medevac:           'b-r-f-h-c',
+  waypoint:          'b-m-p-w',
   route:             'b-m-r',
   beacon_distress:   'b-t-f',
   observation_post:  'a-f-G-U-C-O',

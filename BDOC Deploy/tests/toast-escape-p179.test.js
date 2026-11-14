@@ -147,10 +147,13 @@ test('an undo label recorded by the page is plain text and is escaped exactly on
   P.ctx.BDOCUndo.record(ent, 'TAK update of ' + PAYLOAD + ' & co', { undo() {} });
   P.ctx.BDOCUndo.undo();
   assert.equal(P.last(), '↶ Undone: TAK update of ' + ESCAPED + ' &amp; co');
-  // the TAK import hands its label over unescaped now (it used to esc() it, which undo() would double)
-  const upd = fnSrc('function _cotUpdate(ent,r,S){');
-  assert.match(upd, /BDOCUndo\.record\(ent,'TAK update of '\+\(now\.label\|\|'marker'\),/);
-  assert.doesNotMatch(upd.slice(upd.indexOf('BDOCUndo.record(')).split('\n')[0], /esc\(/);
+  // the TAK import hands its label over unescaped now (it used to esc() it, which undo() would double).
+  // p186: one record per file, made by _cotImportText from the raw file name (control characters out)
+  const imp = fnSrc('async function _cotImportText(text,fileName){');
+  const rec = imp.slice(imp.indexOf('BDOCUndo.record(')).split('\n')[0];
+  assert.match(rec, /^BDOCUndo\.record\(null,'TAK file "'\+String\(fileName\|\|'file'\)\.replace\(/);
+  assert.doesNotMatch(rec, /esc\(/);
+  assert.doesNotMatch(fnSrc('function _cotUpdate(ent,r,S){'), /BDOCUndo\.record\(/);
 });
 
 test('watchlist toasts escape the right-click title (a plan label, an entity name or a callsign)', () => {

@@ -47,6 +47,31 @@
   const takUidOk = u => typeof u === 'string' && u.length > 0 && u.length <= 128 && !/[\u0000-\u001F\u007F]/.test(u);
   const COT_TYPE_RE = /^[a-z](?:-[A-Za-z0-9]{1,12}){1,15}$/;   // = BDOCCot.TYPE_RE
 
+  // p186: a CASEVAC card keeps its CoT event as text (_cotStore), a plan file carries that text
+  // (item.cot), and the TAK export writes it out as it stands. So text from someone else's file may
+  // only be what BDOC itself stores there: ONE <event> of BDOC's CASEVAC type under the same uid, no
+  // DTD, nothing before or after. Before this check a crafted plan file put any events it liked into
+  // the operator's export (a forged unit, a TAK delete task), and text that was not XML made the
+  // whole export unreadable.
+  const CASEVAC_TYPES = ['b-r-f-h-c', 'b-c-c', 'b-c-c-m'];      // the last two: what BDOC sent before p186
+  function casevacEvent(c) {
+    if (!c || typeof c.uid !== 'string' || !/^[A-Za-z0-9_.:-]{1,128}$/.test(c.uid) || typeof c.xml !== 'string' || c.xml.length > 20000) return null;
+    const x = c.xml.replace(/^\uFEFF?\s*(?:<\?xml[^>]*\?>)?\s*/, '');
+    if (/<!|<\?/.test(x)) return null;                              // no DTD, entities, comments, CDATA or instructions
+    const m = /^<event\s([^>]*)>([\s\S]*)<\/event>\s*$/.exec(x);
+    if (!m || /<\/?event[\s>/]/.test(m[2])) return null;                 // exactly one event
+    const at = n => { const a = new RegExp('(?:^|\\s)' + n + '="([^"<]*)"').exec(m[1]); return a ? a[1] : null; };
+    if (at('uid') !== c.uid || !CASEVAC_TYPES.includes(at('type'))) return null;
+    if (typeof DOMParser === 'function') {
+      try {
+        const d = new DOMParser().parseFromString(x, 'application/xml'), top = d && d.documentElement;
+        if (!top || (top.localName || top.nodeName) !== 'event' || d.getElementsByTagName('parsererror').length || d.getElementsByTagName('event').length !== 1) return null;
+      } catch (_) { return null; }
+    }
+    // an older card goes out under TAK's real CASEVAC type
+    return x.replace(/^(<event\s[^>]*?\stype=")b-c-c(?:-m)?(")/, '$1b-r-f-h-c$2').trim();
+  }
+
   const hasV = () => typeof V !== 'undefined' && V && V.entities;
   const tNow = () => (hasV() && V.clock) ? V.clock.currentTime : Cesium.JulianDate.now();
   const metaMap = () => (typeof battleMeta !== 'undefined' ? battleMeta : null);
@@ -160,11 +185,13 @@
       for (const k of ['hq', 'tf', 'feint']) if (k in out.meta && typeof out.meta[k] !== 'boolean') delete out.meta[k];
       if ('iconKey' in out.meta && !(typeof out.meta.iconKey === 'string' && /^[a-z0-9_]{1,32}$/.test(out.meta.iconKey))) delete out.meta.iconKey;
       for (const k of ['designation', 'higher']) if (k in out.meta) out.meta[k] = String(out.meta[k] || '').toUpperCase().replace(/[^A-Z0-9 .,:;/()#+\-*_]/g, '').trim().slice(0, 21);
+      // p186: a unit's display name (its TAK callsign, any script): plain text, no markup characters, 40 characters
+      if ('name' in out.meta) out.meta.name = typeof out.meta.name === 'string' ? out.meta.name.replace(/[\u0000-\u001F\u007F-\u009F\u2028-\u2029\u202A-\u202E\u2066-\u2069\uFEFF<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40) : '';
       // p177: the TAK uid / type of an imported unit or marker go out in the next TAK export
       if ('cotUid' in out.meta && !takUidOk(out.meta.cotUid)) delete out.meta.cotUid;
       if ('cotType' in out.meta && !(typeof out.meta.cotType === 'string' && COT_TYPE_RE.test(out.meta.cotType))) delete out.meta.cotType;
     }
-    if (out.cot && (typeof out.cot.uid !== 'string' || typeof out.cot.xml !== 'string')) delete out.cot;
+    if (out.cot) { const ev = casevacEvent(out.cot); if (ev) out.cot = { uid: out.cot.uid, xml: ev }; else delete out.cot; }
     return out;
   }
 
@@ -372,7 +399,10 @@
       if (s.kind === 'point') {
         const d = val(ent.description, t);
         const x = d && window._cotStore && String(d).match(/_downloadCotXml\('([^']+)'\)/);
-        if (x && window._cotStore.has(x[1])) { events.push(window._cotStore.get(x[1]).replace(/<\?xml[^>]*\?>\s*/, '')); continue; }   // full CASEVAC 9-line
+        // full CASEVAC 9-line. p186: checked on the way out as well (the store may hold text an older
+        // build accepted); text that fails the check is not written, and the card goes out as a plain marker
+        const stored = x && window._cotStore.has(x[1]) ? casevacEvent({ uid: x[1], xml: window._cotStore.get(x[1]) }) : null;
+        if (stored) { events.push(stored); continue; }
         const c = Cesium.Cartographic.fromCartesian(s.position);
         // p175: a unit with a SIDC goes out as its exact 2525 CoT type; pickCoT is optional
         // (tools/qa/ww3.js calls cotEvents() bare) and stays the rule for everything else
@@ -381,9 +411,13 @@
         // p177: a marker imported from TAK (spot, waypoint, CASEVAC …) goes back as the type it came in as
         const takType = !unitType && typeof m.cotType === 'string' && COT_TYPE_RE.test(m.cotType) ? m.cotType : null;
         const cotType = unitType || takType || (typeof pickCoT === 'function' ? pickCoT(m) : 'a-u-G');
-        const remarks = [m.comment || '', unitType ? ['SIDC ' + sd, m.higher ? 'Higher: ' + m.higher : ''].filter(Boolean).join(' · ') : ''].filter(Boolean).join('\n');
+        // p186: every unit with a real code writes its SIDC line, not only the ones TAK has a type for.
+        // An emergency-management or stability-operations code goes out as its side's plain ground
+        // type, and without this line opening the export again could only make it plain infantry.
+        const coded = typeof sd === 'string' && SIDC_RE.test(sd);
+        const remarks = [m.comment || '', coded ? ['SIDC ' + sd, m.higher ? 'Higher: ' + m.higher : ''].filter(Boolean).join(' · ') : ''].filter(Boolean).join('\n');
         events.push(buildCoT({ cotType, uid, lat: Cesium.Math.toDegrees(c.latitude), lon: Cesium.Math.toDegrees(c.longitude),
-          hae: c.height || 0, callsign, remarks, staleMs: (unitType || takType) ? 86400000 : 3600000 }).replace(/<\?xml[^>]*\?>\s*/, ''));   // plan units and TAK markers: 24 h, not 1 h
+          hae: c.height || 0, callsign, remarks, staleMs: (unitType || takType || coded) ? 86400000 : 3600000 }).replace(/<\?xml[^>]*\?>\s*/, ''));   // plan units and TAK markers: 24 h, not 1 h
         continue;
       }
       // ATAK drawing shapes: u-d-f freehand polyline/polygon (link points), u-d-c-c circle

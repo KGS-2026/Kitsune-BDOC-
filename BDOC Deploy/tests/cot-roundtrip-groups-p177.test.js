@@ -10,8 +10,9 @@ const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/\r\n/g, '
 const HTML = read('index.html'), PLAN = read('js/bdoc-plan.js');
 
 function cotFind(battleEntities, meta, alive) {
-  const i = HTML.indexOf('function _cotFind(uid){');
-  const src = HTML.slice(i, HTML.indexOf('\n}\n', i) + 3);
+  // p186: _cotFind is _cotIndexGet(_cotIndex(), uid): one index of the map instead of a walk per uid
+  const fn = start => { const i = HTML.indexOf(start); assert.ok(i >= 0, start); return HTML.slice(i, HTML.indexOf('\n}\n', i) + 3); };
+  const src = fn('function _cotIndex(){') + fn('function _cotIndexGet(ix,uid){') + fn('function _cotFind(uid){');
   const ctx = vm.createContext({ battleEntities, battleMeta: meta, V: { entities: { contains: e => alive.has(e) } } });
   vm.runInContext(src + ';this.f=_cotFind;', ctx);
   return ctx.f;

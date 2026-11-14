@@ -130,14 +130,16 @@ test('the CoT type is the one ATAK / WinTAK / iTAK draw the same 2525 symbol fro
 });
 
 test('Battle Tracker CoT export uses the SIDC first and keeps the label rules for everything else', () => {
-  const start = HTML.indexOf('const pickCoT=(meta)=>{');
-  const src = HTML.slice(start, HTML.indexOf('\n  };', start) + 5);
+  // p186: the rules are a function of their own (_bpPickCoT), shared with the TAK import
+  const start = HTML.indexOf('function _bpPickCoT(meta){');
+  assert.ok(start > 0 && HTML.includes('const pickCoT=_bpPickCoT;'));
+  const src = HTML.slice(start, HTML.indexOf('\n}\n', start) + 3);
   // the offline SIDC → CoT rule pickCoT falls back to
   const hs = HTML.indexOf('const _BP_COT_AFF=');
   const helper = HTML.slice(hs, HTML.indexOf(".join('-')}\n", HTML.indexOf('function _bpSidcCoT(s){', hs)) + 12);
   for (const withSym of [true, false]) {
     const ctx = vm.createContext({ window: withSym ? { BDOCSym: S } : {}, BDOCSym: S });
-    vm.runInContext(helper + src + ';this.pick=pickCoT;this.off=_bpSidcCoT;', ctx);
+    vm.runInContext(helper + src + ';this.pick=_bpPickCoT;this.off=_bpSidcCoT;', ctx);
     const pick = ctx.pick;
     assert.equal(pick({ type: 'unit', sidc: 'SHAPMFF--------', label: 'FRIEND whatever' }), 'a-h-A-M-F-F', `sym=${withSym}`);
     assert.equal(pick({ type: 'unit', sidc: 'SFGPUCI--------' }), 'a-f-G-U-C-I');
@@ -187,7 +189,9 @@ test('plan export: SIDC units go out as their CoT type, with the SIDC in remarks
   // (tests/cot-import-p177.test.js runs the export for real)
   assert.match(PLAN, /const cotType = unitType \|\| takType \|\| \(typeof pickCoT === 'function' \? pickCoT\(m\) : 'a-u-G'\);/);
   assert.match(PLAN, /'SIDC ' \+ sd/);
-  assert.match(PLAN, /staleMs: \(unitType \|\| takType\) \? 86400000 : 3600000/);
+  // p186: every unit with a real code writes the SIDC line and lasts 24 h, whether or not TAK has a type for it
+  assert.match(PLAN, /const coded = typeof sd === 'string' && SIDC_RE\.test\(sd\);/);
+  assert.match(PLAN, /staleMs: \(unitType \|\| takType \|\| coded\) \? 86400000 : 3600000/);
   assert.match(PLAN, /const uid = takUidOk\(m\.cotUid\) \? m\.cotUid : ent\.id \? 'BDOC-' \+ String\(ent\.id\)\.slice\(0, 60\) : 'BDOC-BP-'/);
   // GeoJSON keeps the symbology for QGIS / other C2 tools
   for (const p of ['props.sidc = sd', 'props.cot_type = ct', "['higher', 'higher_formation']", "['feint', 'feint_dummy']"]) assert.ok(PLAN.includes(p), p);
@@ -348,7 +352,8 @@ test('right-click → Edit Unit Symbol opens the editor, with undo', () => {
   const ed = HTML.slice(HTML.indexOf('function openUnitEditor(ent){'), HTML.indexOf('function closeUnitEditor(){'));
   // the record names the unit, so CLEAR / delete retires it (custom records die with their entity)
   assert.match(ed, /BDOCUndo\.record\(ent,'Unit edit',\{undo:\(\)=>_bpRestoreUnit\(ent,snap\)\}\)/);
-  assert.match(HTML, /const _alive=r=>\{if\(r\.custom\)return !r\.dead&&\(!r\.ref\|\|_live\(r\.ref\)\);return _live\(r\.ref\)\};/);
+  // (p186: a custom record may also answer for itself through custom.alive; without one the rule is unchanged)
+  assert.match(HTML, /const _alive=r=>\{if\(r\.custom\)\{if\(r\.dead\)return false;if\(typeof r\.custom\.alive==='function'\)\{try\{return !!r\.custom\.alive\(\)\}catch\(_\)\{return false\}\}return !r\.ref\|\|_live\(r\.ref\)\}return _live\(r\.ref\)\};/);
   assert.match(ed, /if\(!V\.entities\.contains\(ent\)\)\{closeUnitEditor\(\);af\('var\(--t3\)','That unit is no longer on the map'\);return\}/);
   // map markers (bridge, objective, LZ …) keep their own type instead of turning into Infantry
   assert.match(ed, /<optgroup label="MAP MARKERS \(no standard symbol\)">'\+Object\.entries\(BATTLE_ICONS\)\.filter\(\(\[k\]\)=>!_bpOwn\(S\.CATALOG,k\)\)/);

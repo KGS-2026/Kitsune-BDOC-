@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v189';  // p185c: upstream 'minor' is a weak cascade signal (weight 2), only major/critical or news-detected upstream = HIGH; p185b: fusion KINETIC leg filters crime/protest codes outside a theater, SYSTEMIC needs a major; p185: Causal Fusion v2 (rebased p164) — official statuspage incident text as a CYBER leg, UPSTREAM PROVIDER cascade attribution, incident-archive KINETIC leg (150 km / 48 h), SYSTEMIC fallback, corroboration lifts confidence a tier, statuspage MAJOR outages plotted + fused, GTA INFRA weighted by attributed cause
+const SW_VERSION = 'bdoc-v190';  // p186: floating boxes share one stack under the alert banner (a box under a bigger panel can come forward, a dragged box stays over the boxes it crosses, top-bar menus and the sign-in / pricing dialogs open over every panel), the FEMA banner can no longer be dragged or covered, View > Reset Panel Positions; TAK import keeps callsigns as written (any alphabet), keeps emergency / stability / pre-p175 units through a round trip, is one undo step per file, skips alerts cancelled in the same file and no longer freezes on long remarks; CASEVAC goes to TAK as b-r-f-h-c; a plan file cannot put events of its own into the TAK export; five boot scripts added to the offline precache
+// (prev) const SW_VERSION = 'bdoc-v189';  // p185c: upstream 'minor' is a weak cascade signal (weight 2), only major/critical or news-detected upstream = HIGH; p185b: fusion KINETIC leg filters crime/protest codes outside a theater, SYSTEMIC needs a major; p185: Causal Fusion v2 (rebased p164) — official statuspage incident text as a CYBER leg, UPSTREAM PROVIDER cascade attribution, incident-archive KINETIC leg (150 km / 48 h), SYSTEMIC fallback, corroboration lifts confidence a tier, statuspage MAJOR outages plotted + fused, GTA INFRA weighted by attributed cause
 // (prev) const SW_VERSION = 'bdoc-v188';  // p185b: kinetic/systemic filters
 // (prev) const SW_VERSION = 'bdoc-v187';  // p185 first cut (same content, pre-filter)
 // (prev) const SW_VERSION = 'bdoc-v186';  // p184: Cyber layer draws origin lines: an arc from the country a report names as the attacker ("Iran-linked group", "Russian hackers", "Volt Typhoon") to the victim's pin, arrow at the victim; panel lists where attacks came from, with a lines on/off switch
@@ -62,12 +63,12 @@ const STATIC_PRECACHE = [
   '/js/bdoc-gov-alert.js?v=p181',
   '/js/bdoc-cyber-map.js?v=p184',
   '/js/bdoc-offline-store.js?v=p75',
-  '/js/bdoc-plan.js?v=p179',
-  '/js/bdoc-cot-import.js?v=p177',
+  '/js/bdoc-plan.js?v=p186',
+  '/js/bdoc-cot-import.js?v=p186',
   '/js/vendor/hls.min.js?v=1.5.17',
   '/js/bdoc-link-manager.js?v=p156d',
   '/js/bdoc-offline-hud.js?v=p158f',
-  '/js/bdoc-float.js?v=p178',
+  '/js/bdoc-float.js?v=p186',
   '/css/bdoc.css?v=p173',
   '/css/bdoc-p154.css?v=p175',
   '/css/bdoc-p158f.css?v=p158f',
@@ -80,9 +81,17 @@ const STATIC_PRECACHE = [
   '/js/bdoc-auth-fetch.js?v=p162',
   '/js/filters.js?v=p154',
   '/js/kitsune-ai.js?v=p93',
-  '/js/bdoc-atak.js?v=p175',
+  '/js/bdoc-atak.js?v=p186',
   '/js/cesium-init.js?v=p180',
   '/js/deeplink.js?v=p115',
+  // p186: loaded by a <script> tag in index.html but never listed here, so the durable offline cache
+  // did not hold them after an update (only the ordinary browser HTTP cache did). tests/release-p186.test.js
+  // now fails when a local <script src> or stylesheet in index.html is missing from this list.
+  '/js/snapshot-client.js?v=p122',
+  '/js/bdoc-wire-boot.js?v=p160',
+  '/js/a11y.js?v=p119',
+  '/js/mesh-globe-layer.js?v=p163s',
+  '/js/bdoc-plugin-renderer.js?v=p166',
   '/js/modules/layers-military.js?v=p185c',
   '/js/modules/layers-conflict.js?v=p185c',
   '/js/modules/layers-infra.js?v=p185c',

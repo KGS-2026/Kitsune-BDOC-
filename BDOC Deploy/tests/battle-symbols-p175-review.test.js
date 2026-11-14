@@ -97,7 +97,8 @@ function stateFromMeta() {
   const icons = HTML.slice(bi, HTML.indexOf('\n};', bi) + 3);
   const src = icons + '\n' + line('const ECHELON_MARKS=') + line('const _BP_AFF_COL=') + line('const _BP_MARKER_CATS=') +
     line('const _BP_LEGACY_LABELS=') + line('function _bpOwn(o,k)') + line('function _bpSym()') +
-    fnSrc('function _bpLegacyUnitState(m){') + fnSrc('function _bpStateFromMeta(m){') + ';this.f=_bpStateFromMeta;';
+    // p186: _bpStateFromMeta also reads the unit's display name (a TAK callsign) through _bpCleanName
+    line('function _bpCleanName(s)') + fnSrc('function _bpLegacyUnitState(m){') + fnSrc('function _bpStateFromMeta(m){') + ';this.f=_bpStateFromMeta;';
   const c = vm.createContext({ window: { BDOCSym: S } });
   vm.runInContext(src, c);
   return c.f;
@@ -167,9 +168,10 @@ test('control characters never reach a .cot.xml', () => {
   assert.equal(c.x('tab\there\nline\rcr'), 'tab\there\nline\rcr', 'tab, newline and CR are legal XML');
   assert.equal(c.x('￾￿ok'), 'ok');
   assert.equal(c.x(null), '');
-  // changed file, so its cache key moved with it
-  assert.match(HTML, /<script src="js\/bdoc-atak\.js\?v=p175"><\/script>/);
-  assert.ok(read('service-worker.js').includes("'/js/bdoc-atak.js?v=p175',"));
+  // changed file, so its cache key moved with it (p175 or later: p186 changed the file again)
+  const atak = /<script src="js\/bdoc-atak\.js\?v=(p1(?:7[5-9]|[89]\d)\w*)"><\/script>/.exec(HTML);
+  assert.ok(atak, 'bdoc-atak.js is at p175 or later');
+  assert.ok(read('service-worker.js').includes(`'/js/bdoc-atak.js?v=${atak[1]}',`), 'precached at the same ?v=');
 });
 
 test('map markers stay markers; the offline grid uses the right frame', () => {
