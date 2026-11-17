@@ -3,12 +3,23 @@ name: BDOC CI
 # Runs on every push and PR to validate the build BEFORE Netlify deploys.
 # This is the automated version of the manual bug-hunt: JS syntax, inline scripts,
 # CSS integrity, and JSON config sanity. A failed run blocks the merge.
+#
+# p200 (T200) added three jobs beside `validate`, each independent of the others:
+#   secret-scan  gitleaks over the commits this push / PR adds (pinned + checksummed)
+#   sast         CodeQL, JavaScript and Python (results in the repo's Security tab)
+#   sbom         CycloneDX SBOMs for the web functions and the desktop app
+# The repo's own offline secret scan and the twelve home-module invariants run
+# inside `validate` (scripts/ci-validate.sh steps 6 and 7, and the test suite).
+# New actions are pinned to full commit SHAs; the tag is in the comment.
 
 on:
   push:
     branches: ['**']
   pull_request:
     branches: ['**']
+
+permissions:
+  contents: read
 
 jobs:
   validate:
@@ -30,3 +41,93 @@ jobs:
 
       - name: Run BDOC validation gate
         run: bash scripts/ci-validate.sh
+
+  secret-scan:
+    name: Secret scan (gitleaks, commits in this push)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history, for the commit range)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - name: Install gitleaks 8.30.1 (checksum-pinned)
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tgz" https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  $RUNNER_TEMP/gitleaks.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gitleaks.tgz" -C "$RUNNER_TEMP" gitleaks
+
+      - name: Scan the commits this push or pull request adds
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          BEFORE: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [ -n "$PR_BASE" ]; then
+            RANGE="$PR_BASE..$HEAD_SHA"
+          elif [ -n "$BEFORE" ] && ! echo "$BEFORE" | grep -qE '^0+$' && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            RANGE="$BEFORE..$HEAD_SHA"
+          elif git rev-parse -q --verify origin/main >/dev/null && [ "$(git rev-parse origin/main)" != "$HEAD_SHA" ]; then
+            RANGE="origin/main..$HEAD_SHA"   # a new branch: everything it adds over main
+          else
+            RANGE="$HEAD_SHA~1..$HEAD_SHA"
+          fi
+          echo "gitleaks range: $RANGE"
+          "$RUNNER_TEMP/gitleaks" git --redact --no-banner --log-opts="$RANGE" .
+
+  sast:
+    name: SAST (CodeQL, ${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, python]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          category: /language:${{ matrix.language }}
+
+  sbom:
+    name: SBOM (CycloneDX, web + desktop)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+
+      - name: Build the SBOMs from the lockfile (no install)
+        working-directory: BDOC Deploy
+        run: |
+          # web = what Netlify functions run (runtime deps); desktop = adds Electron, which ships in the installer
+          npm sbom --sbom-format=cyclonedx --package-lock-only --omit=dev > "$RUNNER_TEMP/bdoc-sbom-web.cdx.json"
+          npm sbom --sbom-format=cyclonedx --package-lock-only > "$RUNNER_TEMP/bdoc-sbom-desktop.cdx.json"
+          for f in web desktop; do
+            node -e "const s=require(process.argv[1]); if(!s.components||!s.components.length) process.exit(1); console.log(process.argv[2], s.bomFormat, s.specVersion, s.components.length, 'components')" "$RUNNER_TEMP/bdoc-sbom-$f.cdx.json" "$f"
+          done
+
+      - name: Keep the SBOMs with this run
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: bdoc-sbom-cyclonedx
+          path: |
+            ${{ runner.temp }}/bdoc-sbom-web.cdx.json
+            ${{ runner.temp }}/bdoc-sbom-desktop.cdx.json
+          retention-days: 90

@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-11-11 · build **p185c** on `main` · `SW_VERSION bdoc-v189`
-**Last updated by Claude Code:** 2026-11-17 · build **p187** live on `main` @ `11e4e6c` · `SW_VERSION bdoc-v191` (next is v192)
+**Last updated by Claude Code:** 2026-11-17 · build **p187** live on `main` @ `11e4e6c` · `SW_VERSION bdoc-v191` (next is v192) · p200 (T200: CI and tests only) on branch `claude/p200-home-bootstrap`, not pushed
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,49 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
+
+### Claude Code — p200 (T200) Home-defense module bootstrap: twelve invariant checks, a public-surface test that reads the disk, secret scan, CodeQL and SBOM in CI (2026-11-17) — **on branch `claude/p200-home-bootstrap`, NOT pushed**
+Travon pasted another AI's spec for a home-defense module. A hub in the customer's home sends alerts and cleaned-up pictures one way into BDOC, and the design treats the app as already compromised (§2 Z). He asked for whatever applies "without breaking it". T200 is the bootstrap only: no relay, hub or home code exists. Nothing the site serves changed, since everything is under `tests/`, `.ci/`, `.github/`, `scripts/` or docs. No SW bump.
+- **`.ci/invariants/inv01`–`inv12`** turn the spec's twelve invariants into static checks.
+  - `node .ci/invariants/run.js` prints one line each: PASS, WARN, DORMANT (the code it guards doesn't exist yet, and the check arms itself when it appears) or FAIL. A check that crashes counts as FAIL.
+  - Six are active on today's code: 1 (no LAN, tunnel or camera addresses in client code), 5 (secret scan of client code), 6 (RLS on every table in every SQL file), 9 (every suppression has a reason), 10 (no global security claim) and 12 (the public-surface audit).
+- **The public-surface test now reads the disk** (`tests/helpers/public-surface-lib.js` and `tests/public-surface.inventory.json`). It fails on:
+  - any `.env*` or key file in the publish folder or under `relay/`;
+  - a config file the site would serve without a 404 rule;
+  - a new folder at the site root;
+  - a Netlify function or relay endpoint missing from the inventory, and stale inventory entries.
+
+  The three p158f tests are unchanged. **A new function now needs one line in `endpoints.added`** (its name and what it does), or the suite fails.
+- **One allowlist, `.ci/allowlist.json`.** Every suppression carries a kind, a reason, who accepted it, a date and an expiry. Expired entries fail. Secrets are named by a 16-hex sha256 fingerprint, never by value. Today's entries:
+  - four loopback addresses the desktop really uses (the IPC bridge, the Wireshark bridge, Ollama);
+  - the Cesium ion token, an accepted risk that is still **UNSIGNED**;
+  - the AISStream key, an open violation. Its entry runs out after 2026-12-31, and from 2027-01-01 the gate **fails** on it, on purpose (§2 W).
+- **`node .ci/secret-scan.js`** checks every tracked and untracked file. It looks for Stripe, AWS, GitHub, private-key, Telegram, mem0, Anthropic, OpenAI, Supabase service-role, Google, Slack and key-named secrets, and it never prints a whole secret.
+- **CI (`.github/workflows/ci.yml`)** is now `permissions: contents: read`, with three new jobs. Every action is pinned to a commit SHA.
+  - `secret-scan`: gitleaks 8.30.1, tarball checked by sha256, over the pushed commits.
+  - `sast`: CodeQL v4.39.1, JavaScript and Python, `security-extended`, configured in `.github/codeql/codeql-config.yml`.
+  - `sbom`: CycloneDX via `npm sbom` for the web functions and the desktop app, kept 90 days.
+
+  `scripts/ci-validate.sh` gained step 6 (invariants) and step 7 (secret scan). `.gitignore` adds `.env`, `.env.*`, `*.pem`, `*.key`, `*.p12` and `*.pfx`.
+- **Docs:** root `CLAUDE.md` (short, points here); `.ci/README.md`; `.hermes/plans/2026-11-17_home-module-plan.md` (proposed, not approved; it also holds the spec as given).
+- **Tests:** `tests/invariants-p200.test.js` (every check, dormant or not, fails on a planted violation), `tests/secret-scan-p200.test.js`, and new public-surface tests (a planted `.env`, relay config, key file, folder or endpoint each fail).
+
+**Verified:**
+- `node --test tests/*.test.js` (= `npm test`): 1071 tests, 1070 pass, 0 fail, 1 skipped (the existing one), Node 24.14.1.
+- `bash scripts/ci-validate.sh` passes all 7 steps.
+- Invariants: 5 pass, 1 warn (inv05, the two unsigned secrets entries), 6 dormant, 0 fail.
+- Secret scan: 384 files, 0 open, 2 allowlisted.
+- Deliberate leak: with `BDOC Deploy/.env` and `relay/relay.yml` on disk, the public-surface test fails and names both. Both files were removed afterwards.
+
+**Not verified:**
+- The three new CI jobs, which only run on GitHub. If CodeQL "default setup" is on in the repo settings, it clashes with this job: turn default setup off.
+- Node 20, which CI's `validate` job uses.
+
+**Travon:**
+1. Decide T201 (§2 Z).
+2. Turn on GitHub secret scanning and push protection in the repo's security settings (free on a public repo; not checked whether they are on).
+3. Yes or no on the Cesium token entry, and set Allowed URLs on that token in the Cesium ion dashboard.
+4. Rotate the AIS key by 2026-12-31.
 
 ### Claude Code — p187 Clearer plans and prices (2026-11-17) — **LIVE on `main` @ `11e4e6c`**, SW `bdoc-v191` (pushed 2026-11-17 on Travon's "Ship the landing fixes first")
 Came out of a go-to-market review of the pricing window and the first screen. Changes:
@@ -1544,6 +1587,29 @@ curl -s https://kgsbdoc.netlify.app/service-worker.js \
 ---
 
 ## 2. OPEN ITEMS — PICK UP HERE
+
+### Z. Home-defense module spec (another AI chat, 2026-11-17): T200 built, T201 waits on Travon
+The full notes are in `.hermes/plans/2026-11-17_home-module-plan.md` (§2 there), and §3 there holds the spec as given.
+1. **T201 is Travon's call.** The spec says "the zero-backend posture ends for this feature", but BDOC already runs a backend: Supabase, 79 functions, Blobs, the droplet and Stripe webhooks. The real question is whether BDOC adds a second, isolated backend that stores pictures from inside customers' homes. That carries legal and liability weight no map feature has.
+2. **The SPEC it cites (§6, §8, §11, §12) was never provided.** T204, T206, T214, T217 and T220 are blocked until it is.
+3. **Hardware.** T207–T214 and T217–T219 need a hub (TPM 2.0, Linux, a hostapd radio with WPA3-SAE), Go and Rust, real cameras and a separate repo. None exist here.
+4. **Would break current customers as written.**
+   - T205 demotes Google sign-in.
+   - T216's "no `unsafe-inline` in `script-src`" blanks the app until the ~767 KB inline script leaves `index.html`.
+5. **Clashes with p188b** (WIP on `bdoc-p188`). Smart-home webhooks have BDOC's servers call a URL inside the customer's home, and invariant 2 says nothing dials into a home. Decide which wins before both ship.
+6. **Public repo.** T202's threat models would publish the accepted risks. Keep them out until the repo is private, or accept that.
+7. **Numbering.** `p200`–`p220` collide with regular releases. Either skip regular releases from p199 to p221, or rename the home tasks `h2NN`.
+8. **For today's customers, no hub needed.** Found during T200, not fixed:
+   - **Desktop navigation filter** (`electron/main.js`, `will-navigate`).
+     - It tests the URL text against `http://localhost:9080` instead of the origin, so a crafted link can load an outside page in the desktop window, which has no address bar.
+     - It also allows any `*.supabase.co` host.
+     - Fix: compare `new URL(url).origin` and pin BDOC's Supabase host. Needs a desktop release.
+   - **Sign-out keeps cached data.** `logout()` in `js/auth.js` clears the tier keys but not the service-worker caches. It pairs with Y.2(c).
+   - **Cesium `widgets.css` has no SRI** (`index.html:199`, and the jsdelivr fallback at `:1549`). `Cesium.js` has it.
+   - **CSP is still Report-Only.** Enforcing it needs the inline script moved out first.
+   - **AISStream key** (W): Travon rotates it, then it goes through a server relay. Its allowlist entry runs out after 2026-12-31, so from 2027-01-01 the gate fails on it (inv05, inv09 and the secret scan).
+   - **Ollama models load by tag** (`llama3.1:latest` in `electron/tools-ui.js`), not by digest. This matters only if home code ever uses them (invariant 8).
+   - **inv06 can't see tables made in the Supabase dashboard.** It reads the SQL files only.
 
 ### Y. Found while building p160 (2026-10-30)
 1. **Web Push is ready and waiting on Travon (p161, see §1).** Run `tools/push/activate.ps1`, then `activate.ps1 -TestPush` with a real device armed. Done when `sendReady` is true, the dry run passes and the test notification appears on the device. Until then the sentinel's push fan-out and every customer alert stay silently dead. Telegram still reaches Travon.

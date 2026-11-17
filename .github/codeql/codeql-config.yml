@@ -1,0 +1,11 @@
+# p200 (T200): CodeQL SAST scope for BDOC.
+# security-extended adds the medium-precision security queries to the default set.
+# Third-party bundles are left out (the SBOM covers them); our own code is all in.
+name: BDOC CodeQL
+queries:
+  - uses: security-extended
+paths-ignore:
+  - '**/node_modules/**'
+  - '**/vendor/**'
+  - '**/*.min.js'
+  - 'BDOC Deploy/dist-electron/**'

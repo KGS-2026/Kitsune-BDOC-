@@ -11,3 +11,13 @@ node_modules/
 __pycache__/
 *.pyc
 **/electron/vendor/
+
+# p200: secrets and key material never live in the repo. This only stops an
+# accidental `git add`; tests/public-surface.test.js reads the disk and fails on
+# any of these inside the publish tree or beside the relay, ignored or not.
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx

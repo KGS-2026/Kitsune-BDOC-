@@ -1,0 +1,132 @@
+{
+  "_about": "p200: every endpoint and config file, declared on purpose. tests/public-surface.test.js fails on any endpoint or config file that is not listed here, and on entries that no longer exist. New functions go under endpoints.added with what they do and who may call them. Config in the publish tree needs a 404 rule in netlify.toml, or served:false when the platform never serves it, or public:true with a reason.",
+  "endpoints": {
+    "_about": "baseline = the functions that existed on 2026-11-17 (p187, origin/main 1ea396d), grandfathered as they are. Anything newer goes in added.",
+    "baseline": [
+      "_lib",
+      "_snapshot.js",
+      "_supabase.js",
+      "admin-user.js",
+      "adsb-global.js",
+      "config.js",
+      "county-brief.mjs",
+      "csp-report.js",
+      "cyber-incidents.js",
+      "embed-check.js",
+      "entity-preview.js",
+      "export-contacts.js",
+      "gov-alert-tick.mjs",
+      "gov-alert.js",
+      "gps-interference-tick.mjs",
+      "gps-interference.mjs",
+      "incidents-recent.mjs",
+      "incidents-tick.mjs",
+      "launch-selftest.js",
+      "layer-publish.js",
+      "layer-root.js",
+      "layer-snap.js",
+      "mesh-ingest.js",
+      "mesh-nodes.js",
+      "ping.js",
+      "proxy-abusech.js",
+      "proxy-adsb.js",
+      "proxy-adsbdb.js",
+      "proxy-aw.js",
+      "proxy-cables.js",
+      "proxy-cams.js",
+      "proxy-carrier-outages.js",
+      "proxy-celestrak.js",
+      "proxy-cfradar.js",
+      "proxy-cisa.js",
+      "proxy-cyber.js",
+      "proxy-eu.js",
+      "proxy-feed.js",
+      "proxy-firms.js",
+      "proxy-flightradar24.js",
+      "proxy-gdacs.js",
+      "proxy-gdelt.js",
+      "proxy-gdeltevents.js",
+      "proxy-gnews.js",
+      "proxy-hazardbio.js",
+      "proxy-inaturalist.js",
+      "proxy-ip2location.js",
+      "proxy-kml.js",
+      "proxy-launches.js",
+      "proxy-maritime.js",
+      "proxy-mecams.js",
+      "proxy-meshworld.js",
+      "proxy-news.js",
+      "proxy-newsdata.js",
+      "proxy-newsgeo.js",
+      "proxy-ogimage.js",
+      "proxy-opensky.js",
+      "proxy-osrm.js",
+      "proxy-outages.js",
+      "proxy-overpass.js",
+      "proxy-owm.js",
+      "proxy-perenual.js",
+      "proxy-plantid.js",
+      "proxy-polymarket.js",
+      "proxy-signals.js",
+      "proxy-spaceweather.js",
+      "proxy-status.js",
+      "proxy-supabase.js",
+      "proxy-swpc.js",
+      "proxy-tomorrow.js",
+      "proxy-treasury.js",
+      "proxy-waqi.js",
+      "proxy-watch.js",
+      "proxy-weather.js",
+      "push-send.mjs",
+      "push-subscribe.mjs",
+      "sentinel.mjs",
+      "stripe-checkout.js",
+      "stripe-portal.js",
+      "stripe-webhook.js",
+      "wire.mjs",
+      "zone-alerts-tick.mjs"
+    ],
+    "added": {}
+  },
+  "relay_endpoints": {
+    "_about": "Home relay endpoints (T203), keyed by repo path, e.g. relay/functions/enroll.mjs. Empty until the relay exists."
+  },
+  "config": {
+    "netlify.toml": {
+      "served": false,
+      "why": "Netlify never serves its own config file (live 404 checked 2026-11-17)"
+    },
+    "package.json": {
+      "why": "npm manifest for functions and the desktop build; 404 rule /package.json"
+    },
+    "package-lock.json": {
+      "why": "npm lockfile; 404 rule /package-lock.json"
+    },
+    "deno.lock": {
+      "why": "Deno lockfile; 404 rule /deno.lock"
+    },
+    "plugins/splunk/bdoc_tactical_feed/default/app.conf": {
+      "why": "Splunk app (plugins/); /plugins/* is 404-blocked"
+    },
+    "plugins/splunk/bdoc_tactical_feed/default/inputs.conf": {
+      "why": "Splunk app (plugins/); /plugins/* is 404-blocked"
+    },
+    "plugins/splunk/bdoc_tactical_feed/default/savedsearches.conf": {
+      "why": "Splunk app (plugins/); /plugins/* is 404-blocked"
+    }
+  },
+  "repo_config": {
+    "netlify.toml": {
+      "why": "points Netlify at BDOC Deploy/; the repo root is never published"
+    },
+    ".github/workflows/ci.yml": {
+      "why": "CI: validation gate, invariants, secret scan, SAST, SBOM"
+    },
+    ".github/workflows/desktop-release.yml": {
+      "why": "desktop installer build and GitHub release"
+    },
+    ".github/codeql/codeql-config.yml": {
+      "why": "CodeQL (SAST) scope: which paths are scanned"
+    }
+  }
+}

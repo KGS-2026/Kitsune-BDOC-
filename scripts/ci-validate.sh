@@ -11,7 +11,7 @@ echo " BDOC CI VALIDATION"
 echo "════════════════════════════════════════════"
 
 # ── 1. JS syntax check: every module + every Netlify function ──
-echo; echo "── [1/5] JavaScript syntax (node --check) ──"
+echo; echo "── [1/7] JavaScript syntax (node --check) ──"
 js_count=0; js_fail=0
 while IFS= read -r -d '' f; do
   js_count=$((js_count+1))
@@ -24,7 +24,7 @@ done < <(find "$ROOT/js" "$ROOT/netlify/functions" -name '*.js' -print0 2>/dev/n
 echo "  checked $js_count JS files, $js_fail failed"
 
 # ── 2. Inline <script> blocks in index.html (skip JSON-LD) ──
-echo; echo "── [2/5] Inline <script> blocks in index.html ──"
+echo; echo "── [2/7] Inline <script> blocks in index.html ──"
 python3 - "$ROOT/index.html" <<'PY'
 import re, sys, subprocess, tempfile, os
 html = open(sys.argv[1], encoding="utf-8", errors="replace").read()
@@ -49,7 +49,7 @@ PY
 [ $? -ne 0 ] && fail=1
 
 # ── 3. CSS brace balance (catches truncated/broken stylesheets) ──
-echo; echo "── [3/5] CSS brace balance ──"
+echo; echo "── [3/7] CSS brace balance ──"
 python3 - "$ROOT/css/bdoc.css" <<'PY'
 import sys
 c = open(sys.argv[1], encoding="utf-8", errors="replace").read()
@@ -60,7 +60,7 @@ PY
 [ $? -ne 0 ] && { echo "  ✗ FAIL: unbalanced braces in bdoc.css"; fail=1; }
 
 # ── 4. JSON sanity: manifest, package.json, netlify config ──
-echo; echo "── [4/5] JSON / config sanity ──"
+echo; echo "── [4/7] JSON / config sanity ──"
 for jf in "$ROOT/manifest.json" "$ROOT/package.json"; do
   [ -f "$jf" ] || continue
   if python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$jf" 2>/dev/null; then
@@ -78,7 +78,7 @@ echo; echo "══════════════════════�
 # checking tier, or an auth-fetch change that leaked the JWT to a third party,
 # would have sailed through and deployed. Node 18 rejects a bare directory as
 # a --test target, hence the glob.
-echo; echo "── [5/5] Security + unit tests (node --test) ──"
+echo; echo "── [5/7] Security + unit tests (node --test) ──"
 if [ -d "$ROOT/tests" ]; then
   # Shell-expanded glob: Node 20 (GitHub runner) treats a quoted glob as a literal
   # path ("Could not find tests/*.test.js") — that is why CI was red p158c..p158e.
@@ -93,6 +93,24 @@ else
   echo "  ✗ FAIL: $ROOT/tests missing — the security suite must not disappear"
   fail=1
 fi
+
+# ── 6. HOME-MODULE INVARIANTS (p200 / T200) ──
+# The twelve invariants of the home-defense plan (.hermes/plans/2026-11-17_home-module-plan.md).
+# Most are DORMANT until the code they guard exists; the test suite above already
+# proves each one fails on a planted violation. This prints the table for the log.
+echo; echo "── [6/7] Home-module invariants (.ci/invariants) ──"
+if [ -f .ci/invariants/run.js ]; then
+  node .ci/invariants/run.js || fail=1
+else
+  echo "  ✗ FAIL: .ci/invariants/run.js missing — the invariants must not disappear"
+  fail=1
+fi
+
+# ── 7. SECRET SCAN (p200 / T200) ──
+# Offline scan of every tracked file. The repo is public and the site publishes
+# its folder whole, so a committed key is a published key.
+echo; echo "── [7/7] Secret scan (.ci/secret-scan.js) ──"
+node .ci/secret-scan.js || fail=1
 
 echo; echo "════════════════════════════════════════════"
 if [ $fail -eq 0 ]; then
