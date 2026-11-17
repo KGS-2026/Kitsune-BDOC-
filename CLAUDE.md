@@ -21,8 +21,8 @@ Claude Code loads this in every session that opens this repo. Keep it short.
 
 Plan: `.hermes/plans/2026-11-17_home-module-plan.md`.
 
-Status 2026-11-17: the T200 bootstrap is built on branch
-`claude/p200-home-bootstrap` and is unpushed. T201 decides whether BDOC adds a
+Status 2026-11-17: the T200 bootstrap is on branch
+`claude/p200-home-bootstrap` (pushed, not merged to `main`). T201 decides whether BDOC adds a
 home backend at all. That decision is Travon's and has not been made, so do not
 start T201 or later until he decides.
 

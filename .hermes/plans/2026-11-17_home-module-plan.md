@@ -1,7 +1,7 @@
 # Home-defense module ("Home / Base"): plan of record
 
 **Status, 2026-11-17: proposed, not approved.** T200 (bootstrap) is built and
-committed on branch `claude/p200-home-bootstrap`. It is **not pushed**. T201, the
+committed on branch `claude/p200-home-bootstrap`. That branch is pushed but **not merged** to `main`. T201, the
 decision whether BDOC takes on a home backend at all, belongs to Travon and has
 not been made. Nothing after T200 has been started.
 
@@ -87,7 +87,7 @@ Travon's call. T200 used `p200` as the spec asks.
 
 | Task | Needs | Can start here? |
 |---|---|---|
-| T200 bootstrap | CI and tests | **Done** on the branch, unpushed |
+| T200 bootstrap | CI and tests | **Done** on the branch (pushed, not merged) |
 | T201 posture ADR | Travon's decision | Waiting on him |
 | T202 threat models | Docs (public repo: see above) | Yes, once T201 says go |
 | T203 relay tier | A separate deploy (Netlify site or Supabase project), a private bucket, env vars | Needs Travon to create the accounts |

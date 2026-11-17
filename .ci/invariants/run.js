@@ -7,22 +7,17 @@
 // Usage: node .ci/invariants/run.js [--json] [repoRoot]
 // A check that crashes counts as FAIL: a guard that cannot run is not a guard.
 'use strict';
+const fs = require('fs');
 const path = require('path');
 
-const checks = [
-  'inv01-no-app-path-to-hub',
-  'inv02-hub-initiates',
-  'inv03-frame-74-bytes',
-  'inv04-no-camera-original-bytes',
-  'inv05-no-durable-client-credential',
-  'inv06-rls-deny-by-default',
-  'inv07-hub-side-parameters',
-  'inv08-model-artifacts-pinned',
-  'inv09-suppressions-log-reason',
-  'inv10-no-global-security-claim',
-  'inv11-home-data-separate',
-  'inv12-public-surface-covers-new',
-].map(name => require('./' + name));
+// Every file named invNN-*.js in this folder is a check, run in number order. The test suite
+// pins the twelve ids, so a missing or extra file fails it. There is no hand-written list on
+// purpose: on GitHub's first run, gitleaks' generic-api-key rule read such a list as a secret
+// (one name ends in a key word, so the next name looked like its value).
+const checks = fs.readdirSync(__dirname)
+  .filter(f => /^inv\d{2}-[a-z0-9-]+\.js$/.test(f))
+  .sort()
+  .map(f => require(path.join(__dirname, f)));
 
 function runAll(root) {
   return checks.map(c => {

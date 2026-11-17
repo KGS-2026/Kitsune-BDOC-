@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-11-11 · build **p185c** on `main` · `SW_VERSION bdoc-v189`
-**Last updated by Claude Code:** 2026-11-17 · build **p187** live on `main` @ `11e4e6c` · `SW_VERSION bdoc-v191` (next is v192) · p200 (T200: CI and tests only) on branch `claude/p200-home-bootstrap`, not pushed
+**Last updated by Claude Code:** 2026-11-17 · build **p187** live on `main` @ `11e4e6c` · `SW_VERSION bdoc-v191` (next is v192) · p200 (T200: CI and tests only) pushed to branch `claude/p200-home-bootstrap`, not merged to `main`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -79,7 +79,7 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
 
-### Claude Code — p200 (T200) Home-defense module bootstrap: twelve invariant checks, a public-surface test that reads the disk, secret scan, CodeQL and SBOM in CI (2026-11-17) — **on branch `claude/p200-home-bootstrap`, NOT pushed**
+### Claude Code — p200 (T200) Home-defense module bootstrap: twelve invariant checks, a public-surface test that reads the disk, secret scan, CodeQL and SBOM in CI (2026-11-17) — **pushed to branch `claude/p200-home-bootstrap` on Travon's "Push the branch"; NOT on `main`**
 Travon pasted another AI's spec for a home-defense module. A hub in the customer's home sends alerts and cleaned-up pictures one way into BDOC, and the design treats the app as already compromised (§2 Z). He asked for whatever applies "without breaking it". T200 is the bootstrap only: no relay, hub or home code exists. Nothing the site serves changed, since everything is under `tests/`, `.ci/`, `.github/`, `scripts/` or docs. No SW bump.
 - **`.ci/invariants/inv01`–`inv12`** turn the spec's twelve invariants into static checks.
   - `node .ci/invariants/run.js` prints one line each: PASS, WARN, DORMANT (the code it guards doesn't exist yet, and the check arms itself when it appears) or FAIL. A check that crashes counts as FAIL.
@@ -97,7 +97,7 @@ Travon pasted another AI's spec for a home-defense module. A hub in the customer
   - the AISStream key, an open violation. Its entry runs out after 2026-12-31, and from 2027-01-01 the gate **fails** on it, on purpose (§2 W).
 - **`node .ci/secret-scan.js`** checks every tracked and untracked file. It looks for Stripe, AWS, GitHub, private-key, Telegram, mem0, Anthropic, OpenAI, Supabase service-role, Google, Slack and key-named secrets, and it never prints a whole secret.
 - **CI (`.github/workflows/ci.yml`)** is now `permissions: contents: read`, with three new jobs. Every action is pinned to a commit SHA.
-  - `secret-scan`: gitleaks 8.30.1, tarball checked by sha256, over the pushed commits.
+  - `secret-scan`: gitleaks 8.30.1, tarball checked by sha256, over the pushed commits. It runs with `--verbose --redact`, so a finding names its file, line and rule but never the value.
   - `sast`: CodeQL v4.39.1, JavaScript and Python, `security-extended`, configured in `.github/codeql/codeql-config.yml`.
   - `sbom`: CycloneDX via `npm sbom` for the web functions and the desktop app, kept 90 days.
 
@@ -111,10 +111,17 @@ Travon pasted another AI's spec for a home-defense module. A hub in the customer
 - Invariants: 5 pass, 1 warn (inv05, the two unsigned secrets entries), 6 dormant, 0 fail.
 - Secret scan: 384 files, 0 open, 2 allowlisted.
 - Deliberate leak: with `BDOC Deploy/.env` and `relay/relay.yml` on disk, the public-surface test fails and names both. Both files were removed afterwards.
+- GitHub, first push (`83f3e06`):
+  - Validate (Node 20), CodeQL JavaScript, CodeQL Python and SBOM passed.
+  - CodeQL's upload worked, which means the repo's CodeQL "default setup" is off. Keep it off: the two clash.
+  - gitleaks failed on one false positive. Its generic-api-key rule read two neighbouring names in the runner's hand-written check list as a key and its value. Fixed in the follow-up commit `p200b`:
+    - the runner now lists its folder instead;
+    - the job prints findings, redacted.
+  - **When p200 goes to `main`, squash `83f3e06` and `p200b` into one commit.** `83f3e06` still carries the false positive, so a plain merge would make the push to `main` scan it again and fail. A force push to rewrite the branch was refused by the session's permission check, so the history stays as it is.
 
-**Not verified:**
-- The three new CI jobs, which only run on GitHub. If CodeQL "default setup" is on in the repo settings, it clashes with this job: turn default setup off.
-- Node 20, which CI's `validate` job uses.
+**Not verified:** the GitHub re-run after that fix, at the time of this commit.
+
+**Found:** GitHub warns that `actions/checkout` v4 targets Node 20 and is now forced onto Node 24 (seen on the gitleaks job). It's only a warning; move the pins to the current major when convenient.
 
 **Travon:**
 1. Decide T201 (§2 Z).

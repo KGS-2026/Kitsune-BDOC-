@@ -73,7 +73,8 @@ jobs:
             RANGE="$HEAD_SHA~1..$HEAD_SHA"
           fi
           echo "gitleaks range: $RANGE"
-          "$RUNNER_TEMP/gitleaks" git --redact --no-banner --log-opts="$RANGE" .
+          # --verbose names each finding's file, line and rule; --redact keeps the value itself out of the log
+          "$RUNNER_TEMP/gitleaks" git --redact --verbose --no-banner --log-opts="$RANGE" .
 
   sast:
     name: SAST (CodeQL, ${{ matrix.language }})
