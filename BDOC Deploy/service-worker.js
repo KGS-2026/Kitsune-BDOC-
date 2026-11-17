@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v190';  // p186: floating boxes share one stack under the alert banner (a box under a bigger panel can come forward, a dragged box stays over the boxes it crosses, top-bar menus and the sign-in / pricing dialogs open over every panel), the FEMA banner can no longer be dragged or covered, View > Reset Panel Positions; TAK import keeps callsigns as written (any alphabet), keeps emergency / stability / pre-p175 units through a round trip, is one undo step per file, skips alerts cancelled in the same file and no longer freezes on long remarks; CASEVAC goes to TAK as b-r-f-h-c; a plan file cannot put events of its own into the TAK export; five boot scripts added to the offline precache
+const SW_VERSION = 'bdoc-v191';  // p187: pricing window one column on phones (inline 4-col style beat the phone rule), annual buttons hidden (yearly Stripe prices are one-time), fake aggregateRating removed from JSON-LD, plan cards list only real features, founding-member banner, veteran $4.99 line + ?vet=1 one-click discount link, plain-language title / boot line / welcome text; bdoc.css ?v=p187
+// (prev) const SW_VERSION = 'bdoc-v190';  // p186: floating boxes share one stack under the alert banner (a box under a bigger panel can come forward, a dragged box stays over the boxes it crosses, top-bar menus and the sign-in / pricing dialogs open over every panel), the FEMA banner can no longer be dragged or covered, View > Reset Panel Positions; TAK import keeps callsigns as written (any alphabet), keeps emergency / stability / pre-p175 units through a round trip, is one undo step per file, skips alerts cancelled in the same file and no longer freezes on long remarks; CASEVAC goes to TAK as b-r-f-h-c; a plan file cannot put events of its own into the TAK export; five boot scripts added to the offline precache
 // (prev) const SW_VERSION = 'bdoc-v189';  // p185c: upstream 'minor' is a weak cascade signal (weight 2), only major/critical or news-detected upstream = HIGH; p185b: fusion KINETIC leg filters crime/protest codes outside a theater, SYSTEMIC needs a major; p185: Causal Fusion v2 (rebased p164) — official statuspage incident text as a CYBER leg, UPSTREAM PROVIDER cascade attribution, incident-archive KINETIC leg (150 km / 48 h), SYSTEMIC fallback, corroboration lifts confidence a tier, statuspage MAJOR outages plotted + fused, GTA INFRA weighted by attributed cause
 // (prev) const SW_VERSION = 'bdoc-v188';  // p185b: kinetic/systemic filters
 // (prev) const SW_VERSION = 'bdoc-v187';  // p185 first cut (same content, pre-filter)
@@ -69,7 +70,7 @@ const STATIC_PRECACHE = [
   '/js/bdoc-link-manager.js?v=p156d',
   '/js/bdoc-offline-hud.js?v=p158f',
   '/js/bdoc-float.js?v=p186',
-  '/css/bdoc.css?v=p173',
+  '/css/bdoc.css?v=p187',
   '/css/bdoc-p154.css?v=p175',
   '/css/bdoc-p158f.css?v=p158f',
   '/css/bdoc-p159.css?v=p159',

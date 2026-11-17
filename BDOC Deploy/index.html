@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KITSUNE BDOC v7.0 — Global Intelligence Platform</title>
+<title>Kitsune BDOC — Live 3D Globe: Aircraft, Ships, Fires, Quakes, Storms, Conflict</title>
 <!-- Phase 6 (2026-05-05): SEO + Open Graph for shareable links and search indexing -->
 <meta name="description" content="Real-time global intelligence platform. 50+ live OSINT layers on a 3D globe — military aircraft, maritime AIS, conflict zones, submarine cables, cyber attacks, satellites, sanctions, dark fleet. Built by a GEOINT analyst.">
 <meta name="keywords" content="OSINT, intelligence platform, GEOINT, military aircraft tracking, AIS vessel tracking, cyber threat map, conflict map, submarine cables, satellite tracking, sanctions, dark fleet, real-time intelligence, BDOC">
@@ -29,7 +29,7 @@
 <meta name="twitter:description" content="50+ live OSINT layers on a 3D globe. Force tracker, dark fleet, cyber attacks, conflicts, AIS, sat. Built by a GEOINT analyst.">
 <meta name="twitter:image" content="https://kgsbdoc.netlify.app/og-image.png">
 <!-- JSON-LD structured data for richer search results -->
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Kitsune BDOC","alternateName":"Battle Doc","applicationCategory":"BusinessApplication","operatingSystem":"Any","offers":[{"@type":"Offer","name":"Recon (Free)","price":"0","priceCurrency":"USD"},{"@type":"Offer","name":"Operator","price":"9.99","priceCurrency":"USD"},{"@type":"Offer","name":"Analyst","price":"29.99","priceCurrency":"USD"},{"@type":"Offer","name":"Command","price":"499","priceCurrency":"USD"}],"creator":{"@type":"Organization","name":"Kitsune Global Solutions LLC","sameAs":"https://kgsbdoc.netlify.app/"},"description":"Real-time global intelligence platform with 50+ live OSINT layers including military aircraft, maritime AIS, conflict events, submarine cables, cyber attacks, satellites, sanctions, and dark fleet detection.","aggregateRating":{"@type":"AggregateRating","ratingValue":"4.8","ratingCount":"42"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Kitsune BDOC","alternateName":"Battle Doc","applicationCategory":"BusinessApplication","operatingSystem":"Any","offers":[{"@type":"Offer","name":"Recon (Free)","price":"0","priceCurrency":"USD"},{"@type":"Offer","name":"Operator","price":"9.99","priceCurrency":"USD"},{"@type":"Offer","name":"Analyst","price":"29.99","priceCurrency":"USD"},{"@type":"Offer","name":"Command","price":"499","priceCurrency":"USD"}],"creator":{"@type":"Organization","name":"Kitsune Global Solutions LLC","sameAs":"https://kgsbdoc.netlify.app/"},"description":"Real-time global intelligence platform with 50+ live OSINT layers including military aircraft, maritime AIS, conflict events, submarine cables, cyber attacks, satellites, sanctions, and dark fleet detection."}</script>
 <!--
 ╔══════════════════════════════════════════════════════════╗
 ║  KGS BDOC v7.0 — PRODUCTION BUILD                       ║
@@ -198,7 +198,7 @@ if('serviceWorker' in navigator){
 </script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.146.0/Widgets/widgets.css" rel="stylesheet">
 <!-- BDOC PHASE 2 TURN 2: inline style block extracted to css/bdoc.css (2026-04-22) -->
-<link rel="stylesheet" href="css/bdoc.css?v=p173">
+<link rel="stylesheet" href="css/bdoc.css?v=p187">
 <link rel="stylesheet" href="css/bdoc-glass.css?v=p75">
 <link rel="stylesheet" href="css/bdoc-p154.css?v=p175">
 <link rel="stylesheet" href="css/bdoc-p158f.css?v=p158f">
@@ -217,7 +217,7 @@ if('serviceWorker' in navigator){
   <div class="bs-inner">
     <div class="bs-crest">KGS</div>
     <div class="bs-title">KITSUNE <span>BDOC</span></div>
-    <div class="bs-sub">GLOBAL INTELLIGENCE PLATFORM &middot; KITSUNE GLOBAL SOLUTIONS</div>
+    <div class="bs-sub">LIVE AIRCRAFT &middot; SHIPS &middot; FIRES &middot; QUAKES &middot; STORMS &middot; CONFLICT &mdash; ONE GLOBE</div>
     <div class="bs-lines" id="bsLines"></div>
     <div class="bs-barwrap"><div class="bs-bar" id="bsBar"></div></div>
     <div class="bs-foot">UNCLASS // OPEN-SOURCE INTELLIGENCE &middot; CLICK TO SKIP</div>
@@ -430,7 +430,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p186</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p187</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -864,13 +864,15 @@ if('serviceWorker' in navigator){
 <!-- MODAL -->
 <div class="mo-bg" id="moBg">
 <div class="mo">
-<h2>UNLOCK FULL INTELLIGENCE</h2>
-<div class="su">Kitsune BDOC v7.0 — the world's first civilian OSINT fusion platform. Real-time multi-domain intelligence across air, space, seismic, fire, maritime, and conflict data on one common operating picture.<br><em style="color:var(--t3)">Built by a GEOINT analyst who supported SOCOM — not a Silicon Valley demo.</em></div>
-<div class="pg" style="grid-template-columns:repeat(4,1fr)">
+<h2>SEE THE WHOLE PICTURE, LIVE</h2>
+<div class="su">Aircraft, ships, satellites, fires, quakes, storms, outages and conflict on one 3D globe — with alerts when something happens in your area.<br><em style="color:var(--t3)">Built and run by one founder: Marine infantry veteran, designated-marksman instructor, nuclear security, Security+ / CEH.</em></div>
+<div class="founding" id="bdocFounding" style="border:1px solid rgba(232,179,57,.45);background:rgba(232,179,57,.07);border-radius:6px;padding:8px 12px;margin:0 0 12px;font-size:11px;line-height:1.5"><b style="color:#E8B339;letter-spacing:1px">FOUNDING MEMBERS</b> — the first 50 Operator subscribers keep $9.99/mo for as long as they stay subscribed, whatever the price becomes. Cancel anytime from your account.</div>
+<div id="bdocProof" hidden style="margin:0 0 12px;font-size:11px;color:var(--t2)"></div>
+<div class="pg pg4">
 <div class="pc"><div class="pt">RECON</div><div class="pp">$0</div><div class="ppd">free forever</div><div class="pf"><div><span class="ck">&#10003;</span>10 live intel layers</div><div><span class="ck">&#10003;</span>Earthquakes, conflicts, wildfires, NWS alerts</div><div><span class="ck">&#10003;</span>3D globe, 6 map styles, NEAR ME</div><div><span class="ck">&#10003;</span>AI Copilot + community alerts</div></div><button class="ct2" onclick="hideMo()" style="width:100%;margin-top:12px">CURRENT PLAN</button></div>
-<div class="pc"><div class="pt">OPERATOR</div><div class="pp">$9.99</div><div class="ppd">per month</div><div class="pf"><div><span class="ck">&#10003;</span>All 8 domains + Force Tracker</div><div><span class="ck">&#10003;</span>Real-time feeds + satellites</div><div><span class="ck">&#10003;</span>Weather, maritime, cyber, aircraft, 40+ more layers</div><div><span class="ck">&#10003;</span>KML/GeoJSON export</div><div><span class="ck">&#10003;</span>Visual filters (NVG/FLIR)</div><div><span class="ck">&#10003;</span>Anomaly detection</div></div><button class="ct" onclick="BDOC_Auth.subscribe('operator')" style="width:100%;margin-top:8px">SUBSCRIBE — $9.99/mo</button><button class="ct2" onclick="BDOC_Auth.subscribe('operator',true)" style="width:100%;margin-top:4px;font-size:8px">ANNUAL — $99.99/yr <span style="color:#52b788">(save 17%)</span></button></div>
-<div class="pc"><div class="pt">ANALYST</div><div class="pp">$29.99</div><div class="ppd">per month</div><div class="pf"><div><span class="ck">&#10003;</span>Everything in Operator</div><div><span class="ck">&#10003;</span>REST API access</div><div><span class="ck">&#10003;</span>PDF brief generation</div><div><span class="ck">&#10003;</span>Historical replay (24h)</div><div><span class="ck">&#10003;</span>IMINT facility cards</div><div><span class="ck">&#10003;</span>Priority support</div></div><button class="ct" onclick="BDOC_Auth.subscribe('analyst')" style="width:100%;margin-top:8px">SUBSCRIBE — $29.99/mo</button><button class="ct2" onclick="BDOC_Auth.subscribe('analyst',true)" style="width:100%;margin-top:4px;font-size:8px">ANNUAL — $299.99/yr <span style="color:#52b788">(save 17%)</span></button></div>
-<div class="pc ft"><div class="pt">COMMAND</div><div class="pp">$499</div><div class="ppd">per month</div><div class="pf"><div><span class="ck">&#10003;</span>Everything in Analyst</div><div><span class="ck">&#10003;</span>Battle Tracking Mode</div><div><span class="ck">&#10003;</span>White-label deployment</div><div><span class="ck">&#10003;</span>Custom AI models</div><div><span class="ck">&#10003;</span>Dedicated analyst support</div><div><span class="ck">&#10003;</span>Bulk licensing</div><div><span class="ck">&#10003;</span>SLA &amp; priority onboarding</div></div><button class="ct" onclick="BDOC_Auth.subscribe('enterprise')" style="width:100%;margin-top:8px">SUBSCRIBE — $499/mo</button><button class="ct2" onclick="BDOC_Auth.subscribe('enterprise',true)" style="width:100%;margin-top:4px;font-size:8px">ANNUAL — $4,999/yr <span style="color:#52b788">(save 17%)</span></button></div>
+<div class="pc"><div class="pt">OPERATOR</div><div class="pp">$9.99</div><div class="ppd">per month</div><div class="pf"><div><span class="ck">&#10003;</span>All 8 domains + Force Tracker</div><div><span class="ck">&#10003;</span>Real-time feeds + satellites</div><div><span class="ck">&#10003;</span>Weather, maritime, cyber, aircraft, 40+ more layers</div><div><span class="ck">&#10003;</span>KML/GeoJSON export</div><div><span class="ck">&#10003;</span>Visual filters (NVG/FLIR)</div><div><span class="ck">&#10003;</span>Anomaly detection</div></div><div style="font-size:10px;color:#52b788;margin-top:6px">Veterans &amp; military: <b>$4.99/mo</b></div><button class="ct" onclick="BDOC_Auth.subscribe('operator')" style="width:100%;margin-top:6px">SUBSCRIBE — $9.99/mo</button><div style="font-size:8px;color:var(--t3);margin-top:4px;text-align:center">Monthly · cancel anytime</div></div>
+<div class="pc"><div class="pt">ANALYST</div><div class="pp">$29.99</div><div class="ppd">per month</div><div class="pf"><div><span class="ck">&#10003;</span>Everything in Operator</div><div><span class="ck">&#10003;</span>Battle Tracker: 2525C symbols, TAK import</div><div><span class="ck">&#10003;</span>PDF brief generation</div><div><span class="ck">&#10003;</span>Historical replay (24h)</div><div><span class="ck">&#10003;</span>IMINT facility cards</div><div><span class="ck">&#10003;</span>Priority support</div></div><button class="ct" onclick="BDOC_Auth.subscribe('analyst')" style="width:100%;margin-top:8px">SUBSCRIBE — $29.99/mo</button><div style="font-size:8px;color:var(--t3);margin-top:4px;text-align:center">Monthly · cancel anytime</div></div>
+<div class="pc ft"><div class="pt">COMMAND</div><div class="pp">$499</div><div class="ppd">per month</div><div class="pf"><div><span class="ck">&#10003;</span>Everything in Analyst</div><div><span class="ck">&#10003;</span>Setup call with the founder</div><div><span class="ck">&#10003;</span>Team seats — ask</div><div><span class="ck">&#10003;</span>Your feature requests go first</div></div><button class="ct" onclick="BDOC_Auth.subscribe('enterprise')" style="width:100%;margin-top:8px">SUBSCRIBE — $499/mo</button><div style="font-size:8px;color:var(--t3);margin-top:4px;text-align:center">Monthly · cancel anytime</div></div>
 </div>
 <div style="text-align:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--bdr)">
 <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px">
@@ -881,7 +883,7 @@ if('serviceWorker' in navigator){
 <div style="margin-top:8px;background:#2d6a4f;color:#d8f3dc;padding:6px 16px;border-radius:2px;font-size:10px;font-weight:700;letter-spacing:1.5px;display:inline-block">ENTER PROMO CODE &#10132;</div>
 </div>
 </div>
-<div style="font-size:8px;color:var(--t3);margin-bottom:12px;letter-spacing:.5px">Built by a service-disabled veteran who supported SOCOM — we take care of our own.</div>
+<div style="font-size:8px;color:var(--t3);margin-bottom:12px;letter-spacing:.5px">Built by a Marine veteran. Military, veteran and family discount: 50% off any plan.</div>
 <button class="ct2" onclick="hideMo()">CONTINUE FREE</button>
 </div>
 </div>
@@ -1482,7 +1484,7 @@ Bug or support request? <a href="mailto:support@kitsuneglobalsolutions.com?subje
     <button onclick="dismissBdocWelcome(false)" style="background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:18px;padding:0 4px;line-height:1">&times;</button>
   </div>
   <div style="font-size:12px;line-height:1.65;color:#7a8194;margin-bottom:16px">
-    50+ live intelligence layers on a 3D globe — military aircraft, maritime AIS, conflict events, submarine cables, cyber attacks, satellites, weather, sanctions, dark fleet, and more. Built for analysts, operators, and intelligence professionals.
+    50+ live intelligence layers on a 3D globe — military aircraft, maritime AIS, conflict events, submarine cables, cyber attacks, satellites, weather, sanctions, dark fleet, and more. Free to explore. Operator ($9.99/mo) adds live aircraft, ships, satellites, outages, radar and 60+ more layers.
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
     <div style="padding:10px 12px;background:rgba(232,179,73,0.06);border:1px solid rgba(232,179,73,0.15);border-radius:4px">
@@ -3260,6 +3262,14 @@ function bdocPlayScanner(feedUrl,name,color){
 }
 // Phase 5C (2026-05-04): Changelog popup wired to top-bar BUILD pill — deploy verification at a glance.
 const _BDOC_CHANGELOG=[
+  {ver:'p187 (2026-11-17) — CLEARER PLANS AND PRICES',items:[
+    'The plans window fits a phone screen: one plan per row instead of four squeezed side by side',
+    'Veterans and military see their price on the Operator plan: $4.99/mo. A link ending in ?vet=1 applies the discount with no code to type',
+    'Founding members: the first 50 Operator subscribers keep $9.99/mo for as long as they stay subscribed',
+    'Annual buttons are hidden until yearly billing works; plans are monthly, cancel anytime',
+    'Plan cards list only what each plan includes today: Battle Tracker with TAK import is on Analyst',
+    'Page title and start screen say plainly what BDOC shows'
+  ]},
   {ver:'p186 (2026-11-14) — PANELS AND TAK FILES',items:[
     'Floating boxes: click any box to bring it to the front, even one that sits under a bigger panel; a box you drag stays on top of the boxes you drag it across',
     'Menus from the top bar open over every panel, and the sign-in and pricing windows are no longer covered by an open panel',
@@ -3772,7 +3782,7 @@ function showMo(triggerLayer){
 
   // Update headline to be specific
   const h2 = document.querySelector('#moBg h2');
-  if(h2) h2.textContent = lName ? `🔒 ${lName} — ${tierLabel[requiredTier]} TIER` : 'UNLOCK FULL INTELLIGENCE';
+  if(h2) h2.textContent = lName ? `🔒 ${lName} — ${tierLabel[requiredTier]} TIER` : 'SEE THE WHOLE PICTURE, LIVE';
 
   // Highlight the right tier card (remove then add highlight)
   document.querySelectorAll('#moBg .pc').forEach(el => el.style.outline = '');
@@ -3836,6 +3846,11 @@ function submitPromoCode(){
     EventLog.add('info','Military promo code applied: '+code);
   }catch(e){console.error('[PromoCode] submitPromoCode error:',e)}
 }
+// ═══ ONE-CLICK VETERAN LINK ═══ ?vet=1 (or ?promo=CODE for a whitelisted code) pre-applies the 50% discount
+(function(){try{const q=new URLSearchParams(location.search);const raw=q.get('promo')||(q.get('vet')?'VETERAN50':'');const code=String(raw).toUpperCase().replace(/[^A-Z0-9]/g,'');if(!['MILITARY50','VETERAN50','GWOT50','YUT50'].includes(code))return;localStorage.setItem('bdoc_promo_applied',code);setTimeout(()=>{try{af('#52b788','Veteran discount applied: 50% off any plan at checkout.')}catch(e){}},4000);}catch(e){}})();
+// ═══ SOCIAL PROOF SLOT ═══ add only real quotes from paying users who said yes to being quoted
+const BDOC_PROOF=[]; // e.g. {q:"Caught the fire 20 min before my county alert.",who:"Operator subscriber, CA"}
+(function(){try{const el=document.getElementById('bdocProof');if(!el||!BDOC_PROOF.length)return;el.innerHTML=BDOC_PROOF.slice(0,2).map(p=>'“'+String(p.q).replace(/[<>&]/g,'')+'” — '+String(p.who).replace(/[<>&]/g,'')).join('<br>');el.hidden=false;}catch(e){}})();
 // ═══ MULTI-TIMEZONE CLOCK ═══
 (function(){
   const zones={zulu:'UTC',est:'America/New_York',baghdad:'Asia/Baghdad',kabul:'Asia/Kabul',tokyo:'Asia/Tokyo',hawaii:'Pacific/Honolulu'};
