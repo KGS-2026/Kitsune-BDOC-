@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-11-11 · build **p185c** on `main` · `SW_VERSION bdoc-v189`
-**Last updated by Claude Code:** 2026-11-17 · build **p187** live on `main` @ `11e4e6c` · `SW_VERSION bdoc-v191` (next is v192) · p200 (T200: CI and tests only) pushed to branch `claude/p200-home-bootstrap`, not merged to `main`
+**Last updated by Claude Code:** 2026-11-17 · build **p187** live on `main` @ `11e4e6c` · `SW_VERSION bdoc-v191` (next is v192) · p200 (T200: CI and tests only) pushed to branch `claude/p200-home-bootstrap` @ `e13d62e` (GitHub CI green), not merged to `main`
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -118,8 +118,9 @@ Travon pasted another AI's spec for a home-defense module. A hub in the customer
     - the runner now lists its folder instead;
     - the job prints findings, redacted.
   - **When p200 goes to `main`, squash `83f3e06` and `p200b` into one commit.** `83f3e06` still carries the false positive, so a plain merge would make the push to `main` scan it again and fail. A force push to rewrite the branch was refused by the session's permission check, so the history stays as it is.
+- GitHub, fix commit `e13d62e` (`p200b`): all five jobs passed (Validate, Secret scan, CodeQL JavaScript, CodeQL Python, SBOM), run `44173734620`.
 
-**Not verified:** the GitHub re-run after that fix, at the time of this commit.
+**Not verified:** nothing outstanding for T200 itself.
 
 **Found:** GitHub warns that `actions/checkout` v4 targets Node 20 and is now forced onto Node 24 (seen on the gitleaks job). It's only a warning; move the pins to the current major when convenient.
 
