@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-11-11 · build **p185c** on `main` · `SW_VERSION bdoc-v189`
-**Last updated by Claude Code:** 2026-11-14 · build **p186** on branch `claude/p186-float-review`, not live · `SW_VERSION bdoc-v190` on that branch
+**Last updated by Claude Code:** 2026-11-17 · build **p187** live on `main` @ `11e4e6c` · `SW_VERSION bdoc-v191` (next is v192)
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,22 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
+
+### Claude Code — p187 Clearer plans and prices (2026-11-17) — **LIVE on `main` @ `11e4e6c`**, SW `bdoc-v191` (pushed 2026-11-17 on Travon's "Ship the landing fixes first")
+Came out of a go-to-market review of the pricing window and the first screen. Changes:
+- **Pricing window is one column on phones.** The grid carried an inline `grid-template-columns:repeat(4,1fr)` that beat the `@media(max-width:767px)` rule, so a 375 px phone showed four cards 126–174 px wide. The grid is now `class="pg pg4"`: `.mo .pg4` gives 4 columns on desktop, and the phone rule (same specificity, later in `css/bdoc.css`) wins below 768 px (308 px cards).
+- **Annual Subscribe buttons removed.** The Stripe yearly prices are one-time, so `auth.js` fell back to monthly anyway. The cards say "Monthly · cancel anytime". Put annual back once recurring yearly prices exist.
+- **`aggregateRating` removed from the JSON-LD.** There are no reviews.
+- **Plan cards list only what exists.** No REST API, white-label, custom AI models, dedicated analyst or SLA. Analyst names Battle Tracker (2525C symbols, TAK import). Command: setup call with the founder, team seats on request, feature requests first. Note that Command adds no features over Analyst in `BDOC_Auth.TIERS` (both `'*'`).
+- **Founding-members banner** `#bdocFounding`: the first 50 Operator subscribers keep $9.99/mo while subscribed. Stripe keeps existing subscriptions on their price, so this needs no code. A hidden `#bdocProof` slot (`BDOC_PROOF=[]`) is ready for real user quotes.
+- **Veteran price shown:** "Veterans & military: $4.99/mo" on Operator, and a veteran line under the plans. `?vet=1` stores `VETERAN50` in `localStorage.bdoc_promo_applied` (checkout already reads it) and shows a toast. `?promo=CODE` takes only whitelisted codes; a test keeps the page list equal to `PROMO_WHITELIST` in `stripe-checkout.js`.
+- **Plain words:** page title, boot subtitle, welcome text and pricing headline ("SEE THE WHOLE PICTURE, LIVE"). `showMo()` used to write "UNLOCK FULL INTELLIGENCE" back on every open; its fallback string changed too.
+- SW `bdoc-v191` (v190 kept as `// (prev)`), `css/bdoc.css?v=p187` in the page and the precache, build pill p187, changelog entry, new `tests/release-p187.test.js` (9 tests), pill test in `tests/wire-function.test.js` moved to p187.
+
+**Verified:** `node --test tests/*.test.js` 1028 tests, 1027 pass, 0 fail, 1 skipped (Node 24); `scripts/ci-validate.sh` passes; local preview at 375 px (one column) and 1440 px (four). Live about 20 s after the push: BUILD p187, SW `bdoc-v191`, no `aggregateRating`, `pg pg4`, the new headline, the `?vet=1` snippet and the CSS rule are all served; `stripe-checkout` without a JWT still returns 401.
+**Not verified:** a real checkout at $4.99. **Travon:** in Stripe, check that the `VETERAN50` coupon is 50% off with duration **Forever** (with "Once", vets pay $9.99 from month two), then make one test purchase through `https://kgsbdoc.netlify.app/?vet=1` and refund it. Also not checked: Node 20, Safari, Firefox.
+**Found, not fixed:** the military codes are public (in the page and the public repo), so anyone can type one, and there is no eligibility check. Yearly recurring prices don't exist in Stripe. Whether `support@` mail is delivered was not checked.
+**Next SW is `bdoc-v192`.** The go-to-market notes are not in this repo (it is public); they are untracked on the laptop under the worktree `C:/Users/ARNAUTICA/bdoc-gtm/marketing/`.
 
 ### Claude Code — p186 Review of the floating boxes (p178) and the TAK import (p177): the bugs it found, fixed (2026-11-14) — **LIVE on `main` @ `c0dcf80`**, SW `bdoc-v190` (pushed 2026-11-14 on Travon's "Ship p186")
 Travon asked me to finish what I had left off, look for bugs, and make improvements where I could. p178 was already live (`7ef330e`), so this was a review of p177 and p178 as they run on production. Everything below is fixed on the branch with a test that fails on `main` @ `63931bd`. Nothing is pushed: **it needs Travon's explicit OK** (see the ship note).
