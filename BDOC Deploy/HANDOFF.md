@@ -79,6 +79,14 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
 
+### Hermes — p188 Your layers stay on (2026-11-17) — **LIVE on `main`**, SW `bdoc-v192`
+Travon: "look at what has been built" after Claude Code ran p159i→p187. Synced to `origin/main` @ `1ea396d`, re-verified sibling claims: `node --test` 1027/1028 pass (Node 26), `scripts/ci-validate.sh` passes, prod BUILD p187, pricing window one column at 390 px (four 329 px cards). Then a live sweep on prod found two real bugs, fixed here:
+- **War Room switched itself OFF for every returning user who had it on.** Boot restore (p159c, 2.5 s) and the P93 War Room auto-arm (also 2.5 s) both called the `togLy()` *toggle*; measured on prod: on at 17285 ms, off at 17315 ms, and the off-toggle wrote `bdoc_warlive_auto=0` — permanently opting the user out of the auto-armed conflict picture. Now both go through `window.bdocLayerOn(ly)` (idempotent, decided at execution time).
+- **A paid user's saved layers were erased on reload.** Tier loads from Supabase after the 2.5 s restore, so paid layers were skipped as locked, and the next toggle's persist wrote only what was on — the paid layers left the saved workspace for good. Persist now merges (keeps saved layers that are locked/unknown; only an accessible layer that is off is dropped) and `markLockedLayers()` re-runs `bdocRestoreLayers(true)` once boot restore has run.
+- Verified locally in Chromium: saved `[warlive,eq,air,cyber]` as a guest → on `[eq,warlive]`, saved list kept all four, `bdoc_warlive_auto=1`; tier → enterprise → on `[air,eq,warlive,cyber]`.
+- SW `bdoc-v192` (v191 `(prev)`), `auth.js?v=p188`, pill p188, changelog entry, `tests/release-p188.test.js` (5 tests), pill test moved to p188. **Next SW is `bdoc-v193`.**
+**Found, not fixed (Travon):** the Plausible script `plausible.io/js/pa-E-tvb2Sx_aDQGdqkqF1Lh.js` returns **404** — analytics is recording nothing (site removed or plan lapsed in Plausible). `mesh-nodes` still 503 (needs `docs/mesh-setup.sql` in Supabase).
+
 ### Claude Code — p187 Clearer plans and prices (2026-11-17) — **LIVE on `main` @ `11e4e6c`**, SW `bdoc-v191` (pushed 2026-11-17 on Travon's "Ship the landing fixes first")
 Came out of a go-to-market review of the pricing window and the first screen. Changes:
 - **Pricing window is one column on phones.** The grid carried an inline `grid-template-columns:repeat(4,1fr)` that beat the `@media(max-width:767px)` rule, so a 375 px phone showed four cards 126–174 px wide. The grid is now `class="pg pg4"`: `.mo .pg4` gives 4 columns on desktop, and the phone rule (same specificity, later in `css/bdoc.css`) wins below 768 px (308 px cards).

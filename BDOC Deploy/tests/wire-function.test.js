@@ -751,8 +751,8 @@ test('index.html loads the boot script right after bdoc-auth-fetch', () => {
   assert.equal(html.match(/bdoc-wire-boot\.js/g).length, 1, 'loaded twice');
 });
 
-test('the visible build pill says p187', () => {
-  assert.match(html, /id="bdocBuildPill"[^>]*>BUILD p187<\/span>/);
+test('the visible build pill says p188', () => {
+  assert.match(html, /id="bdocBuildPill"[^>]*>BUILD p188<\/span>/);
 });
 
 test('the top bar still has the anchor the boot script inserts before', () => {

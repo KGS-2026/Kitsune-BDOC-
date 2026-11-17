@@ -430,7 +430,7 @@ if('serviceWorker' in navigator){
 </div>
 <!-- TOPBAR -->
 <div class="tb">
-<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p187</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
+<div class="lg"><div class="lg-i">BD</div><div><div class="lg-t">KITSUNE BDOC</div><div class="lg-s">GLOBAL INTELLIGENCE PLATFORM · KGS BDOC v7.0</div></div><!-- Phase 5C (2026-05-04): visible build pill so deploys can be verified at-a-glance --><span id="bdocBuildPill" onclick="showBdocChangelog()" title="Click for changelog" style="margin-left:10px;padding:4px 9px;background:transparent;border:1px solid var(--bdr2);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:var(--text-secondary);cursor:pointer;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;transition:all 200ms ease-out">BUILD p188</span><!-- Phase 9D (2026-05-05): tactical threat readout — DEFCON-style indicator updated by GTA widget --><span id="bdocThreatPill" onclick="showGTALog()" title="Global Threat Assessment — click for score changelog (last 20 changes with cause)" style="margin-left:6px;padding:4px 9px;background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);border-radius:2px;font-family:var(--m);font-size:10px;letter-spacing:0.12em;color:#3FB950;font-weight:500;align-self:center;user-select:none;text-transform:uppercase;cursor:pointer">● NORMAL · GTA --</span></div>
 <!-- MENU BAR (Google Earth-style) -->
 <div class="menu-bar" id="menuBar">
 <div class="menu-item">
@@ -1562,7 +1562,7 @@ if(!window.Cesium){
 <script src="js/modules/icon-factory.js?v=p116"></script>
 <script src="js/converters.js?v=p156g"></script>
 <script src="js/data.js?v=p159h"></script>
-<script src="js/auth.js?v=p172"></script>
+<script src="js/auth.js?v=p188"></script>
 <!-- p157: must load AFTER auth.js (needs window.BDOC_Auth.client) and BEFORE any
      layer module that fetches. Attaches the Supabase JWT to our own function
      calls so the server can enforce tier; see netlify/functions/_lib/guard.js. -->
@@ -3262,6 +3262,11 @@ function bdocPlayScanner(feedUrl,name,color){
 }
 // Phase 5C (2026-05-04): Changelog popup wired to top-bar BUILD pill — deploy verification at a glance.
 const _BDOC_CHANGELOG=[
+  {ver:'p188 (2026-11-17) — YOUR LAYERS STAY ON',items:[
+    'Layers you had on come back after a reload, including paid layers that unlock a moment after sign-in',
+    'War Room no longer switches itself off on reload for returning users',
+    'Turning a layer off is the only thing that removes it from your saved workspace'
+  ]},
   {ver:'p187 (2026-11-17) — CLEARER PLANS AND PRICES',items:[
     'The plans window fits a phone screen: one plan per row instead of four squeezed side by side',
     'Veterans and military see their price on the Operator plan: $4.99/mo. A link ending in ?vet=1 applies the discount with no code to type',
@@ -3663,7 +3668,11 @@ function togLy(el){
   el.classList.toggle('on');layers[ly]=el.classList.contains('on');
   // p159c: remember the workspace. Before this, every reload started with an
   // empty globe — only the first-visit wizard ever switched layers on.
-  try{clearTimeout(window._lyPersistT);window._lyPersistT=setTimeout(()=>{try{localStorage.setItem('bdoc_layers_on',JSON.stringify(Object.keys(layers).filter(k=>layers[k])))}catch(_){}},400)}catch(_){}
+  // p188: MERGE, don't overwrite. Before, the first toggle after boot wrote only what was on
+  // right now — a paid layer still locked because the Supabase tier hadn't loaded yet was
+  // erased from the saved workspace for good. Keep saved layers we can't judge yet (locked /
+  // unknown); drop only accessible layers that are off.
+  try{clearTimeout(window._lyPersistT);window._lyPersistT=setTimeout(()=>{try{let prev=[];try{prev=JSON.parse(localStorage.getItem('bdoc_layers_on')||'[]')}catch(_){}const keep=new Set(prev.filter(k=>!(k in layers)||(window.BDOC_Auth&&!BDOC_Auth.canAccess(k))));Object.keys(layers).filter(k=>layers[k]).forEach(k=>keep.add(k));localStorage.setItem('bdoc_layers_on',JSON.stringify([...keep]))}catch(_){}},400)}catch(_){}
   // P119 RENDER GOVERNOR: sat/air/forcetrack interpolate against the Cesium clock,
   // so they need continuous render. Everything else is static and can run on-demand.
   // Refcounted so turning off satellites while aircraft are still up keeps the lock.
@@ -11174,15 +11183,21 @@ async function bootFeeds(){
   // p159c: restore last session's layers (staggered 900 ms like presets — see p98
   // note above bdocApplyPreset: concurrent arming starves fetches). Skipped on a
   // first visit (wizard owns that) and when ?fresh=1 is in the URL.
-  setTimeout(()=>{try{
+  // p188: ONE idempotent "turn on" used by restore AND the War Room auto-arm. Both used to
+  // fire at 2.5 s and each called the togLy() TOGGLE — so a returning user with War Room
+  // saved got it switched on then straight back off (30 ms apart), and the off-toggle wrote
+  // bdoc_warlive_auto=0: War Room silently opted out forever. Decide at execution time.
+  window.bdocLayerOn=function(ly){const el=document.querySelector('.ly[data-layer="'+ly+'"]');if(!el||el.classList.contains('on')||el.classList.contains('locked')||layers[ly])return false;togLy(el);return true};
+  window.bdocRestoreLayers=function(quiet){try{
     if(localStorage.getItem('bdoc_onboard_done')!=='1')return;
     if(/[?&]fresh=1/.test(location.search))return;
     const want=JSON.parse(localStorage.getItem('bdoc_layers_on')||'[]');
-    const q=[];want.forEach(ly=>{const el=document.querySelector('.ly[data-layer="'+ly+'"]');if(el&&!el.classList.contains('on')&&!el.classList.contains('locked')&&!layers[ly])q.push(el)});
+    const q=want.filter(ly=>{const el=document.querySelector('.ly[data-layer="'+ly+'"]');return el&&!el.classList.contains('on')&&!el.classList.contains('locked')&&!layers[ly]});
     if(!q.length)return;
-    q.forEach((el,i)=>setTimeout(()=>{try{togLy(el)}catch(_){}},i*900));
-    if(typeof af==='function')af('var(--t3)','Workspace restored \u2014 '+q.length+' layer'+(q.length===1?'':'s')+' from your last session');
-  }catch(_){}},2500);
+    q.forEach((ly,i)=>setTimeout(()=>{try{bdocLayerOn(ly)}catch(_){}},i*900));
+    if(typeof af==='function')af('var(--t3)',(quiet?'Plan layers restored \u2014 ':'Workspace restored \u2014 ')+q.length+' layer'+(q.length===1?'':'s')+(quiet?'':' from your last session'));
+  }catch(_){}};
+  setTimeout(()=>{window._bdocRestoreArmed=true;bdocRestoreLayers()},2500);
   // Aircraft timer — adaptive polling from ADSBx recon (2026-08-09).
   // Base 60s. Idle tab (hidden): 4× slower. Background + hidden: 8× slower.
   // Result: active window = 60s, background tab = 240s, hidden idle = 480s.
@@ -11229,8 +11244,7 @@ async function bootFeeds(){
   // first time they manually toggle it off (localStorage bdoc_warlive_auto=0).
   setTimeout(()=>{try{
     if(localStorage.getItem('bdoc_warlive_auto')==='0')return;
-    const el=document.querySelector('.ly[data-layer="warlive"]');
-    if(el&&!el.classList.contains('on')&&!layers.warlive){togLy(el);EventLog.add('info','Global conflict picture auto-armed (War Room)')}
+    if(window.bdocLayerOn&&bdocLayerOn('warlive'))EventLog.add('info','Global conflict picture auto-armed (War Room)')
   }catch(e){console.warn('[Boot] warlive auto-arm failed:',e)}},2500);
   // P102: OUTAGE WATCH sentinel — ALWAYS ON, no toggle. Carriers (T-Mobile/AT&T/Verizon),
   // ISPs, clouds, payment rails, GPS, FAA, grid — news-detect every 3 min + statuspage

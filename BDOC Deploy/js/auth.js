@@ -498,6 +498,9 @@ const BDOC_Auth={
         const sw=el.querySelector('.sw');if(sw)sw.style.pointerEvents='';
       }
     });
+    // p188: the paid tier arrives from Supabase AFTER boot restore ran, so saved paid layers
+    // were skipped as locked. Once boot restore has run, any tier change re-offers them.
+    try{if(window._bdocRestoreArmed&&window.bdocRestoreLayers){clearTimeout(window._bdocReT);window._bdocReT=setTimeout(()=>window.bdocRestoreLayers(true),300)}}catch(_){}
   }
 };
 
