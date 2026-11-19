@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-11-11 · build **p185c** on `main` · `SW_VERSION bdoc-v189`
-**Last updated by Claude Code:** 2026-11-19 · p201 alarm + p202 droplet lockdown running on the droplet; p203 key cleanup on branch `claude/p203-key-cleanup` (on top of p202), not live (main unchanged @ `0173a99`, p188, `SW_VERSION bdoc-v192`, next is v193)
+**Last updated by Claude Code:** 2026-11-19 · p201 alarm + p202 droplet lockdown running on the droplet; p203 key cleanup + p204 Supabase RLS on branch `claude/p204-supabase-rls` (p201→p204 chain), not live (main unchanged @ `0173a99`, p188, `SW_VERSION bdoc-v192`, next is v193)
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,17 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
+
+### Claude Code — p204 Supabase least privilege: migration 004 + service-role functions locked down (2026-11-19) — **branch `claude/p204-supabase-rls` (on top of p203), NOT live; 004 NOT run**
+Item 1b chunk C.
+- **Found live (read-only checks, 2026-11-19):** signed-out reads of `profiles` and `audit_log` return nothing (good). **Migration 003 never ran in production:** `profiles.marketing_consent` does not exist, so the signup consent box has been dropped since it shipped and `export-contacts` cannot work. `heartbeats` is publicly readable. `proxy-supabase` wrote the raw request body into `heartbeats` with the service role (any columns, any size) and read the whole table back on GET. `mesh-ingest` wrote with the service role with no auth at all (harmless today only because the mesh tables don't exist).
+- **`supabase/migrations/004_security_baseline.sql`** (one transaction, idempotent): adds 003's columns and consent capture; RLS on for every public table (loop, prints any it had to switch on); anon gets nothing on `profiles`/`audit_log`/`heartbeats`; signed-in users read their own profile and audit rows and may update only `display_name`, `phone`, `marketing_consent` (column grants from 002/003 are cleared first); `marketing_consent_at` is stamped by a trigger; `heartbeats` becomes service-role only; mesh tables (if ever created) lose browser write policies; functions get `search_path = ''`. Not FORCE RLS: `handle_new_user()` runs as the owner, and FORCE would break signup. Section F at the end prints the proof.
+- **Functions:** `proxy-supabase` is POST-only and rebuilds the heartbeat row from a strict shape (server timestamp, 16 KB cap). `mesh-ingest` needs header `x-mesh-key` = Netlify env `MESH_INGEST_KEY` (unset = off). `admin-user` / `export-contacts` compare the admin key in constant time and accept it in an `x-admin-key` header (`?key=` still works). New `_lib/secret.js`.
+- `docs/mesh-setup.sql` no longer lets every signed-in user write or delete mesh rows.
+- **Prove it live:** `node tools/security/rls-probe.mjs` (signed-out checks; add `BDOC_TEST_JWT` of a TEST account for the signed-in checks). Before 004 on 2026-11-19: 3 PASS, 3 FAIL (heartbeats readable, consent column missing, proxy GET open), which are the three things this fixes.
+- **Hermes:** any new table you create needs `enable row level security` in the same script, and writes from the browser go through a function, never a broad `authenticated` policy. `tests/rls-p204.test.js` checks every `create table` in the SQL files has RLS.
+
+**Verified:** `node --test tests/*.test.js`: 1065 pass, 0 fail (11 new). Not verified: 004 against the live database (needs Travon's Supabase sign-in and "deploy"), and the signed-in probe (needs a test account).
 
 ### Claude Code — p203 Key cleanup: no hardcoded keys in functions, dormant sentinel relay removed (2026-11-19) — **branch `claude/p203-key-cleanup` (on top of p202), NOT live; deploy waits on Travon's key rotation**
 Item 1b chunk D. The whole git history and the live site were scanned for exposed keys. The inventory (which keys, which still work, how to rotate each) is kept privately with Travon's plan, not here, because the repo is public and rotation is still pending.
