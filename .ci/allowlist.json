@@ -41,7 +41,7 @@
   "inv05": [
     {
       "file": "BDOC Deploy/index.html",
-      "fingerprint": "9a7b496a66a071b1",
+      "fingerprint": "8d7b4330946dffdb",
       "kind": "accepted-risk",
       "reason": "Cesium ion browser token (CFG.keys.cesium). Cesium's model is a public token limited by Allowed URLs in the ion dashboard; setting those URLs is Travon's step (HANDOFF section 2)",
       "accepted_by": "UNSIGNED: proposed by Claude Code 2026-11-17, needs Travon",
@@ -61,7 +61,7 @@
   "secrets": [
     {
       "file": "BDOC Deploy/index.html",
-      "fingerprint": "9a7b496a66a071b1",
+      "fingerprint": "8d7b4330946dffdb",
       "kind": "accepted-risk",
       "reason": "Cesium ion browser token, same entry as inv05: public by design, limited by Allowed URLs",
       "accepted_by": "UNSIGNED: proposed by Claude Code 2026-11-17, needs Travon",
