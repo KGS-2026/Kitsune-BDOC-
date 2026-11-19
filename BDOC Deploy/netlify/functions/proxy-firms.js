@@ -5,7 +5,8 @@ exports.handler = async (event) => {
   const params = event.queryStringParameters || {};
   const mode = params.mode || 'area';            // 'area' (global bbox) or 'country' (legacy)
   // p203: no hardcoded fallback. The old fallback keys were public in git history; set the env var in Netlify.
-  const key = process.env.NASA_FIRMS_KEY;
+  // NASA_FIRMS_Map_key is the name the key was saved under in Netlify (2026-11-19); either works.
+  const key = process.env.NASA_FIRMS_KEY || process.env.NASA_FIRMS_Map_key;
   if (!key) return { statusCode: 503, headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'NASA_FIRMS_KEY is not set in Netlify' }) };
   // Validate params before interpolating into URL path — prevents path traversal
   // source: whitelist to known FIRMS NRT/SP products
