@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-11-11 · build **p185c** on `main` · `SW_VERSION bdoc-v189`
-**Last updated by Claude Code:** 2026-11-19 · p201 alarm, p202 droplet lockdown and the p205 droplet canary running on the droplet; p203 key cleanup, p204 Supabase RLS, p205 site canaries and p200 (merged) on branch `claude/p205-canaries` (p201→p205 chain), not live (main unchanged @ `0173a99`, p188, `SW_VERSION bdoc-v192`, next is v193)
+**Last updated by Claude Code:** 2026-11-19 · **LIVE: main @ `07f32b1`, `SW_VERSION bdoc-v193`, next is v194.** Item 1b security baseline shipped: p201 alarm, p202 droplet lockdown, p203 key cleanup, p204 Supabase RLS (migration 004 run on the live database), p205 canaries, p200 CI checks, 2FA on every admin account
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,13 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
+
+### Claude Code — 1b DEPLOYED (2026-11-19) — main `0173a99..07f32b1`, SW v193
+- **Keys:** Travon rotated the exposed keys. The functions read only Netlify env, never a fallback. The env names in Netlify are `TOMORROW_API_KEY`, `weather_map_key` (OpenWeatherMap), `NASA_FIRMS_Map_key`, `NEWS_API_key`; the code also accepts `OWM_API_KEY`, `NASA_FIRMS_KEY`, `NEWSAPI_KEY`. New Cesium token in `index.html` (the allowlist fingerprint is updated).
+- **Netlify secrets scan:** `SECRETS_SCAN_OMIT_KEYS=CESIUM_KEY` is set because an unused `CESIUM_KEY` env var holds the same public token as `index.html`. Deleting `CESIUM_KEY` makes the omit setting unnecessary.
+- **Supabase:** migration 004 ran in the SQL editor. F1: every public table has RLS. F2: signed-in users can UPDATE only display_name/phone/marketing_consent; nothing for anon. F3: 3 policies (profiles read/update own, audit_log read own). F4: signup trigger intact. `node tools/security/rls-probe.mjs`: 6/6 PASS (signed-in checks skipped, no test account).
+- **Verified live:** news, FIRMS, Tomorrow, OWM tiles 200 with the new keys; Cesium terrain 200 with the page token; `/kgs-ops-console` 401; `/api/sentinel` 404; proxy-supabase GET 405; mesh-ingest without key 503; no console errors on load.
+- **Not done:** `HC_SITE_CANARY` (the Healthchecks "Site canary" check exists; Travon pastes its ping URL into Netlify, then a redeploy). Old OWM/NewsAPI/FIRMS keys can now be deleted at the providers.
 
 ### Claude Code — 1b chunk B: two-factor on every admin account (2026-11-19) — **DONE (no code)**
 Audited the security page of every account that can change BDOC (Google, GitHub, Netlify, Supabase, DigitalOcean, Stripe, Healthchecks) in Travon's Chrome. Several had no second factor; Travon turned it on, and the pass test (each page re-opened, showing 2FA on) passed. Every admin account now needs a second factor. The details stay in Travon's private notes, not here. Rule for everyone: **never turn 2FA off, and never add a sign-in method or team member to these accounts without Travon.**
