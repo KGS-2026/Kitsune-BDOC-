@@ -79,6 +79,9 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
 
+### Claude Code — 1b chunk B: two-factor on every admin account (2026-11-19) — **DONE (no code)**
+Audited the security page of every account that can change BDOC (Google, GitHub, Netlify, Supabase, DigitalOcean, Stripe, Healthchecks) in Travon's Chrome. Several had no second factor; Travon turned it on, and the pass test (each page re-opened, showing 2FA on) passed. Every admin account now needs a second factor. The details stay in Travon's private notes, not here. Rule for everyone: **never turn 2FA off, and never add a sign-in method or team member to these accounts without Travon.**
+
 ### Claude Code — p205 Canaries: decoy pages on the site, decoy credentials on the droplet; p200 merged (2026-11-19) — **droplet part RUNNING; site part on branch `claude/p205-canaries`, NOT live**
 Item 1b chunk E. A canary is something no legitimate person ever touches, so any touch is worth a page.
 - **Droplet (live):** `/root/.config/kgs-ops/credentials.env` is a decoy with a fake ops token. auditd watches it (`tools/hardening/bdoc-canary.rules`), and `bdoc-tripwire` reports every open within 5 minutes with the program and user, and alerts if the file changes or disappears. **Hermes: never open, grep through or copy `/root/.config/kgs-ops/`.** `grep -r /root` trips it; use `--exclude-dir=kgs-ops`. If you trip it by accident, tell Travon it was you.
