@@ -1,0 +1,10 @@
+[Unit]
+Description=BDOC droplet tripwire: new ports, programs, keys, services, blocked outbound
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/bdoc-tripwire check
+TimeoutStartSec=120
+Nice=10

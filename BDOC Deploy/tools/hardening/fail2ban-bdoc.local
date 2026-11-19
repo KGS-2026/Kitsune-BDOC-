@@ -1,0 +1,18 @@
+# /etc/fail2ban/jail.d/bdoc.local — p202. Bans an IP for 1 hour after 5 failed SSH logins in 10 minutes;
+# repeat offenders (3 bans in a day) are banned for a week.
+[DEFAULT]
+bantime = 1h
+findtime = 10m
+maxretry = 5
+backend = systemd
+
+[sshd]
+enabled = true
+
+[recidive]
+enabled = true
+backend = auto
+logpath = /var/log/fail2ban.log
+bantime = 1w
+findtime = 1d
+maxretry = 3

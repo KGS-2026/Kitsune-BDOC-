@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-11-11 · build **p185c** on `main` · `SW_VERSION bdoc-v189`
-**Last updated by Claude Code:** 2026-11-19 · p201 outage alarm running on the droplet, code on branch `claude/p201-outage-alarm` (main unchanged @ `0173a99`, p188, `SW_VERSION bdoc-v192`, next is v193)
+**Last updated by Claude Code:** 2026-11-19 · p202 droplet lockdown (firewall, ssh, fail2ban, tripwire) + p201 outage alarm running on the droplet, code on branch `claude/p202-droplet-lockdown` (main unchanged @ `0173a99`, p188, `SW_VERSION bdoc-v192`, next is v193)
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,20 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
+
+### Claude Code — p202 Droplet lockdown: firewall, SSH hardening, fail2ban, tripwire (2026-11-19) — **running on the droplet; code on branch `claude/p202-droplet-lockdown` (on top of p201), NOT on `main`**
+Item 1b chunk A of Travon's November master plan. Nothing the site serves changed (everything is under `tools/hardening/`, plus one test), so no SW bump; next SW is still `bdoc-v193`. Full guide: `tools/hardening/README.md`.
+- **Firewall (ufw):** inbound SSH (22) only. Outbound only DNS, NTP, DHCP, 80, 443 and 22 (Hermes pushes to GitHub over git+ssh). Anything else is dropped and logged. **Hermes / wire: if a new feature needs another outbound port (SMTP 587, a database on 5432, an MQTT broker…) it will silently fail.** Add a `ufw allow out` line to `tools/hardening/apply-firewall.sh` and re-run it, and the tripwire's "BLOCKED OUTBOUND" alert will tell you which one.
+- **SSH:** `/etc/ssh/sshd_config.d/10-bdoc-hardening.conf`: keys only, root by key only, 3 tries, no forwarding. **fail2ban:** 5 failures in 10 min → 1 h ban; repeat offenders → 1 week (jails `sshd`, `recidive`).
+- **Tripwire:** `bdoc-tripwire.timer` every 5 min pings the Healthchecks check "Droplet tripwire" (URL `HC_TRIPWIRE` in `/etc/bdoc-alarm/pings.env`, never commit it). It goes DOWN (Telegram) on a new public port, changed SSH keys, a new UID-0 account, a changed sshd config, a new enabled systemd unit, a changed system crontab, a program running from /tmp or a deleted file, or blocked outbound traffic. New program paths were learned silently for the first 24 h (until about 19:41Z on 2026-11-20); after that a never-seen program alerts once. **If you (Hermes) install a service, change keys or edit cron, run `bdoc-tripwire accept` afterwards**, or Travon gets paged every 5 minutes.
+- Backups taken before the change: `/root/bdoc-backup-p202/`.
+
+**Verified (2026-11-19, on the droplet):**
+- Firewall: DNS, HTTPS, the DO metadata service, `git ls-remote` to GitHub over ssh and NTP all work; a test connection to port 4444 is blocked and logged. Alarm pings kept flowing, and Hermes and the wire showed no errors.
+- New SSH logins work after the sshd change; `fail2ban-client status` lists `recidive, sshd`.
+- Tripwire: the first timer run flagged `NEW ENABLED SERVICE bdoc-tripwire.timer` (its own timer, enabled after the baseline), which is a real end-to-end alert. Accepted, and the next run was `clean (learning)`.
+- Approved reboot at 19:42Z (activated the pending security updates; kernel now 6.8.0-149, no reboot pending). Healthchecks logged "clean shutdown or reboot" (DOWN), then "booted" (UP) 21 s later, closing p201's untested clean-shutdown path. After boot, ufw, fail2ban, ssh, hermes-gateway, bdoc-wire, the alarm timer, lifecycle, canary and the tripwire timer were all active, and the first tripwire run after boot (19:45Z) was `clean`.
+- `node --test tests/tripwire-p202.test.js tests/alarm-p201.test.js tests/public-surface.test.js`: 17 pass, 0 fail (Node 24, Git Bash).
 
 ### Claude Code — p201 Outage alarm: the droplet checks in with Healthchecks.io, which pages Travon on Telegram (2026-11-19) — **running on the droplet; code on branch `claude/p201-outage-alarm`, NOT on `main`**
 Item 1 of Travon's November master plan (the plan itself is kept off this public repo). Nothing the site serves changed (everything is under `tools/alarm/`, which Netlify 404s, plus one test), so no SW bump; next SW is still `bdoc-v193`.

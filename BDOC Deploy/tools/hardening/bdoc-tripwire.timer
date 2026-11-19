@@ -1,0 +1,11 @@
+[Unit]
+Description=BDOC droplet tripwire, every 5 minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=300
+AccuracySec=10s
+Unit=bdoc-tripwire.service
+
+[Install]
+WantedBy=timers.target

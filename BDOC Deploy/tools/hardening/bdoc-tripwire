@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+# bdoc-tripwire — p202 droplet tripwire. Run by bdoc-tripwire.timer every 5 minutes.
+#
+# Compares the droplet's security-relevant state with a saved baseline and tells
+# Healthchecks.io (check HC_TRIPWIRE in /etc/bdoc-alarm/pings.env), which pages Telegram:
+#   OK ping    nothing new
+#   /fail ping something new, listed in the ping body
+#
+#   check   (default) compare and ping
+#   accept  take the current state as the new baseline (after you have checked an alert)
+#   show    print the current snapshot
+#
+# Never learned automatically (stays DOWN until `accept`): a new public listening port,
+# a new or changed SSH key file, a new UID-0 account, a changed sshd config, a new
+# enabled systemd unit, a changed system crontab.
+# Learned after one alert: a program path that has not run on this droplet before
+# (silently learned during the first BDOC_TRIPWIRE_LEARN_HOURS after the baseline).
+# Always alerted: programs running from /tmp, /var/tmp, /dev/shm or /run/user, or from a
+# deleted file outside /usr and /opt; outbound packets the firewall blocked.
+set -u
+export LC_ALL=C
+
+STATE="${BDOC_TRIPWIRE_STATE:-/var/lib/bdoc-tripwire}"
+CONF="${BDOC_ALARM_CONF:-/etc/bdoc-alarm/pings.env}"
+CURL="${BDOC_ALARM_CURL:-curl}"
+LEARN_HOURS="${BDOC_TRIPWIRE_LEARN_HOURS:-24}"
+NOW="${BDOC_TRIPWIRE_NOW:-$(date +%s)}"
+mode="${1:-check}"
+
+HC_TRIPWIRE=""
+# shellcheck disable=SC1090
+[ -r "$CONF" ] && . "$CONF"
+
+sha() { sha256sum 2>/dev/null | cut -c1-16; }
+
+snapshot() {
+  if [ -n "${BDOC_TRIPWIRE_SNAPSHOT_FILE:-}" ]; then
+    cat "$BDOC_TRIPWIRE_SNAPSHOT_FILE"
+    return
+  fi
+  # public listeners (loopback ignored)
+  ss -Htulpn 2>/dev/null | awk '{
+    addr = $5; proc = $7
+    sub(/^users:\(\("/, "", proc); sub(/".*/, "", proc)
+    if (addr ~ /^127\./ || addr ~ /^\[::1\]/ || addr ~ /^\[::ffff:127\./ || addr ~ /%lo:/) next
+    print "listen " $1 " " addr " " proc
+  }'
+  # program paths currently running
+  for p in /proc/[0-9]*; do readlink "$p/exe" 2>/dev/null; done | sort -u | while IFS= read -r exe; do
+    [ -n "$exe" ] || continue
+    case "$exe" in
+      /tmp/*|/var/tmp/*|/dev/shm/*|/run/user/*) echo "sus $exe" ;;
+      *" (deleted)")
+        case "$exe" in /usr/*|/opt/*) echo "exe ${exe% (deleted)}" ;; *) echo "sus $exe" ;; esac ;;
+      *) echo "exe $exe" ;;
+    esac
+  done
+  awk -F: '$3 == 0 { print "uid0 " $1 }' /etc/passwd
+  for f in /root/.ssh/authorized_keys /home/*/.ssh/authorized_keys; do
+    [ -f "$f" ] && echo "keys $f $(sha < "$f")"
+  done
+  echo "sshdcfg $(cat /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null | sha)"
+  systemctl list-unit-files --state=enabled --no-legend 2>/dev/null | awk '{ print "unit " $1 }'
+  echo "cron $(cat /etc/crontab /etc/cron.d/* /var/spool/cron/crontabs/* 2>/dev/null | sha)"
+}
+
+blocked_egress() {
+  if [ -n "${BDOC_TRIPWIRE_BLOCKED_FILE:-}" ]; then
+    cat "$BDOC_TRIPWIRE_BLOCKED_FILE"
+    return
+  fi
+  local since=360
+  [ -r "$STATE/last_run" ] && since=$(( NOW - $(cat "$STATE/last_run") + 5 ))
+  journalctl -k --since "-${since}s" -o cat 2>/dev/null | grep 'UFW BLOCK' | grep -v ' IN=eth' \
+    | sed -n 's/.* DST=\([^ ]*\) .*PROTO=\([A-Z]*\).* DPT=\([0-9]*\).*/\2 \1:\3/p' | sort | uniq -c | sort -rn
+}
+
+ping_hc() { # suffix body
+  if [ -z "$HC_TRIPWIRE" ]; then
+    echo "bdoc-tripwire: no HC_TRIPWIRE in $CONF, result not sent"
+    return 0
+  fi
+  "$CURL" -fsS -m 10 --retry 3 --retry-delay 2 -o /dev/null --data-raw "$2" "${HC_TRIPWIRE}$1" \
+    || echo "bdoc-tripwire: ping ${1:-/ok} FAILED to send" >&2
+}
+
+mkdir -p "$STATE"
+chmod 700 "$STATE"
+cur="$(mktemp)"
+trap 'rm -f "$cur"' EXIT
+snapshot | grep -v '^sus ' | sort -u > "$cur"
+
+case "$mode" in
+  show)
+    snapshot
+    exit 0
+    ;;
+  accept)
+    cp "$cur" "$STATE/baseline"
+    [ -f "$STATE/learn_start" ] || echo "$NOW" > "$STATE/learn_start"
+    echo "bdoc-tripwire: baseline accepted ($(wc -l < "$STATE/baseline") lines)"
+    ping_hc "" "baseline accepted by an operator"
+    exit 0
+    ;;
+  check) ;;
+  *)
+    echo "usage: bdoc-tripwire [check|accept|show]" >&2
+    exit 2
+    ;;
+esac
+
+if [ ! -f "$STATE/baseline" ]; then
+  cp "$cur" "$STATE/baseline"
+  echo "$NOW" > "$STATE/learn_start"
+  echo "$NOW" > "$STATE/last_run"
+  echo "bdoc-tripwire: first run, baseline created ($(wc -l < "$STATE/baseline") lines), learning for ${LEARN_HOURS}h"
+  ping_hc "" "baseline created; learning new programs for ${LEARN_HOURS}h"
+  exit 0
+fi
+
+learn_start="$(cat "$STATE/learn_start" 2>/dev/null || echo "$NOW")"
+learning=0
+[ $(( NOW - learn_start )) -lt $(( LEARN_HOURS * 3600 )) ] && learning=1
+
+findings=""
+add() { findings="${findings}$1"$'\n'; }
+
+new_lines="$(comm -13 "$STATE/baseline" "$cur")"
+learned=""
+while IFS= read -r line; do
+  [ -n "$line" ] || continue
+  case "$line" in
+    exe\ *)
+      learned="${learned}${line}"$'\n'
+      [ "$learning" = 1 ] || add "NEW PROGRAM ${line#exe }"
+      ;;
+    listen\ *)  add "NEW PUBLIC PORT ${line#listen }" ;;
+    keys\ *)    add "SSH KEYS CHANGED ${line#keys }" ;;
+    uid0\ *)    add "NEW ROOT-LEVEL ACCOUNT ${line#uid0 }" ;;
+    sshdcfg\ *) add "SSHD CONFIG CHANGED" ;;
+    unit\ *)    add "NEW ENABLED SERVICE ${line#unit }" ;;
+    cron\ *)    add "SYSTEM CRONTAB CHANGED" ;;
+    *)          add "CHANGED $line" ;;
+  esac
+done <<< "$new_lines"
+if [ -n "$learned" ]; then
+  printf '%s' "$learned" | cat "$STATE/baseline" - | sort -u > "$STATE/baseline.new" && mv "$STATE/baseline.new" "$STATE/baseline"
+fi
+
+while IFS= read -r line; do
+  [ -n "$line" ] && add "SUSPICIOUS PROGRAM ${line#sus }"
+done <<< "$(snapshot | grep '^sus ' | sort -u)"
+
+while IFS= read -r line; do
+  [ -n "$line" ] && add "BLOCKED OUTBOUND $(echo "$line" | awk '{ $1 = $1; print }')"
+done <<< "$(blocked_egress)"
+
+echo "$NOW" > "$STATE/last_run"
+host="$(hostname 2>/dev/null || echo droplet)"
+if [ -z "$findings" ]; then
+  echo "bdoc-tripwire: clean$([ "$learning" = 1 ] && echo ' (learning)')"
+  ping_hc "" "clean"
+else
+  printf 'bdoc-tripwire: ALERT\n%s' "$findings"
+  ping_hc "/fail" "$(printf 'TRIPWIRE on %s\n%s\nIf expected: bdoc-tripwire accept' "$host" "$findings" | head -c 4000)"
+fi
+exit 0
