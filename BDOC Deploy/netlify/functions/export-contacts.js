@@ -17,6 +17,8 @@
 //   SUPABASE_SERVICE_KEY    (Supabase > Project Settings > API > service_role)
 //   ADMIN_EXPORT_KEY        (any long random string you choose)
 
+const { sameSecret, adminKeyFrom } = require('./_lib/secret');
+
 exports.handler = async (event) => {
   const params = event.queryStringParameters || {};
   const adminKey = process.env.ADMIN_EXPORT_KEY;
@@ -25,7 +27,8 @@ exports.handler = async (event) => {
   if (!adminKey) {
     return { statusCode: 503, body: JSON.stringify({ error: 'Export disabled — ADMIN_EXPORT_KEY not set in Netlify.' }) };
   }
-  if ((params.key || '') !== adminKey) {
+  // p204: constant-time compare; the key may come in the x-admin-key header instead of ?key=.
+  if (!sameSecret(adminKeyFrom(event), adminKey)) {
     return { statusCode: 403, body: JSON.stringify({ error: 'Forbidden — invalid or missing admin key.' }) };
   }
 

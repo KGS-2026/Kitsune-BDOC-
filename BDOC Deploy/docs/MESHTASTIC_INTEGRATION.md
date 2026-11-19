@@ -98,7 +98,7 @@ python meshtastic_receptor.py --http http://localhost:3000/.netlify/functions/me
 
 ### Environment Variables
 
-The mesh-ingest function uses `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` from Netlify env vars. No additional config needed.
+The mesh-ingest function uses `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` from Netlify env vars, and (p204) refuses every request unless it carries the header `x-mesh-key: <MESH_INGEST_KEY>`, a long random value set in Netlify env. Without that env var ingest is off.
 
 ## Testing the Flow
 

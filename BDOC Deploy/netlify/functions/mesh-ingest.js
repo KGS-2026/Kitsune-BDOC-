@@ -10,6 +10,7 @@
 // (the actual secret) and resolve the URL through the shared fallback, or mesh
 // ingest silently no-ops forever.
 const { adminClient } = require('./_supabase');
+const { sameSecret } = require('./_lib/secret');
 const supabase = adminClient();
 
 exports.handler = async (event) => {
@@ -19,13 +20,25 @@ exports.handler = async (event) => {
       headers: { 
         'Access-Control-Allow-Origin': '*', 
         'Access-Control-Allow-Methods': 'POST',
-        'Access-Control-Allow-Headers': 'Content-Type'
+        'Access-Control-Allow-Headers': 'Content-Type, x-mesh-key'
       } 
     };
   }
 
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
+  }
+
+  // p204 (item 1b chunk C): this writes with the service role, so it was an open door to the
+  // mesh tables. The sender must now present MESH_INGEST_KEY (Netlify env) in `x-mesh-key`.
+  // Unset key = ingest disabled.
+  const want = process.env.MESH_INGEST_KEY || '';
+  const got = (event.headers && (event.headers['x-mesh-key'] || event.headers['X-Mesh-Key'])) || '';
+  if (!want) {
+    return { statusCode: 503, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'MESH_INGEST_KEY is not set in Netlify' }) };
+  }
+  if (!sameSecret(got, want)) {
+    return { statusCode: 401, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'unauthorized' }) };
   }
 
   if (!supabase) {

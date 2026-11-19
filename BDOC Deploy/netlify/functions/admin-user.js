@@ -11,11 +11,14 @@
 //   .../admin-user?key=ADMIN_KEY&action=status&email=someone@yahoo.com
 //   .../admin-user?key=ADMIN_KEY&action=confirm&email=someone@yahoo.com
 //
+const { sameSecret, adminKeyFrom } = require('./_lib/secret');
+
 exports.handler = async (event) => {
   const p = event.queryStringParameters || {};
   const adminKey = process.env.ADMIN_EXPORT_KEY;
   if (!adminKey) return resp(503, { error: 'ADMIN_EXPORT_KEY not set' });
-  if ((p.key || '') !== adminKey) return resp(403, { error: 'Forbidden' });
+  // p204: constant-time compare; the key may come in the x-admin-key header instead of ?key=.
+  if (!sameSecret(adminKeyFrom(event), adminKey)) return resp(403, { error: 'Forbidden' });
 
   const SUPABASE_URL = process.env.SUPABASE_URL || 'https://ulgxbqhbgbyxlzoyxcus.supabase.co';
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;

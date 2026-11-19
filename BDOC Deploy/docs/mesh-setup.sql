@@ -62,19 +62,15 @@ CREATE INDEX IF NOT EXISTS idx_mesh_messages_received ON mesh_messages(received_
 CREATE INDEX IF NOT EXISTS idx_mesh_trail_node ON mesh_trail(node_id, recorded_at DESC);
 CREATE INDEX IF NOT EXISTS idx_mesh_telemetry_node ON mesh_telemetry(node_id, recorded_at DESC);
 
--- RLS Policies (public read, authenticated write)
+-- RLS Policies (public read; writes only through mesh-ingest, which uses the service role behind MESH_INGEST_KEY — p204)
 ALTER TABLE mesh_nodes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Mesh nodes public read" ON mesh_nodes FOR SELECT USING (true);
-CREATE POLICY "Mesh nodes authenticated write" ON mesh_nodes FOR ALL USING (auth.role() = 'authenticated');
 
 ALTER TABLE mesh_messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Mesh messages public read" ON mesh_messages FOR SELECT USING (true);
-CREATE POLICY "Mesh messages authenticated insert" ON mesh_messages FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 ALTER TABLE mesh_trail ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Mesh trail public read" ON mesh_trail FOR SELECT USING (true);
-CREATE POLICY "Mesh trail authenticated insert" ON mesh_trail FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 ALTER TABLE mesh_telemetry ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Mesh telemetry public read" ON mesh_telemetry FOR SELECT USING (true);
-CREATE POLICY "Mesh telemetry authenticated insert" ON mesh_telemetry FOR INSERT WITH CHECK (auth.role() = 'authenticated');
