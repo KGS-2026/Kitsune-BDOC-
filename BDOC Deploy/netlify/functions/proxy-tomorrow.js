@@ -7,10 +7,9 @@
 exports.handler = async (event) => {
   const params = event.queryStringParameters || {};
   const mode = params.mode || 'forecast';
-  // Phase 15b (2026-05-13): hardcoded fallback authorized by operator. Netlify env TOMORROW_API_KEY overrides if set.
-  // Rotate at app.tomorrow.io/development/keys if you want to invalidate the chat-exposed version.
-  const apiKey = process.env.TOMORROW_API_KEY || 'j8oydmQTUIfy67xyJi342AJreV4tEGZQ';
-  // Note: !apiKey guard removed — hardcoded fallback makes it unreachable dead code
+  // p203: no hardcoded fallback. The old fallback keys were public in git history; set the env var in Netlify.
+  const apiKey = process.env.TOMORROW_API_KEY;
+  if (!apiKey) return { statusCode: 503, headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'TOMORROW_API_KEY is not set in Netlify' }) };
 
   if (mode === 'tile') {
     const layer = String(params.layer || 'temperature').replace(/[^a-zA-Z0-9_]/g, '');

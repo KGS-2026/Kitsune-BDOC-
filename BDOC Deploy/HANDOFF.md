@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-11-11 · build **p185c** on `main` · `SW_VERSION bdoc-v189`
-**Last updated by Claude Code:** 2026-11-19 · p202 droplet lockdown (firewall, ssh, fail2ban, tripwire) + p201 outage alarm running on the droplet, code on branch `claude/p202-droplet-lockdown` (main unchanged @ `0173a99`, p188, `SW_VERSION bdoc-v192`, next is v193)
+**Last updated by Claude Code:** 2026-11-19 · p201 alarm + p202 droplet lockdown running on the droplet; p203 key cleanup on branch `claude/p203-key-cleanup` (on top of p202), not live (main unchanged @ `0173a99`, p188, `SW_VERSION bdoc-v192`, next is v193)
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,17 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
+
+### Claude Code — p203 Key cleanup: no hardcoded keys in functions, dormant sentinel relay removed (2026-11-19) — **branch `claude/p203-key-cleanup` (on top of p202), NOT live; deploy waits on Travon's key rotation**
+Item 1b chunk D. The whole git history and the live site were scanned for exposed keys. The inventory (which keys, which still work, how to rotate each) is kept privately with Travon's plan, not here, because the repo is public and rotation is still pending.
+- `proxy-firms.js`, `proxy-news.js`, `proxy-owm.js`, `proxy-tomorrow.js`: the hardcoded fallback keys are gone. Without `NASA_FIRMS_KEY` / `NEWSAPI_KEY` / `OWM_API_KEY` / `TOMORROW_API_KEY` in Netlify env they answer 503 "<NAME> is not set in Netlify" and never call out. **Deploy order: Travon puts the new keys in Netlify env first, then says "deploy". Deploying before that blanks the fire, news and weather layers.**
+- `netlify/functions/sentinel.mjs` deleted: the P105 relay had a publicly known write key, no page reads it, and its droplet collector (`/root/bdoc-sentinel/collector.py`) has not run since July. **Hermes: don't bring it back with a fallback key**; if a relay is needed again, use an env-only secret.
+- Root `.gitignore` now blocks `.env`, `.env.*` (except `.env.example`), `*.pem`, `*.key`, `pings.env`.
+- **Rule for everyone:** never `process.env.X || '<real key>'`. `tests/keys-p203.test.js` fails the build if a function has a hardcoded fallback, or if a server-secret format (Stripe secret, Supabase secret, mem0, Anthropic, GitHub, DO, Telegram bot, private key, Healthchecks ping URL) appears in served or server code.
+- Still client-side by necessity: the AISStream key (the browser opens the WebSocket; fix = droplet relay, on the backlog) and the Cesium ion token (public by design; Travon restricts it to our URLs in the Cesium dashboard).
+- Not live, so no SW bump; next SW is still `bdoc-v193`.
+
+**Verified:** `node --test tests/*.test.js`: 1054 pass, 0 fail (Node 24). `tests/stale-port.test.js` now sets a test FIRMS key instead of relying on the fallback.
 
 ### Claude Code — p202 Droplet lockdown: firewall, SSH hardening, fail2ban, tripwire (2026-11-19) — **running on the droplet; code on branch `claude/p202-droplet-lockdown` (on top of p201), NOT on `main`**
 Item 1b chunk A of Travon's November master plan. Nothing the site serves changed (everything is under `tools/hardening/`, plus one test), so no SW bump; next SW is still `bdoc-v193`. Full guide: `tools/hardening/README.md`.

@@ -3,10 +3,9 @@
 // Client calls /api/proxy-owm?layer=wind_new&z={z}&x={x}&y={y}
 exports.handler = async (event) => {
   const p = event.queryStringParameters || {};
-  // Phase 15b (2026-05-13): hardcoded fallback authorized by operator. Netlify env OWM_API_KEY overrides if set.
-  // Rotate at openweathermap.org/api_keys if you want to invalidate the chat-exposed version.
-  const apiKey = process.env.OWM_API_KEY || '45ee1a418c2384584a925b0c0aca6fde';
-  // Note: !apiKey guard removed — hardcoded fallback makes it unreachable dead code
+  // p203: no hardcoded fallback. The old fallback keys were public in git history; set the env var in Netlify.
+  const apiKey = process.env.OWM_API_KEY;
+  if (!apiKey) return { statusCode: 503, headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'OWM_API_KEY is not set in Netlify' }) };
   const ALLOWED = ['wind_new', 'precipitation_new', 'temp_new', 'clouds_new', 'pressure_new'];
   const layer = ALLOWED.includes(p.layer) ? p.layer : 'wind_new';
   const z = parseInt(p.z, 10), x = parseInt(p.x, 10), y = parseInt(p.y, 10);

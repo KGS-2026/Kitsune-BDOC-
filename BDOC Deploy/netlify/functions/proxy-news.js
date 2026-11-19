@@ -7,11 +7,11 @@ exports.handler = async (event) => {
   const pageSize = Math.min(parseInt(params.pageSize, 10) || 50, 100);
   const language = (params.language || 'en').slice(0, 5);
   const sortBy = ['publishedAt', 'relevancy', 'popularity'].includes(params.sortBy) ? params.sortBy : 'publishedAt';
+  // p203: no hardcoded fallback. The old fallback keys were public in git history; set the env var in Netlify.
 
-  // Phase 15b (2026-05-13): hardcoded fallback authorized by operator. Netlify env NEWSAPI_KEY overrides if set.
-  // Rotate at newsapi.org/account if you want to invalidate the chat-exposed version.
-  const apiKey = process.env.NEWSAPI_KEY || '47636335de79468886e1f93910ffd046';
-  // Note: !apiKey guard removed — hardcoded fallback makes it unreachable dead code
+  const apiKey = process.env.NEWSAPI_KEY;
+
+  if (!apiKey) return { statusCode: 503, headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'NEWSAPI_KEY is not set in Netlify' }) };
 
   const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&sortBy=${sortBy}&pageSize=${pageSize}&language=${encodeURIComponent(language)}`;
 

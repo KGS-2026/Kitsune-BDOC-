@@ -90,10 +90,17 @@ test('proxy-mecams windy: inactive cams and cams without coordinates are dropped
 
 test('proxy-firms never asks FIRMS for more than 5 days (it answers 400 above that)', async () => {
   const f = fresh(FN('proxy-firms.js'));
-  await withFetch(() => ({ body: 'latitude,longitude\n1,2' }), async (calls) => {
-    await call(f, { mode: 'area', area: '54.3,25.6,57.6,28.0', source: 'VIIRS_NOAA20_NRT', days: '10' });
-    assert.match(calls[0].url, /\/54\.3,25\.6,57\.6,28\.0\/5$/);
-  });
+  const saved = process.env.NASA_FIRMS_KEY;
+  process.env.NASA_FIRMS_KEY = 'test-map-key'; // p203: no hardcoded fallback any more
+  try {
+    await withFetch(() => ({ body: 'latitude,longitude\n1,2' }), async (calls) => {
+      await call(f, { mode: 'area', area: '54.3,25.6,57.6,28.0', source: 'VIIRS_NOAA20_NRT', days: '10' });
+      assert.match(calls[0].url, /\/csv\/test-map-key\//);
+      assert.match(calls[0].url, /\/54\.3,25\.6,57\.6,28\.0\/5$/);
+    });
+  } finally {
+    if (saved === undefined) delete process.env.NASA_FIRMS_KEY; else process.env.NASA_FIRMS_KEY = saved;
+  }
 });
 
 test('index.html wires both layers and keeps module versions in step with the service worker', () => {

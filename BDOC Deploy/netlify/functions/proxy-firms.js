@@ -4,9 +4,9 @@
 exports.handler = async (event) => {
   const params = event.queryStringParameters || {};
   const mode = params.mode || 'area';            // 'area' (global bbox) or 'country' (legacy)
-  // Phase 15b (2026-05-13): hardcoded fallback after operator authorized + accepted exposure risk.
-  // Netlify env var NASA_FIRMS_KEY still overrides if set. Rotate this key via firms.modaps.eosdis.nasa.gov/api if you want to invalidate the chat-exposed version.
-  const key = process.env.NASA_FIRMS_KEY || '49ac78cde379b5007fed0e7a4aa13da2';
+  // p203: no hardcoded fallback. The old fallback keys were public in git history; set the env var in Netlify.
+  const key = process.env.NASA_FIRMS_KEY;
+  if (!key) return { statusCode: 503, headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'NASA_FIRMS_KEY is not set in Netlify' }) };
   // Validate params before interpolating into URL path — prevents path traversal
   // source: whitelist to known FIRMS NRT/SP products
   const ALLOWED_SOURCES = [
