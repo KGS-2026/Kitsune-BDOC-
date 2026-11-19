@@ -1,0 +1,10 @@
+[Unit]
+Description=BDOC outage alarm: ping Healthchecks.io (heartbeat + watched services)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/bdoc-alarm-ping tick
+TimeoutStartSec=90
+Nice=5

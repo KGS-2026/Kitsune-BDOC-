@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-11-11 · build **p185c** on `main` · `SW_VERSION bdoc-v189`
-**Last updated by Claude Code:** 2026-11-17 · build **p187** live on `main` @ `11e4e6c` · `SW_VERSION bdoc-v191` (next is v192)
+**Last updated by Claude Code:** 2026-11-19 · p201 outage alarm running on the droplet, code on branch `claude/p201-outage-alarm` (main unchanged @ `0173a99`, p188, `SW_VERSION bdoc-v192`, next is v193)
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,20 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
+
+### Claude Code — p201 Outage alarm: the droplet checks in with Healthchecks.io, which pages Travon on Telegram (2026-11-19) — **running on the droplet; code on branch `claude/p201-outage-alarm`, NOT on `main`**
+Item 1 of Travon's November master plan (the plan itself is kept off this public repo). Nothing the site serves changed (everything is under `tools/alarm/`, which Netlify 404s, plus one test), so no SW bump; next SW is still `bdoc-v193`.
+- **How it works:** `bdoc-alarm.timer` runs `/usr/local/bin/bdoc-alarm-ping tick` every 120 s. It pings a heartbeat check, plus one check per watched unit (`hermes-gateway`, `bdoc-wire`, `bdoc-alarm-canary`): an OK ping while the unit is `active`, an instant `/fail` when it is failed, inactive or missing, and nothing while it is mid-restart (the grace time covers that). `bdoc-alarm-lifecycle.service` pings a "planned shutdown/reboot" check at boot (UP) and from `ExecStop` on a clean shutdown (DOWN), so a reboot reads differently from a power loss. Healthchecks.io sends the Telegram and email alerts; no Telegram token is involved.
+- **Secrets:** the five ping URLs are only in `/etc/bdoc-alarm/pings.env` on the droplet (root, 600). Never commit them: anyone holding one can fake "all is well". Do not stop `bdoc-alarm-lifecycle` by hand (it sends the shutdown alert). Details in `tools/alarm/README.md`.
+- **Checks:** heartbeat, Hermes gateway, LIVE WIRE, canary (2 min period / 2 min grace each) and the planned-shutdown check (1 day / 1 day). A real power loss sends four DOWN alerts (heartbeat + the three silent service checks).
+
+**Verified (2026-11-19, on the droplet, alerts read in Telegram):**
+- Kill: `systemctl kill -s KILL bdoc-alarm-canary` at 19:05:23Z → `/fail` sent 19:06:24Z → Telegram "Alarm canary is DOWN … bdoc-alarm-canary is failed" at 19:06.
+- Restart at 19:06:47Z → OK ping 19:08:27Z → Telegram "is now UP, downtime 2 minutes, 2 seconds" at 19:08.
+- Silence (power-loss path): timer stopped 19:08:49Z (last heartbeat 19:08:25Z) → Telegram "Droplet heartbeat is DOWN (success signal did not arrive on time)" at 19:12, then the three service checks; timer restarted 19:14:06Z → four UP messages at 19:14. `hermes-gateway` and `bdoc-wire` were never touched.
+- `node --test tests/alarm-p201.test.js tests/public-surface.test.js`: 10 pass, 0 fail (Node 24, Git Bash).
+
+**Not verified:** the clean-shutdown path on a real reboot (would mean rebooting the production droplet; the `shutdown` mode is covered by the unit test only). Node 20 / CI not run yet (branch not pushed).
 
 ### Hermes — p188 Your layers stay on (2026-11-17) — **LIVE on `main`**, SW `bdoc-v192`
 Travon: "look at what has been built" after Claude Code ran p159i→p187. Synced to `origin/main` @ `1ea396d`, re-verified sibling claims: `node --test` 1027/1028 pass (Node 26), `scripts/ci-validate.sh` passes, prod BUILD p187, pricing window one column at 390 px (four 329 px cards). Then a live sweep on prod found two real bugs, fixed here:

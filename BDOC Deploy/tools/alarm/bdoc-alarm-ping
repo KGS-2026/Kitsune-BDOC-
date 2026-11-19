@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# bdoc-alarm-ping — p201 outage alarm for the BDOC droplet.
+#
+# Healthchecks.io raises the alarm when pings stop; this script only pings.
+#   tick      run by bdoc-alarm.timer every 2 minutes: droplet heartbeat, one
+#             ping per watched service (a /fail ping when the service is down),
+#             and a keep-alive on the clean-shutdown check
+#   boot      run by bdoc-alarm-lifecycle.service at boot: clean-shutdown check UP
+#   shutdown  run by bdoc-alarm-lifecycle.service on a clean shutdown or reboot:
+#             clean-shutdown check DOWN, so a planned reboot reads differently
+#             from a power loss (which just goes silent)
+#
+# Ping URLs live in /etc/bdoc-alarm/pings.env (root only), never in the repo.
+# Without that file the script does nothing and exits 0 (dormant).
+set -u
+
+CONF="${BDOC_ALARM_CONF:-/etc/bdoc-alarm/pings.env}"
+CURL="${BDOC_ALARM_CURL:-curl}"
+SYSTEMCTL="${BDOC_ALARM_SYSTEMCTL:-systemctl}"
+mode="${1:-tick}"
+
+if [ ! -r "$CONF" ]; then
+  echo "bdoc-alarm: $CONF missing, dormant"
+  exit 0
+fi
+# shellcheck disable=SC1090
+. "$CONF"
+
+# ping URL SUFFIX BODY LABEL — never prints the URL (it works like a password).
+ping_hc() {
+  local url="$1" suffix="$2" body="$3" label="$4"
+  if [ -z "$url" ]; then
+    echo "bdoc-alarm: no URL for $label, skipped"
+    return 0
+  fi
+  if "$CURL" -fsS -m 10 --retry 3 --retry-delay 2 -o /dev/null --data-raw "$body" "${url}${suffix}"; then
+    echo "bdoc-alarm: $label ${suffix:-/ok} sent"
+  else
+    echo "bdoc-alarm: $label ${suffix:-/ok} FAILED to send" >&2
+  fi
+}
+
+host_summary() {
+  local up load disk mem
+  up="$(uptime -p 2>/dev/null || echo '?')"
+  load="$(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo '?')"
+  disk="$(df -P / 2>/dev/null | awk 'NR==2{print $5}')"
+  mem="$(free -m 2>/dev/null | awk '/^Mem:/{printf "%d/%d MB", $3, $2}')"
+  printf 'host=%s %s | load %s | disk / %s | mem %s' "$(hostname)" "$up" "$load" "${disk:-?}" "${mem:-?}"
+}
+
+case "$mode" in
+  tick)
+    ping_hc "${HC_HEARTBEAT:-}" "" "$(host_summary)" "heartbeat"
+    ping_hc "${HC_LIFECYCLE:-}" "" "running" "lifecycle"
+    for unit in ${BDOC_ALARM_SERVICES:-}; do
+      var="HC_SVC_${unit//-/_}"
+      url="${!var:-}"
+      state="$("$SYSTEMCTL" is-active "$unit" 2>/dev/null)"
+      state="${state:-unknown}"
+      case "$state" in
+        active)
+          ping_hc "$url" "" "$unit is active" "$unit" ;;
+        activating|reloading|deactivating|refreshing)
+          # mid-restart: say nothing, the check's grace time covers it
+          echo "bdoc-alarm: $unit is $state, no ping this round" ;;
+        *)
+          # failed, inactive, unknown (unit missing): alert now, not after grace
+          ping_hc "$url" "/fail" "$unit is $state on $(hostname)" "$unit" ;;
+      esac
+    done
+    ;;
+  boot)
+    ping_hc "${HC_LIFECYCLE:-}" "" "booted: $(host_summary)" "lifecycle"
+    ;;
+  shutdown)
+    ping_hc "${HC_LIFECYCLE:-}" "/fail" "clean shutdown or reboot of $(hostname)" "lifecycle"
+    ;;
+  *)
+    echo "usage: bdoc-alarm-ping [tick|boot|shutdown]" >&2
+    exit 2
+    ;;
+esac
+exit 0

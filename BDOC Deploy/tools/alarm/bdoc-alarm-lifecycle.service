@@ -1,0 +1,16 @@
+[Unit]
+Description=BDOC outage alarm: boot signal and clean-shutdown signal
+# Ordered after the network, so on shutdown it stops (and pings) before the network goes.
+# Do not stop this unit by hand: stopping it sends the clean-shutdown alert.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/bdoc-alarm-ping boot
+ExecStop=/usr/local/bin/bdoc-alarm-ping shutdown
+TimeoutStopSec=45
+
+[Install]
+WantedBy=multi-user.target

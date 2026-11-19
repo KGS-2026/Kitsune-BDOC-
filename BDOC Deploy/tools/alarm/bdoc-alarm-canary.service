@@ -1,0 +1,9 @@
+[Unit]
+Description=BDOC outage alarm canary (does nothing; safe to kill to test the alarm)
+
+[Service]
+ExecStart=/bin/sleep infinity
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

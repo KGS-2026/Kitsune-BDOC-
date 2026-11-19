@@ -1,0 +1,11 @@
+[Unit]
+Description=BDOC outage alarm heartbeat, every 2 minutes
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=120
+AccuracySec=5s
+Unit=bdoc-alarm.service
+
+[Install]
+WantedBy=timers.target
