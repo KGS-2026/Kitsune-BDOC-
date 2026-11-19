@@ -61,3 +61,17 @@ systemctl disable --now fail2ban bdoc-tripwire.timer
 ```
 
 Backups taken before the change: `/root/bdoc-backup-p202/` (sshd config and iptables rules).
+
+## p205 canary (decoy credentials file)
+
+`/root/.config/kgs-ops/credentials.env` holds fake ops-console credentials. Nobody legitimate ever reads it.
+
+- auditd watches it (`bdoc-canary.rules`, key `bdoc-canary`). The tripwire reports every open within 5 minutes as
+  `CANARY FILE OPENED at <time> exe=<program> comm=<name> uid=<user>`, and alerts if the file changes or disappears.
+- The token inside it is also a site canary: anyone who tries it at `https://kgsbdoc.netlify.app/ops/auth` triggers
+  "DROPLET DECOY CREDENTIAL USED" (`netlify/functions/canary.mjs` holds only its sha256).
+- **Hermes and anyone else working on the droplet: don't open, grep through or back up `/root/.config/kgs-ops/`.**
+  `grep -r /root …` will trip it. Exclude it (`--exclude-dir=kgs-ops`) or expect a page.
+- Install: `KGS_OPS_TOKEN=<token> bash install-canary.sh`, then `bdoc-tripwire accept`.
+- Live test (2026-11-19 20:38Z): `cat` of the file → `CANARY FILE OPENED … exe=/usr/bin/cat uid=0` → Telegram DOWN,
+  next run clean → UP.

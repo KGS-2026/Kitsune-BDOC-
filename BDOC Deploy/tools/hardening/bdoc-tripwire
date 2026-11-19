@@ -16,7 +16,8 @@
 # Learned after one alert: a program path that has not run on this droplet before
 # (silently learned during the first BDOC_TRIPWIRE_LEARN_HOURS after the baseline).
 # Always alerted: programs running from /tmp, /var/tmp, /dev/shm or /run/user, or from a
-# deleted file outside /usr and /opt; outbound packets the firewall blocked.
+# deleted file outside /usr and /opt; outbound packets the firewall blocked; (p205) anyone
+# opening the decoy credentials file (auditd key bdoc-canary), and that file changing or vanishing.
 set -u
 export LC_ALL=C
 
@@ -24,6 +25,7 @@ STATE="${BDOC_TRIPWIRE_STATE:-/var/lib/bdoc-tripwire}"
 CONF="${BDOC_ALARM_CONF:-/etc/bdoc-alarm/pings.env}"
 CURL="${BDOC_ALARM_CURL:-curl}"
 LEARN_HOURS="${BDOC_TRIPWIRE_LEARN_HOURS:-24}"
+CANARY_FILES="${BDOC_TRIPWIRE_CANARY_FILES:-/root/.config/kgs-ops/credentials.env}"
 NOW="${BDOC_TRIPWIRE_NOW:-$(date +%s)}"
 mode="${1:-check}"
 
@@ -62,6 +64,50 @@ snapshot() {
   echo "sshdcfg $(cat /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null | sha)"
   systemctl list-unit-files --state=enabled --no-legend 2>/dev/null | awk '{ print "unit " $1 }'
   echo "cron $(cat /etc/crontab /etc/cron.d/* /var/spool/cron/crontabs/* 2>/dev/null | sha)"
+  # p205 canary files: stat only (inode:size:mtime). Never read them here, or the tripwire
+  # would trip its own audit watch.
+  for f in $CANARY_FILES; do
+    if [ -e "$f" ]; then echo "canary $f $(stat -c '%i:%s:%Y' "$f")"; else echo "canary $f MISSING"; fi
+  done
+}
+
+# p205: who opened a canary file since the last run (auditd watch, key bdoc-canary).
+# One line per access: "<epoch> exe=… comm=… uid=… auid=…". The newest event time already
+# reported is kept in $STATE/audit_last (first run: start from now, old events are not news).
+# `--input-logs` matters: without a terminal, ausearch otherwise reads stdin, not the log.
+canary_events() {
+  if [ -n "${BDOC_TRIPWIRE_CANARY_EVENTS_FILE:-}" ]; then
+    cat "$BDOC_TRIPWIRE_CANARY_EVENTS_FILE"
+    return
+  fi
+  command -v ausearch >/dev/null 2>&1 || return 0
+  local last raw newest
+  [ -r "$STATE/audit_last" ] || echo "$NOW" > "$STATE/audit_last"
+  last="$(cat "$STATE/audit_last")"
+  raw="$(ausearch --input-logs -k bdoc-canary 2>/dev/null)"
+  newest="$(printf '%s\n' "$raw" | parse_audit 0 | awk -v l="$last" '$1 + 0 > l + 0 { m = $1 } END { if (m) print m }' | sort -n | tail -n 1)"
+  printf '%s\n' "$raw" | parse_audit "$last"
+  [ -n "$newest" ] && echo "$newest" > "$STATE/audit_last"
+  return 0
+}
+
+# Raw ausearch records -> "<epoch> exe=… comm=… uid=… auid=…" for SYSCALL records newer than $1.
+# Rule-load records (comm=auditctl) are skipped.
+parse_audit() {
+  awk -v last="${1:-0}" '/^type=SYSCALL/ {
+    t = $0; sub(/.*msg=audit\(/, "", t); sub(/:.*/, "", t)
+    if (t + 0 <= last + 0) next
+    exe = comm = uid = auid = "?"
+    for (i = 1; i <= NF; i++) {
+      if ($i ~ /^exe=/)  exe  = substr($i, 5)
+      if ($i ~ /^comm=/) comm = substr($i, 6)
+      if ($i ~ /^uid=/)  uid  = substr($i, 5)
+      if ($i ~ /^auid=/) auid = substr($i, 6)
+    }
+    gsub(/"/, "", exe); gsub(/"/, "", comm)
+    if (comm == "auditctl") next
+    print t " exe=" exe " comm=" comm " uid=" uid " auid=" auid
+  }' | head -n 10
 }
 
 blocked_egress() {
@@ -140,6 +186,7 @@ while IFS= read -r line; do
     sshdcfg\ *) add "SSHD CONFIG CHANGED" ;;
     unit\ *)    add "NEW ENABLED SERVICE ${line#unit }" ;;
     cron\ *)    add "SYSTEM CRONTAB CHANGED" ;;
+    canary\ *)  add "CANARY FILE CHANGED OR DELETED ${line#canary }" ;;
     *)          add "CHANGED $line" ;;
   esac
 done <<< "$new_lines"
@@ -154,6 +201,12 @@ done <<< "$(snapshot | grep '^sus ' | sort -u)"
 while IFS= read -r line; do
   [ -n "$line" ] && add "BLOCKED OUTBOUND $(echo "$line" | awk '{ $1 = $1; print }')"
 done <<< "$(blocked_egress)"
+
+while IFS= read -r line; do
+  [ -n "$line" ] || continue
+  when="$(date -u -d "@${line%%[. ]*}" '+%Y-%m-%d %H:%M:%SZ' 2>/dev/null || echo "${line%% *}")"
+  add "CANARY FILE OPENED at $when ${line#* } (decoy credentials: nobody legitimate reads this file)"
+done <<< "$(canary_events)"
 
 echo "$NOW" > "$STATE/last_run"
 host="$(hostname 2>/dev/null || echo droplet)"

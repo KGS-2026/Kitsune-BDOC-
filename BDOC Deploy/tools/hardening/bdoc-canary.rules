@@ -1,0 +1,3 @@
+# /etc/audit/rules.d/bdoc-canary.rules — p205. Any read, write or attribute change of the decoy
+# credentials file is logged with key bdoc-canary; bdoc-tripwire reports it to Telegram within 5 minutes.
+-w /root/.config/kgs-ops/credentials.env -p rwa -k bdoc-canary

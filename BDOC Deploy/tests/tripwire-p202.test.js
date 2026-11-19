@@ -181,3 +181,48 @@ test('hardening files say what the HANDOFF says', () => {
   const timer = fs.readFileSync(path.join(DIR, 'bdoc-tripwire.timer'), 'utf8');
   assert.match(timer, /^OnUnitActiveSec=300$/m);
 });
+
+test('p205: a canary file changing or vanishing alerts and stays down until accepted', { skip }, () => {
+  const r = rig();
+  r.setSnap([...BASE, 'canary /root/.config/kgs-ops/credentials.env 11:200:1700000000']);
+  r.run('check', T0);
+  r.setSnap([...BASE, 'canary /root/.config/kgs-ops/credentials.env MISSING']);
+  const a = r.run('check', T0 + 300);
+  assert.strictEqual(a.pings[0].url, 'https://hc.example/tw/fail');
+  assert.match(a.pings[0].body, /CANARY FILE CHANGED OR DELETED \/root\/\.config\/kgs-ops\/credentials\.env MISSING/);
+  const b = r.run('check', T0 + 600);
+  assert.strictEqual(b.pings[0].url, 'https://hc.example/tw/fail');
+  r.done();
+});
+
+test('p205: audit events on the canary file are reported with the program that opened it', { skip }, () => {
+  const r = rig();
+  r.setSnap(BASE);
+  r.run('check', T0);
+  const events = path.join(r.tmp, 'events');
+  fs.writeFileSync(events, '1795120534.283 exe=/usr/bin/cat comm=cat uid=0 auid=0\n');
+  process.env.BDOC_TRIPWIRE_CANARY_EVENTS_FILE = fwd(events);
+  try {
+    const a = r.run('check', T0 + 300);
+    assert.strictEqual(a.pings[0].url, 'https://hc.example/tw/fail');
+    assert.match(a.pings[0].body, /CANARY FILE OPENED at 2026-11-19 \d\d:\d\d:\d\dZ exe=\/usr\/bin\/cat comm=cat uid=0/);
+  } finally {
+    delete process.env.BDOC_TRIPWIRE_CANARY_EVENTS_FILE;
+  }
+  r.done();
+});
+
+test('p205: the audit parser keeps only file accesses newer than the last report, minus rule loads', { skip }, () => {
+  const sample = [
+    '----',
+    'type=PROCTITLE msg=audit(1795120531.163:318): proctitle=636174',
+    'type=SYSCALL msg=audit(1795120472.100:188): arch=c000003e syscall=44 success=yes exit=1104 auid=0 uid=0 comm="auditctl" exe="/usr/sbin/auditctl" key="bdoc-canary"',
+    'type=SYSCALL msg=audit(1795120531.163:318): arch=c000003e syscall=257 success=yes exit=3 auid=0 uid=0 comm="cat" exe="/usr/bin/cat" key="bdoc-canary"',
+    'type=SYSCALL msg=audit(1795120600.500:400): arch=c000003e syscall=257 success=yes exit=3 auid=1000 uid=0 comm="python3" exe="/usr/bin/python3.12" key="bdoc-canary"',
+  ].join('\n');
+  const src = fs.readFileSync(SCRIPT, 'utf8');
+  const fn = src.slice(src.indexOf('parse_audit() {'), src.indexOf('}\' | head -n 10') + 18);
+  const run = (last) => spawnSync(BASH, ['-c', `${fn}\nparse_audit ${last}`], { input: sample, encoding: 'utf8' }).stdout.trim();
+  assert.strictEqual(run(0), '1795120531.163 exe=/usr/bin/cat comm=cat uid=0 auid=0\n1795120600.500 exe=/usr/bin/python3.12 comm=python3 uid=0 auid=1000');
+  assert.strictEqual(run('1795120531.163'), '1795120600.500 exe=/usr/bin/python3.12 comm=python3 uid=0 auid=1000');
+});

@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /.netlify/
 Disallow: /netlify/
+Disallow: /kgs-ops-console/
 
 Sitemap: https://kgsbdoc.netlify.app/sitemap.xml

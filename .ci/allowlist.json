@@ -1,0 +1,81 @@
+{
+  "_about": "p200: every suppression in one place (invariant 9: every suppression logs a reason). inv09 fails on an entry without a kind, reason, accepted_by, date or expiry, and on any entry past its expiry: fix the cause or re-sign with a new date. kind: design (allowed, not a risk) | accepted-risk (WARN while accepted_by starts with UNSIGNED) | open-violation (always WARN). Secrets are named by fingerprint (sha256 prefix), never by value.",
+  "inv01": [
+    {
+      "file": "BDOC Deploy/",
+      "match": "127.0.0.1:9876",
+      "kind": "design",
+      "reason": "BDOC local IPC bridge (tools/, in scope in SECURITY.md): the page talks to a bridge on the user's own computer, not to a home network",
+      "accepted_by": "p200 baseline (Claude Code)",
+      "date": "2026-11-17",
+      "expires": "2027-05-17"
+    },
+    {
+      "file": "BDOC Deploy/",
+      "match": "127.0.0.1:9090",
+      "kind": "design",
+      "reason": "Wireshark live bridge (bdoc_live_bridge.py) on the user's own computer; CSP connect-src already names it",
+      "accepted_by": "p200 baseline (Claude Code)",
+      "date": "2026-11-17",
+      "expires": "2027-05-17"
+    },
+    {
+      "file": "BDOC Deploy/",
+      "match": "localhost:9090",
+      "kind": "design",
+      "reason": "Same Wireshark live bridge, named in the comment above the code that connects to it",
+      "accepted_by": "p200 baseline (Claude Code)",
+      "date": "2026-11-17",
+      "expires": "2027-05-17"
+    },
+    {
+      "file": "BDOC Deploy/electron/",
+      "match": "127.0.0.1:11434",
+      "kind": "design",
+      "reason": "Ollama on the user's own computer, used only by the desktop Tools window for offline AI",
+      "accepted_by": "p200 baseline (Claude Code)",
+      "date": "2026-11-17",
+      "expires": "2027-05-17"
+    }
+  ],
+  "inv05": [
+    {
+      "file": "BDOC Deploy/index.html",
+      "fingerprint": "9a7b496a66a071b1",
+      "kind": "accepted-risk",
+      "reason": "Cesium ion browser token (CFG.keys.cesium). Cesium's model is a public token limited by Allowed URLs in the ion dashboard; setting those URLs is Travon's step (HANDOFF section 2)",
+      "accepted_by": "UNSIGNED: proposed by Claude Code 2026-11-17, needs Travon",
+      "date": "2026-11-17",
+      "expires": "2027-02-17"
+    },
+    {
+      "file": "BDOC Deploy/index.html",
+      "fingerprint": "edf7d454b88be59e",
+      "kind": "open-violation",
+      "reason": "AISStream key in client JS since 2026-08-14 (HANDOFF section 2 W). Section 0 rule 6: Travon rotates it, then it moves behind a server relay. This entry fails on expiry on purpose",
+      "accepted_by": "UNSIGNED: open since 2026-08-14, needs Travon",
+      "date": "2026-11-17",
+      "expires": "2026-12-31"
+    }
+  ],
+  "secrets": [
+    {
+      "file": "BDOC Deploy/index.html",
+      "fingerprint": "9a7b496a66a071b1",
+      "kind": "accepted-risk",
+      "reason": "Cesium ion browser token, same entry as inv05: public by design, limited by Allowed URLs",
+      "accepted_by": "UNSIGNED: proposed by Claude Code 2026-11-17, needs Travon",
+      "date": "2026-11-17",
+      "expires": "2027-02-17"
+    },
+    {
+      "file": "BDOC Deploy/index.html",
+      "fingerprint": "edf7d454b88be59e",
+      "kind": "open-violation",
+      "reason": "AISStream key, same entry as inv05: rotate, then serve AIS through a server relay",
+      "accepted_by": "UNSIGNED: open since 2026-08-14, needs Travon",
+      "date": "2026-11-17",
+      "expires": "2026-12-31"
+    }
+  ]
+}

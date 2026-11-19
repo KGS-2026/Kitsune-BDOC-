@@ -19,3 +19,8 @@ __pycache__/
 *.pem
 *.key
 pings.env
+# p200: secrets and key material never live in the repo. This only stops an
+# accidental `git add`; tests/public-surface.test.js reads the disk and fails on
+# any of these inside the publish tree or beside the relay, ignored or not.
+*.p12
+*.pfx
