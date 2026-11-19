@@ -3,7 +3,7 @@
 **Repo:** `Kitsune-BDOC-` · working dir is the `BDOC Deploy/` subfolder
 **Live:** https://kgsbdoc.netlify.app/
 **Last updated by Hermes:** 2026-11-11 · build **p185c** on `main` · `SW_VERSION bdoc-v189`
-**Last updated by Claude Code:** 2026-11-19 · p201 alarm + p202 droplet lockdown running on the droplet; p203 key cleanup + p204 Supabase RLS on branch `claude/p204-supabase-rls` (p201→p204 chain), not live (main unchanged @ `0173a99`, p188, `SW_VERSION bdoc-v192`, next is v193)
+**Last updated by Claude Code:** 2026-11-19 · p201 alarm, p202 droplet lockdown and the p205 droplet canary running on the droplet; p203 key cleanup, p204 Supabase RLS, p205 site canaries and p200 (merged) on branch `claude/p205-canaries` (p201→p205 chain), not live (main unchanged @ `0173a99`, p188, `SW_VERSION bdoc-v192`, next is v193)
 
 This is the running baton. Hermes updates the top section on every handoff.
 Claude Code: read §1 and §2 before touching anything. If you change something
@@ -78,6 +78,19 @@ here, update §1 so Hermes knows where you left off.
 ---
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
+
+### Claude Code — p205 Canaries: decoy pages on the site, decoy credentials on the droplet; p200 merged (2026-11-19) — **droplet part RUNNING; site part on branch `claude/p205-canaries`, NOT live**
+Item 1b chunk E. A canary is something no legitimate person ever touches, so any touch is worth a page.
+- **Droplet (live):** `/root/.config/kgs-ops/credentials.env` is a decoy with a fake ops token. auditd watches it (`tools/hardening/bdoc-canary.rules`), and `bdoc-tripwire` reports every open within 5 minutes with the program and user, and alerts if the file changes or disappears. **Hermes: never open, grep through or copy `/root/.config/kgs-ops/`.** `grep -r /root` trips it; use `--exclude-dir=kgs-ops`. If you trip it by accident, tell Travon it was you.
+- **Site (not live):** `netlify/functions/canary.mjs` answers 401 on `/kgs-ops-console[/*]` and `/ops/auth[/*]`. Those URLs are advertised only in `robots.txt` (Disallow) and an HTML comment in `404.html`, never linked from the app. A hit pings the Healthchecks check `HC_SITE_CANARY` (Netlify env) with `/fail`: IP, city/country, browser, referer. The droplet decoy token presented at `/ops/auth` is matched by sha256 and flagged "DROPLET DECOY CREDENTIAL USED: treat the droplet as compromised". `canary-rearm.mjs` (daily 09:17 UTC) re-arms the check. Nothing the visitor sends is stored.
+- **Deliberately not canaries:** `/.env`, `/wp-login.php`, `/admin` and other scanner paths. Bots hit those every few minutes on every site; they stay a static 404 so the real signal isn't buried (and they don't burn function invocations).
+- **p200 merged** into this chain (merge commit, not squashed): `.ci/invariants`, the public-surface inventory, the offline secret scan, and gitleaks + CodeQL + SBOM in CI. `.gitignore` and HANDOFF conflicts kept both sides. Inventory updated: `sentinel.mjs` removed; `canary.mjs`, `canary-rearm.mjs` and `tools/hardening/10-bdoc-hardening.conf` declared.
+- **Deploy needs:** a new Healthchecks check "Site canary" (1 day period, 2 h grace) with its ping URL in Netlify env `HC_SITE_CANARY`. Without it the canary answers 401 and pages nobody.
+
+**Verified:**
+- Droplet, live 2026-11-19 20:38Z: `cat` of the decoy → `CANARY FILE OPENED at 2026-11-19 20:38:10Z exe=/usr/bin/cat comm=cat uid=0` → Healthchecks "Droplet tripwire" up→down (Telegram), next run clean → down→up. (First try found nothing: without a terminal `ausearch` reads stdin, so it needs `--input-logs`; and its `--checkpoint` mode misfired, so the tripwire tracks the last event time itself in `/var/lib/bdoc-tripwire/audit_last`.)
+- The real decoy token, checked locally against `canary.mjs`: severe alert, not throttled.
+- `node --test tests/*.test.js`: 1118 pass, 0 fail. `node .ci/invariants/run.js`: 0 fail. `.ci/secret-scan.js`: 0 open. `scripts/ci-validate.sh` passes everything except its python JSON/CSS steps, which fail on this Windows laptop only (cp1252 decoding of UTF-8 files that are unchanged from main).
 
 ### Claude Code — p204 Supabase least privilege: migration 004 + service-role functions locked down (2026-11-19) — **branch `claude/p204-supabase-rls` (on top of p203), NOT live; 004 NOT run**
 Item 1b chunk C.
