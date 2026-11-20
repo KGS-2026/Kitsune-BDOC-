@@ -3619,6 +3619,13 @@ const milAC=[],allAC=[],feed=[];
 // Phase 22: added internet/landings/chokepoints here so markLockedLayers() can zero them on logout
 // (they were previously set lazily; 'key in layers' was false so markLockedLayers skipped them)
 const layers={forcetrack:false,air:false,eq:false,fire:false,conf:false,warlive:false,incidents:false,aoiwatch:false,camwall:false,signals:false,euwarn:false,cems:false,firedanger:false,gpsjam:false,cable:false,sat:false,territory:false,imint:false,weather:false,clouds:false,temp:false,hurricanes:false,alerts:false,wind:false,forecastradar:false,lightning:false,airquality:false,vessels:false,cyber:false,outages:false,downdetect:false,webcams:false,radio:false,deforest:false,sentinel:false,news:false,headlines:false,spaceweather:false,mesh:false,community:false,floods:false,tsunamis:false,volcanoes:false,nucranges:false,borders:false,hillshade:false,popdensity:false,alliances:false,powerplants:false,gridinfra:false,substations:false,pipelines:false,metar:false,dartbuoys:false,fireperims:false,oilgas:false,sanctions:false,embassies:false,wireshark:false,vegetation:false,econintel:false,milbases:false,milairfields:false,nukes:false,darkships:false,ioc:false,internet:false,landings:false,chokepoints:false,deflock:false,celltowers:false,fallout:false,meshworld:false,skybridge:false};
+// p206c (master plan W1.1 chunk C): sessions start clean. A reload or back/forward does not switch
+// layers back on: not from the saved list (bdoc_layers_on), not from the layers in the address bar
+// (?layers= / #l=), and War Room no longer arms itself. A link someone opens fresh (a shared view, a
+// bookmark) still turns its layers on. Last session's layers come back from the "Restore last
+// layers" button at the top of the layer list (js/bdoc-layer-meter.js).
+window._bdocCleanStart=true;
+window.bdocIsReload=function(){try{const n=performance.getEntriesByType('navigation')[0];if(n)return n.type==='reload'||n.type==='back_forward';const t=performance.navigation&&performance.navigation.type;return t===1||t===2}catch(_){return false}};
 let eqEnts=[],fireEnts=[],confEnts=[],warliveEnts=[],airEnts=[],milEnts=[],cableEnts=[],satEnts=[],territoryEnts=[],imintEnts=[],newsEnts=[],headlineEnts=[],spwxEnts=[],meshEnts=new Set(),communityEnts=[],floodEnts=[],tsunamiEnts=[],volcanoEnts=[],nucRangeEnts=[],allianceEnts=[],powerplantEnts=[],gridinfraEnts=[],substationEnts=[],pipelineEnts=[],metarEnts=[],dartEnts=[],fireperimEnts=[],oilgasEnts=[],sanctionEnts=[],embassyEnts=[],wiresharkEnts=[],vegEnts=[],darkshipEnts=[],iocEnts=[],falloutEnts=[];
 // XSS sanitizer — escapes HTML in any API-sourced string before injection into innerHTML/description
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
@@ -11198,7 +11205,8 @@ async function bootFeeds(){
     q.forEach((ly,i)=>setTimeout(()=>{try{bdocLayerOn(ly)}catch(_){}},i*900));
     if(typeof af==='function')af('var(--t3)',(quiet?'Plan layers restored \u2014 ':'Workspace restored \u2014 ')+q.length+' layer'+(q.length===1?'':'s')+(quiet?'':' from your last session'));
   }catch(_){}};
-  setTimeout(()=>{window._bdocRestoreArmed=true;bdocRestoreLayers()},2500);
+  // p206c: no automatic restore (clean start). The LOAD strip offers "Restore last layers"; clicking it
+  // calls bdocRestoreLayers() and sets _bdocRestoreArmed so auth.js re-offers paid layers once the plan loads.
   // Aircraft timer — adaptive polling from ADSBx recon (2026-08-09).
   // Base 60s. Idle tab (hidden): 4× slower. Background + hidden: 8× slower.
   // Result: active window = 60s, background tab = 240s, hidden idle = 480s.
@@ -11244,6 +11252,7 @@ async function bootFeeds(){
   // thermal) automatically after boot settles. Respects a user opt-out persisted the
   // first time they manually toggle it off (localStorage bdoc_warlive_auto=0).
   setTimeout(()=>{try{
+    if(window._bdocCleanStart)return; // p206c: sessions start clean; War Room is one click (or a restore) away
     if(localStorage.getItem('bdoc_warlive_auto')==='0')return;
     if(window.bdocLayerOn&&bdocLayerOn('warlive'))EventLog.add('info','Global conflict picture auto-armed (War Room)')
   }catch(e){console.warn('[Boot] warlive auto-arm failed:',e)}},2500);
@@ -13873,7 +13882,7 @@ WiresharkBridge.connect = async function() {
 </script>
 <!-- Cesium init MUST load AFTER inline shell so CFG and `let V` are defined -->
 <script src="js/cesium-init.js?v=p180"></script>
-<script src="js/deeplink.js?v=p115"></script>
+<script src="js/deeplink.js?v=p206c"></script>
 <!-- P119: Section 508 / WCAG 2.1 AA remediation pass. Runtime-labels the 40+ layer
      switches, panels, buttons and the live intel feed; adds h1, skip link, focus
      rings and keyboard operation. Loaded last so it sees the fully built DOM. -->
@@ -14220,7 +14229,8 @@ window.spotifyLogin=spotifyLogin;window.spotifyLogout=spotifyLogout;window.spLoa
     if(!ready){ if(tries<60){return setTimeout(run,500);} return; }
     try{
       // 1) layers
-      const layerList=(qs.get('layers')||'').split(',').map(s=>s.trim()).filter(Boolean);
+      // p206c: a reload keeps the camera but not the layers written into the address bar (clean start).
+      const layerList=(window.bdocIsReload&&bdocIsReload())?[]:(qs.get('layers')||'').split(',').map(s=>s.trim()).filter(Boolean);
       layerList.forEach(name=>{
         const el=[...document.querySelectorAll('[data-layer]')].find(e=>e.dataset.layer===name);
         if(el){ const on=el.classList.contains('on'); if(!on){try{togLy(el)}catch(e){console.warn('[deeplink layer]',name,e)}} }

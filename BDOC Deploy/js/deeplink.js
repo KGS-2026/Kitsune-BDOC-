@@ -146,7 +146,8 @@
     _restoring = true;
     try {
       applyCamera(st.camera);
-      applyLayers(st.layers);
+      // p206c: a reload keeps the camera but starts with no layers (clean start); a shared link opened fresh applies them.
+      if (!(window.bdocIsReload && window.bdocIsReload())) applyLayers(st.layers);
     } finally {
       // release the guard after the toggles settle, then persist current truth
       setTimeout(function () { _restoring = false; scheduleSave(); }, 800);

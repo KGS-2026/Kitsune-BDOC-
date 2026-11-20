@@ -23,3 +23,13 @@
 .lym-cull{all:unset;cursor:pointer;padding:1px 6px;border:1px solid var(--glass-hairline-hi,rgba(255,255,255,.18));border-radius:3px;color:#E6E9EE;font-size:8px;letter-spacing:.06em}
 .lym-cull[aria-pressed="false"]{color:#ff8a8a;border-color:rgba(255,92,92,.4)}
 .lym-cull:focus-visible{outline:1px solid #E8B349;outline-offset:2px}
+/* p206c: clean start offer + sleeping layers */
+.lym-restore{display:flex;align-items:center;gap:6px;margin-top:6px}
+.lym-restore[hidden]{display:none}
+.lym-rbtn{all:unset;box-sizing:border-box;flex:1;cursor:pointer;text-align:center;padding:5px 8px;border-radius:4px;background:rgba(232,179,73,.12);border:1px solid rgba(232,179,73,.35);color:#E8B349;font-size:9px;letter-spacing:.06em}
+.lym-rbtn:hover,.lym-rbtn:focus-visible{background:rgba(232,179,73,.2)}
+.lym-rx{all:unset;cursor:pointer;width:18px;height:18px;line-height:18px;text-align:center;border-radius:3px;color:#8B919A;font-size:10px}
+.lym-rx:hover,.lym-rx:focus-visible{background:rgba(255,255,255,.08);color:#E6E9EE}
+.lym-zz{color:#8FB8FF}
+.ly.on.ly-asleep .ly-n{opacity:.6}
+.ly.on.ly-asleep .ly-n::after{content:"  sleeping";font-size:8px;letter-spacing:.06em;color:#8FB8FF;font-weight:400}

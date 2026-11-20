@@ -262,7 +262,22 @@
   const fmtKb = kb => kb >= 1024 ? (kb / 1024).toFixed(1) + ' MB' : kb + ' KB';
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-  let root = null, open = false;
+  let root = null, open = false, restoreDismissed = false;
+
+  // Saved layers that can come back right now (a row exists and isn't locked for this plan).
+  function restorable() {
+    let want = [];
+    try { want = JSON.parse(localStorage.getItem('bdoc_layers_on') || '[]'); } catch (_) {}
+    if (!Array.isArray(want)) return [];
+    return want.filter(ly => { try { const el = document.querySelector('.ly[data-layer="' + ly + '"]'); return el && !el.classList.contains('locked'); } catch (_) { return false; } });
+  }
+  function renderRestore(s) {
+    const box = root.querySelector('.lym-restore');
+    if (s.layersOn > 0) restoreDismissed = true; // once anything is on, the offer has done its job
+    const n = (!restoreDismissed && window._bdocCleanStart) ? restorable().length : 0;
+    box.hidden = !n;
+    if (n) root.querySelector('.lym-rbtn').textContent = 'Restore last layers (' + n + ')';
+  }
   function mount() {
     if (root && document.contains(root)) return root;
     const lpB = document.querySelector('.lp-b');
@@ -275,6 +290,8 @@
       root.innerHTML =
         '<button type="button" class="lym-strip" aria-expanded="false" aria-controls="lymList" title="What the layers that are on cost. Tap for each layer.">' +
           '<span class="lym-lbl">LOAD</span><span class="lym-bar"><i></i></span><span class="lym-txt"></span></button>' +
+        '<div class="lym-restore" hidden><button type="button" class="lym-rbtn"></button>' +
+          '<button type="button" class="lym-rx" aria-label="Dismiss" title="Dismiss">✕</button></div>' +
         '<div class="lym-list" id="lymList" hidden></div>';
       lpB.insertBefore(root, lpB.firstChild);
       root.querySelector('.lym-strip').addEventListener('click', () => {
@@ -283,6 +300,14 @@
         root.querySelector('.lym-list').hidden = !open;
         render();
       });
+      // p206c: sessions start clean; last session's layers come back only when asked.
+      root.querySelector('.lym-rbtn').addEventListener('click', () => {
+        restoreDismissed = true;
+        window._bdocRestoreArmed = true; // lets auth.js re-offer paid layers once the plan loads (p188)
+        try { if (typeof window.bdocRestoreLayers === 'function') window.bdocRestoreLayers(false); } catch (_) {}
+        render();
+      });
+      root.querySelector('.lym-rx').addEventListener('click', () => { restoreDismissed = true; render(); });
       root.querySelector('.lym-list').addEventListener('click', ev => {
         const cb = ev.target.closest('[data-cull]');
         if (cb && window.BDOCCull) { ev.stopPropagation(); window.BDOCCull.setEnabled(cb.getAttribute('data-cull') === '1'); setTimeout(render, 50); return; }
@@ -310,20 +335,23 @@
     const lvl = s.score >= 70 ? 'heavy' : s.score >= 35 ? 'medium' : 'light';
     root.setAttribute('data-level', lvl);
     root.querySelector('.lym-bar i').style.width = Math.max(s.layersOn ? 4 : 0, s.score) + '%';
+    const C = window.BDOCCull;
+    const asleep = C && C.sleeping ? s.rows.filter(r => C.sleeping(r.layer)).length : 0;
     root.querySelector('.lym-txt').textContent = s.layersOn
-      ? s.layersOn + ' on · ' + fmtN(s.drawn) + ' drawn · ' + fmtKb(s.kbMin) + '/min'
+      ? s.layersOn + ' on' + (asleep ? ' (' + asleep + ' asleep)' : '') + ' · ' + fmtN(s.drawn) + ' drawn · ' + fmtKb(s.kbMin) + '/min'
       : 'No layers on';
+    renderRestore(s);
     if (!open) return;
     const fpsTxt = s.fps ? s.fps + ' fps' : 'idle (draws on demand)';
     let h = '<div class="lym-sum">Globe: ' + esc(fpsTxt) + ' · ' + fmtN(s.globeEnts) + ' objects' +
       (s.heapMb ? ' · ' + s.heapMb + ' MB memory' : '') + ' · layers ' + s.reqMin + ' requests/min</div>';
-    const C = window.BDOCCull;
     if (C) h += '<div class="lym-sum"><button type="button" class="lym-cull" data-cull="' + (C.isEnabled() ? '0' : '1') + '" aria-pressed="' + C.isEnabled() + '">Off-screen culling: ' + (C.isEnabled() ? 'ON' : 'OFF') + '</button>' +
       (C.isEnabled() && s.loaded > s.drawn ? ' ' + fmtN(s.loaded - s.drawn) + ' off screen, not drawn' : '') + '</div>';
     // Two lines per layer: the panel is ~220 px wide, so names get the full width and numbers sit under them.
     for (const r of s.rows) {
       if (r.layer === OTHER && !r.kbMin && !r.reqMin) continue;
       const parts = [];
+      if (C && C.sleeping && C.sleeping(r.layer)) parts.push('<span class="lym-zz" title="Off screen for 2 minutes: taken off the globe until you look there again. Its feed keeps updating.">sleeping</span>');
       if (r.drawn != null) parts.push(fmtN(r.drawn) + ' drawn' + (r.loaded > r.drawn ? ' of ' + fmtN(r.loaded) : ''));
       else if (r.layer !== OTHER) parts.push('map tiles');
       if (r.kbMin) parts.push(fmtKb(r.kbMin) + '/min');
