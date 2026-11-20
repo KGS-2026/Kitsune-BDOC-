@@ -552,7 +552,7 @@ if('serviceWorker' in navigator){
 <button class="eb" onclick="toggleSpotify()" title="Spotify — music & podcasts (paste any Spotify link)" style="color:#1DB954;border-color:rgba(29,185,84,0.3)">&#9834; SPOTIFY</button>
 </div>
 <div class="tb-r">
-<div class="st"><div class="dt dt-g bk" id="liveDot"></div>LIVE</div>
+<div class="st"><div class="dt dt-g bk" id="liveDot"></div><span id="liveTxt">LIVE</span></div>
 <div class="st"><div class="dt dt-g"></div><span id="srcN">35</span> FEEDS</div>
 <div class="st" id="clk">00:00:00Z</div>
 <span id="userBadge" style="font-size:10px;font-family:var(--m);letter-spacing:.5px;cursor:pointer" onclick="BDOC_Auth.user?BDOC_Auth.showAccountMenu():BDOC_Auth.showModal()"></span>
@@ -1562,7 +1562,7 @@ if(!window.Cesium){
 <script src="js/snapshot-client.js?v=p122"></script>
 <script src="js/modules/icon-factory.js?v=p116"></script>
 <script src="js/converters.js?v=p156g"></script>
-<script src="js/data.js?v=p159h"></script>
+<script src="js/data.js?v=p207"></script>
 <script src="js/auth.js?v=p188"></script>
 <!-- p157: must load AFTER auth.js (needs window.BDOC_Auth.client) and BEFORE any
      layer module that fetches. Attaches the Supabase JWT to our own function
@@ -2502,6 +2502,7 @@ const Replay={
     const isLive=idx===History.aircraft.length-1;
     const dot=document.getElementById('liveDot');
     if(!isLive){dot.style.background='var(--yl)';dot.style.boxShadow='0 0 6px var(--yl)'}
+    else if(typeof Health!=='undefined'&&Health.updateLive)Health.updateLive();
     else{dot.style.background='var(--gn)';dot.style.boxShadow='0 0 6px var(--gn)'}
   }
 };
@@ -3174,7 +3175,7 @@ BDOC.ticker={
       // Filter: skip noisy operational chatter, keep substantive events
       const text=String(msg||'');
       if(text.length<8)return;
-      this._events.push({sev,msg:text.slice(0,180),ts:ts||(new Date().toISOString().slice(11,19)+'Z')});
+      this._events.push({sev,msg:text.slice(0,180),ts:ts||(new Date(typeof BDOC_now==='function'?BDOC_now():Date.now()).toISOString().slice(11,19)+'Z')});
       if(this._events.length>this._max)this._events.shift();
       this._render();
     }catch(_){}
@@ -3658,7 +3659,8 @@ let _rfPending=false;
 function af(c,x){feed.push({c,x});if(feed.length>100)feed.shift();if(!_rfPending){_rfPending=true;requestAnimationFrame(()=>{rf();_rfPending=false})}}
 function rf(){const e=document.getElementById('fdEl');if(!e)return;const h=feed.map(f=>`<div class="fd-i"><div class="fd-d" style="background:${f.c}"></div>${f.x}</div>`).join('');e.innerHTML=h+h}
 function us(n){srcN+=n;const _s=document.getElementById('srcN');if(_s)_s.textContent=srcN}
-setInterval(()=>{const _c=document.getElementById('clk');if(_c)_c.textContent=new Date().toISOString().slice(11,19)+'Z'},1000);
+// p207: header clock shows server-corrected UTC; amber + tooltip when the device clock is off.
+setInterval(()=>{const _c=document.getElementById('clk');if(!_c)return;const off=window.BDOC_CLOCK_OFF_MS||0;_c.textContent=new Date(typeof BDOC_now==='function'?BDOC_now():Date.now()).toISOString().slice(11,19)+'Z'+(off?' ⚠':'');if(off){_c.style.setProperty('color','var(--yl)','important');_c.title='Corrected to server time. This device clock is '+Math.round(Math.abs(off)/60000)+' min '+(off>0?'ahead':'behind')+'.'}else{_c.style.removeProperty('color');_c.title='UTC'}},1000);
 // ═══════════════════════════════════════════
 // SECTION 9: PANEL TOGGLES + NAV
 // ═══════════════════════════════════════════
@@ -11137,7 +11139,7 @@ af('var(--yl)','DOMAINS: Air \u2022 Space \u2022 Seismic \u2022 Fire \u2022 Mari
 af('var(--pr)','Kitsune Global Solutions LLC \u2014 Service-Disabled Veteran-Owned Small Business');
 // Periodic ticker refresh — keeps bottom feed alive with current stats every 5 min
 setInterval(()=>{
-  const now=new Date().toISOString().slice(11,19)+'Z';
+  const now=new Date(typeof BDOC_now==='function'?BDOC_now():Date.now()).toISOString().slice(11,19)+'Z';
   // P119: use Health.statusLine() — IDLE feeds no longer counted as failures.
   const stat=(typeof Health!=='undefined'&&Health.statusLine)?Health.statusLine():'STATUS UNAVAILABLE';
   const c=(typeof Health!=='undefined'&&Health.counts)?Health.counts():{down:0,degraded:0};

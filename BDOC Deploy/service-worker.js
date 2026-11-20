@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v194';  // p206: W1.1 layer state: load meter, off-screen culling, sleeping layers, clean start + Restore last layers
+const SW_VERSION = 'bdoc-v195';  // p206: W1.1 layer state: load meter, off-screen culling, sleeping layers, clean start + Restore last layers
+// (prev) const SW_VERSION = 'bdoc-v194';  // p207: clock truth (header clock corrected to server time, LIVE shows CLOCK OFF, skew rechecked)
 // (prev) const SW_VERSION = 'bdoc-v193';  // p201-p205: security baseline (old fallback keys removed, new Cesium token, Supabase-facing functions locked down, site canaries, p200 CI checks)
 // (prev) const SW_VERSION = 'bdoc-v192';  // p188: saved workspace survives a late-loading paid tier (merge, not overwrite; restore re-runs on tier change); War Room no longer toggled on-then-off by boot restore + auto-arm racing (which also opted users out of War Room forever); auth.js ?v=p188
 // (prev) const SW_VERSION = 'bdoc-v191';  // p187: pricing window one column on phones (inline 4-col style beat the phone rule), annual buttons hidden (yearly Stripe prices are one-time), fake aggregateRating removed from JSON-LD, plan cards list only real features, founding-member banner, veteran $4.99 line + ?vet=1 one-click discount link, plain-language title / boot line / welcome text; bdoc.css ?v=p187
@@ -83,7 +84,7 @@ const STATIC_PRECACHE = [
   '/css/bdoc-layer-meter.css?v=p206',
   '/js/telemetry.js?v=p59',
   '/js/converters.js?v=p156g',
-  '/js/data.js?v=p159h',
+  '/js/data.js?v=p207',
   '/js/auth.js?v=p188',
   '/js/bdoc-auth-fetch.js?v=p162',
   '/js/filters.js?v=p154',

@@ -124,12 +124,56 @@ const Health={
     if(c.down===0&&c.degraded===0)return c.ok?`ALL SYSTEMS NOMINAL · ${c.ok} OK`+(c.idle?` · ${c.idle} IDLE`:''):'STANDBY — feeds arming';
     return `OK ${c.ok}/${c.active}`+(c.degraded?` · DEGRADED ${c.degraded}`:'')+(c.down?` · DOWN ${c.down}`:'')+(c.idle?` · IDLE ${c.idle}`:'');
   },
+  // p207 — device clock check against the CDN's Date header (1 s resolution, so
+  // only offsets over 2 min count). Sets window.BDOC_CLOCK_OFF_MS (device minus
+  // server) that BDOC_now() subtracts. Posts to the ticker only when the state
+  // changes, so a recheck every 5 min doesn't spam it.
+  checkClock(){
+    const now=Date.now();if(this._clkBusy||now-(this._clkLast||0)<15000)return;
+    this._clkBusy=true;this._clkLast=now;
+    const t0=Date.now(),p0=performance.now();
+    fetch('/manifest.json',{method:'HEAD',cache:'no-store'}).then(r=>{
+      const hdr=r.headers.get('date');if(!hdr)return;
+      const srv=new Date(hdr).getTime();if(isNaN(srv))return;
+      const rtt=performance.now()-p0;if(rtt>10000)return;
+      const skew=Math.round((t0+rtt/2)-srv)/1000;
+      this.clockSkewS=skew;this.clockCheckedAt=Date.now();
+      const off=Math.abs(skew)>120,m=Math.round(Math.abs(skew)/60);
+      const was=this._clkOffMin||0;
+      window.BDOC_CLOCK_OFF_MS=off?skew*1000:0;
+      if(off&&(!was||Math.abs(m-was)>=5)){
+        const msg=`DEVICE CLOCK ${skew>0?'AHEAD':'BEHIND'} BY ~${m} MIN — header clock corrected to server time; feed ages and "AS OF" times are off by that much until Windows/macOS resyncs its clock`;
+        console.warn('[Health] '+msg);
+        if(typeof af==='function')af('var(--yl)',msg);
+        if(typeof EventLog!=='undefined'&&EventLog.add)EventLog.add('warn',msg);
+      }else if(!off&&was){
+        const msg='DEVICE CLOCK FIXED — times on this device are accurate again';
+        console.info('[Health] '+msg);
+        if(typeof af==='function')af('var(--gn)','✓ '+msg);
+        if(typeof EventLog!=='undefined'&&EventLog.add)EventLog.add('ok',msg);
+      }
+      this._clkOffMin=off?m:0;
+      this.updateLive();
+    }).catch(()=>{}).finally(()=>{this._clkBusy=false});
+  },
+  _clockWatch(){
+    setTimeout(()=>this.checkClock(),8000);
+    setInterval(()=>this.checkClock(),300000);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)this.checkClock()});
+    window.addEventListener('online',()=>this.checkClock());
+    // Wall-clock jump: Date.now() moved a lot more or less than the monotonic
+    // clock (NTP correction, manual change, wake from sleep). Recheck at once.
+    let w=Date.now(),p=performance.now();
+    setInterval(()=>{const w2=Date.now(),p2=performance.now();if(Math.abs((w2-w)-(p2-p))>30000){this._clkLast=0;this.checkClock()}w=w2;p=p2},5000);
+  },
   updateLive(){
     const h=this.sysHealth();const dot=document.getElementById('liveDot');
     try{this.gridCheck()}catch(_){}
     if(!dot)return;
+    const lt=document.getElementById('liveTxt'),cOff=!!window.BDOC_CLOCK_OFF_MS;
+    if(lt){lt.textContent=cOff?'LIVE · CLOCK OFF':'LIVE';lt.parentNode.title=cOff?`This device's clock is off by ~${this._clkOffMin} min. Feeds are live, but ages and times computed on this device are wrong until the system clock resyncs.`:''}
     if(h==='critical'){dot.style.background='var(--rd)';dot.style.boxShadow='0 0 6px var(--rd)'}
-    else if(h==='degraded'||h==='nominal'){dot.style.background='var(--yl)';dot.style.boxShadow='0 0 6px var(--yl)'}
+    else if(cOff||h==='degraded'||h==='nominal'){dot.style.background='var(--yl)';dot.style.boxShadow='0 0 6px var(--yl)'}
     else{dot.style.background='var(--gn)';dot.style.boxShadow='0 0 6px var(--gn)'}
   },
   // p159h GRID STATE. navigator.onLine only flips when the NIC drops — a dead ISP, a
@@ -187,24 +231,13 @@ const Health={
     document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&e.key==='H')this.togDash()});
     // PERF FIX: Health dashboard timer now only runs when dashboard is open (see togDash)
     setInterval(()=>this.heartbeat(),300000);
-    // p159b — CLOCK SKEW check (HANDOFF S13). Every "age" we print assumes the
-    // device clock is right. Compare once against the CDN's Date header; if off
-    // by >2 min, say so in the ticker and tag Health so the dash shows it.
-    setTimeout(()=>{try{
-      const t0=Date.now();
-      fetch('/manifest.json',{method:'HEAD',cache:'no-store'}).then(r=>{
-        const hdr=r.headers.get('date');if(!hdr)return;
-        const srv=new Date(hdr).getTime();if(isNaN(srv))return;
-        const rtt=Date.now()-t0;const skew=Math.round((t0+rtt/2)-srv)/1000;
-        this.clockSkewS=skew;
-        if(Math.abs(skew)>120){
-          const m=Math.round(Math.abs(skew)/60);
-          const msg=`DEVICE CLOCK ${skew>0?'AHEAD':'BEHIND'} BY ~${m} MIN — data ages and "AS OF" times on this device are off by that much`;
-          console.warn('[Health] '+msg);
-          if(typeof af==='function')af('var(--yl)',msg);
-        }
-      }).catch(()=>{});
-    }catch(_){}},8000);
+    // p159b + p207 — CLOCK SKEW check (HANDOFF S13). Every time we print assumes
+    // the device clock is right. p159b checked once at boot, so a laptop that woke
+    // with a frozen clock kept a stale warning, a green LIVE and a wrong header
+    // clock. p207: re-check every 5 min, on tab focus, on reconnect and whenever
+    // the wall clock jumps; the header clock shows corrected UTC (BDOC_now) and
+    // turns amber, and LIVE goes amber with "CLOCK OFF" until the device is fixed.
+    this._clockWatch();
     // p159b — "WHAT CHANGED" boot brief (HANDOFF open item #3). After the feeds
     // have had 25 s to arm, compare live counts with the snapshot saved on the
     // previous visit and post one message in the copilot log. Replaces the
@@ -261,4 +294,7 @@ async function safeFetch(feedName,cacheKey,url,opts={}){
 // Explicit window mirrors — defensive for any caller that does window.Cache / window.Health
 window.Cache=Cache;
 window.Health=Health;
+// p207 — server-corrected wall clock. Use for anything shown to the user as "now".
+window.BDOC_CLOCK_OFF_MS=window.BDOC_CLOCK_OFF_MS||0;
+window.BDOC_now=()=>Date.now()-(window.BDOC_CLOCK_OFF_MS||0);
 window.safeFetch=safeFetch;

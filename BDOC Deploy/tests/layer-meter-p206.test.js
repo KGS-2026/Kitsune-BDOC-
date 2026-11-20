@@ -42,13 +42,13 @@ function load() {
   return sandbox;
 }
 
-test('page loads the meter script and stylesheet, and the service worker caches both (v194)', () => {
+test('page loads the meter script and stylesheet, and the service worker caches both (v195)', () => {
   assert.match(HTML, /<script src="js\/bdoc-layer-meter\.js\?v=p206"><\/script>/);
   assert.match(HTML, /<link rel="stylesheet" href="css\/bdoc-layer-meter\.css\?v=p206">/);
   assert.ok(SW.includes("'/js/bdoc-layer-meter.js?v=p206'"));
   assert.ok(SW.includes("'/css/bdoc-layer-meter.css?v=p206'"));
-  assert.match(SW, /const SW_VERSION = 'bdoc-v194';/);
-  assert.match(SW, /\/\/ \(prev\) const SW_VERSION = 'bdoc-v193';/);
+  assert.match(SW, /const SW_VERSION = 'bdoc-v195';/);
+  assert.match(SW, /\/\/ \(prev\) const SW_VERSION = 'bdoc-v194';  \/\/ p207:/);
 });
 
 test('meter loads after the layer code it reads (index.html inline script + togLy override)', () => {
