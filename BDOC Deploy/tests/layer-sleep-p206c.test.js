@@ -164,11 +164,9 @@ test('clean start: no automatic restore, no War Room auto-arm, no layers from th
 });
 
 test('bdocIsReload reads the navigation type', () => {
-  const m = /window\.bdocIsReload=(function\(\)\{[^\n]*\}\});?/.exec(HTML) || /window\.bdocIsReload=(function\(\)\{.*?\}\};)/.exec(HTML);
   const src = /window\.bdocIsReload=(function\(\)\{[\s\S]*?return false\}\})/.exec(HTML)[1];
   const mk = type => vm.runInNewContext('(' + src + ')()', { performance: { getEntriesByType: () => [{ type }] } });
   assert.strictEqual(mk('reload'), true);
   assert.strictEqual(mk('back_forward'), true);
   assert.strictEqual(mk('navigate'), false, 'a fresh visit or a shared link still applies its layers');
-  assert.ok(m || src);
 });
