@@ -79,6 +79,13 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
 
+### Claude Code — p206 Layer-load meter (W1.1 chunk A) (2026-11-20) — **branch `claude/p206-layer-state`, NOT live**
+- New `js/bdoc-layer-meter.js` + `css/bdoc-layer-meter.css`, loaded after `bdoc-float.js`. A LOAD strip sits at the top of the layer list (sticky, glass); tap it for a per-layer breakdown: things drawn, data per minute, requests per minute, a light/medium/heavy dot, and an off switch (calls the page's own `togLy`).
+- Read-only: entity counts come from the page's top-level arrays (`ENTS` map, shown entities only); network from Resource Timing (no fetch wrapping), attributed by `NET_RULES` URL patterns, shared feeds split between the layers that are on. Basemap/terrain/app files are a separate "Map and app" row, not in the totals. Cross-origin feeds that hide their size show "size n/a".
+- `window.BDOCLayerMeter.snapshot()` is the registry chunks B (viewport culling) and C (hibernation + clean start) will build on.
+- SW `bdoc-v194` (new files precached). Tests: `tests/layer-meter-p206.test.js` (9), full suite 1127 pass / 0 fail. Checked in a local preview: 7 layers on, numbers match, off switch drops the row and the count, no script errors.
+- Note for chunk C: there is a second `togLy` override (index.html ~12130) whose early `return`s skip the p188 layer persistence; clean start will replace that persistence anyway.
+
 ### Claude Code — 1b DEPLOYED (2026-11-19) — main `0173a99..07f32b1`, SW v193
 - **Keys:** Travon rotated the exposed keys. The functions read only Netlify env, never a fallback. The env names in Netlify are `TOMORROW_API_KEY`, `weather_map_key` (OpenWeatherMap), `NASA_FIRMS_Map_key`, `NEWS_API_key`; the code also accepts `OWM_API_KEY`, `NASA_FIRMS_KEY`, `NEWSAPI_KEY`. New Cesium token in `index.html` (the allowlist fingerprint is updated).
 - **Netlify secrets scan:** `SECRETS_SCAN_OMIT_KEYS=CESIUM_KEY` is set because an unused `CESIUM_KEY` env var holds the same public token as `index.html`. Deleting `CESIUM_KEY` makes the omit setting unnecessary.

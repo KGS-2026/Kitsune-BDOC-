@@ -1,0 +1,22 @@
+/* p206 (W1.1 chunk A): layer-load meter at the top of the layer list. Glass like the panels around it. */
+.lym{position:sticky;top:0;z-index:3;margin:0 0 6px;padding:6px 8px 6px;background:var(--glass-fill-raised,rgba(30,34,43,.68));-webkit-backdrop-filter:var(--glass-blur,blur(10px) saturate(140%));backdrop-filter:var(--glass-blur,blur(10px) saturate(140%));border-bottom:1px solid var(--glass-hairline,rgba(255,255,255,.10));font-family:var(--m,ui-monospace,monospace)}
+.lym-strip{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;cursor:pointer;padding:2px 0;font-size:9px;letter-spacing:.06em;color:#8B919A}
+.lym-strip:focus-visible{outline:1px solid #E8B349;outline-offset:2px;border-radius:3px}
+.lym-lbl{color:#E6E9EE;font-weight:600}
+.lym-bar{flex:0 0 64px;height:4px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden}
+.lym-bar i{display:block;height:100%;width:0;border-radius:2px;background:#33cc33;transition:width .4s ease,background .4s ease}
+.lym[data-level="medium"] .lym-bar i{background:#E8B349}
+.lym[data-level="heavy"] .lym-bar i{background:#ff5c5c}
+.lym-txt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.lym-list{margin-top:6px;max-height:42vh;overflow:auto;font-size:9px;color:#C9CED6}
+.lym-sum{color:#8B919A;margin:0 0 4px;line-height:1.4}
+.lym-row{display:grid;grid-template-columns:8px minmax(0,1fr) 18px;align-items:center;gap:7px;padding:4px 0;border-top:1px solid rgba(255,255,255,.05)}
+.lym-n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#E6E9EE}
+.lym-main{min-width:0}
+.lym-sub{color:#8B919A;font-size:8px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.lym-dot{width:6px;height:6px;border-radius:50%;background:#33cc33}
+.lym-row[data-cost="medium"] .lym-dot{background:#E8B349}
+.lym-row[data-cost="heavy"] .lym-dot{background:#ff5c5c}
+.lym-off{all:unset;cursor:pointer;width:18px;height:18px;line-height:18px;text-align:center;border-radius:3px;color:#8B919A;font-size:10px}
+.lym-off:hover,.lym-off:focus-visible{background:rgba(255,92,92,.15);color:#ff8a8a}
+.lym-empty{color:#6B7280;padding:4px 0}
