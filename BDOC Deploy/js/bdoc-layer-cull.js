@@ -18,6 +18,13 @@
 //   BDOCCull.onViewChange(fn)        → fn(view) after the camera settles
 // Off switch: ?cull=0 in the URL, or the "Off-screen culling" button in the LOAD breakdown
 // (remembered in localStorage bdoc_cull=0).
+//
+// p206c (chunk C): sleeping layers. When every point of a layer that is on has been off screen for
+// SLEEP_MS, the layer goes to sleep: its points are taken out of Cesium's entity collection
+// altogether (no per-frame work, primitives freed), and its row says "sleeping". The layer's own
+// arrays still hold them and its feed keeps updating. It wakes, points back in, as soon as one of
+// them would be on screen, when culling is switched off, or when the layer is switched off and on.
+//   BDOCCull.sleeping(layer) → true / false
 (function () {
   'use strict';
   if (typeof window === 'undefined') return;
@@ -28,6 +35,7 @@
   const SKIP = { sat: 1 };    // satellites move ~7 km/s and carry orbit lines; culling them would flicker
   const PASS_MS = 1000;       // light check each second; full pass when something changed
   const MOVING_PASS_MS = 5000;
+  const SLEEP_MS = 120000;    // 2 minutes entirely off screen → sleep
 
   let enabled = true;
   try { if (/[?&]cull=0\b/.test(location.search) || localStorage.getItem('bdoc_cull') === '0') enabled = false; } catch (_) {}
@@ -38,6 +46,7 @@
   let lastFull = 0;
   const listeners = [];
   const stats = {};           // layer → {culled, considered}
+  const sleepSt = {};         // layer → {since: ms all points went off screen (0 = some on screen), asleep}
   const posCache = new WeakMap(); // entity → [lon, lat] for entities whose position never changes
 
   function viewer() { return window.V && window.V.scene ? window.V : null; }
@@ -131,8 +140,34 @@
   }
 
   function unhideAll() {
-    eachLayerEntity((ly, e) => { if (e.parent === HIDE) setHidden(e, false); });
+    const v = viewer();
+    eachLayerEntity((ly, e, isOn) => {
+      if (e._bdocAsleep && isOn) attach(v, e);
+      if (e.parent === HIDE) setHidden(e, false);
+    });
     Object.keys(stats).forEach(k => delete stats[k]);
+    Object.keys(sleepSt).forEach(k => delete sleepSt[k]);
+    markRows();
+  }
+
+  // ── Sleep / wake ──────────────────────────────────────────────────────────────────────────
+  function detach(v, e) {
+    try { if (v.entities.contains(e)) v.entities.remove(e); e._bdocAsleep = true; } catch (_) {}
+  }
+  function attach(v, e) {
+    // Only for layers that are on: an off layer's code may have removed this entity on purpose.
+    try { if (!v.entities.contains(e)) v.entities.add(e); } catch (_) { /* same id re-added by the layer meanwhile: drop ours */ }
+    e._bdocAsleep = false;
+  }
+  function markRows() {
+    try {
+      document.querySelectorAll('.ly.ly-asleep').forEach(el => { if (!(sleepSt[el.dataset.layer] || {}).asleep) el.classList.remove('ly-asleep'); });
+      Object.keys(sleepSt).forEach(ly => {
+        if (!sleepSt[ly].asleep) return;
+        const el = document.querySelector('.ly[data-layer="' + ly + '"]');
+        if (el) el.classList.add('ly-asleep');
+      });
+    } catch (_) {}
   }
 
   function pass(force) {
@@ -145,10 +180,14 @@
     const keep = new Set([v.selectedEntity, v.trackedEntity].filter(Boolean));
     Object.keys(stats).forEach(k => delete stats[k]);
     let changed = 0;
+    const now = Date.now();
+    const on = layersOn();
+    const byLayer = {}; // layer → [entities considered], for the sleep step
     const suspend = v.entities && v.entities.suspendEvents;
     if (suspend) v.entities.suspendEvents();
     try {
       eachLayerEntity((ly, e, isOn) => {
+        if (e._bdocAsleep && isOn && !(sleepSt[ly] || {}).asleep) { attach(v, e); changed++; } // layer woke / switched back on
         if (SKIP[ly] || !isOn || !cullable(e)) { if (e.parent === HIDE) { setHidden(e, false); changed++; } return; }
         let hide = false;
         if (view && !keep.has(e)) {
@@ -159,8 +198,24 @@
         if (hide !== was) { setHidden(e, hide); changed++; }
         const st = stats[ly] || (stats[ly] = { culled: 0, considered: 0 });
         st.considered++; if (hide) st.culled++;
+        (byLayer[ly] || (byLayer[ly] = [])).push(e);
+      });
+      // Sleep step: a layer whose every point has been off screen for SLEEP_MS leaves the collection.
+      Object.keys(sleepSt).forEach(ly => { if (!on[ly] || !byLayer[ly]) delete sleepSt[ly]; });
+      Object.keys(byLayer).forEach(ly => {
+        const st = stats[ly], ss = sleepSt[ly] || (sleepSt[ly] = { since: 0, asleep: false });
+        const allOff = !!view && st.considered > 0 && st.culled === st.considered;
+        if (!allOff) {
+          ss.since = 0;
+          if (ss.asleep) { ss.asleep = false; byLayer[ly].forEach(e => { if (e._bdocAsleep) { attach(v, e); changed++; } }); }
+          return;
+        }
+        if (!ss.since) ss.since = now;
+        if (!ss.asleep && now - ss.since >= SLEEP_MS) ss.asleep = true;
+        if (ss.asleep) byLayer[ly].forEach(e => { if (!e._bdocAsleep) { detach(v, e); changed++; } }); // incl. points a poll added while asleep
       });
     } finally { if (suspend) v.entities.resumeEvents(); }
+    markRows();
     if (changed && window.BDOCRender) { try { window.BDOCRender.kick(); } catch (_) {} }
     lastFull = Date.now();
     return changed;
@@ -178,7 +233,8 @@
     const sig = signature();
     const on = layersOn();
     const moving = MOVING.some(k => on[k]);
-    if (sig !== lastSig || (moving && Date.now() - lastFull > MOVING_PASS_MS)) { lastSig = sig; pass(); }
+    const sleepDue = Object.keys(sleepSt).some(ly => { const s = sleepSt[ly]; return s.since && !s.asleep && Date.now() - s.since >= SLEEP_MS; });
+    if (sig !== lastSig || sleepDue || (moving && Date.now() - lastFull > MOVING_PASS_MS)) { lastSig = signature(); pass(); lastSig = signature(); }
   }
 
   let moveT = null;
@@ -217,6 +273,8 @@
     isEnabled: () => enabled,
     setEnabled,
     stats: () => JSON.parse(JSON.stringify(stats)),
+    sleeping: ly => !!(sleepSt[ly] && sleepSt[ly].asleep),
+    SLEEP_MS,
     pass,
     _test: { inViewOf, boxInViewOf, circleInViewOf, lonRangesOverlap, cullable }
   };
