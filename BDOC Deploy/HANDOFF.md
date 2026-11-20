@@ -79,6 +79,11 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
 
+### Claude Code — p207 clock truth (2026-11-20) — branch `claude/p207-clock-truth`, SW v194, **NOT pushed**
+- **Trigger:** Travon's screenshot showed ONLINE + green LIVE with the header clock at 22:50Z while real UTC was 17:29Z. The laptop's Windows clock had frozen at Nov 19 22:50Z (Windows Kernel-General log: NTP jumped it +18h39m at 12:29 EST; same on Nov 17 and Nov 19). The p159b skew check had correctly said "BEHIND BY ~1119 MIN" in the ticker, but ran once at boot, the header clock still used raw `new Date()`, and LIVE stayed green.
+- **Fix:** `Health.checkClock()` in `js/data.js` rechecks every 5 min, on tab focus, on `online` and when the wall clock jumps against `performance.now()` (>30 s). It sets `window.BDOC_CLOCK_OFF_MS`, and `BDOC_now()` returns server-corrected time. Header `#clk` and EventLog/ticker timestamps use `BDOC_now()`; the clock turns amber with ⚠ and a tooltip. LIVE reads `LIVE · CLOCK OFF` (amber dot) until it's fixed, then posts "DEVICE CLOCK FIXED" and goes back to normal. Feed "ages" elsewhere still use raw `Date.now()` (the ticker says so).
+- **Verified (local dev server 8883):** a correct clock shows plain LIVE (0.4 s skew); faking `Date.now` −1119 min was caught within ~5 s (header still showed true UTC); restoring it cleared the warning by itself. Inline scripts parse; suite 1118 pass / 0 fail.
+
 ### Claude Code — 1b DEPLOYED (2026-11-19) — main `0173a99..07f32b1`, SW v193
 - **Keys:** Travon rotated the exposed keys. The functions read only Netlify env, never a fallback. The env names in Netlify are `TOMORROW_API_KEY`, `weather_map_key` (OpenWeatherMap), `NASA_FIRMS_Map_key`, `NEWS_API_key`; the code also accepts `OWM_API_KEY`, `NASA_FIRMS_KEY`, `NEWSAPI_KEY`. New Cesium token in `index.html` (the allowlist fingerprint is updated).
 - **Netlify secrets scan:** `SECRETS_SCAN_OMIT_KEYS=CESIUM_KEY` is set because an unused `CESIUM_KEY` env var holds the same public token as `index.html`. Deleting `CESIUM_KEY` makes the omit setting unnecessary.
