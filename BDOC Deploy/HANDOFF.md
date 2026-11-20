@@ -79,7 +79,8 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
 
-### Claude Code — p207 clock truth (2026-11-20) — branch `claude/p207-clock-truth`, SW v194, **NOT pushed**
+### Claude Code — p207 clock truth (2026-11-20) — **LIVE** main `aabbd1c..1619ae8`, SW v194
+- **Deployed on Travon's "deploy"** (17:44Z). Live check: `data.js?v=p207` served, SW v194, skew 0.16 s, plain LIVE; the faked −1119 min clock showed `LIVE · CLOCK OFF` + amber ⚠ header with the true time, then cleared once restored; no console errors. p206 layer-state (branch only) must take SW v195.
 - **Trigger:** Travon's screenshot showed ONLINE + green LIVE with the header clock at 22:50Z while real UTC was 17:29Z. The laptop's Windows clock had frozen at Nov 19 22:50Z (Windows Kernel-General log: NTP jumped it +18h39m at 12:29 EST; same on Nov 17 and Nov 19). The p159b skew check had correctly said "BEHIND BY ~1119 MIN" in the ticker, but ran once at boot, the header clock still used raw `new Date()`, and LIVE stayed green.
 - **Fix:** `Health.checkClock()` in `js/data.js` rechecks every 5 min, on tab focus, on `online` and when the wall clock jumps against `performance.now()` (>30 s). It sets `window.BDOC_CLOCK_OFF_MS`, and `BDOC_now()` returns server-corrected time. Header `#clk` and EventLog/ticker timestamps use `BDOC_now()`; the clock turns amber with ⚠ and a tooltip. LIVE reads `LIVE · CLOCK OFF` (amber dot) until it's fixed, then posts "DEVICE CLOCK FIXED" and goes back to normal. Feed "ages" elsewhere still use raw `Date.now()` (the ticker says so).
 - **Verified (local dev server 8883):** a correct clock shows plain LIVE (0.4 s skew); faking `Date.now` −1119 min was caught within ~5 s (header still showed true UTC); restoring it cleared the warning by itself. Inline scripts parse; suite 1118 pass / 0 fail.
