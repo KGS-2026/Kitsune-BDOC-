@@ -125,23 +125,30 @@
 
   function on() { try { return typeof layers === 'object' && layers ? layers : {}; } catch (_) { return {}; } } // eslint-disable-line no-undef
 
-  function countColl(c) {
+  // "Drawn" = Cesium will actually draw it: its own show AND its parent's (p206b culling hangs off-screen
+  // points under a hidden parent). "Loaded" = the layer has it switched on, on screen or not.
+  const isDrawn = e => (typeof e.isShowing === 'boolean' ? e.isShowing : e.show !== false);
+  const isLoaded = e => e.show !== false;
+  function countColl(c, test) {
+    test = test || isDrawn;
     if (!c) return 0;
     try {
-      if (Array.isArray(c)) { let n = 0; for (let i = 0; i < c.length; i++) { const e = c[i]; if (e && e.show !== false) n++; } return n; }
-      if (c instanceof Set) { let n = 0; c.forEach(e => { if (e && e.show !== false) n++; }); return n; }
+      if (Array.isArray(c)) { let n = 0; for (let i = 0; i < c.length; i++) { const e = c[i]; if (e && test(e)) n++; } return n; }
+      if (c instanceof Set) { let n = 0; c.forEach(e => { if (e && test(e)) n++; }); return n; }
       if (c.entities && c.entities.values) return c.show === false ? 0 : c.entities.values.length; // DataSource
     } catch (_) {}
     return 0;
   }
 
-  function drawnFor(ly) {
+  function collections(ly) {
     const g = ENTS[ly];
-    if (!g) return null; // tile / module layer: we don't know its entity count
-    let colls;
-    try { colls = g(); } catch (_) { return 0; } // array not declared yet (lazy module not loaded)
+    if (!g) return [];
+    try { return g().filter(Boolean); } catch (_) { return []; } // array not declared yet (lazy module not loaded)
+  }
+  function drawnFor(ly, test) {
+    if (!ENTS[ly]) return null; // tile / module layer: we don't know its entity count
     let n = 0;
-    for (const c of colls) n += countColl(c);
+    for (const c of collections(ly)) n += countColl(c, test);
     return n;
   }
 
@@ -218,7 +225,7 @@
     const now = performance.timeOrigin + performance.now();
     trimNet(now);
     const rows = {};
-    Object.keys(active).filter(k => active[k]).forEach(k => { rows[k] = { layer: k, drawn: drawnFor(k), req: 0, bytes: 0 }; });
+    Object.keys(active).filter(k => active[k]).forEach(k => { rows[k] = { layer: k, drawn: drawnFor(k), loaded: drawnFor(k, isLoaded), req: 0, bytes: 0 }; });
     rows[OTHER] = { layer: OTHER, drawn: null, req: 0, bytes: 0 };
     for (const n of net) {
       for (const [ly, share] of attribute(n.url, active)) {
@@ -228,12 +235,12 @@
     }
     // Totals are the layers' own cost. "Map and app" (basemap, terrain, app files) is its own row:
     // right after a load it is many MB and would drown out what the layers cost.
-    let totalDrawn = 0, totalKb = 0, totalReq = 0, otherKb = 0, otherReq = 0;
+    let totalDrawn = 0, totalLoaded = 0, totalKb = 0, totalReq = 0, otherKb = 0, otherReq = 0;
     const list = Object.values(rows).map(r => {
       const reqMin = Math.round(r.req * 10) / 10, kbMin = Math.round(r.bytes / 1024);
       if (r.layer === OTHER) { otherKb = kbMin; otherReq = reqMin; }
-      else { totalDrawn += r.drawn || 0; totalKb += kbMin; totalReq += reqMin; }
-      return { layer: r.layer, name: r.layer === OTHER ? 'Map and app' : layerName(r.layer), drawn: r.drawn, reqMin, kbMin, cost: grade(r.drawn, reqMin, kbMin) };
+      else { totalDrawn += r.drawn || 0; totalLoaded += r.loaded || 0; totalKb += kbMin; totalReq += reqMin; }
+      return { layer: r.layer, name: r.layer === OTHER ? 'Map and app' : layerName(r.layer), drawn: r.drawn, loaded: r.loaded == null ? null : r.loaded, reqMin, kbMin, cost: grade(r.drawn, reqMin, kbMin) };
     });
     const rank = { heavy: 3, medium: 2, light: 1 };
     list.sort((a, b) => (a.layer === OTHER) - (b.layer === OTHER) || rank[b.cost] - rank[a.cost] || (b.drawn || 0) - (a.drawn || 0) || b.kbMin - a.kbMin);
@@ -243,7 +250,7 @@
     try { if (performance.memory) heapMb = Math.round(performance.memory.usedJSHeapSize / 1048576); } catch (_) {}
     return {
       layersOn: list.filter(r => r.layer !== OTHER).length,
-      drawn: totalDrawn, kbMin: totalKb, reqMin: Math.round(totalReq), otherKbMin: otherKb, otherReqMin: Math.round(otherReq),
+      drawn: totalDrawn, loaded: totalLoaded, kbMin: totalKb, reqMin: Math.round(totalReq), otherKbMin: otherKb, otherReqMin: Math.round(otherReq),
       fps: fps(), globeEnts, heapMb,
       score: loadScore(totalDrawn, totalKb, totalReq),
       rows: list
@@ -277,6 +284,8 @@
         render();
       });
       root.querySelector('.lym-list').addEventListener('click', ev => {
+        const cb = ev.target.closest('[data-cull]');
+        if (cb && window.BDOCCull) { ev.stopPropagation(); window.BDOCCull.setEnabled(cb.getAttribute('data-cull') === '1'); setTimeout(render, 50); return; }
         const b = ev.target.closest('[data-off]');
         if (!b) return;
         ev.stopPropagation();
@@ -308,11 +317,14 @@
     const fpsTxt = s.fps ? s.fps + ' fps' : 'idle (draws on demand)';
     let h = '<div class="lym-sum">Globe: ' + esc(fpsTxt) + ' · ' + fmtN(s.globeEnts) + ' objects' +
       (s.heapMb ? ' · ' + s.heapMb + ' MB memory' : '') + ' · layers ' + s.reqMin + ' requests/min</div>';
+    const C = window.BDOCCull;
+    if (C) h += '<div class="lym-sum"><button type="button" class="lym-cull" data-cull="' + (C.isEnabled() ? '0' : '1') + '" aria-pressed="' + C.isEnabled() + '">Off-screen culling: ' + (C.isEnabled() ? 'ON' : 'OFF') + '</button>' +
+      (C.isEnabled() && s.loaded > s.drawn ? ' ' + fmtN(s.loaded - s.drawn) + ' off screen, not drawn' : '') + '</div>';
     // Two lines per layer: the panel is ~220 px wide, so names get the full width and numbers sit under them.
     for (const r of s.rows) {
       if (r.layer === OTHER && !r.kbMin && !r.reqMin) continue;
       const parts = [];
-      if (r.drawn != null) parts.push(fmtN(r.drawn) + ' drawn');
+      if (r.drawn != null) parts.push(fmtN(r.drawn) + ' drawn' + (r.loaded > r.drawn ? ' of ' + fmtN(r.loaded) : ''));
       else if (r.layer !== OTHER) parts.push('map tiles');
       if (r.kbMin) parts.push(fmtKb(r.kbMin) + '/min');
       else if (r.reqMin) parts.push('<span title="This source does not report its size to the browser">size n/a</span>');
@@ -337,7 +349,9 @@
   window.BDOCLayerMeter = {
     snapshot,
     render,
-    _test: { attribute, grade, loadScore, countColl, NET_RULES, ENTS, OTHER, addEntry, net }
+    collections,
+    layerKeys: () => Object.keys(ENTS),
+    _test: { attribute, grade, loadScore, countColl, isLoaded, NET_RULES, ENTS, OTHER, addEntry, net }
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

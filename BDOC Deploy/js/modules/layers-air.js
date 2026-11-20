@@ -733,8 +733,30 @@ function _acPlausible(a){
   _acLastPos.set(a.hex,{lat:a.lat,lon:a.lon,t:now,spd:a.spd,tooFast:Math.max(-5,(prev.tooFast|0)-0.8)});
   return true;
 }
+// p206b (master plan W1.1 chunk B): poll only the regions on screen. Each region is a circle of
+// r nautical miles (1 nm = 1/60 degree); BDOCCull says whether it touches the view plus a margin.
+// Aircraft in regions that were not fetched drop off (they were off screen and culled anyway); when
+// the camera reaches a region that has not been fetched for a refresh period, it is fetched at once.
+const _airRegionAt={}; // region name -> last fetch time (ms)
+let _airCatchUpT=null;
+function _airRegionsInView(){
+  const C=window.BDOCCull;
+  // Force Track's side panel lists military aircraft worldwide: keep every region while it is on.
+  if(!C||!C.isEnabled()||layers.forcetrack)return CFG.regions.slice();
+  return CFG.regions.filter(r=>C.circleInView(r.lat,r.lon,r.r/60));
+}
+window._airRegionsInView=_airRegionsInView;
+if(window.BDOCCull){BDOCCull.onViewChange(function(){
+  if(!layers.air||layers.forcetrack)return;
+  const now=Date.now();
+  if(_airRegionsInView().some(r=>now-(_airRegionAt[r.name]||0)>CFG.refresh.aircraft)){
+    clearTimeout(_airCatchUpT);_airCatchUpT=setTimeout(()=>{if(layers.air&&!layers.forcetrack)loadAircraft()},1200);
+  }
+})}
 async function loadAircraft(){
   if(!V)return;
+  const _regions=_airRegionsInView();
+  if(!_regions.length)return; // no aircraft region on screen: nothing to fetch
   milAC.length=0;allAC.length=0;
   let totalAir=0,totalMil=0;
   let primarySource='adsb_lol';
@@ -744,7 +766,8 @@ async function loadAircraft(){
   // Fire FR24 enrichment fetch IN PARALLEL with all region fetches — one call,
   // populates _fr24EnrichMap (hex→{orig,dest,airline,flight,acType}) before entities build.
   const [regionResults]=await Promise.all([
-   Promise.allSettled(CFG.regions.map(async reg=>{
+   Promise.allSettled(_regions.map(async reg=>{
+    _airRegionAt[reg.name]=Date.now();
     let acList=[];
     try{acList=await fetchAdsbLol(reg)}catch(e){console.warn(`[BDOC AIR] adsb.lol failed for ${reg.name}:`,e.message)}
     if(acList.length===0){
@@ -760,7 +783,7 @@ async function loadAircraft(){
   ]);
   // Visible diagnostic when ALL regions return empty (operator can see this without opening console)
   if(regionStats.ok===0){
-    af('var(--rd)','AIRCRAFT FEED: all 6 regions returned 0 — check Netlify proxy logs (proxy-adsb / proxy-opensky)');
+    af('var(--rd)','AIRCRAFT FEED: all '+_regions.length+' regions returned 0 — check Netlify proxy logs (proxy-adsb / proxy-opensky)');
     console.error('[BDOC AIR] Both adsb.lol and OpenSky returned 0 across all 6 COCOM regions. Check Netlify Functions logs.');
   }
   // PERF FIX: Use Set for O(1) dedup instead of O(n) array.find()

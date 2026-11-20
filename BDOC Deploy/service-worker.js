@@ -3,7 +3,7 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v194';  // p206: W1.1 layer-load meter (js/bdoc-layer-meter.js + css)
+const SW_VERSION = 'bdoc-v194';  // p206: W1.1 layer-load meter + off-screen culling (js/bdoc-layer-meter.js, js/bdoc-layer-cull.js + css)
 // (prev) const SW_VERSION = 'bdoc-v193';  // p201-p205: security baseline (old fallback keys removed, new Cesium token, Supabase-facing functions locked down, site canaries, p200 CI checks)
 // (prev) const SW_VERSION = 'bdoc-v192';  // p188: saved workspace survives a late-loading paid tier (merge, not overwrite; restore re-runs on tier change); War Room no longer toggled on-then-off by boot restore + auto-arm racing (which also opted users out of War Room forever); auth.js ?v=p188
 // (prev) const SW_VERSION = 'bdoc-v191';  // p187: pricing window one column on phones (inline 4-col style beat the phone rule), annual buttons hidden (yearly Stripe prices are one-time), fake aggregateRating removed from JSON-LD, plan cards list only real features, founding-member banner, veteran $4.99 line + ?vet=1 one-click discount link, plain-language title / boot line / welcome text; bdoc.css ?v=p187
@@ -74,6 +74,7 @@ const STATIC_PRECACHE = [
   '/js/bdoc-offline-hud.js?v=p158f',
   '/js/bdoc-float.js?v=p186',
   '/js/bdoc-layer-meter.js?v=p206',
+  '/js/bdoc-layer-cull.js?v=p206',
   '/css/bdoc.css?v=p187',
   '/css/bdoc-p154.css?v=p175',
   '/css/bdoc-p158f.css?v=p158f',
