@@ -52,7 +52,7 @@ test('page loads the meter script and stylesheet, and the service worker caches 
 });
 
 test('meter loads after the layer code it reads (index.html inline script + togLy override)', () => {
-  const meterAt = HTML.indexOf('js/bdoc-layer-meter.js');
+  const meterAt = HTML.indexOf('<script src="js/bdoc-layer-meter.js');
   assert.ok(meterAt > HTML.indexOf('const _origTogLy = togLy;'), 'meter must load after the togLy override');
   assert.ok(meterAt > HTML.indexOf('let eqEnts=[]'));
 });
