@@ -79,6 +79,16 @@ here, update §1 so Hermes knows where you left off.
 
 ## 1. WHERE HERMES LEFT OFF (2026-11-11)
 
+### Claude Code — p206b Off-screen culling (W1.1 chunk B) (2026-11-20) — **branch `claude/p206-layer-state`, NOT live**
+- New `js/bdoc-layer-cull.js` (loads right after the meter). Points outside the camera view plus a margin (25% each side, min 2°) stop being drawn; they come back when the camera returns. Only point-like entities (position, no line/polygon/ellipse); satellites, the selected and the tracked entity are never culled. Nothing is culled when the whole globe is in view.
+- How: an off-screen entity is hung under one hidden parent entity (Cesium draws an entity only when it and its parent show). `entity.show` is never touched, so layer toggles, filters and the aircraft refresh (which sets show every update) can't fight it. Runs on camera moveEnd, on layer changes, and every 5 s while aircraft/ships are on.
+- Aircraft poll only the regions on screen (`_airRegionsInView` in layers-air.js; all 12 while Force Track is on, because its panel lists military aircraft worldwide). Moving onto a region not fetched for a refresh period fetches it at once. Over Europe: 2 of 12 regions.
+- Meter: "drawn" now follows `isShowing` (so culled points don't count), rows read "197 drawn of 573", and the breakdown has an "Off-screen culling: ON/OFF" button (remembered as localStorage `bdoc_cull`; `?cull=0` also turns it off).
+- Global feeds (quakes, fires, news, War Room…) still poll everywhere on purpose: skipping a worldwide feed because nothing is on screen would miss a new event. AIS ship stream still subscribes to the whole world (narrowing it to the view is in the private backlog).
+- Checked in a local preview with Cesium 1.146: over Europe 963 point/label/billboard primitives → 260 shown with culling on, all 963 with it off; no script errors. Tests: `tests/layer-cull-p206b.test.js` (11); full suite 1138 pass / 0 fail.
+- 2026-11-20: a power loss zeroed index.html, service-worker.js and layers-air.js in this worktree (all NUL bytes). Restored from git and redone; git fsck clean; other worktrees scanned clean. Commit early on this laptop.
+- SW: p206 and p207 (clock truth) both claim `bdoc-v194`; whichever ships second takes v195.
+
 ### Claude Code — p206 Layer-load meter (W1.1 chunk A) (2026-11-20) — **branch `claude/p206-layer-state`, NOT live**
 - New `js/bdoc-layer-meter.js` + `css/bdoc-layer-meter.css`, loaded after `bdoc-float.js`. A LOAD strip sits at the top of the layer list (sticky, glass); tap it for a per-layer breakdown: things drawn, data per minute, requests per minute, a light/medium/heavy dot, and an off switch (calls the page's own `togLy`).
 - Read-only: entity counts come from the page's top-level arrays (`ENTS` map, shown entities only); network from Resource Timing (no fetch wrapping), attributed by `NET_RULES` URL patterns, shared feeds split between the layers that are on. Basemap/terrain/app files are a separate "Map and app" row, not in the totals. Cross-origin feeds that hide their size show "size n/a".
