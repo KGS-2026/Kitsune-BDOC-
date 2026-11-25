@@ -10464,7 +10464,9 @@ async function loadIOCLayer(){
     let c2Count=0,compCount=0;
     for(const f of features){
       if(!isValidCoord(f.lat,f.lon))continue;
-      const isC2=f.source==='threatfox';
+      // p208: C2 rows now come from ThreatFox (keyed), Feodo Tracker or C2IntelFeeds
+      const isC2=f.source!=='emerging_threats'&&f.threat_type!=='compromised';
+      const srcName=({threatfox:'ThreatFox (abuse.ch)',feodo:'Feodo Tracker (abuse.ch)',c2intel:'C2IntelFeeds (daily C2 scan)'})[f.source]||'Emerging Threats';
       const color=isC2?'#DA3633':'#ff7722';
       const alpha=isC2?0.85:0.60;
       const radius=isC2?12000:8000;
@@ -10495,15 +10497,21 @@ async function loadIOCLayer(){
           +(f.city||f.country?'<span style="color:#888">Location:</span> '+esc([f.city,f.country].filter(Boolean).join(', '))+'<br>':'')
           +(f.isp?'<span style="color:#888">ISP:</span> '+esc(f.isp)+'<br>':'')
           +'<span style="color:#888">Confidence:</span> '+(f.confidence||'?')+'%<br>'
-          +'<span style="color:#888;font-size:9px">Source: '+(isC2?'ThreatFox (abuse.ch)':'Emerging Threats')+'</span>'
+          +'<span style="color:#888;font-size:9px">Source: '+srcName+'</span>'
           +'</div>',
         show:layers.ioc
       });
       if(ent){iocEnts.push(ent);isC2?c2Count++:compCount++;}
     }
     BDOC.layerLoadFx.done('ioc',true);
-    af('var(--rd)','☠ IOC: '+c2Count+' C2 servers (ThreatFox) · '+compCount+' compromised hosts (ET)');
-    EventLog.add('warn','IOC layer: '+c2Count+' C2 + '+compCount+' compromised IPs geocoded');
+    // p208: name every feed that did not answer, so "0 C2" never reads as "no C2"
+    const _srcs=payload.sources||{};
+    const _down=Object.keys(_srcs).filter(function(k){return _srcs[k]&&_srcs[k].status!=='ok'&&_srcs[k].status!=='needs_key'}).map(function(k){
+      const st=_srcs[k].status;return k+(st==='key_rejected'?' (key rejected)':' ('+st+')');});
+    if(_srcs.threatfox&&_srcs.threatfox.status==='needs_key')console.info('[IOC] ThreatFox leg idle: set ABUSECH_AUTH_KEY in Netlify env (free key at auth.abuse.ch)');
+    window._iocSources=_srcs;
+    af('var(--rd)','☠ IOC: '+c2Count+' C2 servers · '+compCount+' compromised hosts (ET)'+(_down.length?' · offline: '+esc(_down.join(', ')):''));
+    EventLog.add('warn','IOC layer: '+c2Count+' C2 + '+compCount+' compromised IPs geocoded'+(_down.length?' — feeds offline: '+_down.join(', '):''));
     try{FusionEngine.check()}catch(_){}
   }catch(e){
     BDOC.layerLoadFx.done('ioc',false);

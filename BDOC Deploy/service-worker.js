@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v195';  // p206: W1.1 layer state: load meter, off-screen culling, sleeping layers, clean start + Restore last layers
+const SW_VERSION = 'bdoc-v196';  // p208: dead-feed audit — IOC layer C2 leg back (ThreatFox needs an abuse.ch Auth-Key since 2026-10-21; now Feodo + C2IntelFeeds keyless, ThreatFox when ABUSECH_AUTH_KEY set, per-feed status in the toast); proxy-overpass races 4 mirrors with a User-Agent (was 429 on every call)
+// (prev) const SW_VERSION = 'bdoc-v195';  // p206: W1.1 layer state: load meter, off-screen culling, sleeping layers, clean start + Restore last layers
 // (prev) const SW_VERSION = 'bdoc-v194';  // p207: clock truth (header clock corrected to server time, LIVE shows CLOCK OFF, skew rechecked)
 // (prev) const SW_VERSION = 'bdoc-v193';  // p201-p205: security baseline (old fallback keys removed, new Cesium token, Supabase-facing functions locked down, site canaries, p200 CI checks)
 // (prev) const SW_VERSION = 'bdoc-v192';  // p188: saved workspace survives a late-loading paid tier (merge, not overwrite; restore re-runs on tier change); War Room no longer toggled on-then-off by boot restore + auto-arm racing (which also opted users out of War Room forever); auth.js ?v=p188

@@ -47,7 +47,7 @@ test('page loads the meter script and stylesheet, and the service worker caches 
   assert.match(HTML, /<link rel="stylesheet" href="css\/bdoc-layer-meter\.css\?v=p206">/);
   assert.ok(SW.includes("'/js/bdoc-layer-meter.js?v=p206'"));
   assert.ok(SW.includes("'/css/bdoc-layer-meter.css?v=p206'"));
-  assert.match(SW, /const SW_VERSION = 'bdoc-v195';/);
+  assert.match(SW, /\/\/ \(prev\) const SW_VERSION = 'bdoc-v195';  \/\/ p206:/);
   assert.match(SW, /\/\/ \(prev\) const SW_VERSION = 'bdoc-v194';  \/\/ p207:/);
 });
 
