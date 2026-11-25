@@ -8,6 +8,7 @@ with sync_playwright() as p:
     b = p.chromium.launch(executable_path="/root/.cache/ms-playwright/chromium-1223/chrome-linux64/chrome",
                           args=["--no-sandbox", "--use-gl=angle", "--use-angle=swiftshader"])
     pg = b.new_page(viewport={"width": 1400, "height": 900})
+    pg.on("response", lambda r: errs.append("HTTP %d %s" % (r.status, r.url[:150])) if r.status >= 400 else None)
     pg.on("pageerror", lambda e: errs.append("PAGEERROR " + str(e)))
     pg.on("console", lambda m: errs.append("CONSOLE.error " + m.text) if m.type == "error" else None)
     pg.goto(URL, wait_until="domcontentloaded", timeout=90000)
