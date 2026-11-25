@@ -78,7 +78,7 @@ test('every local script and stylesheet index.html loads is precached under the 
   const missing = boot.filter(u => !PRECACHE.includes(u) && !(u in NOT_PRECACHED));
   assert.deepEqual(missing, [], 'in index.html but not in STATIC_PRECACHE under the same ?v=');
   // the five p186 added
-  for (const u of ['/js/snapshot-client.js?v=p122', '/js/bdoc-wire-boot.js?v=p160', '/js/a11y.js?v=p119', '/js/mesh-globe-layer.js?v=p163s', '/js/bdoc-plugin-renderer.js?v=p166']) {
+  for (const u of ['/js/snapshot-client.js?v=p122', '/js/bdoc-wire-boot.js?v=p160', '/js/a11y.js?v=p119', '/js/mesh-globe-layer.js?v=p208', '/js/bdoc-plugin-renderer.js?v=p166']) {
     if (boot.includes(u)) assert.ok(PRECACHE.includes(u), u);
   }
 });

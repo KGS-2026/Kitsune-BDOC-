@@ -3,7 +3,8 @@
 // Strategies: Cache-first for static assets, Stale-while-revalidate for API data.
 // Cache names include version so bumping SW_VERSION forces a cache refresh on deploy.
 
-const SW_VERSION = 'bdoc-v196';  // p208: dead-feed audit — IOC layer C2 leg back (ThreatFox needs an abuse.ch Auth-Key since 2026-10-21; now Feodo + C2IntelFeeds keyless, ThreatFox when ABUSECH_AUTH_KEY set, per-feed status in the toast); proxy-overpass races 4 mirrors with a User-Agent (was 429 on every call)
+const SW_VERSION = 'bdoc-v197';  // p208b: mesh-nodes answers 200 {status:'not_provisioned'} (was a 503 = red console error on every page load); mesh-globe-layer.js ?v=p208 stops polling on it
+// (prev) const SW_VERSION = 'bdoc-v196';  // p208: dead-feed audit — IOC layer C2 leg back (ThreatFox needs an abuse.ch Auth-Key since 2026-10-21; now Feodo + C2IntelFeeds keyless, ThreatFox when ABUSECH_AUTH_KEY set, per-feed status in the toast); proxy-overpass races 4 mirrors with a User-Agent (was 429 on every call)
 // (prev) const SW_VERSION = 'bdoc-v195';  // p206: W1.1 layer state: load meter, off-screen culling, sleeping layers, clean start + Restore last layers
 // (prev) const SW_VERSION = 'bdoc-v194';  // p207: clock truth (header clock corrected to server time, LIVE shows CLOCK OFF, skew rechecked)
 // (prev) const SW_VERSION = 'bdoc-v193';  // p201-p205: security baseline (old fallback keys removed, new Cesium token, Supabase-facing functions locked down, site canaries, p200 CI checks)
@@ -99,7 +100,7 @@ const STATIC_PRECACHE = [
   '/js/snapshot-client.js?v=p122',
   '/js/bdoc-wire-boot.js?v=p160',
   '/js/a11y.js?v=p119',
-  '/js/mesh-globe-layer.js?v=p163s',
+  '/js/mesh-globe-layer.js?v=p208',
   '/js/bdoc-plugin-renderer.js?v=p166',
   '/js/modules/layers-military.js?v=p185c',
   '/js/modules/layers-conflict.js?v=p185c',

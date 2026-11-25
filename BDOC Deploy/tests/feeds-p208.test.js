@@ -95,5 +95,7 @@ test('IOC layer counts every C2 source as C2 and names offline feeds', () => {
 
 test('SW v196 ships p208', () => {
   const SW = fs.readFileSync(path.join(ROOT, 'service-worker.js'), 'utf8');
-  assert.match(SW, /const SW_VERSION = 'bdoc-v196';  \/\/ p208:/);
+  assert.match(SW, /\/\/ \(prev\) const SW_VERSION = 'bdoc-v196';  \/\/ p208:/);
+  assert.match(SW, /const SW_VERSION = 'bdoc-v197';  \/\/ p208b:/);
+  assert.ok(SW.includes("'/js/mesh-globe-layer.js?v=p208'"));
 });

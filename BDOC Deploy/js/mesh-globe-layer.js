@@ -42,6 +42,13 @@ const meshGlobeLayer = {
         return;
       }
       result = await res.json();
+      // p208: mesh-nodes answers 200 {status:'not_provisioned'} now (was 503) — same stop.
+      if (result && result.status === 'not_provisioned') {
+        this.notProvisioned = true;
+        if (this.refreshHandle) { clearInterval(this.refreshHandle); this.refreshHandle = null; }
+        console.info('[Mesh Globe] mesh backend not provisioned; polling stopped');
+        return;
+      }
     } catch (err) { console.debug('[Mesh Globe] fetch failed:', err.message); return; }
     if (!result || !Array.isArray(result.nodes)) return;
     this.renderNodes(result.nodes);

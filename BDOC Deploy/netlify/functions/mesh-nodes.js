@@ -60,8 +60,10 @@ exports.handler = async (event) => {
       let code = null;
       try { code = JSON.parse(text).code; } catch (e) { /* non-JSON error body */ }
       if (res.status === 404 || code === 'PGRST205') {
+        // p208: 200, not 503 — the body says not_provisioned, and a 503 put a red
+        // "Failed to load resource" in every visitor's console on every page load.
         return {
-          statusCode: 503,
+          statusCode: 200,
           headers,
           body: JSON.stringify({
             status: 'not_provisioned',
